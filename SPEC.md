@@ -319,6 +319,7 @@ section in the same PR and is listed here.
 | PR 1 | Preflight step 6 skipped a run that started after 11:00, before the content checkout (§8.2) | The too-late skip is the first check of step 8, after the checkout, and Finish records it in the one status commit; such a run's watchdog is start + 10 min | PR 1 review: without the checkout the skipped run could not make the status commit that test 7 and P5 expect, and its watchdog (11:02) had already passed |
 | PR 1 | A failed edition push left its commit local; preflight pushed such commits with `pushPending()` before the too-late check, and any later push of `main`, status commits included, carried them (§8.2, §8.8) | An edition call (`publishDataOnly`, `publishFull`) refuses to start after 11:00, stops its push at 11:00 and removes its own commit when the push has not landed; every publish call on `main`, and preflight, first drops a `brief:` commit that origin lacks (`dropPendingEditions`); the publish CLI refuses editions after 11:00; `publishDataOnly` gets a deadline (`TIMEOUTS.dataOnlyPublish`); daily tests 16 to 19 and publish tests 9 to 12 | PR 1 review: a rerun after 11:00, or a run started after 07:40 whose data-only push failed, could publish an edition after 11:00, and before 11:00 a status push could put live a full edition that the record said had failed |
 | PR 1 | `SITE_BLOCKING_CODES` left out `SECRET_LIKE` (§6.2), and its `sk-` pattern had no leading boundary (§4.12) | `SECRET_LIKE` is a site-blocking code; every code in `lib/rules/safety.ts` must be one, and `tests/content.test.ts` checks it (§7.9). The `sk-` pattern needs no letter or digit before it | PR 1 review: a secret-shaped string that bypassed publish, or was caught only by a newer pattern, would have been built into a public page with only a warning. Once the rule hides pages, a slug such as `risk-…` must not trip it |
+| PR 1 | `dropPendingEditions` dropped every local commit above origin's `main`, withholds included (§8.8) | It makes the dropped withholds again as one new commit, composed as `publishWithholds` composes them; daily test 20 and publish test 13 | PR 1 review (round 3): a rerun after 11:00 skips before dispute intake, so a dropped withhold would have left a disputed name public until the next morning |
 | P0 | Claude first tries `create_repository`; J1 only if it fails (§0.3, §10 P0 Scope 1, §9.10 C1) | Claude does not call `create_repository`; JL creates the content repo (J1), then Claude attaches it | The build session's own rules forbid `create_repository` and `gh repo create`, so the call cannot be tried. J1 was asked on 2026-11-07 |
 | P0 | J4 only if reviews don't arrive after `@codex review`; J4 is a Code review toggle (§9.10) | J4 is "create a Codex environment for `8gara8/CyberTracker`" (chatgpt.com/codex/cloud/settings/environments), asked as soon as the bot says so | On PR 1 the bot `chatgpt-codex-connector[bot]` answered at once with "create an environment for this repo" instead of a review, so waiting and `@codex review` could not help |
 | P0 | Fetch errors are `timeout`, `dns`, `tls`, `http_<status>`, `too_large`, `redirects`, `parse`, `schema`, `empty` (§8.3) | Adds `network` (a reset or refused connection after DNS worked) | Without it a dropped connection would be reported as `dns` or `tls`, which points the reader at the wrong cause |
@@ -5393,8 +5394,9 @@ The orchestrator keeps one in-memory `RunRecord` (§4.8) per attempt and updates
    `ops/dry-runs` is also accepted, and the sync below is skipped: the ops task's chained dry runs,
    §9.4); `dropPendingEditions(g)` (§8.8): a `brief:` commit that origin lacks, left by an earlier run in
    the same session that stopped between its commit and its push, is dropped with every local commit
-   above origin's `main` and never pushed (noted "Dropped N unpushed commits left by an earlier run, one
-   of them an edition."); uncommitted changes under `metrics/` and `state/` left by an earlier run in the
+   above origin's `main` and never pushed, and any withholds among them are made again as a new commit
+   (§8.8; noted "Dropped N unpushed commits left by an earlier run, one of them an edition; M withholds
+   made again."); uncommitted changes under `metrics/` and `state/` left by an earlier run in the
    same session are discarded (noted); after that `git status --porcelain` is empty (a dry run allows a
    dirty tree with a note); `syncMain(g, CONTENT_LAYOUT)` (§8.8). The local commits that origin still
    lacks are status and withhold commits whose push failed earlier in this session, never a `brief:`
@@ -5702,6 +5704,9 @@ detects) and `repair` (an invalid first draft, then a valid one on `--resume`). 
     one unpushed commit was dropped.
 19. The same leftover commit, then a run started at 06:00: it is dropped, never pushed, and the run
     publishes its own data-only edition.
+20. A `correction:` commit withholding one item with a `brief:` commit above it, neither pushed, then a
+    run started at 11:05: `skipped`; `content.git` gains a `correction:` commit that withholds the same
+    item and one `status:` commit, and no `brief:` commit.
 
 ### 8.3 `scripts/collect.ts`: feeds, sanitiser and pack
 
@@ -6129,7 +6134,7 @@ on stderr. Exit 0 published, 1 refused or failed (the reason on stderr), 2 usage
 | `publishState(o)` | `state: <cutoff> · backfill` or `state: <cutoff> · catch-up` | `state/*.json`; `state/kev-index.json` only while no brief exists (§5.3) |
 | `publishOps(o)` | `ops: <command> YYYY-MM-DD HH:MM` | Ops mode (`--ops`, called by `scripts/ops.ts`, §9.4): the files under `--from`, on the named branch only. The branch must match `^ops/[a-z0-9][a-z0-9-]*$`, so `main` is refused. It starts from the branch's tip on origin when it exists, else from `main`, and adds one commit. Ops mode is exempt from `CONTENT_LAYOUT`: reports and log excerpts go under `ops-reports/<command>-<YYYYMMDD-HHMM>/`, and only `main` is layout-guarded. Steps 3, 4 and 6 below are skipped (nothing on an `ops/` branch is deployed or read by the site; `rebuild.yml` runs only for `main`) |
 | `pushPending(g)` | none | Pushes local commits that origin lacks: status and withhold commits whose push failed earlier in this session, after 11:00 too. If one of them is a `brief:` commit it throws `PublishError("pending edition")` and pushes nothing (callers run `dropPendingEditions` first, so this should not happen) |
-| `dropPendingEditions(g)` | none | `git fetch origin main`; when the commits that `origin/main` lacks include a `brief:` commit (left by a run that stopped between its commit and step 9), `git reset --hard origin/main` in preflight (whose earlier-run files are discarded anyway) and `git reset --keep origin/main` in a publish call, so uncommitted `metrics/` and `state/` files that this run wrote stay in place (step 2; it throws if a dropped commit changed one of them), and return the number of commits dropped, else 0. The same before and after 11:00: only the call that made an edition commit ever pushes it. Dropped status commits cost only that dead run's records, because `publishStatus` writes the current run's records onto origin's `status/D.json` by `run_id`; a dropped withhold is made again by the next dispute intake (§8.10) |
+| `dropPendingEditions(g)` | none, or `correction: D · withheld <item id>[, <item id>]` for the withholds it makes again | `git fetch origin main`; when the commits that `origin/main` lacks include a `brief:` commit (left by a run that stopped between its commit and step 9), it first reads, from each `correction:` commit among them, the disputes and `name_removed` corrections that its `corrections.json` adds (`git show <sha>:corrections.json`). Then `git reset --hard origin/main` in preflight (whose earlier-run files are discarded anyway) and `git reset --keep origin/main` in a publish call, so uncommitted `metrics/` and `state/` files that this run wrote stay in place (step 2; it throws if a dropped commit changed one of them). Then it re-applies those withholds as one new local commit, composed, validated and titled as `publishWithholds` does (steps 4 to 7), with D taken from the title of the newest dropped `correction:` commit, but writing only `corrections.json`, the rewritten `briefs/*.json` and `archive-index.json`: `status/D.json` stays as origin has it, because a dead run's records are never replayed, and the caller's own status commit records the count, which the next push carries (`pushPending()` in preflight, or the calling publish's own push), after 11:00 too. A withhold whose item is already withheld on origin is left out; one that fails validation is noted and left to the next dispute intake (§8.10). It returns the number of commits dropped and the number of withholds made again, else both 0. The same before and after 11:00: only the call that made an edition commit ever pushes it, and a withhold is never lost with it. Dropped status commits are not replayed: they cost only that dead run's records, because `publishStatus` writes the current run's records onto origin's `status/D.json` by `run_id` |
 | `commitTitle(kind, args)` | | Builds every message above. Messages hold dates, counts, run ids, outcomes and item ids only, never model-written text |
 | `CONTENT_LAYOUT` | | The allowed paths of §3.2; on `main`, `syncMain` and the commit step refuse anything else |
 
@@ -6183,11 +6188,11 @@ included, changes either.
    (15 s), with `sha` the edition commit as it stands after any rebase of step 8 (`HEAD`). If origin
    still lacks it, the call removes it: `git reset --mixed HEAD^`, then it restores the paths step 4
    composed as step 6 does, so the tree is as before the call and `HEAD` is the commit below the edition
-   (the pre-call `HEAD`, or origin's tip when step 8 rebased), with the metrics and `state/` files
-   uncommitted again. It then throws `PublishError("push")`. An edition commit therefore never waits in
-   the checkout for a later push. A status or withhold commit whose push fails stays local, and the
-   session's next push to `main` carries it (`pushPending()`, or the next call's step 8), after 11:00
-   too.
+   (the pre-call `HEAD`, or the withhold commit that step 2 made again, or origin's tip when step 8
+   rebased), with the metrics and `state/` files uncommitted again. It then throws
+   `PublishError("push")`. An edition commit therefore never waits in the checkout for a later push. A
+   status or withhold commit whose push fails stays local, and the session's next push to `main` carries
+   it (`pushPending()`, or the next call's step 8), after 11:00 too.
 
 **Tests** (`tests/publish.test.ts`, on the two-remote harness of §8.2):
 
@@ -6216,6 +6221,9 @@ included, changes either.
 12. A local `brief:` commit above a local `status:` commit, neither on origin: `pushPending()` throws
     `pending edition` and pushes nothing; then `publishStatus` on the same checkout drops both and
     lands one `status:` commit holding this run's records.
+13. A local `correction:` commit below a local `brief:` commit, neither on origin: `publishStatus` drops
+    both, makes the withhold again, and lands a `correction:` commit and a `status:` commit; the item is
+    withheld in every brief on origin.
 
 The tests pass local repo names and bare-remote paths through `Deps.repos` (§8.2).
 
