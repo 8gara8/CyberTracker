@@ -1,0 +1,3 @@
+{"type":"system","subtype":"init","session_id":"67bbfd80-2c60-42e0-83af-dcb3b91ddc71","model":"<model>","claude_code_version":"2.1.316","tools":["Read"],"permissionMode":"dontAsk"}
+{"type":"assistant","error":"authentication_failed","message":{"content":[{"type":"text","text":"Not logged in · Please run /login"}]},"session_id":"67bbfd80-2c60-42e0-83af-dcb3b91ddc71"}
+{"type":"result","subtype":"success","is_error":true,"result":"Not logged in · Please run /login","num_turns":1,"total_cost_usd":0,"permission_denials":[],"terminal_reason":"api_error","session_id":"67bbfd80-2c60-42e0-83af-dcb3b91ddc71"}

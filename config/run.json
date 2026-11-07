@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "site": {
+    "name": "CyberTracker",
+    "tagline": "The AI-era exploit and breach brief",
+    "url": "https://cybertracker.vercel.app"
+  },
+  "repos": {
+    "code": "8gara8/CyberTracker",
+    "content": "8gara8/CyberTracker-content",
+    "code_clone_url": "https://github.com/8gara8/CyberTracker.git",
+    "content_clone_url": "https://github.com/8gara8/CyberTracker-content.git",
+    "branch": "main"
+  },
+  "siblings": {
+    "europe": "https://europetracker.vercel.app",
+    "me": "https://metracker.vercel.app"
+  },
+  "schedule": {
+    "timezone": "Asia/Taipei",
+    "cron": "CRON_TZ=Asia/Taipei 47 5 * * *",
+    "start": "05:47",
+    "data_only_target": "05:58",
+    "full_target": "06:40",
+    "retry_cutoff": "06:50",
+    "hard_stop": "07:40",
+    "stale_after": "08:00",
+    "publish_until": "11:00"
+  },
+  "budgets": {
+    "agent_minutes": 35,
+    "web_fetches": 40,
+    "repair_rounds": 2,
+    "candidates_max": 40,
+    "deep_read_max": 15,
+    "items_max": 10,
+    "publish_reserve_minutes": 4,
+    "attempts_max": 2,
+    "deploy_wait_minutes": 8
+  },
+  "pack": {
+    "window_end": "05:45",
+    "window_hours": 24,
+    "lookback_hours": 12
+  },
+  "releases": [
+    {
+      "vendor_id": "microsoft",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "adobe",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "sap",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "oracle",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "fortinet",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "ivanti",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "siemens",
+      "min_records": 5
+    },
+    {
+      "vendor_id": "schneider-electric",
+      "min_records": 5
+    }
+  ],
+  "paths": {
+    "content_dir": "content",
+    "cache": "cache",
+    "packs": "packs",
+    "drafts": "drafts",
+    "logs": "logs",
+    "needs_review": "needs-review"
+  },
+  "user_agent": "CyberTracker/1.0 (+https://cybertracker.vercel.app)",
+  "task_name": "cybertracker-morning",
+  "network": "full"
+}
