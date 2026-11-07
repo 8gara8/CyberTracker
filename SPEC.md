@@ -317,6 +317,8 @@ section in the same PR and is listed here.
 |---|---|---|---|
 | PR 1 | `roundTo` read `Math.abs(x).toFixed(dp + 6)` and then decided the half on that string (§5) | It decides on the shortest decimal that reads back as `x` (`plainDecimal`), with three new tests | PR 1 review: `toFixed` rounds first, so `roundTo(1.2344999996, 3)` gave 1.235, not 1.234 |
 | PR 1 | Preflight step 6 skipped a run that started after 11:00, before the content checkout (§8.2) | The too-late skip is the first check of step 8, after the checkout, and Finish records it in the one status commit; such a run's watchdog is start + 10 min | PR 1 review: without the checkout the skipped run could not make the status commit that test 7 and P5 expect, and its watchdog (11:02) had already passed |
+| PR 1 | A failed edition push left its commit local; preflight pushed such commits with `pushPending()` before the too-late check, and any later push of `main`, status commits included, carried them (§8.2, §8.8) | An edition call (`publishDataOnly`, `publishFull`) refuses to start after 11:00, stops its push at 11:00 and removes its own commit when the push has not landed; every publish call on `main`, and preflight, first drops a `brief:` commit that origin lacks (`dropPendingEditions`); the publish CLI refuses editions after 11:00; `publishDataOnly` gets a deadline (`TIMEOUTS.dataOnlyPublish`); daily tests 16 to 19 and publish tests 9 to 12 | PR 1 review: a rerun after 11:00, or a run started after 07:40 whose data-only push failed, could publish an edition after 11:00, and before 11:00 a status push could put live a full edition that the record said had failed |
+| PR 1 | `SITE_BLOCKING_CODES` left out `SECRET_LIKE` (§6.2), and its `sk-` pattern had no leading boundary (§4.12) | `SECRET_LIKE` is a site-blocking code; every code in `lib/rules/safety.ts` must be one, and `tests/content.test.ts` checks it (§7.9). The `sk-` pattern needs no letter or digit before it | PR 1 review: a secret-shaped string that bypassed publish, or was caught only by a newer pattern, would have been built into a public page with only a warning. Once the rule hides pages, a slug such as `risk-…` must not trip it |
 
 ### 0.6 JL's part
 
@@ -903,7 +905,8 @@ source pack (§4.14) and the agent context (§4.15) also live only in the run co
   committed (§4.10).
 - **No secrets anywhere.** No content file may hold a token, a deploy-hook URL, an environment value or
   raw error text from a third party. Status notes are built from fixed templates (§4.8). A brief's
-  strings are also screened for secret-shaped text by SECRET_LIKE (§4.12).
+  strings are also screened for secret-shaped text by SECRET_LIKE (§4.12), and the site build skips a
+  brief that fails it (§6.2).
 - **Zod is the single source of truth.** `lib/schema/` holds `common.ts`, `item.ts`, `draft-brief.ts`,
   `brief.ts`, `metrics.ts`, `status.ts`, `scoreboard.ts`, `misc.ts`, `config.ts`, `pack.ts` (§4.14) and
   `context.ts` (§4.15), re-exported from `index.ts`. The validator, the site loaders, the config loader
@@ -2638,7 +2641,7 @@ entry that is a phrase.
 |---|---|---|---|---|
 | NO_LIVE_IOC † | hard | brief | In a prose field, quoted field or title: a URL of any scheme; a lower-case domain whose last label is in `IOC_TLDS` (com, net, org, info, biz, io, co, me, xyz, top, site, online, club, shop, app, dev, cloud, ru, su, cn, hk, tw, jp, kr, kp, ir, uk, de, fr, nl, eu, us, cc, tk, ml, ga, cf, gq, pw, ws, to, ly, in, br, vn, ua, by, kz, and more in `lib/vocab.ts`) that isn't a domain listed in `config/source-tiers.json` or `config/vendors.json`; an IPv4 address (every octet 255 or less, not within two words after "version", "v", "build", "firmware" or "release"); an email address; any `.onion` or `.i2p` name. Defanged forms pass (`hxxp://`, `hxxps://`, `[.]`, `(.)`, `[@]`, `[:]`); the site renders them as plain `<code>`, never as links | F: the summary names `evil-update.com` |
 | NO_EXPLOIT_LINK † | hard | brief | A source URL on a `BLOCKED_HOSTS` entry (§4.2; the full list is in Appendix B.3: exploit archives, paste and raw-file hosts, messaging, link shorteners, leak sites, scanner searches, the code hosts gitlab.com, bitbucket.org, codeberg.org, sourceforge.net and huggingface.co, and any `.onion` or `.i2p` host) other than the `redirect` and `archive` entries, which are SOURCE_URL's; a `github.com` URL whose path matches no `github.tier1_paths` regex in `config/source-tiers.json` (§4.11); a tier 3 URL with a path segment poc, exploit, exploits, payload or 0day. In prose: a scanner query (shodan, censys, fofa or zoomeye with `field:value` syntax in the same sentence) or a `PAYLOAD_PATTERNS` match (code fences, `${jndi:`, `<script`, `/bin/sh`, `cmd.exe /c`, `powershell -enc`, `curl` or `wget` piped into a shell, `' OR 1=1`, `../../`) | F: a source URL `github.com/<user>/CVE-…-poc` that is in the evidence |
-| SECRET_LIKE † | hard | brief | In any string field, a secret-shaped string: `AKIA[0-9A-Z]{16}`, `gh[pousr]_[A-Za-z0-9]{36,}`, `github_pat_[A-Za-z0-9_]{20,}`, `xox[abprs]-[A-Za-z0-9-]{10,}`, `AIza[0-9A-Za-z_-]{35}`, `sk-[A-Za-z0-9]{20,}`, `-----BEGIN [A-Z ]*PRIVATE KEY-----`. The content repo is public and GitHub push protection rejects such pushes, which would lose the full edition at push time. The message gives the field path and the pattern's name, never the matched text | F: a summary quotes `AKIAABCDEFGHIJKLMNOP` |
+| SECRET_LIKE † | hard | brief | In any string field, a secret-shaped string: `AKIA[0-9A-Z]{16}`, `gh[pousr]_[A-Za-z0-9]{36,}`, `github_pat_[A-Za-z0-9_]{20,}`, `xox[abprs]-[A-Za-z0-9-]{10,}`, `AIza[0-9A-Za-z_-]{35}`, `(?<![A-Za-z0-9])sk-[A-Za-z0-9]{20,}` (not after a letter or digit, so a slug such as `risk-…` passes), `-----BEGIN [A-Z ]*PRIVATE KEY-----`. The content repo is public and GitHub push protection rejects such pushes, which would lose the full edition at push time. The message gives the field path and the pattern's name, never the matched text | F: a summary quotes `AKIAABCDEFGHIJKLMNOP` |
 
 Items say "Public exploit reported: yes" or "no" (`PUBLIC_EXPLOIT_LABEL`) instead of linking. The item's
 `public_exploit` is set by script from its CVE blocks' `exploit_reference` (a reference tagged `exploit`
@@ -4306,9 +4309,15 @@ Rules:
 2. Each file is parsed with its schema (§4). Each brief is also run through `validatePublished()`
    (§4.12) with its same-date metrics file. A brief is **skipped** only when it has an error with one of
    `SITE_BLOCKING_CODES = ["SCHEMA", "FILE_NAME", "DATE_MISMATCH", "CANARY", "NO_LIVE_IOC",
-   "NO_EXPLOIT_LINK"]`. Any other error is printed as a build warning and the brief is shown. Why: a rule
-   added in a later PR must never silently remove archived editions, while schema and safety failures
-   must never reach a page.
+   "NO_EXPLOIT_LINK", "SECRET_LIKE"]`: the schema and file codes, `CANARY`, and every code that
+   `lib/rules/safety.ts` returns. Any other error is printed as a build warning and the brief is shown.
+   Why: a rule added in a later PR must never silently remove archived editions, while schema and safety
+   failures must never reach a page. Every blocking code except `FILE_NAME` is marked † in §4.12, so it
+   also runs on data-only editions. A new rule in `lib/rules/safety.ts` joins this list in the same PR:
+   the module exports its codes as `SAFETY_CODES`, which `tests/content.test.ts` compares with this list
+   (§7.9). `SOURCE_URL` is not on the list: `safeHref()` (§7.2) already renders every URL it catches
+   without a link. A change that would newly skip an archived brief turns the CI `content` job red on its
+   PR (§9.2), and the build log names every skipped file.
 3. A metrics, status, scoreboard or corrections file that fails its schema is skipped; a brief whose
    Gap fails `GAP_MATCH` keeps its page but its Gap is treated as missing (§7.6).
 4. Cross-file issues (`XREF_*`, `MANIFEST_MISMATCH`, `FILE_ORDER`, `FILE_UNEXPECTED`) never hide
@@ -5084,8 +5093,9 @@ are US dates; the item's details say so.
 
 ### 7.9 Tests for the site
 
-`tests/site.test.tsx` (Vitest, `renderToStaticMarkup`, `environment: "node"`, as Europe's) and
-`tests/stale.test.ts`. §10 assigns them to P4; every case below must pass.
+`tests/site.test.tsx` (Vitest, `renderToStaticMarkup`, `environment: "node"`, as Europe's),
+`tests/content.test.ts` (the loader, §6.2) and `tests/stale.test.ts`. §10 assigns them to P4; every case
+below must pass.
 
 - **Sample content renders.** Every brief in `fixtures/site-content/` renders through `BriefView`
   without throwing; the HTML holds `id="<first item id>"`, `id="src-s1"` and `BRIEF_END`; Monday's
@@ -5101,8 +5111,18 @@ are US dates; the item's details say so.
 - **Headers.** `next.config.ts`'s `headers()` returns the five headers for `/:path*`; with
   `NODE_ENV=production` the CSP has no `'unsafe-eval'` and has `object-src 'none'` and
   `frame-ancestors 'none'`.
-- **Skipping.** A copy of the sample content with one brief broken (an unknown key) loads with that
-  brief in `skipped` and every other brief present; a missing content folder throws `ContentError`.
+- **Skipping** (`tests/content.test.ts`). A copy of the sample content with one brief broken (an unknown
+  key) loads with that brief in `skipped` and every other brief present; a missing content folder throws
+  `ContentError`. On temporary copies, changing one brief at a time: the canary in a summary, a summary
+  naming `evil-update.com`, one source URL changed to `https://bit.ly/sample` (a `BLOCKED_HOSTS`
+  shortener) and a summary holding an AWS-key-shaped string each leave that brief in `skipped` with
+  `CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` or `SECRET_LIKE` in its `codes`, and the build log names the
+  file and the code but never the matched text; a summary with one word replaced by a `BANNED_WORDS`
+  entry (so `computed.word_count` still matches) leaves the brief shown and prints one `BANNED_WORDS`
+  warning. The test builds the secret-shaped string at run time (`"AKIA" + "ABCDEFGHIJKLMNOP"`), so the
+  test file itself holds none (the §4.12 SECRET_LIKE fixture is the one committed example).
+  `SITE_BLOCKING_CODES` contains every code in `SAFETY_CODES`, and every entry except `FILE_NAME` is a †
+  rule (§4.12).
 - **Withholding.** The sample's withheld item shows `WITHHELD_HEADLINE` on its brief and on its item
   page, and no edition's original headline appears anywhere in either page's HTML.
 - **Levels.** Every severity and region level renders its pips and its word; `UNRATED` appears only in
@@ -5273,7 +5293,7 @@ From `config/run.json` (Appendix B.9). The run reads them once at start.
 |---|---|---|
 | `hardStop` | `at(D, schedule.hard_stop)` = 07:40 | No agent call, repair or full-edition publish starts after it, and a run that started before it ends by it. With `--no-deadline`: start + 75 min |
 | `retryCutoff` | `at(D, schedule.retry_cutoff)` = 06:50 | A second attempt starts only if `now ≤ retryCutoff`. With `--no-deadline`: `hardStop − 50 min` |
-| `publishUntil` | `at(D, schedule.publish_until)` = 11:00 | Nothing is published for D after it: no data-only edition, no full edition. Status commits are records, not editions, and are still made. No flag overrides it |
+| `publishUntil` | `at(D, schedule.publish_until)` = 11:00 | Nothing is published for D after it: no data-only edition, no full edition. A `brief:` commit reaches origin only in the push of the call that made it, which never starts after 11:00 and is cut at 11:00 (§8.8). Status commits are records, not editions, and are still made; a withhold (`correction:`) commit still waiting to be pushed may land with one, because it only removes text. No flag overrides it |
 | `staleAfter` | `at(D, schedule.stale_after)` = 08:00 | A brief published after it gets `late: true` |
 | Agent time per attempt | `budgets.agent_minutes` = 35 | `attemptBudget = min(35 min, hardStop − now − 10 min)`. Below 10 min the attempt is not started |
 | Repairs | `budgets.repair_rounds` = 2 | Per run, across both attempts (§4.12 soft pass uses the same rounds) |
@@ -5296,6 +5316,7 @@ them and they are not editorial choices:
 | `agentMin` | 10 min: an attempt with less is not started |
 | `deployWait` | `min(CT_DEPLOY_WAIT_MS, hardStop − now − 90 s)`; GET every 20 s, each request at most 15 s |
 | `links` | 3 min, and not started with less than 6 min before `hardStop` (§4.12) |
+| `dataOnlyPublish` | 3 min for `publishDataOnly()`, push included; publish caps it at `publishUntil` (§8.8) |
 | `finalCommit` | 60 s |
 | `watchdog` | At `hardStop + 2 min` (`publishUntil + 2 min` for a run that started after `hardStop`; start + 10 min for a run that started after `publishUntil`, which only records its skip) the process writes the fallback summary and exits 1. The timer is `unref()`ed |
 | `lockStale` | 2 h (Europe's `lock.ts`) |
@@ -5358,10 +5379,16 @@ The orchestrator keeps one in-memory `RunRecord` (§4.8) per attempt and updates
    clone works through the session's GitHub proxy; if not, use a full clone and record it in §0.5.
    Then: `origin` normalises to `repos.content`; the branch is `main` (with `--dry-run` only,
    `ops/dry-runs` is also accepted, and the sync below is skipped: the ops task's chained dry runs,
-   §9.4); uncommitted changes under `metrics/` and `state/` left by an earlier run in the same session
-   are discarded (noted); after that `git status --porcelain` is empty (a dry run allows a dirty tree
-   with a note); `syncMain(g, CONTENT_LAYOUT)` (§8.8). Local commits that origin lacks (an earlier push
-   in this session failed) are pushed now with `pushPending()` (§8.8). Any failure is `E_CONTENT`.
+   §9.4); `dropPendingEditions(g)` (§8.8): a `brief:` commit that origin lacks, left by an earlier run in
+   the same session that stopped between its commit and its push, is dropped with every local commit
+   above origin's `main` and never pushed (noted "Dropped N unpushed commits left by an earlier run, one
+   of them an edition."); uncommitted changes under `metrics/` and `state/` left by an earlier run in the
+   same session are discarded (noted); after that `git status --porcelain` is empty (a dry run allows a
+   dirty tree with a note); `syncMain(g, CONTENT_LAYOUT)` (§8.8). The local commits that origin still
+   lacks are status and withhold commits whose push failed earlier in this session, never a `brief:`
+   commit; they are pushed now with `pushPending()` (§8.8), after 11:00 too, because they are records and
+   removals, not editions. A dry run runs neither `dropPendingEditions` nor `pushPending`. Any failure is
+   `E_CONTENT`.
 8. Too late, then idempotency, against the content checkout just synced with origin. If not a dry run
    and `now > publishUntil`, the outcome is `skipped` with "Too late: nothing is published after
    11:00.", whatever origin holds and with or without `--force`. Otherwise:
@@ -5404,11 +5431,13 @@ non-zero exit or a missing file is `E_METRICS`: nothing can be published today w
 `stale` or `failed` inside the file makes the stage `degraded`, with the block names in the note.
 
 **4. Data-only edition.** Skipped as in the idempotency table, and skipped when `now > publishUntil`.
-Otherwise `publishDataOnly()` (§8.8) composes the brief with `lib/data-only.ts`, validates it and
-commits it with the metrics, inputs manifest and `state/`: `brief: D · data-only edition`. On success
+Otherwise `publishDataOnly()` (§8.8), with `deadline` now + `TIMEOUTS.dataOnlyPublish` (publish caps it
+at `publishUntil`), composes the brief with `lib/data-only.ts`, validates it and commits it with the
+metrics, inputs manifest and `state/`: `brief: D · data-only edition`. On success
 it records `data_only_published_at` and calls `requestDeploy()` (below) without waiting. A failure here
-is recorded (`failed`, note "Data-only edition not published.") and the run goes on: the full edition
-may still publish, and it then carries the metrics and `state/` files instead.
+is recorded (`failed`, note "Data-only edition not published.") and the run goes on: publish has
+already removed a commit it could not push (§8.8 step 9), so no later push carries this edition; the
+full edition may still publish, and it then carries the metrics and `state/` files instead.
 
 **5. Re-check** (`scripts/recheck.ts`, §8.10). Runs whenever preflight passed and at least 6 min remain
 before the run's end limit. Dispute intake first: a `victim` or `attribution` dispute withholds the item
@@ -5483,7 +5512,8 @@ issue `{ code: "SIMULATED", path: "(run)" }`, without a retry.
 and logs "Dry run complete: drafts/D.json is valid." Otherwise `publishFull()` (§8.8) with
 `deadline: hardStop − 30 s`: the edition is `partial` when `feeds_stale` is not empty, else `full`.
 Its commit is `brief: D · full edition, N items` (or `partial edition`). A `PublishError` or a push
-still failing at the deadline is `E_PUBLISH`; the data-only edition stands. On success: log `Full
+still failing at the deadline is `E_PUBLISH`; publish has removed the full-edition commit (§8.8 step 9),
+so the final status commit cannot carry it, and the data-only edition stands. On success: log `Full
 edition published at HH:MM (<sha7>).` and call `requestDeploy()`.
 
 **9. Deploy** (`scripts/lib/deploy.ts`). Runs once, after the run's last publish (or, when nothing was
@@ -5614,7 +5644,8 @@ a code clone for `ROOT` and a content clone for `CT_CONTENT_DIR`; `fixtures/empt
 content remote, so metrics finds its `state/`; `Deps.repos` with local names and clone URLs
 (`code_clone_url` and `content_clone_url` are the bare-remote paths), which `normaliseRemote()` maps back
 to those names, so preflight's and publish's repository checks pass without GitHub; `CT_FIXTURE_FEEDS=fixtures/feeds`; the fake agent through `CT_CLAUDE_BIN`; a
-`pre-receive` hook on the content remote that rejects pushes while `<base>/reject-pushes` exists; a
+`pre-receive` hook on the content remote that rejects pushes while `<base>/reject-pushes` exists, and
+rejects any push carrying a commit whose subject starts `brief:` while `<base>/reject-briefs` exists; a
 clock injected through `Deps.now`. Every case also asserts that `code.git` is unchanged.
 
 The fake is Europe's `fixtures/agent/fake-claude.mjs`, adapted. Europe's reads its mode from
@@ -5647,6 +5678,18 @@ detects) and `repair` (an invalid first draft, then a valid one on `--resume`). 
 14. A rerun, `--trigger schedule --no-deadline` started at 08:30 (clock injected): the agent runs, with
     `hardStop` 09:45.
 15. The fake in `limit` mode: `E_LIMIT`, no retry, the data-only edition stands.
+16. `reject-briefs` created after the data-only commit: `E_PUBLISH`, exit 3; the final status commit
+    lands, `briefs/D.json` on origin is still the data-only edition, the record's `edition` is
+    `data_only`, and no full-edition commit is on `content.git`.
+17. Start at 10:58 (after `hardStop`) with `reject-briefs`: the data-only stage `failed`; the final
+    status commit lands and `content.git` gains only `status:` commits (the cut at 11:00 itself is
+    publish test 11).
+18. A `brief: D · data-only edition` commit made in the content clone and not pushed (what a run
+    stopped between commit and push leaves), then a run started at 11:05: `skipped`; `content.git`
+    gains exactly one commit, a `status:` one; the local brief commit is gone; the preflight note says
+    one unpushed commit was dropped.
+19. The same leftover commit, then a run started at 06:00: it is dropped, never pushed, and the run
+    publishes its own data-only edition.
 
 ### 8.3 `scripts/collect.ts`: feeds, sanitiser and pack
 
@@ -6058,8 +6101,10 @@ tsx scripts/publish.ts --ops <branch> --from <dir>
 
 The CLI is for the manual steps the chat edition names (§8.2's next steps) and for ops mode. With no mode flag it
 publishes `drafts/D.json` as the full edition, validated against `logs/D.context.json`,
-`logs/D.evidence.json` and the content checkout's metrics, exactly as the orchestrator would. Exit 0
-published, 1 refused or failed (the reason on stderr), 2 usage.
+`logs/D.evidence.json` and the content checkout's metrics, exactly as the orchestrator would, with
+`deadline` `publishUntil`. After `publishUntil` an edition (no mode flag, or `--data-only`) without
+`--dry-run` is refused before anything is written: exit 1, `Too late: nothing is published after 11:00.`
+on stderr. Exit 0 published, 1 refused or failed (the reason on stderr), 2 usage.
 
 **Exports** (the orchestrator calls these in-process):
 
@@ -6071,13 +6116,19 @@ published, 1 refused or failed (the reason on stderr), 2 usage.
 | `publishStatus(o)` | `status: D · run <run_id> started`, `status: D · run <run_id> ended: <outcome>`, or the retry form (§8.2) | `status/D.json`, plus `archive-index.json` at the end of a run |
 | `publishState(o)` | `state: <cutoff> · backfill` or `state: <cutoff> · catch-up` | `state/*.json`; `state/kev-index.json` only while no brief exists (§5.3) |
 | `publishOps(o)` | `ops: <command> YYYY-MM-DD HH:MM` | Ops mode (`--ops`, called by `scripts/ops.ts`, §9.4): the files under `--from`, on the named branch only. The branch must match `^ops/[a-z0-9][a-z0-9-]*$`, so `main` is refused. It starts from the branch's tip on origin when it exists, else from `main`, and adds one commit. Ops mode is exempt from `CONTENT_LAYOUT`: reports and log excerpts go under `ops-reports/<command>-<YYYYMMDD-HHMM>/`, and only `main` is layout-guarded. Steps 3, 4 and 6 below are skipped (nothing on an `ops/` branch is deployed or read by the site; `rebuild.yml` runs only for `main`) |
-| `pushPending(g)` | none | Pushes local commits that origin lacks (an earlier push in this session failed) |
+| `pushPending(g)` | none | Pushes local commits that origin lacks: status and withhold commits whose push failed earlier in this session, after 11:00 too. If one of them is a `brief:` commit it throws `PublishError("pending edition")` and pushes nothing (callers run `dropPendingEditions` first, so this should not happen) |
+| `dropPendingEditions(g)` | none | `git fetch origin main`; when the commits that `origin/main` lacks include a `brief:` commit (left by a run that stopped between its commit and step 9), `git reset --hard origin/main` in preflight (whose earlier-run files are discarded anyway) and `git reset --keep origin/main` in a publish call, so uncommitted `metrics/` and `state/` files that this run wrote stay in place (step 2; it throws if a dropped commit changed one of them), and return the number of commits dropped, else 0. The same before and after 11:00: only the call that made an edition commit ever pushes it. Dropped status commits cost only that dead run's records, because `publishStatus` writes the current run's records onto origin's `status/D.json` by `run_id`; a dropped withhold is made again by the next dispute intake (§8.10) |
 | `commitTitle(kind, args)` | | Builds every message above. Messages hold dates, counts, run ids, outcomes and item ids only, never model-written text |
 | `CONTENT_LAYOUT` | | The allowed paths of §3.2; on `main`, `syncMain` and the commit step refuse anything else |
 
 Every function takes `{ dir, date, deadline, now, dryRun }` plus its payload and returns
 `{ sha, publishedAt }` or throws `PublishError` with a code-only message. With `dryRun` it writes the
-same files under `logs/dry-run/D/` and runs no git command.
+same files under `logs/dry-run/D/` and runs no git command. `publishDataOnly` and `publishFull` are the
+edition calls: each refuses to start after `publishUntil` (`at(D, schedule.publish_until)`, §8.2),
+throwing `PublishError("too late")` before it writes anything, and caps its own deadline at it:
+`deadline = min(o.deadline, publishUntil)`. With `dryRun` neither applies: a dry run pushes nothing, and
+the past-date dry runs of P3 run long after 11:00 on D (§8.2 clock rules). No other flag, `--force`
+included, changes either.
 
 **Steps, the same for every function:**
 
@@ -6086,9 +6137,10 @@ same files under `logs/dry-run/D/` and runs no git command.
    `repos.content` (`run.json`, or `Deps.repos` in tests, §8.2); the branch is `main`. Anything else throws
    `PublishError("wrong repository")`. This check is the reason publish cannot write to the code repo
    even if `CT_CONTENT_DIR` is wrong.
-2. **Sync.** `syncMain(g, CONTENT_LAYOUT)` (above): fetch, then `merge --ff-only` (or
-   `rebase --autostash` when there are local commits); refuse when the working tree has changes outside
-   `CONTENT_LAYOUT`. Uncommitted `metrics/` and `state/` files that `metrics.ts` wrote this run stay in
+2. **Sync.** Every call on `main` first runs `dropPendingEditions(g)` (above), so no push ever carries an
+   edition commit that an earlier call left behind. Then `syncMain(g, CONTENT_LAYOUT)` (above): fetch,
+   then `merge --ff-only` (or `rebase --autostash` when there are local commits); refuse when the working
+   tree has changes outside `CONTENT_LAYOUT`. Uncommitted `metrics/` and `state/` files that `metrics.ts` wrote this run stay in
    place; only the data-only and full publishes stage them.
 3. **Re-check idempotency on the synced tree.** `publishDataOnly` refuses when `briefs/D.json` exists.
    `publishFull` refuses when it holds `full` or `partial` and `force` is not set. Neither ever
@@ -6109,10 +6161,21 @@ same files under `logs/dry-run/D/` and runs no git command.
 8. **Push** with `pushWithRetry(g, ["origin", "main"])`, within the deadline. A rejected push that is
    not fast-forward fetches and rebases once if the incoming commits touch none of this commit's paths,
    else throws. Then `onOriginMain(g, sha)` confirms `git ls-remote origin refs/heads/main` equals the
-   new commit.
-9. **Return** `{ sha, publishedAt }`. A push still failing at the deadline throws
-   `PublishError("push")`; the commit stays local and `pushPending()` sends it on the next call in the
-   same session.
+   new commit. For an edition call the push, its retries and the one rebase all end by the capped
+   deadline, never after `publishUntil`: `git()` measures that deadline on the call's own clock (`o.now`,
+   which tests inject) and kills a push still running then together with its process group, so no
+   `remote-https` helper, local `receive-pack` or hook outlives it, and `onOriginMain` alone decides
+   whether it landed.
+9. **Return** `{ sha, publishedAt }`. When an edition call ends without its commit on origin (a push
+   still failing at the deadline, or any error after step 7), it checks `onOriginMain(g, sha)` once more
+   (15 s), with `sha` the edition commit as it stands after any rebase of step 8 (`HEAD`). If origin
+   still lacks it, the call removes it: `git reset --mixed HEAD^`, then it restores the paths step 4
+   composed as step 6 does, so the tree is as before the call and `HEAD` is the commit below the edition
+   (the pre-call `HEAD`, or origin's tip when step 8 rebased), with the metrics and `state/` files
+   uncommitted again. It then throws `PublishError("push")`. An edition commit therefore never waits in
+   the checkout for a later push. A status or withhold commit whose push fails stays local, and the
+   session's next push to `main` carries it (`pushPending()`, or the next call's step 8), after 11:00
+   too.
 
 **Tests** (`tests/publish.test.ts`, on the two-remote harness of §8.2):
 
@@ -6121,7 +6184,8 @@ same files under `logs/dry-run/D/` and runs no git command.
 3. A data-only publish after a full one throws; a full publish after a data-only one replaces it and
    keeps `data_only_published_at`.
 4. A brief that fails `validateAll` leaves the working tree clean and origin unchanged.
-5. A rejected push followed by `pushPending()` lands the commit.
+5. A rejected `publishStatus` or `publishWithholds` push followed by `pushPending()` lands the commit;
+   a pending withhold lands with a status commit made after 11:00.
 6. No commit message contains a headline: messages on `main` match
    `^(brief|status|correction|state): \d{4}-\d{2}-\d{2} · `, and ops messages match
    `^ops: [a-z-]+ \d{4}-\d{2}-\d{2} \d{2}:\d{2}$`.
@@ -6129,6 +6193,17 @@ same files under `logs/dry-run/D/` and runs no git command.
    origin's `main` unchanged.
 8. With modified `state/*.json` and a new `metrics/D.json` in the tree, and origin one status commit
    ahead, `publishDataOnly` succeeds and commits them.
+9. With `reject-briefs`, `publishDataOnly` and `publishFull` throw `push`; afterwards `HEAD`,
+   `git status --porcelain` and the uncommitted `metrics/` and `state/` files equal their state before
+   the call, and a following `publishStatus` lands only its `status:` commit.
+10. With `now` after `publishUntil`, `publishDataOnly` and `publishFull` throw `too late` and write
+    nothing, `--force` included; the CLI exits 1 with `Too late: nothing is published after 11:00.`
+11. Called at 10:59:58 with `deadline` 12:00, against a pre-receive hook that sleeps 5 s and then
+    rejects: the push is killed at 11:00, the call throws `push` within about 3 s, and origin is
+    unchanged.
+12. A local `brief:` commit above a local `status:` commit, neither on origin: `pushPending()` throws
+    `pending edition` and pushes nothing; then `publishStatus` on the same checkout drops both and
+    lands one `status:` commit holding this run's records.
 
 The tests pass local repo names and bare-remote paths through `Deps.repos` (§8.2).
 
@@ -7424,9 +7499,9 @@ What each layer stops, and the test that proves it:
 |---|---|---|
 | Collect sanitises and wraps untrusted text | Hidden characters, markup, code and live links reaching the agent | CI: `tests/sanitize.test.ts` on `fixtures/injection/` (the planted page and RSS item), and `tests/collect.test.ts` on `fixtures/feeds/` (§4.14, §8.3) |
 | The agent's sandbox | Shell, git, MCP, reading secrets, writing outside `drafts/`, fetching blocked hosts and their subdomains | `npm run agent:check -- --sandbox` in the run environment (§8.13): each negative test passes only on a recorded denial of a real attempt |
-| The validator | Canary text, exploit links, live indicators, computed numbers the model invented | CI: one invalid fixture per rule code (§4.12) |
+| The validator | Canary text, exploit links, live indicators, secret-shaped strings, computed numbers the model invented | CI: one invalid fixture per rule code (§4.12) |
 | Two repos | Model-written bytes reaching deployable code | The fired-session push test below, and the code ruleset's `current_user_can_bypass` is `never` (§9.4) |
-| The site build | An invalid or unsafe file reaching a page | CI: `tests/content.test.ts` skips fixtures with `SITE_BLOCKING_CODES` (§6.2) |
+| The site build | An invalid or unsafe file reaching a page | CI: `tests/content.test.ts` skips a brief for `SCHEMA`, `CANARY` and each code `lib/rules/safety.ts` returns, and shows a brief with only a quality error (§6.2, §7.9) |
 | The workflow and its secret | A rebuild being anything but a build of trusted `main` | The workflow-file test below, and §9.1 |
 
 **1. The canary fixture (planted instructions).** `fixtures/injection/` holds a page and an RSS item
@@ -8005,7 +8080,8 @@ accessibility checks, and deploys from both kinds of push.
 1. `app/`, `components/`, `lib/content.ts`, `lib/site.ts`, `lib/site-data.ts`, the CSP in
    `next.config.ts` (§6, §7), and the `CT_LOOK` switch.
 2. `scripts/fetch-content.ts`; `"build": "tsx scripts/fetch-content.ts && next build"` (§9.1).
-3. `scripts/color-check.ts`; accessibility tests (`tests/site.test.tsx`, `tests/stale.test.ts`, §7).
+3. `scripts/color-check.ts`; accessibility and loader tests (`tests/site.test.tsx`,
+   `tests/content.test.ts`, `tests/stale.test.ts`, §7.9).
 4. `check` gains `color:check`, `build:sample`, `build:empty`.
 5. Screenshots: `scripts/screenshots.mjs` drives the session's Chrome through the global `playwright`
    (nothing added to dependencies) at 375 and 1280 px for `/`, `/brief/2026-10-14`, `/archive` and
