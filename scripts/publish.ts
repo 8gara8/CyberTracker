@@ -98,9 +98,10 @@ export async function publishOps(o: OpsOptions): Promise<{ sha: string; branch: 
   }
 }
 
+/** The content repo's clone URL from config/run.json. There is no override: tests pass `remote` to publishOps directly. */
 export function contentRemote(repo = process.cwd()): string {
   const cfg = JSON.parse(fs.readFileSync(path.join(repo, "config", "run.json"), "utf8")) as { repos: { content_clone_url: string } };
-  return process.env.CT_CONTENT_REMOTE || cfg.repos.content_clone_url;
+  return cfg.repos.content_clone_url;
 }
 
 async function main(): Promise<number> {

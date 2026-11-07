@@ -23,7 +23,8 @@ export function git(cwd: string, opts: { deadline?: number } = {}): Git {
     if (ms <= 0) throw new GitError(`git ${args[0]} not started: the run's deadline has passed.`);
     const r: RunResult = await run("git", args, { cwd, timeoutMs: ms, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
     if (r.code !== 0) throw new GitError(`git ${args.join(" ")} failed (${r.timedOut ? "timeout" : `exit ${r.code}`}): ${r.stderr.trim().slice(0, 400)}`);
-    return r.stdout.trim();
+    // Only the end is trimmed: `status --porcelain` lines start with a meaningful space.
+    return r.stdout.replace(/\s+$/, "");
   }) as Git;
   fn.cwd = cwd;
   fn.deadline = deadline;

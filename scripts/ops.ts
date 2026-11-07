@@ -36,7 +36,7 @@ export function plan(command: OpsCommand, arg: string | undefined, now: Date, ne
   const s = stamp(now);
   switch (command) {
     case "probe":
-      return { argv: ["scripts/probe.ts", "--fired", "--hold-minutes", "112"], branch: `ops/probe-${s}`, phase: "P0" };
+      return { argv: ["scripts/probe.ts", "--fired", "--network", network, "--hold-minutes", "112"], branch: `ops/probe-${s}`, phase: "P0" };
     case "agent-check":
       return { argv: ["scripts/agent-check.ts", "--all", "--network", network], branch: `ops/agent-check-${s}`, phase: "P0" };
     case "agent-check-passthrough":
@@ -79,7 +79,10 @@ function codeBranch(): string {
   }
 }
 
-/** The ops-latest.md text: header lines, then the report's last lines, never more than 60 in all. */
+/**
+ * The ops-latest.md text, never more than 60 lines: header lines, then the report. A longer report keeps
+ * its head (the probe and agent-check put their verdicts first) and its last lines, with a marker between.
+ */
 export function latestReport(o: { command: string; branch: string; commit: string; started: string; ended: string; exit: number | null; pushed: string; report: string }): string {
   const head = [
     `# CyberTracker ops: ${o.command}`,
@@ -91,8 +94,11 @@ export function latestReport(o: { command: string; branch: string; commit: strin
   ];
   const body = o.report.trim().split("\n");
   const room = MAX_LINES - head.length;
-  const tail = body.length > room ? ["(earlier lines are in the ops branch report)", ...body.slice(body.length - room + 1)] : body;
-  return [...head, ...tail].join("\n") + "\n";
+  const TAIL = 6;
+  const kept = body.length > room
+    ? [...body.slice(0, room - TAIL - 1), "(more lines are in the ops branch report)", ...body.slice(body.length - TAIL)]
+    : body;
+  return [...head, ...kept].join("\n") + "\n";
 }
 
 async function main(): Promise<number> {

@@ -5,7 +5,10 @@ import {
 } from "@/lib/dates";
 import { countWords } from "@/lib/text";
 import { blockedEntry, defang, extractUrls, hostMatches, hostOf, isHttpsUrl, normalizeUrl, stripArchivePrefix } from "@/lib/urls";
-import { BLOCK_REASONS, BLOCKED_HOSTS, blockedHostEntries, CANARY_TOKEN, CANARY_URL_PREFIX } from "@/lib/vocab";
+import { BLOCK_REASONS, BLOCKED_HOSTS, blockedHostEntries, CANARY_TOKEN, CANARY_URL_MARK, CANARY_URL_PREFIX } from "@/lib/vocab";
+import { fetchFeed } from "@/lib/feeds/http";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 
 describe("countWords", () => {
   it("counts whitespace-separated words", () => {
@@ -165,5 +168,28 @@ describe("vocab", () => {
   it("keeps the canary harmless and recognisable", () => {
     expect(CANARY_TOKEN).toMatch(/^CT-CANARY-[0-9A-F]{8}-[A-Z]+-[A-Z]+$/);
     expect(CANARY_URL_PREFIX.startsWith("https://example.org/")).toBe(true);
+    expect(CANARY_URL_PREFIX.endsWith(CANARY_URL_MARK)).toBe(true);
+    expect(CANARY_URL_MARK).toBe(CANARY_URL_MARK.toLowerCase());
+  });
+});
+
+describe("fetchFeed never throws", () => {
+  it("turns a redirect with an unparseable Location into a result", async () => {
+    const server = http.createServer((_req, res) => { res.writeHead(302, { Location: "http://[not-a-host" }); res.end(); });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+    const { port } = server.address() as AddressInfo;
+    try {
+      const r = await fetchFeed(`http://127.0.0.1:${port}/feed`, { retryDelayMs: 0, timeoutMs: 5_000, userAgent: "CyberTracker test" });
+      expect(r.ok).toBe(false);
+      expect(r.error).toBe("redirects");
+      expect(r.status).toBe(302);
+    } finally {
+      server.close();
+    }
+  });
+  it("turns an unusable URL into a result", async () => {
+    const r = await fetchFeed("not a url", { retryDelayMs: 0, userAgent: "CyberTracker test" });
+    expect(r.ok).toBe(false);
+    expect(r.status).toBeNull();
   });
 });

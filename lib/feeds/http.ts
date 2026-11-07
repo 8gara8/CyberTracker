@@ -108,8 +108,12 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
       return { ok: false, status: null, finalUrl: current, body: null, contentType: null, error: classifyError(e), detail: String((e as Error).cause ?? (e as Error).message).slice(0, 300) };
     }
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
-      current = new URL(res.headers.get("location")!, current).toString();
       await res.body?.cancel().catch(() => {});
+      try {
+        current = new URL(res.headers.get("location")!, current).toString();
+      } catch {
+        return { ok: false, status: res.status, finalUrl: current, body: null, contentType: null, error: "redirects", detail: "a redirect with an invalid Location" };
+      }
       continue;
     }
     const contentType = res.headers.get("content-type");
@@ -138,15 +142,21 @@ function retryable(r: Omit<FetchResult, "attempts" | "durationMs">): boolean {
 /** One GET with SPEC §8.3's rules. Never throws. */
 export async function fetchFeed(url: string, options: FetchOptions = {}): Promise<FetchResult> {
   const started = Date.now();
-  const fixtures = process.env.CT_FIXTURE_FEEDS;
-  if (fixtures) return fromFixtures(fixtures, url, started);
-  const opts = { timeoutMs: DEFAULT_TIMEOUT_MS, maxBytes: DEFAULT_MAX_BYTES, retryDelayMs: 2_000, ...options };
-  let r = await once(url, opts);
-  let attempts = 1;
-  if (retryable(r) && opts.retryDelayMs > 0) {
-    await new Promise((res) => setTimeout(res, opts.retryDelayMs));
-    r = await once(url, opts);
-    attempts = 2;
+  let attempts = 0;
+  try {
+    const fixtures = process.env.CT_FIXTURE_FEEDS;
+    if (fixtures) return fromFixtures(fixtures, url, started);
+    const opts = { timeoutMs: DEFAULT_TIMEOUT_MS, maxBytes: DEFAULT_MAX_BYTES, retryDelayMs: 2_000, ...options };
+    attempts = 1;
+    let r = await once(url, opts);
+    if (retryable(r) && opts.retryDelayMs > 0) {
+      await new Promise((res) => setTimeout(res, opts.retryDelayMs));
+      attempts = 2;
+      r = await once(url, opts);
+    }
+    return { ...r, attempts, durationMs: Date.now() - started };
+  } catch (e) {
+    // Anything once() did not foresee (a bad option, an unreadable fixture index) is still a result.
+    return { ok: false, status: null, finalUrl: url, body: null, contentType: null, error: "network", detail: String((e as Error).message).slice(0, 300), attempts, durationMs: Date.now() - started };
   }
-  return { ...r, attempts, durationMs: Date.now() - started };
 }
