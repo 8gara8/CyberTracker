@@ -168,7 +168,7 @@
 | Design doc says | This spec does | Why |
 |---|---|---|
 | The pipeline is forked from the Europe tracker "at a recorded commit" | Fork 8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570` (`main` on 2026-11-07, "Merge pull request #8"). P0 records it in `docs/PROVENANCE.md`. If Europe's `main` has moved by then, P0 forks the new head, records that SHA instead and adds a §0.5 row | The commit has to be named before anything is copied |
-| A second public repo holds what the run writes; created in P0 | Claude first tries the GitHub MCP tool `create_repository` (name `CyberTracker-content`, public, empty). Only if that fails, JL creates it once at github.com/new: owner `8gara8`, Public, no README, licence or .gitignore (J1). Claude does every other step. If `add_repo` then reports no access, Claude relays the exact remedy its error names (§10 P0 Scope 1) | The session's git and REST access could not create repos on 2026-11-07, and the MCP tool was not tried (Appendix C). The other route, a Remote Control session on Kobol, breaks §0.2 and could make the desktop app skip the Europe or ME task |
+| A second public repo holds what the run writes; created in P0 | JL creates it once (the build session may not call `create_repository`, §0.5) at github.com/new: owner `8gara8`, Public, no README, licence or .gitignore (J1). Claude does every other step. If `add_repo` then reports no access, Claude relays the exact remedy its error names (§10 P0 Scope 1) | The session's git and REST access could not create repos on 2026-11-07, and the MCP tool was not tried (Appendix C). The other route, a Remote Control session on Kobol, breaks §0.2 and could make the desktop app skip the Europe or ME task |
 | The run's cloud environment has "a network allowlist [that] names only the feed and news hosts the run needs" | The run environment uses **Full** network access, which only JL can set (one setting, once). The fallback is a **Custom** list of at most 20 exact hosts that Claude can propose (§9); with it the agent can fetch only listed hosts and sees the rest only through search snippets | The agent must read vendor advisories and newsroom pages on hosts no fixed list can name, and its WebFetch obeys the same allowlist (Appendix C). The trust boundary keeps the run safe, not the allowlist: the run holds no secret, and its only write path is the content repo |
 | "Claude sets it up with no connectors and with notifications off, and it starts a fresh session each morning" | Claude creates the task with `create_trigger`: `cron_expression` `CRON_TZ=Asia/Taipei 47 5 * * *`, `create_new_session_on_fire: true`, `connectors: []`, `notifications: {}` and the run environment's `environment_id`. `create_trigger` has no repositories parameter: a fired session's repositories come from the creating session, environment or project, and P0 records which, with what push rights. J7 is the fallback if the code repo appears: JL creates the task once on the scheduled-tasks page with only the content repo selected (§9.4 lists the one screen of settings) | Makes the design's settings exact. The security design depends on the fired session having no connectors and no write path to the code repo |
 | "The run has no write access to the code repo; it fetches the code read-only" | The fired session clones the public code repo over git at `main` without it being attached, runs `npm ci` and runs the pipeline from that checkout. P0 proves from a test firing of a scheduled task that a push to the code repo and a GitHub API write to it both fail, and commits the report | A public clone needs no access. The proof has to come from the same kind of session the morning run uses |
@@ -315,10 +315,19 @@ section in the same PR and is listed here.
 
 | Phase | Spec said | Now | Why |
 |---|---|---|---|
+| P0 | Claude first tries `create_repository`; J1 only if it fails (§0.3, §10 P0 Scope 1, §9.10 C1) | Claude does not call `create_repository`; JL creates the content repo (J1), then Claude attaches it | The build session's own rules forbid `create_repository` and `gh repo create`, so the call cannot be tried. J1 was asked on 2026-11-07 |
+| P0 | J4 only if reviews don't arrive after `@codex review`; J4 is a Code review toggle (§9.10) | J4 is "create a Codex environment for `8gara8/CyberTracker`" (chatgpt.com/codex/cloud/settings/environments), asked as soon as the bot says so | On PR 1 the bot `chatgpt-codex-connector[bot]` answered at once with "create an environment for this repo" instead of a review, so waiting and `@codex review` could not help |
+| P0 | Fetch errors are `timeout`, `dns`, `tls`, `http_<status>`, `too_large`, `redirects`, `parse`, `schema`, `empty` (§8.3) | Adds `network` (a reset or refused connection after DNS worked) | Without it a dropped connection would be reported as `dns` or `tls`, which points the reader at the wrong cause |
+| P0 | P0 re-records `transcript-auth-failed.jsonl` on the current CLI if it can (§8.13) | Kept Europe's, recorded on CLI 2.1.316, with its model value replaced | CLI 2.1.319 in a cloud session signs in even with an empty passthrough, so no sign-in failure could be produced |
+| P0 | The Vercel project's Node version is to be read and recorded (§2, §9.1) | `26.x`, read with `get_project` on 2026-11-08; CI stays on Node 24. No build-command override was set (`update_project` with `buildCommand: null` changed nothing); the Preview variable `CT_CONTENT_DIR=fixtures/site-content` is set | Recorded as asked. The project's domains so far are the team-scoped ones; P4 checks that `cybertracker.vercel.app` is the production domain before anything relies on it |
+| P0 | The issue form's `labels` include `correction` (§8.12) | P0 also creates the `correction` label in the content repo (REST `POST /repos/{owner}/{repo}/labels`) | An issue form applies only labels that exist, so without it the dispute intake's `labels=correction` query would find nothing |
+| P0 | `publish.ts` commits with the session's identity (§8.8, implicit) | `ensureIdentity()` in `scripts/lib/git.ts` sets `CyberTracker <run@cybertracker.invalid>` in the temp repo only when no identity is configured | A fresh CI machine has none, so the ops-mode test and any machine without a global identity would fail to commit |
+| P0 | P0's tests are `no-europe-strings`, `agent`, `lib`, `transcript` (§10 P0 Files) | Adds `tests/ops.test.ts` (the ops command table, the 60-line report, the probe's host list, and ops-mode publish on a local bare repo) | The ops plumbing pushes to the content repo, so it is tested before its first firing |
 
 ### 0.6 JL's part
 
-- **P0, one sitting, about 3 minutes:** J1 only if Claude cannot create the content repo; tap Approve
+- **P0, one sitting, about 4 minutes:** create the content repo (J1); create a Codex environment for
+  the code repo (J4); tap Approve
   on the environment card (J2); set it to Full (J3); after the first test firing, answer one question
   (did anything notify you?).
 - **Possible, about 5 minutes:** J7, if test sessions get the code repo or connectors.
@@ -5665,7 +5674,7 @@ fetcher, the link check and `probe.ts`.
 | Concurrency | 8 feeds at a time (Europe's `CONCURRENCY`); the per-id CVE record pool runs 16 at a time |
 | Total cap | 240 s from the first request, shared by feeds and the record pool (Europe's was 180 s). Work still running at the cap is abandoned and its feed recorded `failed` (`timeout`) |
 | Fixtures | When `CT_FIXTURE_FEEDS` is set (§8.2), every URL is answered from `<dir>/index.json` and an unknown URL is a `dns` error. No test touches the network |
-| Errors | Reduced to a class: `timeout`, `dns`, `tls`, `http_<status>`, `too_large`, `redirects`, `parse`, `schema`, `empty`. The raw message goes to `logs/D.collect.log` only |
+| Errors | Reduced to a class: `timeout`, `dns`, `tls`, `network`, `http_<status>`, `too_large`, `redirects`, `parse`, `schema`, `empty`. The raw message goes to `logs/D.collect.log` only |
 
 **Collect fetches only URLs it builds.** Every request URL comes from the registry (`url`,
 `fallback_url`) or is built from an id, a tag or a commit by a fixed pattern (CVE records and delta
@@ -6847,7 +6856,7 @@ under "For JL (optional, 10 s)": Settings, General, "Automatically delete head b
 read-only by default, and the repo has no Actions secrets. Do not enable Dependabot version or security
 update PRs: dependencies are pinned exactly, and each such PR would notify JL.
 
-**Content repo settings** (created empty by Claude's `create_repository` call, or by JL in J1; Claude
+**Content repo settings** (created empty by JL in J1; Claude
 does the rest in P0):
 
 | Setting | Value |
@@ -7539,13 +7548,13 @@ the thread twice, about 3 minutes in all, or once if Claude created the repo.
 
 | # | Phase | Step | Who | How | Why JL |
 |---|---|---|---|---|---|
-| J1 | P0 start, if needed | Create `8gara8/CyberTracker-content` | JL | github.com/new: owner `8gara8`, name `CyberTracker-content`, Public, no README, licence or .gitignore; reply "done" (about one minute) | Only if Claude's `create_repository` call failed; Kobol is off limits (§0.2) |
-| C1 | P0 | Create the content repo if the GitHub tool can; attach it; push the setup commit; apply the content ruleset and repo settings; unwatch | Claude | `create_repository` (public, empty); `add_repo` (`access: "push"`, `save_to_project` false; on an access error, Claude relays the exact remedy the error names and adds no other URL); the setup commit as the repo's first push (§10 P0 Scope 2); REST (§9.2) | |
+| J1 | P0 start, if needed | Create `8gara8/CyberTracker-content` | JL | github.com/new: owner `8gara8`, name `CyberTracker-content`, Public, no README, licence or .gitignore; reply "done" (about one minute) | The build session may not create repos (§0.5); Kobol is off limits (§0.2) |
+| C1 | P0 | Attach the content repo JL created (J1); push the setup commit; apply the content ruleset and repo settings; unwatch | Claude | `add_repo` (`access: "push"`, `save_to_project` false; on an access error, Claude relays the exact remedy the error names and adds no other URL); the setup commit as the repo's first push (§10 P0 Scope 2); REST (§9.2) | |
 | C2 | P0 | Propose `cybertracker-run` (its card is J2); once it exists, create `cybertracker-ops` and fire `ops: tools`; after J3, fire the probe and the agent checks | Claude | `get_environment`, `create_environment` (§9.3, §10 P0 Scope 3), `create_trigger`, `fire_trigger`, each fired session read as §9.4 says | |
 | J2 | P0 | Approve the `cybertracker-run` environment | JL | One tap on the approval card | The platform asks the account owner every time |
 | J3 | P0 | Set `cybertracker-run` to Full network | JL | Settings: environment selector, `cybertracker-run`, settings icon, Network access, Full, Save changes | Only the owner can set Full; Claude can propose at most 20 hosts |
 | C3 | P0 | Vercel: read the project's settings, clear a build-command override, set the Preview variable | Claude | Vercel connector (§9.1) | |
-| J4 | PR 1 / P0, if needed | Turn on Codex review for the code repo | JL | Codex settings, Code review, `8gara8/CyberTracker` | Codex is JL's OpenAI account; only if reviews don't arrive after `@codex review` |
+| J4 | PR 1 / P0, if needed | Create a Codex environment for the code repo, and turn on Code review if it is off | JL | chatgpt.com/codex/cloud/settings/environments, `8gara8/CyberTracker`, defaults; then Codex settings, Code review | Codex is JL's OpenAI account; asked as soon as the bot says no environment exists, or if reviews don't arrive after `@codex review` (§0.5) |
 | J5 | P4, if needed | Create the deploy hook and paste it into the content repo's secret | JL | §9.1, about two minutes | Only if the Vercel connector can't create hooks; pasting it straight into GitHub keeps it out of chat |
 | J5b | P0, if needed | Add `rebuild.yml` through GitHub's web editor | JL | Content repo, Add file, Create new file, path `.github/workflows/rebuild.yml`, paste the copy in `docs/content-repo/`, Commit to `main` | Only if the session's GitHub access cannot write workflow files (§9.6) |
 | J6 | P0, if needed | Import the two rulesets; set the content repo's Actions permissions | JL | Settings, Rules, Rulesets, New ruleset, Import a ruleset, `docs/rulesets/*.json`. If those calls were refused too, content repo Settings, Actions, General: Workflow permissions read-only, "Allow select actions" with none selected | Only if the session's GitHub access cannot manage rulesets or Actions settings |
@@ -7634,14 +7643,12 @@ environment exist, and a real fired session has proved what the run can reach an
 1. **Setup sequence** (C1, C2 and J1 to J3, §9.10), in exactly this order:
    1. Claude alone, no JL: `get_environment()`, and
       `curl -sS -o /dev/null -w '%{http_code}' https://www.cisa.gov/` from this session (the proxy's
-      refusal is the evidence of need, Scope 3). Then try the GitHub MCP tool
-      `create_repository(name: "CyberTracker-content", private: false, autoInit: false)`, with no
-      `organization`, so it lands in JL's account `8gara8`. Verify: if it succeeds, J1 is done by
-      Claude; record it in §0.5. Then
+      refusal is the evidence of need, Scope 3). The build session may not call
+      `create_repository` (§0.5), so JL creates the repo (J1). Then
       `add_repo(owner: "8gara8", repo: "CyberTracker-content", access: "push")`, with
       `save_to_project` false. If `add_repo` returns an access error, send JL the exact remedy the
       error names and no other URL (the tool's rule).
-   2. Message 1 to JL, only if `create_repository` failed: J1 (about one minute), then reply "done".
+   2. Message 1 to JL: J1 (about one minute), then reply "done".
    3. On "done" (or straight on from step 1): `add_repo` as above if not yet attached; the setup commit
       (Scope 2); then `create_environment` exactly as §9.3 (Scope 3), which raises the J2 card.
    4. Message 2, posted immediately before the `create_environment` call: Scope 3's one sentence, then
@@ -7732,7 +7739,7 @@ environment exist, and a real fired session has proved what the run can reach an
 `scripts/{ops,probe,agent-check,publish}.ts`, `scripts/lib/*.ts`, `routine/{OPS.md,agent-settings.json}`,
 `fixtures/injection/*` (including `canary-prompt.md`), `fixtures/agent/` (one real transcript from
 `agent:check`, model values replaced, and Europe's `transcript-auth-failed.jsonl`, §8.13),
-`tests/{no-europe-strings,agent,lib,transcript}.test.ts`,
+`tests/{no-europe-strings,agent,lib,transcript,ops}.test.ts`,
 `docs/PROVENANCE.md`, `docs/content-repo/` (README, issue forms, `rebuild.yml`), `docs/rulesets/*.json`,
 `docs/reports/*`, `AGENTS.md`, `README.md`.
 
@@ -7778,7 +7785,7 @@ Each `fire_trigger` line is read as §9.4 "Reading a fired session" says.
 - [ ] The final `AGENT_ENV_PASSTHROUGH` list (names only) and the config-dir outcome.
 - [ ] The environment and task ids, the network decision and the Vercel facts (Node version, build
       command).
-- [ ] Verify results: whether `create_repository` worked (J1 needed or not) and `add_repo` attached
+- [ ] Verify results: J1 done by JL and `add_repo` attached
       the content repo with push; its default branch is `main`; REST permissions for rulesets,
       settings, secrets, branch deletion and unwatching; workflow-file push; every CLI flag; tool names;
       the `ops: tools` reply and where the fired session's repositories came from.
@@ -9790,7 +9797,7 @@ day) or "Kobol" (a Remote Control check on JL's Mac).
     `.../ccr/convert_to_draft`, `GET .../pulls/{n}/ccr/review_threads`,
     `POST .../pulls/{n}/ccr/comments/{comment_id}/resolve` (and `/unresolve`), `PUT|DELETE .../ccr/auto_merge`.
   - Sessions could not create repos through their git and REST access. The GitHub MCP tool
-    `create_repository` was not tried; P0 tries it first (§10 P0 Scope 1). `8gara8/CyberTracker` is
+    `create_repository` is not allowed in the build session, so JL creates the content repo (J1, §0.5). `8gara8/CyberTracker` is
     attached to coding sessions with push:
     public, default branch `main`, `allow_auto_merge: false`, `delete_branch_on_merge: false`, merge,
     squash and rebase allowed. The latest Actions majors are `actions/checkout` v7 and
