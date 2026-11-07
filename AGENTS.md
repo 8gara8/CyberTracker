@@ -63,7 +63,7 @@ faster?
 
 | Phase | Branch | PR | State |
 |---|---|---|---|
-| PR 1 The spec | `spec` | set when opened | In review |
+| PR 1 The spec | `spec` | #1 | In review |
 | P0 Repo, fork and environment | `p0-setup` | | Not started |
 | P1 Data contract, validator, chat renderer | `p1-contract` | | Not started |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | | Not started |
@@ -79,8 +79,15 @@ faster?
     `team_xxXFmwmVsAfTU86OFG8fcX3S`.
   - Fork: 8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570` (SPEC §0.3).
   - Rulesets (code `main`, content `main`): set in P0.
-- **How Codex reviews start:** set on PR 1 (the bot's login, its no-issues signal, and whether
-  `@codex review` is needed; SPEC §0.1 item 4).
+- **How Codex reviews start** (seen on PR 1, 2026-11-07; SPEC §0.1 item 4):
+  - The bot's login is `chatgpt-codex-connector[bot]`. It needs a Codex environment for the repo
+    (JL created one on 2026-11-07); without one it only comments asking for it.
+  - Its own help text says a review starts when a PR is opened for review, a draft is marked ready, or
+    someone comments `@codex review`. PR 1's first review came from `@codex review` (about 4 minutes).
+  - Signals: a 👀 reaction while it runs; a review with inline comments when it has findings; a 👍
+    reaction on the PR when a review finishes with none. Its summary comment (marker
+    `codex-pull-request-review-summary`) carries a `codex-review-state` JSON with `status` and
+    `has_unresolved_findings` for the latest reviewed commit.
 
 ## 4. Map
 
