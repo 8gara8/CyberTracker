@@ -315,6 +315,8 @@ section in the same PR and is listed here.
 
 | Phase | Spec said | Now | Why |
 |---|---|---|---|
+| PR 1 | `roundTo` read `Math.abs(x).toFixed(dp + 6)` and then decided the half on that string (§5) | It decides on the shortest decimal that reads back as `x` (`plainDecimal`), with three new tests | PR 1 review: `toFixed` rounds first, so `roundTo(1.2344999996, 3)` gave 1.235, not 1.234 |
+| PR 1 | Preflight step 6 skipped a run that started after 11:00, before the content checkout (§8.2) | The too-late skip is the first check of step 8, after the checkout, and Finish records it in the one status commit; such a run's watchdog is start + 10 min | PR 1 review: without the checkout the skipped run could not make the status commit that test 7 and P5 expect, and its watchdog (11:02) had already passed |
 | P0 | Claude first tries `create_repository`; J1 only if it fails (§0.3, §10 P0 Scope 1, §9.10 C1) | Claude does not call `create_repository`; JL creates the content repo (J1), then Claude attaches it | The build session's own rules forbid `create_repository` and `gh repo create`, so the call cannot be tried. J1 was asked on 2026-11-07 |
 | P0 | J4 only if reviews don't arrive after `@codex review`; J4 is a Code review toggle (§9.10) | J4 is "create a Codex environment for `8gara8/CyberTracker`" (chatgpt.com/codex/cloud/settings/environments), asked as soon as the bot says so | On PR 1 the bot `chatgpt-codex-connector[bot]` answered at once with "create an environment for this repo" instead of a review, so waiting and `@codex review` could not help |
 | P0 | Fetch errors are `timeout`, `dns`, `tls`, `http_<status>`, `too_large`, `redirects`, `parse`, `schema`, `empty` (§8.3) | Adds `network` (a reset or refused connection after DNS worked) | Without it a dropped connection would be reported as `dns` or `tls`, which points the reader at the wrong cause |
@@ -3340,14 +3342,25 @@ function medianCi80(xs: number[]): [number, number] { /* … */ }
 // to a width below 1e−9.
 function poissonCi80(k: number): [number, number] { /* … */ }
 
-// Rounding for stored values: half away from zero, decided on the decimal string so that binary
-// floating point cannot move a half (2.5 → 3, −2.5 → −3, 0.145 at 2 dp → 0.15). Math.round alone
+// Rounding for stored values: half away from zero, decided on the shortest decimal string that reads
+// back as x (what x.toString() prints), so that binary floating point cannot move a half (2.5 → 3,
+// −2.5 → −3, 0.145 at 2 dp → 0.15) and no digit is rounded before the one that decides
+// (1.2344999996 at 3 dp → 1.234; a pre-rounding toFixed(dp + 6) would give 1.235). Math.round alone
 // rounds negative halves toward +∞ and Math.floor(x * 100 + 0.5) misses halves such as 0.145.
+function plainDecimal(a: number): string {             // a ≥ 0, finite; x.toString() out of exponent form
+  const [mant, exp = "0"] = a.toString().split("e");
+  const [int, frac = ""] = mant.split(".");
+  const digits = int + frac;
+  const point = int.length + Number(exp);
+  if (point <= 0) return "0." + "0".repeat(-point) + digits;
+  if (point >= digits.length) return digits + "0".repeat(point - digits.length);
+  return digits.slice(0, point) + "." + digits.slice(point);
+}
 function roundTo(x: number, dp: number): number {
-  const m = Math.abs(x).toFixed(dp + 6);                 // enough digits to see the half exactly
-  const [i, f = ""] = m.split(".");
-  let units = BigInt(i + f.slice(0, dp));
-  if (f.charCodeAt(dp) - 48 >= 5) units += 1n;           // the first dropped digit decides
+  const [i, f = ""] = plainDecimal(Math.abs(x)).split(".");
+  const p = f.padEnd(dp + 1, "0");
+  let units = BigInt(i + p.slice(0, dp));
+  if (p.charCodeAt(dp) - 48 >= 5) units += 1n;           // the first dropped digit decides
   const r = Number(units) / 10 ** dp;
   return x < 0 ? -r : r;
 }
@@ -3372,7 +3385,8 @@ same figure can't render two ways.
 
 Tests (`tests/stats.test.ts`): `fmtPct(0.285)` is `29%` and `fmtPct(0.145)` is `15%` (a plain
 `Math.floor(x * 100 + 0.5)` gives 28% and 14%); `roundTo(-2.55, 1)` is `-2.6`; `round4(2.23605)` is
-`2.2361`; `newcombe80(58, 157, 104, 282)` is −0.0601 to 0.0626 at 4 dp; `mannWhitneyZ` of the D.3 w26
+`2.2361`; `roundTo(1.2344999996, 3)` is `1.234`; `roundTo(0.000049999999, 4)` is `0`; `roundTo(1.5e21, 0)`
+is `1.5e21` (`toString` uses exponent form there); `newcombe80(58, 157, 104, 282)` is −0.0601 to 0.0626 at 4 dp; `mannWhitneyZ` of the D.3 w26
 after-lags against `REFERENCE.after_lags` is −1.2028 at 4 dp.
 
 ### 5.3 The Window (`lib/metrics/window.ts`)
@@ -5295,7 +5309,7 @@ them and they are not editorial choices:
 | `deployWait` | `min(CT_DEPLOY_WAIT_MS, hardStop − now − 90 s)`; GET every 20 s, each request at most 15 s |
 | `links` | 3 min, and not started with less than 6 min before `hardStop` (§4.12) |
 | `finalCommit` | 60 s |
-| `watchdog` | At `hardStop + 2 min` (or `publishUntil + 2 min` for a run that started after `hardStop`) the process writes the fallback summary and exits 1. The timer is `unref()`ed |
+| `watchdog` | At `hardStop + 2 min` (`publishUntil + 2 min` for a run that started after `hardStop`; start + 10 min for a run that started after `publishUntil`, which only records its skip) the process writes the fallback summary and exits 1. The timer is `unref()`ed |
 | `lockStale` | 2 h (Europe's `lock.ts`) |
 
 **Clock rules in preflight.**
@@ -5306,7 +5320,8 @@ them and they are not editorial choices:
 - A date other than `taipeiToday()` needs `--dry-run`; otherwise print `Publishing a date other than
   today needs --dry-run; past editions are never published.` and exit 2.
 - If not a dry run and `now > publishUntil`: outcome `skipped`, reason "Too late: nothing is published
-  after 11:00."
+  after 11:00." This one is applied in preflight step 8, after the content checkout, so that the
+  skipped run can still commit its run record.
 - If not a dry run and `now > hardStop` (and no `--no-deadline`): the run continues without editorial
   work. Draft, validate and publish are recorded `skipped` with the note "Started after 07:40: no
   editorial pass today."; every other stage is bounded by `publishUntil`.
@@ -5349,7 +5364,7 @@ The orchestrator keeps one in-memory `RunRecord` (§4.8) per attempt and updates
    `ls-remote`).
 4. Config: `loadConfig()` and `validateConfig()` (§4.11); any issue is `E_CONFIG`.
 5. Network: `HEAD https://github.com` answers within 10 s with a status below 500, else `E_NET`.
-6. Clock rules (above): `E_CLOCK`, exit 2 or skip.
+6. Clock rules (above): `E_CLOCK` or exit 2. The too-late skip waits for step 8.
 7. Content checkout: the folder from `CT_CONTENT_DIR`. If it is missing, clone it:
    `git clone --filter=blob:none --branch main <repos.content_clone_url> <dir>`. Verify in P0: a partial
    clone works through the session's GitHub proxy; if not, use a full clone and record it in §0.5.
@@ -5359,7 +5374,9 @@ The orchestrator keeps one in-memory `RunRecord` (§4.8) per attempt and updates
    are discarded (noted); after that `git status --porcelain` is empty (a dry run allows a dirty tree
    with a note); `syncMain(g, CONTENT_LAYOUT)` (§8.8). Local commits that origin lacks (an earlier push
    in this session failed) are pushed now with `pushPending()` (§8.8). Any failure is `E_CONTENT`.
-8. Idempotency, against the content checkout just synced with origin:
+8. Too late, then idempotency, against the content checkout just synced with origin. If not a dry run
+   and `now > publishUntil`, the outcome is `skipped` with "Too late: nothing is published after
+   11:00.", whatever origin holds and with or without `--force`. Otherwise:
 
    | `briefs/D.json` on origin | Without `--force` | With `--force` |
    |---|---|---|
@@ -5367,7 +5384,9 @@ The orchestrator keeps one in-memory `RunRecord` (§4.8) per attempt and updates
    | `edition: "data_only"` | resume: metrics reused, the data-only stage recorded `skipped` ("Data-only edition already up since HH:MM."), the agent runs | the same |
    | `edition: "full"` or `"partial"` | outcome `skipped`, reason "The full edition was already published at HH:MM." | full run; the data-only stage is `skipped`; the new full edition replaces the old one |
 
-   A skipped run still appends a run record, so a manual rerun that did nothing is visible.
+   A skipped run stops preflight here: no start commit, and steps 9 to 11 and stages 2 to 10 do not
+   run. Finish (below) still appends its run record in the one status commit, so a manual rerun that
+   did nothing is visible.
 9. CLI (skipped with `--data-only`): `CT_CLAUDE_BIN` resolves to an executable and
    `<bin> --version` exits 0 within 30 s; the version goes into the run log. Else `E_CLI`.
 10. Code repo write check (with `--trigger schedule` only; never in dry runs or tests):
