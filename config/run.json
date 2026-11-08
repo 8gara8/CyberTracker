@@ -6,10 +6,8 @@
     "url": "https://cybertracker.vercel.app"
   },
   "repos": {
-    "code": "8gara8/CyberTracker",
-    "content": "8gara8/CyberTracker-content",
-    "code_clone_url": "https://github.com/8gara8/CyberTracker.git",
-    "content_clone_url": "https://github.com/8gara8/CyberTracker-content.git",
+    "repo": "8gara8/CyberTracker",
+    "clone_url": "https://github.com/8gara8/CyberTracker.git",
     "branch": "main"
   },
   "siblings": {
@@ -18,17 +16,16 @@
   },
   "schedule": {
     "timezone": "Asia/Taipei",
-    "cron": "CRON_TZ=Asia/Taipei 47 5 * * *",
-    "start": "05:47",
-    "data_only_target": "05:58",
-    "full_target": "06:40",
-    "retry_cutoff": "06:50",
-    "hard_stop": "07:40",
+    "start": "04:30",
+    "data_only_target": "04:50",
+    "full_target": "05:15",
+    "retry_cutoff": "05:00",
+    "hard_stop": "05:30",
     "stale_after": "08:00",
     "publish_until": "11:00"
   },
   "budgets": {
-    "agent_minutes": 35,
+    "agent_minutes": 30,
     "web_fetches": 40,
     "repair_rounds": 2,
     "candidates_max": 40,
@@ -39,7 +36,7 @@
     "deploy_wait_minutes": 8
   },
   "pack": {
-    "window_end": "05:45",
+    "window_end": "04:30",
     "window_hours": 24,
     "lookback_hours": 12
   },
@@ -86,6 +83,5 @@
     "needs_review": "needs-review"
   },
   "user_agent": "CyberTracker/1.0 (+https://cybertracker.vercel.app)",
-  "task_name": "cybertracker-morning",
-  "network": "full"
+  "task_name": "CyberTracker morning"
 }

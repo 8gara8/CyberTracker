@@ -7,10 +7,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test",
-    "publish": "tsx scripts/publish.ts",
-    "agent:check": "tsx scripts/agent-check.ts",
-    "probe": "tsx scripts/probe.ts",
-    "ops": "tsx scripts/ops.ts"
+    "agent:check": "tsx scripts/agent-check.ts"
   },
   "dependencies": {
     "next": "16.4.3",

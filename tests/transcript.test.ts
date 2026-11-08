@@ -84,7 +84,7 @@ describe("a synthetic run with tools, denials and a limit", () => {
       { type: "text", text: "Looking." },
       { type: "tool_use", id: "t1", name: "WebSearch", input: { query: "KEV added" } },
       { type: "tool_use", id: "t2", name: "WebFetch", input: { url: "https://www.cisa.gov/a" } },
-      { type: "tool_use", id: "t3", name: "WebFetch", input: { url: "https://www.exploit-db.com/x" } },
+      { type: "tool_use", id: "t3", name: "WebFetch", input: { url: "https://www.exploit-db.com/" } },
     ] } },
     { type: "user", message: { content: [
       { type: "tool_result", tool_use_id: "t1", content: [{ type: "text", text: "Results: https://therecord.media/a, https://www.securityweek.com/b" }] },
@@ -102,7 +102,7 @@ describe("a synthetic run with tools, denials and a limit", () => {
     expect(t.calls.map((c) => [c.id, c.name, c.isError])).toEqual([["t1", "WebSearch", false], ["t2", "WebFetch", false], ["t3", "WebFetch", true]]);
     expect(t.toolUses).toEqual({ WebSearch: 1, WebFetch: 2 });
     expect(t.searches).toEqual(["KEV added"]);
-    expect(t.fetched).toEqual(["https://www.cisa.gov/a", "https://www.exploit-db.com/x"]);
+    expect(t.fetched).toEqual(["https://www.cisa.gov/a", "https://www.exploit-db.com/"]);
     expect(t.fetchedOk).toEqual(["https://www.cisa.gov/a"]);
     expect(t.urlsByTool.WebSearch).toEqual(["https://therecord.media/a", "https://www.securityweek.com/b"]);
     expect(t.urlsByTool.WebFetch).toEqual(["https://www.cisa.gov/known-exploited-vulnerabilities-catalog"]);
@@ -133,7 +133,7 @@ describe("a synthetic run with tools, denials and a limit", () => {
     expect(evidenceUrls([t], ["https://www.cisa.gov/a/"])).toEqual([
       "https://cisa.gov/a",
       "https://cisa.gov/known-exploited-vulnerabilities-catalog",
-      "https://exploit-db.com/x",
+      "https://exploit-db.com",
       "https://securityweek.com/b",
       "https://therecord.media/a",
     ]);

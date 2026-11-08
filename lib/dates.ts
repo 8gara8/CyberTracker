@@ -61,10 +61,12 @@ export function utcDateOf(timestamp: string): string {
   const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/i.exec(s);
   if (!m) throw new Error(`Invalid timestamp: ${timestamp}`);
   const [, day, hh, mm, ss, zone] = m;
-  if (!zone) {
-    if (!isValidDate(day!)) throw new Error(`Invalid timestamp: ${timestamp}`);
-    return day!;
+  // Every field must be in range, zoned or not: Date.parse would roll "24:00" into the next day, and an
+  // unzoned timestamp never reaches Date.parse at all (PR 2 review).
+  if (!isValidDate(day!) || Number(hh) > 23 || Number(mm) > 59 || Number(ss ?? "0") > 59) {
+    throw new Error(`Invalid timestamp: ${timestamp}`);
   }
+  if (!zone) return day!;
   const iso = `${day}T${hh}:${mm}:${ss ?? "00"}${zone.toUpperCase() === "Z" ? "Z" : zone.length === 5 ? `${zone.slice(0, 3)}:${zone.slice(3)}` : zone}`;
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) throw new Error(`Invalid timestamp: ${timestamp}`);

@@ -1,4 +1,5 @@
-// No EuropeTracker leftovers in the fork (SPEC §10 P0 Scope 7). Scans the tracked (and not ignored)
+// No EuropeTracker leftovers in the fork (SPEC §10 Foundation). Kobol paths, the keychain, arm64 and
+// the pinned CLI are CyberTracker's own since SPEC v2.0, so they are no longer patterns. Scans the tracked (and not ignored)
 // files under the code folders, never SPEC.md, AGENTS.md, docs/, package-lock.json or saved and
 // generated data. This file and tests/agent.test.ts are skipped, because they name the patterns.
 import { execFileSync } from "node:child_process";
@@ -15,16 +16,9 @@ const PATTERNS: { name: string; re: RegExp; only?: string }[] = [
   { name: "EuropeTracker", re: /EuropeTracker/ },
   { name: "europetracker (except siblings.europe)", re: /europetracker/ },
   { name: "ET_ variable", re: /\bET_[A-Z]/ },
-  { name: "the Mac's name", re: /\b[Kk]obol\b/ },
   { name: "Kyiv", re: /Kyiv/ },
-  { name: "/opt/homebrew", re: /\/opt\/homebrew/ },
-  { name: "keychain", re: /keychain/i },
-  { name: "caffeinate", re: /caffeinate/ },
-  { name: "process.arch or arm64", re: /process\.arch|\barm64\b/ },
   { name: "rung", re: /\brungs?\b/ },
   { name: "pathway", re: /\bpathway\b/ },
-  { name: "05:30 or 06:55", re: /\b05:30\b|\b06:55\b/ },
-  { name: "CLI 2.1.316", re: /2\.1\.316/ },
   { name: "model flags", re: /--model\b|--fallback-model\b/ },
   { name: "model identifiers", re: /claude-(opus|sonnet|haiku)/ },
   { name: "Telegram web previews", re: /t\.me\/s\// },

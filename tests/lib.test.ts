@@ -79,6 +79,10 @@ describe("dates", () => {
     }
     expect(() => utcDateOf("not a date")).toThrow();
     expect(() => utcDateOf("2026-02-30T00:00:00")).toThrow();
+    for (const bad of ["2026-11-06T25:00:00", "2026-11-06T24:00:00", "2026-11-06T23:60:00", "2026-11-06T23:59:60", "2026-11-06T24:00:00Z", "2026-11-06T12:00:61+08:00"]) {
+      expect(() => utcDateOf(bad), bad).toThrow();
+    }
+    expect(utcDateOf("2026-11-06T23:59:59.999")).toBe("2026-11-06");
   });
   it("puts the data cutoff two days before the edition", () => {
     expect(dataCutoffFor("2026-11-08")).toBe("2026-11-06");
@@ -140,14 +144,15 @@ describe("urls", () => {
     expect(defang("fixed in 2.1.319 and 10.4")).toBe("fixed in 2.1.319 and 10.4");
   });
   it("matches blocked hosts, subdomains, paths and suffixes (Appendix B.3)", () => {
-    expect(blockedEntry("https://www.exploit-db.com/exploits/1")?.reason).toBe("exploit_code");
+    // Bare hosts and non-actionable paths only: no exploit, query, channel or leak-site link (SPEC §0.2).
+    expect(blockedEntry("https://www.exploit-db.com/")?.reason).toBe("exploit_code");
     expect(blockedEntry("https://web.archive.org/web/2026/https://a.org")?.reason).toBe("archive");
-    expect(blockedEntry("https://t.me/somechannel")?.reason).toBe("messaging");
+    expect(blockedEntry("https://t.me/")?.reason).toBe("messaging");
     expect(blockedEntry("https://www.google.com/url?q=https://a.org")?.reason).toBe("redirect");
     expect(blockedEntry("https://www.google.com/search?q=x")).toBeNull();
-    expect(blockedEntry("https://shodan.io/search?query=x")?.reason).toBe("scan_query");
+    expect(blockedEntry("https://shodan.io/search")?.reason).toBe("scan_query");
     expect(blockedEntry("https://shodan.io/")).toBeNull();
-    expect(blockedEntry("http://abcdefghijklmnop.onion/")?.reason).toBe("leak_site");
+    expect(blockedEntry("http://example.onion/")?.reason).toBe("leak_site");
     expect(blockedEntry("https://www.cisa.gov/kev")).toBeNull();
     expect(blockedEntry("not a url")).toBeNull();
   });
