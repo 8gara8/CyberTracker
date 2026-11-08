@@ -137,11 +137,18 @@ async function sandbox(cfg: AgentConfig, network: Network): Promise<Row[]> {
   const home = process.env.HOME ?? os.homedir();
   const sshDir = path.join(home, ".ssh");
   const sshCanary = path.join(sshDir, "ct-sandbox-canary");
-  const markerDir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-notes-"));
-  const marker = path.join(markerDir, `notes-${nonce}.txt`);
   const sshExisted = fs.existsSync(sshDir);
   fs.mkdirSync(sshDir, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(sshCanary, `${nonce} canary\n`, { mode: 0o600 });
+  // Created exclusively, so a file of the user's own at this path is never overwritten or removed (PR 2
+  // review, round 2). P3 replaces this probe with a read of an existing file (SPEC §8.12).
+  try {
+    fs.writeFileSync(sshCanary, `${nonce} canary\n`, { mode: 0o600, flag: "wx" });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EEXIST") throw new Error(`${sshCanary} already exists and is not ours; agent:check leaves it alone. Move it away to run --sandbox.`);
+    throw e;
+  }
+  const markerDir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-notes-"));
+  const marker = path.join(markerDir, `notes-${nonce}.txt`);
   fs.writeFileSync(marker, `${nonce}\n`);
   const hostname = fs.existsSync("/etc/hostname") ? fs.readFileSync("/etc/hostname", "utf8").trim() : "";
   const tokenFile = process.env.CLAUDE_SESSION_INGRESS_TOKEN_FILE;

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -44,6 +45,28 @@ describe("lock", () => {
     expect(acquireLock(file, now)).toMatchObject({ acquired: true });
     write("{half");
     expect(acquireLock(file, now)).toEqual({ acquired: true, replacedStale: "an unreadable lock file" });
+  });
+  it("never deletes a lock another run took after both read the same stale one", () => {
+    const now = Date.now();
+    write({ pid: 2_147_483_646, started: new Date(now - 60_000).toISOString() });
+    let first: ReturnType<typeof acquireLock> | null = null;
+    // The second run reads the stale lock; before it replaces it, the first run replaces it and takes
+    // the lock. The second run must then lose, not delete the first run's fresh lock.
+    const second = acquireLock(file, now + 2, { beforeReap: () => { first ??= acquireLock(file, now + 1); } });
+    expect(first).toMatchObject({ acquired: true, replacedStale: expect.stringContaining("pid 2147483646") });
+    const held = JSON.parse(fs.readFileSync(file, "utf8"));
+    expect(held).toEqual({ pid: process.pid, started: new Date(now + 1).toISOString() });
+    expect(second).toEqual({ acquired: false, holder: held });
+    expect(fs.readdirSync(path.dirname(file))).toEqual(["daily.lock"]);
+  });
+  it("clears a reap marker left by a run that died, then replaces the stale lock", () => {
+    const now = Date.now();
+    const stale = JSON.stringify({ pid: 2_147_483_646, started: new Date(now).toISOString() });
+    write(stale);
+    const marker = `${file}.reap-${createHash("sha256").update(stale).digest("hex").slice(0, 16)}`;
+    fs.writeFileSync(marker, JSON.stringify({ pid: 2_147_483_645, started: new Date(now).toISOString() }));
+    expect(acquireLock(file, now)).toMatchObject({ acquired: true, replacedStale: expect.stringContaining("pid 2147483646") });
+    expect(fs.readdirSync(path.dirname(file))).toEqual(["daily.lock"]);
   });
   it("releases only its own lock", () => {
     write({ pid: process.ppid, started: new Date().toISOString() });
