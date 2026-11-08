@@ -331,6 +331,8 @@ section in the same PR and is listed here.
 | P0 | `Transcript.terminalReason` is the result event's `subtype` (§8.13) | `terminal_reason` when present, else `subtype` | On CLI 2.1.319 a sign-in failure has subtype `success` with `terminal_reason: "api_error"`; only the latter says what happened |
 | P0 | The `shell` test fails on any directory listing in the reply (§8.13) | Fails on a listing only when no Glob call made it (three or more top-level names as whole words) | Glob may list the working directory inside the sandbox; only a listing with no Glob call points to a shell |
 | P0 | P0's tests are `no-europe-strings`, `agent`, `lib`, `transcript` (§10 P0 Files) | Adds `tests/ops.test.ts` (the ops command table, the 60-line report, the probe's host list, and ops-mode publish on a local bare repo) | The ops plumbing pushes to the content repo, so it is tested before its first firing |
+| P0 | Claude creates `cybertracker-ops` with `create_trigger` (`connectors: []`) in P0 and `cybertracker-morning` in P5; J7 only if a fired session gets the wrong repositories or connectors (§9.4, §9.10) | JL creates both tasks by hand in P0 (J7, §9.4's fallback table), and Claude switches them off with `update_trigger` until each is needed | Tried on 2026-11-08 from this project's thread: `create_trigger` refused `connectors` ("not available for this organization"), and the task it made without them was a project routine that starts a new project thread on every run, runs with the project's settings instead of `cybertracker-run`, and cannot be fired with added text (`ops: <command>`) or changed with `update_trigger`. Claude deleted it unfired |
+| P0 | Claude applies the content repo's ruleset, features, Actions permissions and unwatch through REST (§9.2, §9.10 C1) | The setup commit, the default branch and the `correction` label went through; the ruleset (`POST .../rulesets`), the features `PATCH`, the Actions permission calls and `DELETE .../subscription` were refused with 403 on 2026-11-08, so they join J6, and the repo stays watched (JL may set Watch to "Participating and @mentions") | The session's GitHub proxy refuses ruleset, repo-settings and Actions-settings writes, and the watch endpoints answer "Resource not accessible by integration" |
 
 ### 0.6 JL's part
 
@@ -7103,6 +7105,13 @@ CyberTracker never creates, edits, pauses or reschedules any other task, Europe'
 | `cybertracker-ops` | `routine/OPS.md` | None: it runs only when Claude fires it with `fire_trigger` | P0 |
 | `cybertracker-morning` | `routine/TASK.md` | `CRON_TZ=Asia/Taipei 47 5 * * *` | P5 |
 
+**Who creates the tasks.** Verified on 2026-11-08 (§0.5): from a project thread, `create_trigger` refuses
+`connectors`, and the task it makes starts a new project thread on each run, runs with the project's
+settings instead of `environment_id`, and can be neither fired with added text nor changed with
+`update_trigger`. So JL creates both tasks by hand in P0 (J7, "Fallback" below), and Claude switches
+them off with `update_trigger` until each is needed. The two `create_trigger` calls below stay as the
+record of the intended settings.
+
 **Creating the ops task (P0)** with `create_trigger`:
 
 ```json
@@ -7658,7 +7667,7 @@ the thread twice, about 3 minutes in all, or once if Claude created the repo.
 |---|---|---|---|---|---|
 | J1 | P0 start, if needed | Create `8gara8/CyberTracker-content` | JL | github.com/new: owner `8gara8`, name `CyberTracker-content`, Public, no README, licence or .gitignore; reply "done" (about one minute) | The build session may not create repos (§0.5); Kobol is off limits (§0.2) |
 | C1 | P0 | Attach the content repo JL created (J1); push the setup commit; apply the content ruleset and repo settings; unwatch | Claude | `add_repo` (`access: "push"`, `save_to_project` false; on an access error, Claude relays the exact remedy the error names and adds no other URL); the setup commit as the repo's first push (§10 P0 Scope 2); REST (§9.2) | |
-| C2 | P0 | Propose `cybertracker-run` (its card is J2); once it exists, create `cybertracker-ops` and fire `ops: tools`; after J3, fire the probe and the agent checks | Claude | `get_environment`, `create_environment` (§9.3, §10 P0 Scope 3), `create_trigger`, `fire_trigger`, each fired session read as §9.4 says | |
+| C2 | P0 | Propose `cybertracker-run` (its card is J2); once JL has made the tasks (J7), switch them off and fire `ops: tools`; after J3, fire the probe and the agent checks | Claude | `get_environment`, `create_environment` (§9.3, §10 P0 Scope 3), `update_trigger`, `fire_trigger`, each fired session read as §9.4 says | |
 | J2 | P0 | Approve the `cybertracker-run` environment | JL | One tap on the approval card | The platform asks the account owner every time |
 | J3 | P0 | Set `cybertracker-run` to Full network | JL | Settings: environment selector, `cybertracker-run`, settings icon, Network access, Full, Save changes | Only the owner can set Full; Claude can propose at most 20 hosts |
 | C3 | P0 | Vercel: read the project's settings, clear a build-command override, set the Preview variable | Claude | Vercel connector (§9.1) | |
@@ -7666,11 +7675,11 @@ the thread twice, about 3 minutes in all, or once if Claude created the repo.
 | J5 | P4, if needed | Create the deploy hook and paste it into the content repo's secret | JL | §9.1, about two minutes | Only if the Vercel connector can't create hooks; pasting it straight into GitHub keeps it out of chat |
 | J5b | P0, if needed | Add `rebuild.yml` through GitHub's web editor | JL | Content repo, Add file, Create new file, path `.github/workflows/rebuild.yml`, paste the copy in `docs/content-repo/`, Commit to `main` | Only if the session's GitHub access cannot write workflow files (§9.6) |
 | J6 | P0, if needed | Import the two rulesets; set the content repo's Actions permissions | JL | Settings, Rules, Rulesets, New ruleset, Import a ruleset, `docs/rulesets/*.json`. If those calls were refused too, content repo Settings, Actions, General: Workflow permissions read-only, "Allow select actions" with none selected | Only if the session's GitHub access cannot manage rulesets or Actions settings |
-| J7 | P0, if needed | Create the two scheduled tasks on the scheduled-tasks page | JL | §9.4 fallback table, about 5 minutes | Only if a task made by `create_trigger` gets the wrong repositories or connectors; the first `ops: tools` firing shows it, so Claude asks while JL is still at the screen |
+| J7 | P0 | Create the two scheduled tasks on the scheduled-tasks page | JL | §9.4 fallback table, about 5 minutes | A task made by `create_trigger` from a project thread is a project routine that ignores the environment and cannot take a command (§0.5, §9.4) |
 | J8 | P3, if needed | Add the cache-warming setup script | JL | Environment settings, Setup script, paste §9.3's script | Only if `npm ci` threatens the 05:58 target; a fired session must never wait on an approval card |
 | C4 | P4 | Deploy hook and secret (if the connector can), first production deploy, domain check | Claude | §9.1 | |
 | J9 | P4 | Check Vercel's deployment-failure notifications | JL | Vercel, Account Settings, Notifications, Deployment Failures: turn email and web off (one toggle), or say they may stay as the one rare channel; §0.5 records the answer | The connector cannot read or change account notification settings, and the setting also covers Europe and ME (§0.2, §9.1) |
-| C5 | P5 | Create `cybertracker-morning` | Claude | `create_trigger` (§9.4) | |
+| C5 | P5 | Switch on `cybertracker-morning` (made by JL in J7) | Claude | `update_trigger` with `enabled: true` (§9.4) | |
 
 In the best case JL's setup is J2 and J3 in P0, in one sitting (with J1 too if Claude cannot create
 the repo, about 3 minutes in all), and one question after the first test firing. The likely case adds J5 and J9 in P4, about 2
