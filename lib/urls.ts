@@ -1,4 +1,4 @@
-// URL helpers (SPEC §4.12, §8.13): normalisation for evidence matching and duplicate checks, defanging
+// URL helpers (SPEC §4.1, §4.2, §4.12): normalisation for evidence matching and duplicate checks, defanging
 // for indicators shown as text, and host helpers. Adapted from the Europe fork's lib/urls.ts.
 
 import { BLOCKED_HOSTS, type BlockedHost } from "./vocab";
@@ -87,9 +87,24 @@ export function defang(text: string): string {
 }
 
 /**
+ * A URL path in the one form every path rule compares (SPEC §4.2): percent-escapes of unreserved
+ * characters decoded (RFC 3986 §6.2.2.2), other escapes kept, runs of slashes collapsed, lower-cased. So
+ * `/%73earch` and `//search` compare as `/search` (PR 2 review, round 3).
+ */
+export function matchPath(pathname: string): string {
+  return pathname
+    .replace(/%([0-9a-f]{2})/gi, (m: string, hex: string) => {
+      const c = String.fromCharCode(parseInt(hex, 16));
+      return /[A-Za-z0-9\-._~]/.test(c) ? c : m;
+    })
+    .replace(/\/{2,}/g, "/")
+    .toLowerCase();
+}
+
+/**
  * The BLOCKED_HOSTS entry a URL falls under, or null (Appendix B.3). A host entry matches the host and
- * every subdomain; an entry with a path matches that host (and its subdomains) and the path prefix;
- * ".onion" and ".i2p" match any host ending so. Unparseable URLs are not matched here.
+ * every subdomain; an entry with a path matches that host (and its subdomains) and the path prefix, on
+ * `matchPath()`; ".onion" and ".i2p" match any host ending so. Unparseable URLs are not matched here.
  */
 export function blockedEntry(url: string): BlockedHost | null {
   let u: URL;
@@ -111,7 +126,7 @@ export function blockedEntry(url: string): BlockedHost | null {
       continue;
     }
     const [h, path] = [p.slice(0, slash), p.slice(slash)];
-    if (hostMatches(host, h) && u.pathname.toLowerCase().startsWith(path)) return entry;
+    if (hostMatches(host, h) && matchPath(u.pathname).startsWith(path)) return entry;
   }
   return null;
 }

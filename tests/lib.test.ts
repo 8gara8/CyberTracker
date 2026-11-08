@@ -4,7 +4,7 @@ import {
   taipeiDateOf, taipeiTime, taipeiTimestamp, taipeiToday, utcDateOf, weekday, windowEnding,
 } from "@/lib/dates";
 import { countWords } from "@/lib/text";
-import { blockedEntry, defang, extractUrls, hostMatches, hostOf, isHttpsUrl, normalizeUrl, stripArchivePrefix } from "@/lib/urls";
+import { blockedEntry, defang, extractUrls, hostMatches, hostOf, isHttpsUrl, matchPath, normalizeUrl, stripArchivePrefix } from "@/lib/urls";
 import { BLOCK_REASONS, BLOCKED_HOSTS, blockedHostEntries, CANARY_TOKEN, CANARY_URL_MARK, CANARY_URL_PREFIX } from "@/lib/vocab";
 import { fetchFeed } from "@/lib/feeds/http";
 import http from "node:http";
@@ -155,6 +155,17 @@ describe("urls", () => {
     expect(blockedEntry("http://example.onion/")?.reason).toBe("leak_site");
     expect(blockedEntry("https://www.cisa.gov/kev")).toBeNull();
     expect(blockedEntry("not a url")).toBeNull();
+    // An encoded unreserved character, a doubled slash or upper case can't slip past a path entry.
+    expect(blockedEntry("https://shodan.io/%73earch")?.reason).toBe("scan_query");
+    expect(blockedEntry("https://shodan.io//search")?.reason).toBe("scan_query");
+    expect(blockedEntry("https://shodan.io/SEARCH")?.reason).toBe("scan_query");
+    expect(blockedEntry("https://www.google.com/%75rl?q=https://a.org")?.reason).toBe("redirect");
+    expect(blockedEntry("https://shodan.io/%2573earch")).toBeNull();
+  });
+  it("puts paths in one form for path rules", () => {
+    expect(matchPath("/%73earch")).toBe("/search");
+    expect(matchPath("//A%7e/b%2Fc")).toBe("/a~/b%2fc");
+    expect(matchPath("/x%20y")).toBe("/x%20y");
   });
 });
 

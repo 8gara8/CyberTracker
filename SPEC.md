@@ -181,7 +181,8 @@ everything else and puts only these in a PR's "For JL" list.
 
 Where building shows this spec is wrong, incomplete or ambiguous, the fix goes into the relevant section
 in the same PR and is listed here. v1.0's own rows (PR 1 and P0 reviews) are already in the sections
-they changed. Rows 2 to 5 are where v2.0 departs from the redesign plan of row 1, v1.0 or Europe.
+they changed. Rows 2 to 5 are where v2.0 departs from the redesign plan of row 1, v1.0 or Europe; later
+rows are what review and building found.
 
 | # | PR | Section | Change | Why |
 |---|---|---|---|---|
@@ -190,6 +191,7 @@ they changed. Rows 2 to 5 are where v2.0 departs from the redesign plan of row 1
 | 3 | #2 | §0.3, §10 P4 | JL picks the look from the P4 PR's side-by-side screenshots of both looks on the dry-run editions, not on the Vercel preview as planned | The preview builds only the sample, in paper |
 | 4 | #2 | §8.2 | In v1.0 and Europe, `E_CLI` and `E_AUTH` in preflight stop the run. Now the run goes on as data-only and ends `published_data_only` with that code | An expired token still leaves a dated edition |
 | 5 | #2 | §0.2, §3, §8.4, §8.7 | The plan let only the morning pipeline push to `main`. After go-live, a state rebuild (`npm run backfill -- --catch-up --push` or `-- --credits --push`) also pushes, as `state:` commits through `publishState()` under the run lock; before go-live, backfill output goes through a phase PR | A PR touching `content/state/` would conflict with the daily commits |
+| 6 | #2 | §4.2 | Path rules compare `matchPath()`: unreserved percent-escapes decoded, repeated slashes collapsed, lower case | Codex round 3: an encoded `/%73earch` slipped past a blocked path prefix |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -705,7 +707,10 @@ export const BLOCK_REASONS = ["exploit_code", "paste", "messaging", "shortener",
 (`NO_EXPLOIT_LINK`, `SOURCE_URL`), collect, the snapshot fetcher, the link check and the agent's WebFetch
 deny list in `routine/agent-settings.json` (§9.5) all read it. Tests use a bare blocked host, a host
 with a non-actionable path, or a reserved example domain; never a usable exploit-archive URL, a scanner
-query or a paste link. `lib/vocab.ts` also exports, defined where used: `BANNED_WORDS`, `IOC_TLDS`,
+query or a paste link. Every path rule (a `BLOCKED_HOSTS` path prefix, `github.tier1_paths`,
+NO_EXPLOIT_LINK's tier 3 path segments) compares `matchPath()` (`lib/urls.ts`): the URL's path with
+percent-escapes of unreserved characters decoded (RFC 3986 §6.2.2.2), runs of slashes collapsed and
+letters lower-cased, so `/%73earch` and `//search` match `/search`. `lib/vocab.ts` also exports, defined where used: `BANNED_WORDS`, `IOC_TLDS`,
 `PAYLOAD_PATTERNS`, `NEXUS_TERMS`, `ATTRIBUTION_CUES`, `METRIC_TERMS`, `ABBREVIATIONS` (§4.12);
 `COUNTRY_CODES` (ISO 3166-1 alpha-2 with English names); `INJECTION_PATTERNS` (§4.14);
 `DISPUTE_FORM_OPTIONS` (§8.9).
