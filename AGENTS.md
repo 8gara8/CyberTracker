@@ -75,10 +75,12 @@ faster?
 - **Ids** (not secrets; kept here and in no code or config file):
   - Run environment `cybertracker-run`: `env_018Z7FomJwDv6nZkUde3ZmqQ` (created 2026-11-08, J2 approved;
     content repo only; 20-host Custom list until JL sets Full, J3).
-  - Scheduled tasks `cybertracker-ops` and `cybertracker-morning`: made by JL by hand (J7), because a
-    task that `create_trigger` makes from a project thread is a project routine that ignores the
-    environment and cannot be fired with added text (SPEC §0.5, 2026-11-08). Ids recorded here once
-    they exist.
+  - Scheduled tasks, made by JL by hand on 2026-11-08 (J7), because a task that `create_trigger`
+    makes from a project thread is a project routine that ignores the environment and cannot be fired
+    with added text (SPEC §0.5): `cybertracker-ops` `trig_01VQLSKhFTryZgQmsCKEYBog`,
+    `cybertracker-morning` `trig_018vtiJUniKG67vsaNppbjKt`. Both switched off by Claude. The first
+    `ops: tools` firing showed every connector attached, a generic environment and push on, so JL is
+    fixing both tasks (`docs/reports/2026-11-08-p0-trust-boundary.md`).
   - Vercel project `cybertracker`: `prj_tnJqehlQCR0vPwIyeG4wptkQswML`, team
     `team_xxXFmwmVsAfTU86OFG8fcX3S`.
   - Fork: 8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570` (SPEC §0.3).
