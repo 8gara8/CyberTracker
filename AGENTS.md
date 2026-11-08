@@ -84,8 +84,9 @@ faster?
     (JL created one on 2026-11-07); without one it only comments asking for it.
   - Its own help text says a review starts when a PR is opened for review, a draft is marked ready, or
     someone comments `@codex review`. PR 1's first review came from `@codex review` (about 4 minutes).
-  - Signals: a 👀 reaction while it runs; a review with inline comments when it has findings; a 👍
-    reaction on the PR when a review finishes with none. Its summary comment (marker
+  - Signals: a 👀 reaction while it runs; a review with inline comments when it has findings. With
+    none, it posted an issue comment "Codex Review: Didn't find any major issues." naming the reviewed
+    commit (PR 1, 2026-11-08), and its help text also promises a 👍 reaction. Its summary comment (marker
     `codex-pull-request-review-summary`) carries a `codex-review-state` JSON with `status` and
     `has_unresolved_findings` for the latest reviewed commit.
 
