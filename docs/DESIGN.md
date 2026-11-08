@@ -12,6 +12,20 @@
 >   review comments to fix, don't merge, i will do that" (JL).
 > - Still open, with defaults: the look (paper family; JL picks on real pages in P4), the Scoreboard
 >   seed (approved once in the P5 PR), the tagline.
+>
+> **v0.3 (JL, decision card, 2026-11-08): built and run on Kobol, the EuropeTracker way.** JL stopped
+> the build because the cloud setup needed too many manual steps. These points override the v0.2 text
+> below wherever it says otherwise; the product itself does not change:
+> - The morning run is a Claude desktop scheduled task on Kobol at 04:30 Taipei (it starts about 04:37
+>   and stops by 05:30, before Europe's 05:30 task begins). There is no cloud task, cloud environment,
+>   ops task or setup phase (P0).
+> - One public repo, `8gara8/CyberTracker`, holds the code and the daily content (`content/`), like
+>   EuropeTracker. Only the morning pipeline's publish step pushes to `main`, and only under `content/`.
+>   Vercel rebuilds the site on every push. There is no content repo, deploy hook or ruleset.
+> - Claude builds it in a Remote Control session on Kobol with JL's own GitHub login. The drafting
+>   agent is sandboxed exactly as EuropeTracker's (no shell, no connectors or MCP servers, writes only
+>   to `drafts/`), plus CyberTracker's block list of exploit, paste, leak and scanner sites.
+> - SPEC.md v2.0 is the build spec; it is about a third of v1.0's length.
 
 ## What changed in v0.2
 

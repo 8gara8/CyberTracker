@@ -1,0 +1,477 @@
+# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalises it with
+# `npm run sources:check` and drops or replaces any entry that fails. Entries marked "unverified" have
+# no confirmed path yet (SPEC §4.13 "Verify in P2").
+schema_version: 1
+keywords:            # ranking boosts and filters for news items; any language; case-insensitive
+  - zero-day
+  - 0-day
+  - actively exploited
+  - exploited in the wild
+  - known exploited
+  - ransomware
+  - data breach
+  - breach
+  - hack
+  - hacked
+  - cyberattack
+  - cyber attack
+  - vulnerability
+  - vulnerabilities
+  - CVE-
+  - remote code execution
+  - authentication bypass
+  - supply chain
+  - backdoor
+  - malware
+  - espionage
+  - state-sponsored
+  - APT
+  - phishing
+  - extortion
+  - leak
+  - critical infrastructure
+  - patch
+  - emergency directive
+  - AI-found
+  - AI agent
+  - 資安
+  - 駭客
+  - 勒索
+  - 漏洞
+  - 網路攻擊
+  - 資料外洩
+  - 個資外洩
+  - 惡意程式
+  - 脆弱性
+  - 不正アクセス
+  - ランサムウェア
+  - サイバー攻撃
+  - 情報漏えい
+  - ゼロデイ
+  - マルウェア
+feeds:
+  # ── Structured feeds (parsers in lib/feeds/<kind>.ts, P2) ──────────────────────────────────────
+  - id: kev
+    name: CISA Known Exploited Vulnerabilities (cisagov/kev-data mirror)
+    kind: kev
+    url: https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json
+    fallback_url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    language: en
+    region: US
+    coverage: [exploits]
+    priority: 1
+    fresh_days: 7
+  - id: cvelist
+    name: CVE List V5 (CVEProject/cvelistV5)
+    kind: cvelist
+    url: https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/deltaLog.json
+    language: en
+    region: GLOBAL
+    coverage: [exploits]
+    priority: 1
+    fresh_days: 1
+  - id: epss
+    name: FIRST EPSS daily scores
+    kind: epss
+    url: https://epss.empiricalsecurity.com/epss_scores-current.csv.gz
+    fallback_url: https://api.first.org/data/v1/epss
+    language: en
+    region: GLOBAL
+    coverage: [exploits]
+    priority: 1
+    fresh_days: 2
+  - id: ghsa
+    name: GitHub Advisory Database (reviewed advisories)
+    kind: ghsa
+    url: https://github.com/github/advisory-database.git
+    language: en
+    region: GLOBAL
+    coverage: [exploits]
+    priority: 2
+    fresh_days: 2
+  - id: nvd
+    name: NVD CVE API 2.0 (keyless)
+    kind: nvd
+    url: https://services.nvd.nist.gov/rest/json/cves/2.0
+    language: en
+    region: US
+    coverage: [exploits]
+    priority: 3
+    fresh_days: 30
+  - id: myjvn
+    name: MyJVN (JVN iPedia)
+    kind: myjvn
+    url: https://jvndb.jvn.jp/myjvn?method=getVulnOverviewList&feed=hnd&rangeDatePublic=w&maxCountItem=50&startItem=1
+    language: ja
+    region: JP
+    coverage: [exploits, japan]
+    priority: 2
+    fresh_days: 7
+  - id: anthropic-cvd
+    name: Anthropic coordinated disclosure dashboard
+    kind: anthropic-cvd
+    url: https://red.anthropic.com/
+    language: en
+    region: GLOBAL
+    coverage: [ai]
+    priority: 2
+    fresh_days: 30
+  - id: exchange-tw
+    name: TWSE material information (open data)
+    kind: exchange
+    url: https://openapi.twse.com.tw/v1/opendata/t187ap04_L
+    language: zh-Hant-TW
+    region: TW
+    coverage: [breaches, taiwan]
+    priority: 2
+    fresh_days: 3
+  # ── Global and US newsrooms and research ──────────────────────────────────────────────────────────
+  - id: therecord
+    name: The Record
+    kind: rss
+    url: https://therecord.media/feed
+    language: en
+    region: GLOBAL
+    coverage: [exploits, breaches, policy]
+    priority: 1
+    fresh_days: 2
+  - id: bleepingcomputer
+    name: BleepingComputer
+    kind: rss
+    url: https://www.bleepingcomputer.com/feed/
+    language: en
+    region: GLOBAL
+    coverage: [exploits, breaches]
+    priority: 1
+    fresh_days: 2
+  - id: securityweek
+    name: SecurityWeek
+    kind: rss
+    url: https://www.securityweek.com/feed/
+    language: en
+    region: GLOBAL
+    coverage: [exploits, breaches, ai]
+    priority: 1
+    fresh_days: 2
+  - id: krebs
+    name: Krebs on Security
+    kind: rss
+    url: https://krebsonsecurity.com/feed/
+    language: en
+    region: US
+    coverage: [breaches]
+    priority: 2
+    fresh_days: 30
+  - id: thehackernews
+    name: The Hacker News
+    kind: rss
+    url: https://feeds.feedburner.com/TheHackersNews
+    language: en
+    region: GLOBAL
+    coverage: [exploits, breaches]
+    priority: 2
+    fresh_days: 2
+  - id: techcrunch-security
+    name: TechCrunch Security
+    kind: rss
+    url: https://techcrunch.com/category/security/feed/
+    language: en
+    region: US
+    coverage: [breaches, ai]
+    priority: 2
+    fresh_days: 3
+  - id: cisa-advisories
+    name: CISA cybersecurity advisories
+    kind: rss
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    language: en
+    region: US
+    coverage: [exploits, policy]
+    priority: 1
+    fresh_days: 7
+  - id: gtig
+    name: Google Threat Intelligence blog (unverified)
+    kind: rss
+    url: https://cloud.google.com/blog/topics/threat-intelligence/rss/
+    language: en
+    region: GLOBAL
+    coverage: [exploits, policy, ai]
+    priority: 2
+    fresh_days: 30
+  - id: msft-security
+    name: Microsoft Security blog
+    kind: rss
+    url: https://www.microsoft.com/en-us/security/blog/feed/
+    language: en
+    region: GLOBAL
+    coverage: [exploits, policy, ai]
+    priority: 2
+    fresh_days: 14
+  - id: msrc
+    name: Microsoft Security Response Center blog
+    kind: rss
+    url: https://msrc.microsoft.com/blog/feed
+    language: en
+    region: GLOBAL
+    coverage: [exploits]
+    priority: 2
+    fresh_days: 30
+  - id: unit42
+    name: Palo Alto Networks Unit 42
+    kind: rss
+    url: https://unit42.paloaltonetworks.com/feed/
+    language: en
+    region: GLOBAL
+    coverage: [exploits, policy]
+    priority: 2
+    fresh_days: 14
+  - id: volexity
+    name: Volexity
+    kind: rss
+    url: https://www.volexity.com/feed/
+    language: en
+    region: GLOBAL
+    coverage: [exploits]
+    priority: 3
+    fresh_days: 60
+  - id: project-zero
+    name: Google Project Zero
+    kind: rss
+    url: https://googleprojectzero.blogspot.com/feeds/posts/default
+    language: en
+    region: GLOBAL
+    coverage: [exploits, ai]
+    priority: 3
+    fresh_days: 90
+  - id: google-security
+    name: Google Online Security Blog
+    kind: rss
+    url: https://security.googleblog.com/feeds/posts/default
+    language: en
+    region: GLOBAL
+    coverage: [ai, policy]
+    priority: 3
+    fresh_days: 30
+  - id: openai-news
+    name: OpenAI news
+    kind: rss
+    url: https://openai.com/news/rss.xml
+    language: en
+    region: GLOBAL
+    coverage: [ai]
+    priority: 3
+    fresh_days: 14
+    must_match: true
+  # ── Europe ────────────────────────────────────────────────────────────────────────────────────────
+  - id: ncsc-uk
+    name: NCSC UK
+    kind: rss
+    url: https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml
+    language: en
+    region: EU
+    coverage: [policy, exploits]
+    priority: 1
+    fresh_days: 14
+  - id: cert-eu
+    name: CERT-EU security advisories (unverified)
+    kind: rss
+    url: https://cert.europa.eu/publications/security-advisories-rss
+    language: en
+    region: EU
+    coverage: [exploits, policy]
+    priority: 2
+    fresh_days: 14
+  - id: bsi
+    name: BSI news
+    kind: rss
+    url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml
+    language: de
+    region: EU
+    coverage: [policy, exploits]
+    priority: 2
+    fresh_days: 14
+  - id: cert-fr
+    name: CERT-FR
+    kind: rss
+    url: https://www.cert.ssi.gouv.fr/feed/
+    language: fr
+    region: EU
+    coverage: [exploits, policy]
+    priority: 2
+    fresh_days: 7
+  # ── Taiwan ────────────────────────────────────────────────────────────────────────────────────────
+  - id: twcert-tvn
+    name: TWCERT/CC vulnerability notes (TVN)
+    kind: rss
+    url: https://www.twcert.org.tw/tw/rss-132-1.xml
+    language: zh-Hant-TW
+    region: TW
+    coverage: [exploits, taiwan]
+    priority: 1
+    fresh_days: 14
+  - id: focustaiwan
+    name: Focus Taiwan (CNA English) (unverified)
+    kind: rss
+    url: https://focustaiwan.tw/rss/aall.xml
+    language: en
+    region: TW
+    coverage: [taiwan, breaches, policy]
+    priority: 2
+    fresh_days: 2
+    must_match: true
+  - id: taipeitimes
+    name: Taipei Times
+    kind: rss
+    url: https://www.taipeitimes.com/xml/index.rss
+    language: en
+    region: TW
+    coverage: [taiwan, policy]
+    priority: 2
+    fresh_days: 2
+    must_match: true
+  - id: cna
+    name: Central News Agency 中央社 (unverified)
+    kind: rss
+    url: https://feeds.feedburner.com/rsscna/technology
+    language: zh-Hant-TW
+    region: TW
+    coverage: [taiwan, breaches]
+    priority: 2
+    fresh_days: 2
+    must_match: true
+  - id: ithome-security
+    name: iThome 資安 (unverified)
+    kind: rss
+    url: https://www.ithome.com.tw/rss
+    language: zh-Hant-TW
+    region: TW
+    coverage: [taiwan, exploits, breaches]
+    priority: 1
+    fresh_days: 2
+  # ── Japan ─────────────────────────────────────────────────────────────────────────────────────────
+  - id: jpcert
+    name: JPCERT/CC
+    kind: rss
+    url: https://www.jpcert.or.jp/rss/jpcert.rdf
+    language: ja
+    region: JP
+    coverage: [exploits, japan]
+    priority: 1
+    fresh_days: 14                                # 注意喚起 pages under /at/ are alerts through regions.json alert_patterns (§5.11)
+  - id: ipa
+    name: IPA security alerts (unverified)
+    kind: rss
+    url: https://www.ipa.go.jp/security/alert-rss.rdf
+    language: ja
+    region: JP
+    coverage: [exploits, japan]
+    priority: 2
+    fresh_days: 30
+  - id: security-next
+    name: Security NEXT
+    kind: rss
+    url: https://www.security-next.com/feed
+    language: ja
+    region: JP
+    coverage: [japan, breaches, exploits]
+    priority: 2
+    fresh_days: 2
+  - id: nhk
+    name: NHK News
+    kind: rss
+    url: https://www3.nhk.or.jp/rss/news/cat0.xml
+    language: ja
+    region: JP
+    coverage: [japan]
+    priority: 2
+    fresh_days: 1
+    must_match: true                              # keep only items that hit a keyword
+  # ── Searches the agent runs (never fetched by collect) ────────────────────────────────────────────
+  - id: q-reuters
+    name: Reuters (search)
+    kind: search
+    query: "Reuters cyberattack OR hacking OR vulnerability"
+    language: en
+    region: GLOBAL
+    coverage: [breaches, policy]
+    priority: 2
+  - id: q-ap
+    name: Associated Press (search)
+    kind: search
+    query: "AP News cyberattack OR hackers OR vulnerability"
+    language: en
+    region: US
+    coverage: [breaches, policy]
+    priority: 2
+  - id: q-anthropic-red
+    name: Anthropic frontier red team (search)
+    kind: search
+    query: "site:red.anthropic.com"
+    language: en
+    region: GLOBAL
+    coverage: [ai]
+    priority: 2
+  - id: q-enisa
+    name: ENISA (search)
+    kind: search
+    query: "ENISA threat OR vulnerability OR incident"
+    language: en
+    region: EU
+    coverage: [policy]
+    priority: 3
+  - id: q-acs-tw
+    name: Administration for Cyber Security 資安署 (search)
+    kind: search
+    query: "資安署 site:moda.gov.tw"
+    language: zh-Hant-TW
+    region: TW
+    coverage: [taiwan, policy]
+    priority: 2
+  - id: q-mjib-tw
+    name: Investigation Bureau 調查局 (search)
+    kind: search
+    query: "調查局 資安"
+    language: zh-Hant-TW
+    region: TW
+    coverage: [taiwan, policy]
+    priority: 3
+  - id: q-nsb-tw
+    name: National Security Bureau 國安局 (search)
+    kind: search
+    query: "國安局 網路攻擊"
+    language: zh-Hant-TW
+    region: TW
+    coverage: [taiwan, policy]
+    priority: 3
+  - id: q-nco-jp
+    name: National Cybersecurity Office 国家サイバー統括室 (search)
+    kind: search
+    query: "国家サイバー統括室"
+    language: ja
+    region: JP
+    coverage: [japan, policy]
+    priority: 3
+  - id: q-npa-jp
+    name: National Police Agency 警察庁 (search)
+    kind: search
+    query: "警察庁 サイバー"
+    language: ja
+    region: JP
+    coverage: [japan, policy]
+    priority: 3
+  - id: q-nikkei
+    name: Nikkei (search)
+    kind: search
+    query: "日経 サイバー攻撃"
+    language: ja
+    region: JP
+    coverage: [japan, breaches]
+    priority: 3
+  - id: q-prc-state
+    name: PRC state sources, labelled (search)
+    kind: search
+    query: "国家计算机病毒应急处理中心 OR 新华社 网络攻击"
+    language: zh-Hans-CN
+    region: GLOBAL
+    coverage: [policy]
+    priority: 3

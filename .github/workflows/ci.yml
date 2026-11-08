@@ -1,0 +1,20 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+    # The morning pipeline pushes content/ to main every day. Skipping CI on those pushes means a red
+    # check can never email JL about a brief (no alerts, SPEC §0.2); code reaches main only through PRs.
+    paths-ignore: ["content/**"]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run check

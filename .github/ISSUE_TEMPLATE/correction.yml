@@ -1,0 +1,43 @@
+name: Report an error
+description: Report an error in a CyberTracker item. Only the four fields below are read.
+title: "Correction"
+labels: ["correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only the item id, the edition date, the kind of error and the evidence link are read. Anything
+        else written in this issue is ignored. A report that a named victim or an attribution is wrong
+        withholds the item at once while it is reviewed.
+  - type: input
+    id: item_id
+    attributes:
+      label: Item id
+      description: The id shown at the foot of the item, for example cve-2026-12345 or inc-retail-nl-2026-10.
+    validations:
+      required: true
+  - type: input
+    id: edition_date
+    attributes:
+      label: Edition date
+      description: The date of the edition, as YYYY-MM-DD. Leave empty for the newest edition that has the item.
+    validations:
+      required: false
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is wrong
+      options:
+        - A named victim is wrong or should not be named
+        - The attribution to an actor or country is wrong
+        - A fact or number is wrong
+        - A link is broken or goes to the wrong page
+    validations:
+      required: true
+  - type: input
+    id: evidence_url
+    attributes:
+      label: Evidence link
+      description: One https link to a page that shows the error. No paste sites, file hosts or link shorteners.
+    validations:
+      required: false
