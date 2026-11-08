@@ -12,7 +12,7 @@
 |---|---|---|
 
 ## Spec changes
-<!-- The §0.5 rows this PR adds, or "None." -->
+<!-- The SPEC §0.4 rows this PR adds, or "None." -->
 
 ## Screenshots
 <!-- P4 and P5: links to docs/screenshots/<phase>/<page>-<width>.png. Otherwise delete this section. -->

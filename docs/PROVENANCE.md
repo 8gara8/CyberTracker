@@ -1,7 +1,7 @@
 # Provenance
 
 CyberTracker is forked from **8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570`**
-(`main` on 2026-11-07, "Merge pull request #8 from 8gara8/phase-5-go-live"; SPEC §0.3). Nothing was
+(`main` on 2026-11-07, "Merge pull request #8 from 8gara8/phase-5-go-live"; the SPEC header). Nothing was
 merged from Git history: files were copied by hand into a fresh repo and changed as below.
 
 Verdicts:
@@ -20,9 +20,9 @@ Every carried file names its Europe source in its header comment.
 | `package.json` | adapted | Name `cybertracker`; the same packages and exact pins (SPEC §2); only the Foundation scripts (`typecheck`, `test`, `check`, `agent:check`); `engines.node >=22` |
 | `package-lock.json` | adapted | Europe's lockfile with the name changed, because `npm install` on this machine fails inside npm itself (`edgesOut` of null); `npm ci` installs it cleanly |
 | `tsconfig.json`, `vitest.config.ts`, `postcss.config.mjs` | copied | |
-| `next.config.ts` | adapted | `poweredByHeader: false` only; P4 adds the CSP and headers (SPEC §6.6) |
-| `.gitignore` | adapted | Exactly SPEC §3.1 |
-| `.github/workflows/ci.yml` | adapted | One job running `npm run check` on Node 24 (SPEC §9.2); P1 adds the report-only `content` job |
+| `next.config.ts` | adapted | `poweredByHeader: false` only; P4 adds the CSP and headers (SPEC §6) |
+| `.gitignore` | adapted | Exactly SPEC §3 |
+| `.github/workflows/ci.yml` | adapted | One job running `npm run check` on Node 24; pushes to `main` that change only `content/` skip it (SPEC §9.2) |
 | `README.md`, `AGENTS.md`, `CLAUDE.md`, `SPEC.md`, `docs/DESIGN.md` | replaced | Written for CyberTracker in PR 1 |
 | `docs/RUNBOOK.md` | later | P3 writes CyberTracker's runbook |
 | `docs/SEED-REPORT.md`, `research/**` | dropped | The Gap history is computed from feeds in P2; the source registry is `config/sources.yaml` |
@@ -49,7 +49,7 @@ Every carried file names its Europe source in its header comment.
 | `scripts/lib/log.ts` | copied | |
 | `scripts/lib/lock.ts` | adapted | The lock appears atomically through a hard link, so a lost race returns the holder instead of throwing (PR 2 review) |
 | `scripts/lib/run.ts` | adapted | An `onLine` hook (returning `"stop"` kills the child) and a `stopped` flag, for the sandbox guard (SPEC §8.12) |
-| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.8) |
+| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.7) |
 | `scripts/lib/transcript.ts` | adapted | More fields (tools, MCP servers, permission mode, calls with results, denials, usage, terminal reason, limits, safety stops) and `scrubModels()` (SPEC §8.12) |
 | `scripts/lib/agent.ts` | adapted | `--restricted`, `--safe-mode`, no model flag, an isolated config dir. Written for the retired cloud run; P3 brings it back to Europe's Kobol harness (keychain token, `~/.cybertracker`, SPEC §9.4) |
 | `scripts/agent-check.ts` | adapted | `ask()` kept; sandbox tests and the canary test (SPEC §8.12). P3 drops the cloud-only `--find-passthrough` and `--network` and restores Europe's Mac sign-in check |
@@ -70,7 +70,7 @@ Every carried file names its Europe source in its header comment.
 |---|---|---|
 | `routine/agent-settings.json` | adapted | SPEC §9.5: the fixed denies, then both WebFetch domain forms of every `BLOCKED_HOSTS` host entry in order, then `*.onion` and `*.i2p`; hooks off |
 | `routine/TASK.md`, `routine/PROMPT.md`, `routine/REPAIR.md`, `routine/STYLE.md`, `routine/schema/draft-brief.schema.json` | later (P1 to P3) | Rewritten for CyberTracker |
-| `fixtures/agent/transcript-auth-failed.jsonl` | copied | Its model value replaced by `<model>`. The current CLI could not be made to fail sign-in (it signs in even with an empty passthrough), so the shape is Europe's (SPEC §0.5) |
+| `fixtures/agent/transcript-auth-failed.jsonl` | copied | Its model value replaced by `<model>`. The current CLI could not be made to fail sign-in (it signs in even with an empty passthrough), so the shape is Europe's (found while building v1.0's P0) |
 | `fixtures/agent/fake-claude.mjs` | later (P3) | For the end-to-end pipeline tests |
 | none | new in Foundation | `fixtures/agent/transcript-ok.jsonl` (a real transcript from `agent:check` on CLI 2.1.319, model values replaced), `fixtures/injection/` (the planted page, RSS item and pre-P3 canary prompt) |
 | `fixtures/src/**`, `fixtures/empty-content/**` | later (P1, P4) | The fixture builder's pattern; every fixture is CyberTracker's own |

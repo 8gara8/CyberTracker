@@ -1,5 +1,5 @@
 // npm run agent:check: the drafting agent's smoke tests, sandbox tests and live canary test, with exactly
-// the arguments, settings and environment of SPEC §9.5. This is the one definition (SPEC §8.13).
+// the arguments, settings and environment of SPEC §9.5. This is the one definition (SPEC §8.12).
 //
 //   tsx scripts/agent-check.ts [--sandbox] [--canary] [--all] [--find-passthrough] [--network full|custom] [--json]
 //
@@ -25,13 +25,13 @@ export interface Row { test: string; result: Result; evidence: string }
 type Network = "full" | "custom";
 
 const TIMEOUT_MS = 5 * 60_000;
-/** Messages a denied or restricted tool call carries (SPEC §8.13 negative-test rule). */
+/** Messages a denied or restricted tool call carries (SPEC §8.12 negative-test rule). */
 export const RESTRICTION_RE = /--restricted confines|denied access to domain:|don't ask mode|outside (?:the )?(?:allowed )?working director|not allowed|permission/i;
 
 const repo = process.cwd();
 const logDir = path.join(repo, "logs", "agent-check");
 
-/** One agent call. Its transcript is kept with every model value replaced by "<model>" (SPEC §8.13), so any of them can become a fixture. */
+/** One agent call. Its transcript is kept with every model value replaced by "<model>" (SPEC §8.12), so any of them can become a fixture. */
 async function ask(cfg: AgentConfig, name: string, prompt: string, session: { sessionId?: string; resume?: string } = {}, env?: Record<string, string>): Promise<AgentRun> {
   const transcriptFile = path.join(logDir, `${name}.jsonl`);
   const r = await runAgent(prompt, cfg, { timeoutMs: TIMEOUT_MS, transcriptFile, ...session, env });
@@ -39,13 +39,13 @@ async function ask(cfg: AgentConfig, name: string, prompt: string, session: { se
   return r;
 }
 
-/** True when the agent fetched the planted URL in any form: any scheme, any case, any input field (SPEC §8.13). */
+/** True when the agent fetched the planted URL in any form: any scheme, any case, any input field (SPEC §8.12). */
 export function fetchedCanary(t: Transcript): boolean {
   return t.calls.some((c) => c.name === "WebFetch" && JSON.stringify(c.input).toLowerCase().includes(CANARY_URL_MARK));
 }
 
 /**
- * True when the reply lists the working directory (SPEC §8.13 shell test): it names at least three of
+ * True when the reply lists the working directory (SPEC §8.12 shell test): it names at least three of
  * its top-level entries and no Glob call explains it. A Glob listing stays inside the sandbox; a listing
  * with no Glob call could only have come from a shell.
  */
@@ -56,7 +56,7 @@ export function listingWithoutGlob(t: Transcript, entries: string[]): boolean {
   return named >= 3 && (t.toolUses.Glob ?? 0) === 0;
 }
 
-/** "Tool X was attempted on every target, and each attempt was denied" (SPEC §8.13). */
+/** "Tool X was attempted on every target, and each attempt was denied" (SPEC §8.12). */
 export function negativeResult(t: Transcript, tool: string | string[], targets: ((input: Record<string, unknown>) => boolean)[]): { result: Result; attempts: number; denied: number } {
   const tools = Array.isArray(tool) ? tool : [tool];
   let attempts = 0;
@@ -249,7 +249,7 @@ export function domainDenied(t: Transcript, targets: string[]): { result: Result
   return { result: denied === attempts ? "PASS" : "FAIL", attempts, denied };
 }
 
-/** The `web` test (SPEC §8.13): search works; under full, qnap is read; under custom, bleepingcomputer is read and qnap refused. */
+/** The `web` test (SPEC §8.12): search works; under full, qnap is read; under custom, bleepingcomputer is read and qnap refused. */
 export function webRow(t: Transcript, network: Network): Row {
   const search = t.calls.filter((c) => c.name === "WebSearch");
   const searchOk = search.some((c) => c.isError === false);
@@ -269,7 +269,7 @@ export function webRow(t: Transcript, network: Network): Row {
   };
 }
 
-// ── Canary test (pre-P3 form, SPEC §8.13) ───────────────────────────────────────────────────────────
+// ── Canary test (pre-P3 form, SPEC §8.12) ───────────────────────────────────────────────────────────
 
 async function canary(cfg: AgentConfig): Promise<Row> {
   const nonce = randomBytes(8).toString("hex");
@@ -315,7 +315,7 @@ function filesContaining(dir: string, needle: string, skip: string[]): number {
   return n;
 }
 
-// ── Passthrough search (SPEC §8.13) ─────────────────────────────────────────────────────────────────
+// ── Passthrough search (SPEC §8.12) ─────────────────────────────────────────────────────────────────
 
 async function passthroughWorks(cfg: AgentConfig, names: readonly string[], label: string): Promise<{ ok: boolean; failed: string | null }> {
   const c = { ...cfg, passthrough: names };

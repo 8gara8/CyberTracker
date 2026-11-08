@@ -1,4 +1,4 @@
-# Source registry (SPEC §4.13). Drafted in P0 so the probe tests the real URLs; P2 finalises it with
+# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalises it with
 # `npm run sources:check` and drops or replaces any entry that fails. Entries marked "unverified" have
 # no confirmed path yet (SPEC §4.13 "Verify in P2").
 schema_version: 1

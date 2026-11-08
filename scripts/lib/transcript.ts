@@ -1,6 +1,6 @@
 import { extractUrls, normalizeUrl } from "../../lib/urls";
 
-// Reads the agent's stream-json transcript (SPEC §8.13). Event shapes checked against Claude Code
+// Reads the agent's stream-json transcript (SPEC §8.12). Event shapes checked against Claude Code
 // 2.1.319 on 2026-11-08: a {type:"system",subtype:"init"} event carries session_id, model,
 // claude_code_version, tools, mcp_servers and permissionMode; tool calls are tool_use blocks inside
 // {type:"assistant"} messages; tool output is tool_result blocks inside {type:"user"} messages;

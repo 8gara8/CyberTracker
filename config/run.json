@@ -7,7 +7,6 @@
   },
   "repos": {
     "repo": "8gara8/CyberTracker",
-    "clone_url": "https://github.com/8gara8/CyberTracker.git",
     "branch": "main"
   },
   "siblings": {
@@ -33,7 +32,13 @@
     "items_max": 10,
     "publish_reserve_minutes": 4,
     "attempts_max": 2,
-    "deploy_wait_minutes": 8
+    "deploy_wait_minutes": 8,
+    "typical_items": [
+      5,
+      8
+    ],
+    "words_target": 1100,
+    "words_max": 1300
   },
   "pack": {
     "window_end": "04:30",

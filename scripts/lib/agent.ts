@@ -67,7 +67,7 @@ export interface AgentConfig {
   passthrough: readonly string[];
 }
 
-/** The argument list of SPEC §9.5. The prompt comes first because the allow and deny lists are variadic. */
+/** The argument list of SPEC §9.4. The prompt comes first because the allow and deny lists are variadic. */
 export function agentArgs(prompt: string, session: { sessionId: string } | { resume: string }): string[] {
   return [
     "-p", prompt,
@@ -168,7 +168,7 @@ export async function runAgent(
 }
 
 /**
- * What is wrong with an agent's init event against the sandbox (SPEC §8.13): tools other than exactly
+ * What is wrong with an agent's init event against the sandbox (SPEC §8.12): tools other than exactly
  * `allowed`, any MCP tool or server, and a permission mode other than dontAsk. Empty when it is right.
  * The orchestrator's sandbox guard and agent-check's `tools` test both use it.
  */

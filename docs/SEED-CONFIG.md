@@ -2,10 +2,11 @@
 
 The starting contents of the config files in `config/`, moved verbatim from SPEC v1.0 Appendix B when
 the spec was rewritten for Kobol (SPEC v2.0, 2026-11-08). P1 writes each file to `config/` in the shape
-SPEC §4.11 gives, validates it with its schema, and checks the counts stated here. "Verify" notes say
+SPEC §4.11 gives, validates it with its schema, and checks the counts stated here. From then `config/` governs
+and this file stays frozen as the record of the seed and its Verify notes, like `docs/DESIGN.md`. "Verify" notes say
 which phase checks a value. Section references are to SPEC v2.0.
 
-These are the contents of `config/` when it first lands: P0 for `run.json` and `sources.yaml`, P1 for
+These are the contents of `config/` when it first lands: the Foundation PR for `run.json` and `sources.yaml`, P1 for
 the other files (Verify fixes in P2). Two files land in P1 in a starting form and get their seed in P5:
 `claims.json` starts as `{"schema_version":1,"version":0,"claims":[]}` (B.10), and `watch-windows.json`
 starts with an empty `windows` list (B.7). Every other file starts at `version: 1`. Tables below become JSON arrays with the field
@@ -1040,8 +1041,8 @@ aliases. `actors.json` holds no nexus (§4.11).
 | `lockbit` | LockBit | | | | Ransomware brand |
 | `cl0p` | Cl0p | | | | Ransomware brand |
 
-Verify in P5: each alias appears on its cited MITRE page; drop any that does not. Whether Europe and ME
-cover each actor marked `europe` or `me` (ask in the P5 PR; JL decides).
+Verify in P5: each alias appears on its cited MITRE page; drop any that does not. Keep `related_tracker`
+only where the sibling's site covers the actor (Claude reads the sites and says so in the P5 PR).
 
 ### B.7 `watch-windows.json`
 
