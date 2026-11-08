@@ -154,7 +154,9 @@ describe("runAgent with a fake CLI", () => {
     const seen = JSON.parse(fs.readFileSync(path.join(configDir, "seen.json"), "utf8")) as { argv: string[]; env: Record<string, string>; cwd: string };
     expect(seen.argv).toEqual(agentArgs("Say OK", { sessionId: "11111111-2222-3333-4444-555555555555" }));
     expect(fs.realpathSync(seen.cwd)).toBe(fs.realpathSync(repo));
-    const keys = Object.keys(seen.env).filter((k) => k !== "PWD" && k !== "SHLVL" && k !== "_");
+    // The shell and macOS add these to every process, even with an empty environment (seen on Kobol).
+    const OS_ADDED = new Set(["PWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"]);
+    const keys = Object.keys(seen.env).filter((k) => !OS_ADDED.has(k));
     expect(keys.sort()).toEqual(["CLAUDE_CONFIG_DIR", "DISABLE_AUTOUPDATER", "HOME", "HTTPS_PROXY", "LANG", "PATH"]);
     expect(seen.env.GH_TOKEN).toBeUndefined();
     expect(r.transcript.isError).toBe(false);
