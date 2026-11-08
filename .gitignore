@@ -6,7 +6,6 @@ next-env.d.ts
 .env*
 .vercel/
 .DS_Store
-/content/
 /cache/
 /packs/
 /drafts/
