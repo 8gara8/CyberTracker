@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data, environment values
 > and run-environment security details out. Never publish this file on the site.
 
-Last reviewed 2026-11-07 · Code repo 8gara8/CyberTracker · Content repo 8gara8/CyberTracker-content · Claude project Geo Tracker
+Last reviewed 2026-11-08 · Code repo 8gara8/CyberTracker · Content repo 8gara8/CyberTracker-content · Claude project Geo Tracker
 
 ## 1. Who and what
 
@@ -63,8 +63,8 @@ faster?
 
 | Phase | Branch | PR | State |
 |---|---|---|---|
-| PR 1 The spec | `spec` | #1 | In review |
-| P0 Repo, fork and environment | `p0-setup` | | Not started |
+| PR 1 The spec | `spec` | #1 | Merged 2026-11-08 |
+| P0 Repo, fork and environment | `p0-setup` | #2 | In progress: waiting for J1 |
 | P1 Data contract, validator, chat renderer | `p1-contract` | | Not started |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | | Not started |
 | P3 Morning pipeline and timed dry runs | `p3-pipeline` | | Not started |
@@ -78,7 +78,8 @@ faster?
   - Vercel project `cybertracker`: `prj_tnJqehlQCR0vPwIyeG4wptkQswML`, team
     `team_xxXFmwmVsAfTU86OFG8fcX3S`.
   - Fork: 8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570` (SPEC §0.3).
-  - Rulesets (code `main`, content `main`): set in P0.
+  - Rulesets (code `main`, content `main`): set in P0. The session's GitHub proxy refuses ruleset and
+    repo-settings writes (403, 2026-11-08), so JL imports both rulesets (J6).
 - **How Codex reviews start** (seen on PR 1, 2026-11-07; SPEC §0.1 item 4):
   - The bot's login is `chatgpt-codex-connector[bot]`. It needs a Codex environment for the repo
     (JL created one on 2026-11-07); without one it only comments asking for it.
