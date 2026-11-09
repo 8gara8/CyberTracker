@@ -452,9 +452,13 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
     d.print("state/ is missing: run npm run backfill first (SPEC §8.4).");
     return 1;
   }
-  const commit = o.commit ?? (await branchTip(d.git, REPOS.cvelist, "main"));
+  // B16 (§8.4): with no --commit, the CVE List commit collect read for E, as kevSource() does for the catalog,
+  // so the catch-up and E's metrics count one clone; else the tip of main.
+  const E = addDays(o.cutoff, 2);
+  const cachedCommit = o.commit === null ? cachedRun(o.root, E)?.cvelistCommit ?? null : null;
+  const commit = o.commit ?? cachedCommit ?? (await branchTip(d.git, REPOS.cvelist, "main"));
   if (commit === null) throw new Refused("git ls-remote could not read the tip of CVEProject/cvelistV5 main.");
-  d.print(`CVE List commit ${commit} (${o.commit ? "--commit" : "the tip of main"}).`);
+  d.print(`CVE List commit ${commit} (${o.commit ? "--commit" : cachedCommit ? `collect's cache for ${E}` : "the tip of main"}).`);
   const { facts } = await cloneAndRead(o, d, commit);
   const run = aiFindersOf(config, config.compiled);
 
@@ -474,9 +478,14 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
 
   const since = facts.filter((f) => f.date_published !== null && f.date_published > newestBefore && f.date_published <= o.cutoff);
   const prevCredits: CreditState = { candidates: prev["credit-candidates.json"], credits: prev["ai-credits.json"] };
-  const credits = updateCredits(prevCredits, { records: since, ghsa: [] }, run, o.cutoff).state;
+  const updated = updateCredits(prevCredits, { records: since, ghsa: [] }, run, o.cutoff).state;
+  // B14: the dashboard's ledger ids applied again with the clone's publication dates, as the build and --credits do.
+  const credits: CreditState = {
+    candidates: updated.candidates,
+    credits: applyLedger(updated.credits, { cveIds: prev["anthropic-cvd.json"].ledger_ids, published: publishedOf(facts) }, run, o.cutoff).credits,
+  };
 
-  const edition = briefs(content, addDays(o.cutoff, 2));
+  const edition = briefs(content, E);
   const anyBrief = edition.any;
   let index = prev["kev-index.json"];
   if (!anyBrief) {

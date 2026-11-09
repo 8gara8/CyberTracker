@@ -93,11 +93,11 @@ function opts(r: Root, over: Partial<BackfillOptions> = {}): BackfillOptions {
 }
 
 /** collect's cache for edition date E, with every feed failed (the backfill's metrics then use the state alone). */
-function writeCache(root: string, editionDate: string, cutoff: string): void {
+function writeCache(root: string, editionDate: string, cutoff: string, cvelistCommit: string | null = null): void {
   const inputs = CollectInputsFile.parse({
     schema_version: 1, date: editionDate, data_cutoff_utc: cutoff, generated_at: `${cutoff}T20:40:00Z`, run_utc_day: cutoff,
     record_window: { start: `${cutoff}T00:00:00Z`, end: `${cutoff}T00:00:00Z` },
-    commits: { cvelist: null, kev_data: null, ghsa: null },
+    commits: { cvelist: cvelistCommit, kev_data: null, ghsa: null },
     cvelist: { zips: [], days: [], newest_hourly_tag: null, delta_log_newest: null, by_id: { fetched: [], not_found: [], over_cap: 0 } },
     kev: null, epss: null, ghsa: null, anthropic_cvd: null,
   });
@@ -318,6 +318,49 @@ describe("--catch-up and --credits", () => {
     expect(after["series.json"].weeks).toEqual(full["series.json"].weeks);
     expect(fs.existsSync(path.join(r.root, DEFAULT_OUT, "metrics"))).toBe(false);
     expect(r.lines.find((l) => l.startsWith("Catch-up to "))).toMatch(/^Catch-up to 2026-11-06: 2 days added \(2026-11-05 to 2026-11-06\)/);
+  }, SLOW);
+
+  it("--catch-up applies the dashboard ledger with the clone's publication dates, as the build and --credits do (B14)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-06", "2026-11-04");
+    expect(await runBackfill(opts(r, { cutoff: "2026-11-04", out: "out/early" }), r.deps)).toBe(0);
+    const content = path.join(r.root, "content");
+    copyState(path.join(r.root, "out", "early"), content);
+    const early = stateOf(content);
+    expect(early["ai-credits.json"].matches.filter((m) => m[7] === "cvd_ledger")).toEqual([]);
+    // A later dashboard revision lists three records without AI credit text: one published on 27 October, in a
+    // week the series already holds, and two on 4 and 6 November, in a week not yet complete.
+    const cvd = { ...early["anthropic-cvd.json"], ledger_ids: ["CVE-2026-100164", "CVE-2026-62662", "CVE-2026-100080", "GHSA-7q8r-9v2w-c3f4"] };
+    write(path.join(content, "state", "anthropic-cvd.json"), jsonText(cvd, STATE_SCHEMAS["anthropic-cvd.json"]));
+    writeCache(r.root, "2026-11-08", C);
+    expect(await runBackfill(opts(r, { mode: "catch-up" }), r.deps)).toBe(0);
+    const after = stateOf(path.join(r.root, DEFAULT_OUT));
+    const ledger = after["ai-credits.json"].matches.filter((m) => m[7] === "cvd_ledger").map((m) => [m[0], m[1], m[5], m[8]]);
+    expect(ledger).toEqual(expect.arrayContaining([
+      ["CVE-2026-100164", "2026-10-27", "cvd_ledger", C], ["CVE-2026-62662", "2026-11-04", "cvd_ledger", C], ["CVE-2026-100080", "2026-11-06", "cvd_ledger", C],
+    ]));
+    expect(ledger).toHaveLength(3);
+    const s = after["series.json"];
+    expect(s.weeks.at(-1)).toBe("2026-10-26");
+    expect(s.ai_ledger_only_weekly.at(-1)).toBe(1);
+    expect(s.ai_ledger_only_weekly.reduce((a, b) => a + b, 0)).toBe(1);
+  }, SLOW);
+
+  it("--catch-up without --commit uses the CVE List commit collect read for E, and says so (B16)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-06", "2026-11-04");
+    expect(await runBackfill(opts(r, { cutoff: "2026-11-04", out: "out/early" }), r.deps)).toBe(0);
+    copyState(path.join(r.root, "out", "early"), path.join(r.root, "content"));
+    // ls-remote answers nothing here (noGit), so only collect's cache can name the commit.
+    writeCache(r.root, "2026-11-08", C, r.sha);
+    r.lines.length = 0;
+    expect(await runBackfill(opts(r, { mode: "catch-up", commit: null }), r.deps)).toBe(0);
+    expect(r.lines).toContain(`CVE List commit ${r.sha} (collect's cache for 2026-11-08).`);
+    // collect's cache for another edition date is not used.
+    writeCache(r.root, "2026-11-07", "2026-11-05", r.sha);
+    r.lines.length = 0;
+    expect(await runBackfill(opts(r, { mode: "catch-up", commit: null }), r.deps)).toBe(1);
+    expect(r.lines).toContain("git ls-remote could not read the tip of CVEProject/cvelistV5 main.");
   }, SLOW);
 
   it("--credits rebuilds both credit files and keeps each match's first_matched", async () => {
