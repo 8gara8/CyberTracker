@@ -16,6 +16,10 @@ export interface FetchOptions {
   userAgent?: string;
   /** Retry once after this delay on a timeout, network error or 5xx. 0 turns the retry off. */
   retryDelayMs?: number;
+  /** A body over `maxBytes` is cut there instead of failing `too_large` (snapshots and the link check, §8.3). P2 WP1. */
+  truncate?: boolean;
+  /** Epoch ms: each attempt's timeout is min(timeoutMs, deadline − now), and no attempt starts past it (`timeout`). P2 WP1. */
+  deadline?: number;
 }
 
 export interface FetchResult {
@@ -34,6 +38,18 @@ export interface FetchResult {
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
 export const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Per-request timeouts (§8.3): 15 s; 30 s for kev, nvd and each MyJVN page; 60 s per EPSS file; 90 s for deltaLog.json and each delta zip. */
+export const FEED_TIMEOUTS = { default: 15_000, kev: 30_000, nvd: 30_000, myjvn: 30_000, epss: 60_000, deltaLog: 90_000, zip: 90_000 } as const;
+/** Body caps (§8.3): 5 MB by default, 20 MB for KEV and EPSS, 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. */
+export const FEED_MAX_BYTES = {
+  default: 5 * 1024 * 1024,
+  kev: 20 * 1024 * 1024,
+  epss: 20 * 1024 * 1024,
+  deltaLog: 64 * 1024 * 1024,
+  zip: 64 * 1024 * 1024,
+  snapshot: 3 * 1024 * 1024,
+} as const;
 const MAX_REDIRECTS = 5;
 
 let cachedUserAgent: string | null = null;
@@ -159,4 +175,24 @@ export async function fetchFeed(url: string, options: FetchOptions = {}): Promis
     // Anything once() did not foresee (a bad option, an unreadable fixture index) is still a result.
     return { ok: false, status: null, finalUrl: url, body: null, contentType: null, error: "network", detail: String((e as Error).message).slice(0, 300), attempts, durationMs: Date.now() - started };
   }
+}
+
+// ── The harness pieces collect needs (§8.3: 8 feeds at a time, the per-id pool 16, a 240 s total cap) ──
+
+/** Runs `fn` over `items` with at most `limit` in flight; results in input order. P2 WP1. */
+export async function pool<T, R>(items: readonly T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
+  throw new Error("not implemented: pool");
+}
+
+/** The shared 240 s cap: the clock starts at the first request (begin), and deadline() is begin + capMs. */
+export interface FetchBudget {
+  readonly started: number | null;
+  readonly capMs: number;
+  begin(now: number): void;
+  deadline(): number;
+}
+
+/** A fresh budget; capMs defaults to 240_000. P2 WP1. */
+export function fetchBudget(capMs?: number): FetchBudget {
+  throw new Error("not implemented: fetchBudget");
 }
