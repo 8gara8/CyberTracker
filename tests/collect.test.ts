@@ -816,13 +816,22 @@ describe("collect's other runs", () => {
     const got = await run(root, { feeds });
     expect(got.inputs.cvelist.by_id.fetched).toContain(LEDGER_ID);
     expect(fs.existsSync(path.join(root, "cache", "cvelist", "records", `${LEDGER_ID}.json`))).toBe(true);
-    // The same revision as the state's: not asked for again.
+    // The same revision as the state's, already complete: not asked for again.
     const same = tempRoot(true);
-    const cvdState = { schema_version: 1, updated_at: "2026-10-11", revision: "37", as_of: "2026-10-13", fetched_at: "2026-10-13T04:37:00+08:00", source_url: "https://red.anthropic.com/2026/cvd", found_n: null, disclosed_n: 4812, patched_n: 588, ledger_ids: [LEDGER_ID] };
+    const cvdState = { schema_version: 1, updated_at: "2026-10-11", revision: "37", as_of: "2026-10-13", fetched_at: "2026-10-13T04:37:00+08:00", source_url: "https://red.anthropic.com/2026/cvd", found_n: 5530, disclosed_n: 4812, patched_n: 588, ledger_ids: [LEDGER_ID] };
     fs.writeFileSync(path.join(same, "content", "state", "anthropic-cvd.json"), JSON.stringify(cvdState));
     const sameUrls: string[] = [];
     await run(same, { urls: sameUrls });
     expect(sameUrls).not.toContain(perIdUrl);
+    // The same revision, read earlier from the page alone (found_n null): today's payload completes it in the
+    // metrics, so its ledger ids are asked for too.
+    const completes = tempRoot(true);
+    fs.writeFileSync(path.join(completes, "content", "state", "anthropic-cvd.json"), JSON.stringify({ ...cvdState, found_n: null }));
+    const completesUrls: string[] = [];
+    const completesLog: string[] = [];
+    await run(completes, { urls: completesUrls, log: completesLog });
+    expect(completesUrls).toContain(perIdUrl);
+    expect(completesLog).toContain("cvelist: 3 ledger ids of revision 37 fetched by id for their dates.");
     // A new revision, but credit-candidates.json already dates the id: not asked for.
     const datedRoot = tempRoot(true);
     fs.writeFileSync(path.join(datedRoot, "content", "state", "anthropic-cvd.json"), JSON.stringify({ ...cvdState, revision: "36" }));

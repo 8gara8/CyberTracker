@@ -181,6 +181,7 @@ function readState(contentDir: string, date: string) {
     knownDays: days.success ? days.data.days.map((d) => d[0]) : null,
     kevIndex: index.success ? index.data : null,
     cvdRevision: cvd.success ? cvd.data.revision : null,
+    cvdFoundMissing: cvd.success && cvd.data.found_n === null,
     dated,
     earlierReleaseIds: [...releaseIds].sort(byCodeUnit),
   };
@@ -324,9 +325,11 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const newKevIds = baseline?.newKevIds ?? [];
   const kevWanted = new Set<string>(newKevIds);
   for (const r of state.kevIndex?.entries ?? []) if (r[1] >= REJOIN_FROM && r[4] === null) kevWanted.add(r[0]);
-  // A new dashboard revision: its ledger ids the state cannot date are fetched too, after the KEV ids.
+  // A new dashboard revision, or the same one completing a state read from the page alone (the metrics'
+  // updateAnthropicCvd takes both): its ledger ids the state cannot date are fetched too, after the KEV ids.
   const dashRead = (cvd as Awaited<ReturnType<typeof readCvd>> | null)?.data ?? null;
-  const ledgerIds = dashRead && dashRead.revision !== state.cvdRevision ? dashRead.ledger_ids : null;
+  const completes = dashRead !== null && dashRead.revision === state.cvdRevision && state.cvdFoundMissing && dashRead.found_n !== null;
+  const ledgerIds = dashRead && (dashRead.revision !== state.cvdRevision || completes) ? dashRead.ledger_ids : null;
   const perId = perIdPlan({ kevIds: [...kevWanted], ledgerIds, dated: state.dated, have: new Set(records.keys()) });
   const byId = perId.ids;
   if (perId.ledger.length) log(`cvelist: ${perId.ledger.length} ledger ids of revision ${dashRead!.revision} fetched by id for their dates.`);

@@ -21,7 +21,8 @@ import { joinKev } from "@/lib/metrics/window";
 import { InputsManifest, Metrics, STATE_FILES, STATE_SCHEMAS, type DayRow, type StateFiles } from "@/lib/schema/metrics";
 import { CollectInputsFile, FeedIndexFile, type FeedIndexEntry } from "@/lib/schema/pack";
 import { feedOutputs, FEED_WORLD, KEV_CATALOG_PATH, EOD_ZIP_PATH, HOURLY_ZIP_PATH } from "@/fixtures/src/feeds";
-import { firstDifference, REPRODUCED, runMetrics, STATE_MISSING } from "@/scripts/metrics";
+import { firstDifference, gitReader, REPRODUCED, runMetrics, STATE_MISSING } from "@/scripts/metrics";
+import { GitError, GitOutputCut, type Git } from "@/scripts/lib/git";
 import { loadFeedCache, NoFeedsError } from "@/scripts/lib/feed-cache";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -359,5 +360,24 @@ describe("firstDifference", () => {
     expect(firstDifference({ a: 1, b: [1, 2] }, { a: 1, b: [1, 2] })).toBeNull();
     expect(firstDifference({ a: 1, b: [1, 2] }, { a: 1, b: [1, 3] })).toBe("b[1]");
     expect(firstDifference({ a: { c: 1 } }, { a: {} })).toBe("a.c");
+  });
+});
+
+describe("gitReader (--recompute's reader of a commit)", () => {
+  const failing = (e: Error): Git =>
+    Object.assign(async () => {
+      throw e;
+    }, { cwd: REPO, deadline: null });
+
+  it("reads a path git cannot show as missing", async () => {
+    const r = gitReader(failing(new GitError("fatal: path 'content/state/x.json' does not exist")), "HEAD", "content/state");
+    expect(await r.read("kev-index.json")).toBeNull();
+    expect(await r.list("")).toEqual([]);
+  });
+
+  it("rethrows output cut at the limit, so a state file read in part never passes for a missing one", async () => {
+    const r = gitReader(failing(new GitOutputCut("git show: the output passed 67108864 bytes and was cut.")), "HEAD", "content/state");
+    await expect(r.read("kev-index.json")).rejects.toBeInstanceOf(GitOutputCut);
+    await expect(r.list("")).rejects.toBeInstanceOf(GitOutputCut);
   });
 });

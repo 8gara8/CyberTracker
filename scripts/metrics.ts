@@ -27,7 +27,7 @@ import {
   InputsManifest, KevIndexFile, Metrics, STATE_FILES, STATE_SCHEMAS, type StateFileName, type StateFiles,
 } from "../lib/schema/metrics";
 import { contentDir } from "../lib/site";
-import { git, type Git } from "./lib/git";
+import { git, GitOutputCut, type Git } from "./lib/git";
 import { loadFeedCache, NoFeedsError, noFeeds, type MetricsFeeds } from "./lib/feed-cache";
 
 export interface RunMetricsOptions {
@@ -63,7 +63,7 @@ const BriefEdition = z.object({ date: z.string(), edition: z.string() });
 // ── Reading content/ from the working tree or from a commit ────────────────────────────────────────
 
 /** A folder to read from: the working tree, or a tree in git. Names are relative to the folder. */
-interface Reader {
+export interface Reader {
   list(dir: string): Promise<string[]>;
   read(file: string): Promise<string | null>;
 }
@@ -87,20 +87,27 @@ function diskReader(base: string): Reader {
   };
 }
 
-function gitReader(g: Git, rev: string, base: string): Reader {
+/**
+ * A tree in git at `rev`. A path git cannot show is missing (an empty list, null), but output cut at
+ * GIT_STDOUT_MAX_BYTES is rethrown: a state file read in part must never pass for a missing one, which
+ * would send --recompute down the frozen path.
+ */
+export function gitReader(g: Git, rev: string, base: string): Reader {
   const at = (p: string) => `${rev}:${[base, p].filter(Boolean).join("/")}`;
   return {
     async list(dir) {
       try {
         return (await g(["ls-tree", "--name-only", at(dir)])).split("\n").filter(Boolean).sort(byCodeUnit);
-      } catch {
+      } catch (e) {
+        if (e instanceof GitOutputCut) throw e;
         return [];
       }
     },
     async read(file) {
       try {
         return `${await g(["show", at(file)])}\n`;
-      } catch {
+      } catch (e) {
+        if (e instanceof GitOutputCut) throw e;
         return null;
       }
     },

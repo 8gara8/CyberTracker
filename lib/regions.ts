@@ -157,10 +157,12 @@ export const BASELINE_REASON = "No rule fired.";
  * 悪用された場合, 悪用されると), so neither word counts alone. A negative or conditional ending never counts:
  * 確認されていません, 確認していない and 確認してください have no affirmative form, and the lookahead refuses
  * 確認しておりません, 確認された場合, 確認したら, 確認した上で and the like. The gap may not hold 確認 itself, so
- * "悪用は確認されていませんが、修正を確認しました" does not match on the second 確認.
+ * "悪用は確認されていませんが、修正を確認しました" does not match on the second 確認. Nor may it hold a negated
+ * clause (ない, 無い, なかった or 無かった, then こと or の), so "悪用されていないことを確認しています" (no
+ * exploitation confirmed) does not match.
  */
 const JA_EXPLOITATION =
-  "(?:悪用|攻撃)(?:(?!確認)[^。！？!?\\r\\n]){0,40}確認(?:されています|されており|しています|しており|されました|しました|された|した)" +
+  "(?:悪用|攻撃)(?:(?!確認|(?:ない|無い|なかった|無かった)(?:こと|の))[^。！？!?\\r\\n]){0,40}確認(?:されています|されており|しています|しており|されました|しました|された|した)" +
   "(?!ません|ず|場合|ら|い|か|時|とき|際|上)";
 
 /**

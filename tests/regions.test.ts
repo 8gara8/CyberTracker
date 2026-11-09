@@ -548,6 +548,9 @@ describe("collectSignals", () => {
       "現時点で本脆弱性を悪用した攻撃は確認されておりません", "当社では攻撃を確認しておりません",
       // Conditional forms of an affirmative ending.
       "悪用が確認された場合は直ちに連絡してください", "攻撃を確認したら報告してください", "攻撃の影響を確認した上で対策を実施してください",
+      // An affirmative 確認 of a negated clause: no exploitation was found.
+      "悪用されていないことを確認しています", "悪用の痕跡がないことを確認しました", "攻撃を受けていないことを確認した",
+      "悪用された形跡が無いことを確認しました", "攻撃がなかったのを確認しました",
       // The first 確認 after the word decides; a later one in the sentence does not count.
       "悪用は確認されていませんが、修正版の公開を確認しました",
       // A sentence boundary ends the reach.
