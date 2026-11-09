@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rss version="2.0"
+   xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SAMPLE title 1 資安</title>
+    <link>https://www.ithome.com.tw/ct-sample/item-1</link>
+    <description>SAMPLE text 8</description>
+    <language>zh-hant</language>
+        
+    <link rel="hub" href="https://www.example.com/ct-sample/home" xmlns="http://www.w3.org/2005/Atom" />
+    <link rel="self" href="https://www.ithome.com.tw/ct-sample/item-2" xmlns="http://www.w3.org/2005/Atom" />
+    
+        <item>
+      <title>SAMPLE title 2</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-3</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-3</guid>
+ <pubDate>2026-11-09 21:16</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 9</description>
+      <content:encoded>SAMPLE text 15 資料外洩</content:encoded>
+    </item>
+    <item>
+      <title>SAMPLE title 3 資安 漏洞</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-4</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-4</guid>
+ <pubDate>2026-11-09 18:12</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 10 漏洞 CVE-2026-19868</description>
+      <content:encoded>SAMPLE text 16 vulnerability 資安 漏洞 CVE-2026-19868</content:encoded>
+    </item>
+    <item>
+      <title>SAMPLE title 4 漏洞</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-5</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-5</guid>
+ <pubDate>2026-11-09 18:10</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 11 漏洞 CVE-2026-19868</description>
+      <content:encoded>SAMPLE text 17 資安 漏洞 CVE-2026-19868</content:encoded>
+    </item>
+    <item>
+      <title>SAMPLE title 5</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-6</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-6</guid>
+ <pubDate>2026-11-09 17:56</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 12</description>
+      <content:encoded>SAMPLE text 18</content:encoded>
+    </item>
+    <item>
+      <title>SAMPLE title 6</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-7</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-7</guid>
+ <pubDate>2026-11-09 17:15</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 13 資安</description>
+      <content:encoded>SAMPLE text 19 APT 資安 勒索</content:encoded>
+    </item>
+    <item>
+      <title>SAMPLE title 7</title>
+      <link>https://www.ithome.com.tw/ct-sample/item-8</link>
+       <guid isPermaLink="true">https://www.ithome.com.tw/ct-sample/item-8</guid>
+ <pubDate>2026-11-09 16:24</pubDate>
+ <dc:creator>SAMPLE Author</dc:creator>
+      <description>SAMPLE text 14 資安</description>
+      <content:encoded>SAMPLE text 20 資安</content:encoded>
+    </item>
+    </channel>
+</rss>

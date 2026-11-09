@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>SAMPLE title 1</title>
+	<atom:link href="https://www.microsoft.com/ct-sample/item-1" rel="self" type="application/rss+xml" />
+	<link>https://www.microsoft.com/ct-sample/item-2</link>
+	<description>SAMPLE text 8</description>
+	<lastBuildDate>Sat, 07 Nov 2026 05:06:21 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>SAMPLE text 32</generator>
+	<item>
+		<title>SAMPLE title 2</title>
+		<link>https://www.microsoft.com/ct-sample/item-3</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Sat, 07 Nov 2026 02:44:34 +0000</pubDate>
+				<category>SAMPLE text 21</category>
+		<category>SAMPLE text 22</category>
+		<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-4</guid>
+
+					<description>SAMPLE text 9</description>
+										<content:encoded>SAMPLE text 15 breach vulnerability vulnerabilities</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 3</title>
+		<link>https://www.microsoft.com/ct-sample/item-5</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Thu, 05 Nov 2026 23:46:50 +0000</pubDate>
+				<category>SAMPLE text 23</category>
+		<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-6</guid>
+
+					<description>SAMPLE text 10</description>
+										<content:encoded>SAMPLE text 16 breach vulnerability APT</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 4</title>
+		<link>https://techcommunity.microsoft.com/ct-sample/item-7</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Thu, 05 Nov 2026 17:10:14 +0000</pubDate>
+				<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-8</guid>
+
+					<description>SAMPLE text 11</description>
+										<content:encoded>SAMPLE text 17 vulnerability vulnerabilities APT</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 5</title>
+		<link>https://www.microsoft.com/ct-sample/item-9</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Thu, 05 Nov 2026 17:00:00 +0000</pubDate>
+				<category>SAMPLE text 24</category>
+		<category>SAMPLE text 25</category>
+		<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-10</guid>
+
+					<description>SAMPLE text 12 AI agent</description>
+										<content:encoded>SAMPLE text 18 APT AI agent</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 6</title>
+		<link>https://www.microsoft.com/ct-sample/item-11</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Thu, 05 Nov 2026 16:00:00 +0000</pubDate>
+				<category>SAMPLE text 26</category>
+		<category>SAMPLE text 27 malware</category>
+		<category>SAMPLE text 28 phishing</category>
+		<category>SAMPLE text 29</category>
+		<category>SAMPLE text 30</category>
+		<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-12</guid>
+
+					<description>SAMPLE text 13 APT phishing</description>
+										<content:encoded>SAMPLE text 19 vulnerability malware APT</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 7</title>
+		<link>https://www.microsoft.com/ct-sample/item-13</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Tue, 03 Nov 2026 17:32:47 +0000</pubDate>
+				<category>SAMPLE text 31 malware</category>
+		<guid isPermaLink="false">https://www.microsoft.com/ct-sample/item-14</guid>
+
+					<description>SAMPLE text 14</description>
+										<content:encoded>SAMPLE text 20 vulnerability malware APT</content:encoded>
+					
+		
+		
+			</item>
+		</channel>
+</rss>

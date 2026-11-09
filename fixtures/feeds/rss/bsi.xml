@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>SAMPLE title 1</title>
+<link>https://www.bsi.bund.de/ct-sample/home</link>
+<atom:link href="https://www.bsi.bund.de/ct-sample/item-1" rel="self" type="application/rss+xml" />
+<description>SAMPLE text 9</description>
+<lastBuildDate>Mon, 9 Nov 2026 18:33:47 +0100</lastBuildDate>
+<language>de-de</language>
+<copyright>SAMPLE text 18</copyright>
+<managingEditor>SAMPLE Author</managingEditor>
+<webMaster>SAMPLE Author</webMaster>
+<category>SAMPLE text 17</category>
+<generator>SAMPLE text 19</generator>
+<image>
+<url>https://www.bsi.bund.de/ct-sample/img-1</url>
+<title>SAMPLE title 2</title>
+<link>https://www.bsi.bund.de/ct-sample/home</link>
+<description>SAMPLE text 10</description>
+</image>
+<docs>https://www.example.com/ct-sample/item-2</docs>
+<ttl>60</ttl>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-3</guid>
+<title>SAMPLE title 3</title>
+<link>https://www.bsi.bund.de/ct-sample/item-3</link>
+<pubDate>Tue, 3 Nov 2026 14:00:00 +0100</pubDate>
+<description>SAMPLE text 11</description>
+</item>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-4</guid>
+<title>SAMPLE title 4</title>
+<link>https://www.bsi.bund.de/ct-sample/item-4</link>
+<pubDate>Wed, 21 Oct 2026 14:00:00 +0200</pubDate>
+<description>SAMPLE text 12</description>
+</item>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-5</guid>
+<title>SAMPLE title 5</title>
+<link>https://www.bsi.bund.de/ct-sample/item-5</link>
+<pubDate>Tue, 20 Oct 2026 08:00:00 +0200</pubDate>
+<description>SAMPLE text 13</description>
+</item>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-6</guid>
+<title>SAMPLE title 6</title>
+<link>https://www.bsi.bund.de/ct-sample/item-6</link>
+<pubDate>Mon, 19 Oct 2026 09:00:00 +0200</pubDate>
+<description>SAMPLE text 14</description>
+</item>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-7</guid>
+<title>SAMPLE title 7</title>
+<link>https://www.bsi.bund.de/ct-sample/item-7</link>
+<pubDate>Fri, 16 Oct 2026 12:00:00 +0200</pubDate>
+<description>SAMPLE text 15</description>
+</item>
+<item>
+<guid isPermaLink="true">https://www.bsi.bund.de/ct-sample/item-8</guid>
+<title>SAMPLE title 8</title>
+<link>https://www.bsi.bund.de/ct-sample/item-8</link>
+<pubDate>Mon, 12 Oct 2026 10:00:00 +0200</pubDate>
+<description>SAMPLE text 16</description>
+</item>
+</channel>
+</rss>
