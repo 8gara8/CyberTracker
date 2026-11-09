@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-09 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-10 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -45,16 +45,20 @@ faster?
 - **2026-11-09:** JL merged the Foundation PR #2 at 07:37 Taipei (23:37 UTC on 2026-11-08) and the P1
   PR #3 at 17:19 Taipei (09:19 UTC; `main` at `a5c183c`): the seed configs in `config/`, the validator
   and its rules, the fixtures and the chat edition, with the spec changes in §0.4 rows 7 to 30.
-- **P2, in progress on `p2-feeds-metrics` (2026-11-09):** feeds, collect, rank, metrics, the backfill,
+- **P2, in progress on `p2-feeds-metrics` (2026-11-10):** feeds, collect, rank, metrics, the backfill,
   Appendix D and their tests are built in the cloud container; `--check-reference` passes from a fresh
-  clone (all 83 figures). Kobol read every feed URL once (about 18:40 Taipei); the registry changes are
-  in §0.4 row 39. AI-finder list v2 (`aisle` adds "Aisle Research" and "Aisle.com", `aixcc`
-  "Team-Atlanta") and `vendors.json` v2 (68 more `cna` lists) are in. The GitHub unfixed line is kept,
-  and `ghsa_source` stays `git` (REST credits are logins with no AI match). Spec changes: §0.4 rows 31
-  to 43. Left for Kobol: session 1 (the final `sources:check`, real feed captures, the items marked
-  "(Kobol, P2 session 1)") and session 2 (the milestone backfill into `content/`, Kobol's clone
-  figures, `docs/reports/D-p2-backfill.md`). P2's Kobol sessions run in a worktree,
-  `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics`.
+  clone (all 83 figures). Kobol read every feed URL once (2026-11-09, about 18:40 Taipei; §0.4 row 39).
+  AI-finder list v2 (`aisle` adds "Aisle Research" and "Aisle.com", `aixcc` "Team-Atlanta") and
+  `vendors.json` v2 (68 more `cna` lists) are in. The GitHub unfixed line is kept, and `ghsa_source`
+  stays `git` (REST credits are logins with no AI match). Kobol session 1 (2026-11-09, 22:15 to 22:50
+  Taipei) ran `sources:check`, made the Verify reads and pushed the first scrubbed captures (`f145953`);
+  session 2a (23:18 to 23:27 Taipei) passed `--check-reference` on Kobol from a fresh clone (06:24 to
+  clone, 00:16 to read) and reran `--fixtures` byte for byte. The review's 30 findings and session 1's
+  results were then fixed in the cloud container: spec changes in §0.4 rows 31 to 63 (44 onward for the
+  fix round). Left for Kobol session 2, at the PR's head: the final `sources:check`, recapturing the 13
+  feeds the scrubber refused and the 4 captures removed, the milestone backfill into `content/`, the
+  kernel batch count from `days.json`, and `docs/reports/D-p2-backfill.md`. P2's Kobol sessions run in a
+  worktree, `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics`.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -157,7 +161,8 @@ faster?
 | Draft JSON Schema | `npm run schema:gen` writes `routine/schema/draft-brief.schema.json`; `npm run schema:check` compares it (from P1) |
 | Chat edition for a date | `npm run chat -- --date D` prints D's chat edition from `content/` alone; prefix `CT_CONTENT_DIR=fixtures/site-content` for the sample (from P1) |
 | Collect a day's feeds | `npm run collect -- --date D` writes `packs/D.json`, `packs/D.md`, the candidates files and `cache/feeds/` (the morning's stage 2; from P2) |
-| Check feeds | `npm run sources:check` prints the table of every feed (`-- --id ID` for one, `-- --json` for rows); exit 1 on a priority-1 problem (from P2) |
+| Check feeds | `npm run sources:check` prints the table of every feed (`-- --id ID` for one, `-- --json` for rows) and keeps its bodies in `cache/check/`, never in collect's `cache/feeds/`; exit 1 on a priority-1 problem (from P2) |
+| Capture a feed fixture | After `sources:check`: `npm exec -- tsx fixtures/src/scrub-feed.ts <kind> cache/check/feeds/<file> fixtures/feeds/rss/<registry id>.xml` (kinds in SPEC §4.12; live captures go to `fixtures/feeds/live/`); it refuses a feed with an unknown XML namespace or a link in another scheme. Read the output before committing it; `tests/fixture-safety.test.ts` and `tests/captures.test.ts` check it (from P2) |
 | Metrics for a date | `npm run metrics -- --date D` stages `metrics/D.json`, its inputs manifest and the changed state in `cache/staged/D/`; `-- --recompute` checks a committed file reproduces from `cache/`; `--out DIR` writes elsewhere (from P2) |
 | Backfill | `npm run backfill -- --check-reference` (Appendix D from `fixtures/reference/`, offline; add `--commit 67c39b124fe4a56018212b4e6f62bd078058e76c --kev-commit e5b3a9b25050a8da26c96266c5bfe438ee0bdebc --cutoff 2026-11-06` to check the clone too); after `npm run collect -- --date D`, `npm run backfill -- --out content` builds `content/state/` and D's metrics (P2 only, before go-live); `-- --catch-up` and `-- --credits` rebuild state, with `--push` after go-live (from P3). Needs 10 GiB free for the CVE List clone in `cache/cvelistV5` (SPEC §5.9, §8.4) |
 | Agent sandbox | `npm run agent:check` (P3, with the keychain token) |
