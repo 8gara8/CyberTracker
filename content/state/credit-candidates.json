@@ -7,7 +7,7 @@
       "CVE-2021-47978",
       "2026-05-16",
       "cna.credits",
-      "Ai Ho [email]"
+      "Ai Ho (@j3ssiejjj)"
     ],
     [
       "CVE-2023-27524",
@@ -37,19 +37,19 @@
       "CVE-2024-9464",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai"
     ],
     [
       "CVE-2024-9465",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai"
     ],
     [
       "CVE-2024-9466",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai"
     ],
     [
       "CVE-2025-0133",
@@ -1999,7 +1999,7 @@
       "CVE-2026-9256",
       "2026-05-22",
       "cna.credits",
-      "\"F5 acknowledges Mufeed VH of Winfunc Research, Nebula Security [email] and Vexera AI for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
+      "\"F5 acknowledges Mufeed VH of Winfunc Research, Nebula Security (@nebusecurity), and Vexera AI for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
     ],
     [
       "CVE-2026-9279",
@@ -2941,7 +2941,7 @@
       "CVE-2026-28477",
       "2026-03-05",
       "cna.credits",
-      "Aether AI [email]"
+      "Aether AI (@aether-ai-agent)"
     ],
     [
       "CVE-2026-28808",
@@ -3013,7 +3013,7 @@
       "CVE-2026-32061",
       "2026-03-11",
       "cna.credits",
-      "Aether AI [email]"
+      "Aether AI (@aether-ai-agent)"
     ],
     [
       "CVE-2026-32144",
@@ -3031,7 +3031,7 @@
       "CVE-2026-32897",
       "2026-03-21",
       "cna.credits",
-      "Aether AI [email]"
+      "Aether AI (@aether-ai-agent)"
     ],
     [
       "CVE-2026-33005",
@@ -3289,13 +3289,13 @@
       "CVE-2026-42530",
       "2026-06-17",
       "cna.credits",
-      "\"F5 acknowledges Trung Nguyen [email] of CyStack, Zhenpeng (Leo) Lin (depthfirst), Evan Hellman [email] of Trail of Bits in collaboration with OpenAI, AntAISecurityLab, and Nebula Security [email] for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
+      "\"F5 acknowledges Trung Nguyen (@everping) of CyStack, Zhenpeng (Leo) Lin (depthfirst), Evan Hellman (@xintenseapple) of Trail of Bits in collaboration with OpenAI, AntAISecurityLab, and Nebula Security (@nebusecurity) for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
     ],
     [
       "CVE-2026-42533",
       "2026-07-15",
       "cna.credits",
-      "F5 acknowledges Ming Xuan, DKD [email] Ji'an Zhou, and Zhen Yan of AntAISecurityLab, Rafael Gacek, Sergii Negodiuk of EVO.company, Lam Jun Rong of Calif.io, Mufeed VH of Winfunc Research (winfunc.com), Vexera AI ([link]), Tu Tran Dinh [email] Stan Shaw (cyberstan), qianshuidewajueji, zenneth (randomguy6407), Zhenpeng (Leo) Lin of depthfirst, Lukas Johannes Moeller, Melih Tolga Sahin of Vodafone Türkiye, Ayoub Nabil Boubagrat (GitHub: @ayoubnabil), and Milan Jovic (Kljunowsky) for independently bringing this issue to our attention and following the highest standards of coordinated disclosure."
+      "F5 acknowledges Ming Xuan, DKD (@pidifn), Ji'an Zhou, and Zhen Yan of AntAISecurityLab, Rafael Gacek, Sergii Negodiuk of EVO.company, Lam Jun Rong of Calif.io, Mufeed VH of Winfunc Research (winfunc.com), Vexera AI ([link]), Tu Tran Dinh (@1w4y), Stan Shaw (cyberstan), qianshuidewajueji, zenneth (randomguy6407), Zhenpeng (Leo) Lin of depthfirst, Lukas Johannes Moeller, Melih Tolga Sahin of Vodafone Türkiye, Ayoub Nabil Boubagrat (GitHub: @ayoubnabil), and Milan Jovic (Kljunowsky) for independently bringing this issue to our attention and following the highest standards of coordinated disclosure."
     ],
     [
       "CVE-2026-42535",
@@ -3541,7 +3541,7 @@
       "CVE-2026-48558",
       "2026-06-12",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai"
     ],
     [
       "CVE-2026-48863",
@@ -4033,37 +4033,37 @@
       "CVE-2026-61500",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61501",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61502",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61503",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61504",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61505",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-63272",
@@ -4849,7 +4849,7 @@
       "CVE-2026-75156",
       "2026-09-08",
       "cna.credits",
-      "NEO AI Engineer [email] ProjectDiscovery)"
+      "NEO AI Engineer (@neo-ai-engineer, ProjectDiscovery)"
     ],
     [
       "CVE-2026-75773",
@@ -7687,7 +7687,7 @@
       "CVE-2026-107350",
       "2026-10-14",
       "cna.credits",
-      "Thanks to Dave Aitel [email] OpenAI) for finding and reporting this issue."
+      "Thanks to Dave Aitel (@daveaitel-openai, OpenAI) for finding and reporting this issue."
     ],
     [
       "CVE-2026-107466",
@@ -8089,7 +8089,7 @@
       "CVE-2026-115189",
       "2026-10-26",
       "cna.credits",
-      "Submersion AI - Security Research Team (SRT) [email]"
+      "Submersion AI - Security Research Team (SRT) (@SRTSubmersionAI)"
     ],
     [
       "CVE-2026-115541",
