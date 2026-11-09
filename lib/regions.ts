@@ -10,7 +10,7 @@ import { severityAtLeast } from "./items";
 import { sanitize } from "./sanitize";
 import type { Item, RegionRaise } from "./schema";
 import type { Brief, RegionRow, RegionSignal, Regions } from "./schema/brief";
-import type { DraftSource, Source } from "./schema/common";
+import type { DraftSource, RegionCode, Source } from "./schema/common";
 import type { RegionDef, RegionRule, RegionsFile, SourceTiersFile, VendorsFile } from "./schema/config";
 import type { KevIndexFile } from "./schema/metrics";
 import type { Pack } from "./schema/pack";
@@ -190,6 +190,15 @@ function isAlertUrl(config: RegionsConfig, code: LevelledRegion, url: string): b
   const res = alertPatterns(config.regions).get(code) ?? [];
   const norm = normalizeUrl(url);
   return res.some((re) => re.test(norm));
+}
+
+/**
+ * The regions whose agencies include `publisher` and whose alert_patterns match `url` (§5.11): what
+ * collect's PackItem.alert and JPCERT records' facts.alert are built from (ruling R36). P2 WP2 fills this
+ * stub (S0 contract).
+ */
+export function alertRegions(url: string, publisher: string, config: RegionsConfig): RegionCode[] {
+  throw new Error("not implemented: alertRegions");
 }
 
 /** A source or signal date as a Taipei calendar date: a timestamp converted, a bare date as written. */
