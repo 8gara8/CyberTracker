@@ -13,7 +13,7 @@ import type { CreditString } from "@/lib/feeds/types";
 import { jsonText, sha256Hex } from "@/lib/json";
 import {
   AI_NOTES, CREDIT_FIELD_ORDER, GHSA_CREDIT_SOURCE, LEDGER_MATCHED, aiCreditFor, aiCredited, aiFindersOf, aiManifestRows, aiWeekly,
-  applyLedger, baseRate, buildCredits, creditListStatus, creditTexts, matchCredit, matchRecord, prefilterSha256, recomputeCredits,
+  applyLedger, baseRate, buildCredits, creditListStatus, creditText, creditTexts, matchCredit, matchRecord, prefilterSha256, recomputeCredits,
   updateCredits, type AiFindersRun, type CreditRecord, type CreditState, type GhsaCreditSource,
 } from "@/lib/metrics/ai-credit";
 import { poissonCi80, round4 } from "@/lib/metrics/stats";
@@ -203,6 +203,30 @@ describe("buildCredits (§5.9 step 2, §4.7)", () => {
     expect(s.candidates.candidates.filter((c) => c[0] === "CVE-2026-109618").map((c) => c[3])).toEqual(["OpenAI"]);
     expect(() => jsonText(s.candidates, CreditCandidatesFile)).not.toThrow();
     expect(() => jsonText(s.credits, AiCreditsFile)).not.toThrow();
+  });
+
+  it("stores no e-mail address, plain or spelt out, and matches as before (§0.4 row 64)", () => {
+    const strings = [
+      "SAMPLE Researcher (sample@example.com) using Claude Code",
+      "sample-ai@example.com",
+      "SAMPLE Researcher <sample.researcher@example.org>",
+      "SAMPLE Researcher \u2039sampleATexampleDOTcom\u203a with OpenAI",
+      "SAMPLE Researcher, sample[at]example[dot]com, AI-assisted",
+    ];
+    const s = buildCredits({ records: [rec("CVE-2026-1003", CUTOFF, cna(...strings))], ghsa: [] }, run, CUTOFF);
+    expect(s.candidates.candidates.map((c) => c[3])).toEqual([
+      "SAMPLE Researcher [email] using Claude Code", // the parentheses go with the address, as strip rule 1 takes them
+      "SAMPLE Researcher [email] with OpenAI",
+      "SAMPLE Researcher, [email] AI-assisted",
+    ]);
+    for (const c of s.candidates.candidates) expect(c[3]).not.toMatch(/@|\bAT\w*DOT|\[at\]/);
+    expect(s.credits.matches.map((m) => m[6])).toEqual(["Claude Code"]);
+    // The replacement changes no match: B.2's examples, D.7's must-not-match credits and the strings above.
+    const examples = config.aiFinders.finders.flatMap((f) => [...f.examples.match, ...f.examples.no_match]);
+    for (const x of [...examples, ...strings]) expect(matchCredit(creditText(x), cfg), x).toEqual(matchCredit(sanitize(x), cfg));
+    // A bare handle stays; one with a character before its @ goes, as strip rule 1 already takes it.
+    expect(creditText("SAMPLE Researcher @handle of Team-Atlanta")).toBe("SAMPLE Researcher @handle of Team-Atlanta");
+    expect(creditText("SAMPLE Researcher (@handle) of Team-Atlanta")).toBe("SAMPLE Researcher [email] of Team-Atlanta");
   });
 
   it("counts only PUBLISHED records dated on or before the cutoff, with no lower bound (ruling R4)", () => {

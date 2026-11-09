@@ -89,15 +89,30 @@ export interface CreditText {
 }
 
 /**
+ * An e-mail address in a credit string: one written plainly, as ai-finders.json's first strip rule
+ * writes it (`\S+@\S+`), or spelt out inside one token ("nameATexampleDOTcom", "name[at]example[dot]com").
+ * creditText() puts EMAIL in its place before anything is matched or stored, so credit-candidates.json
+ * (public, §4.7) holds no address. Matching is unchanged: the strip rule removed every plain address
+ * anyway, and a spelt-out one is a single token no prefilter or pattern word matches inside (§0.4 row 64).
+ */
+export const CREDIT_EMAIL_RE = /\S+@\S+|\S+(?:AT|\[at\]|\(at\))\S+(?:DOT|\[dot\]|\(dot\))\S+/g;
+export const EMAIL = "[email]";
+
+/** A sanitised credit string with its e-mail addresses replaced by EMAIL. */
+export function creditText(raw: string): string {
+  return sanitize(raw).replace(CREDIT_EMAIL_RE, EMAIL);
+}
+
+/**
  * The record's sanitised credit strings in canonical field order (CNA, ADP, then GHSA), array order
- * within a field. GHSA strings only when `ghsa` is given.
+ * within a field, e-mail addresses replaced (creditText()). GHSA strings only when `ghsa` is given.
  */
 export function creditTexts(rec: CreditRecord | null, ghsa: GhsaCreditSource | null): CreditText[] {
   const out: CreditText[] = [];
   for (const field of ["cna.credits", "adp.credits"] as const) {
-    for (const c of rec?.credits ?? []) if (c.field === field) out.push({ field, text: sanitize(c.value) });
+    for (const c of rec?.credits ?? []) if (c.field === field) out.push({ field, text: creditText(c.value) });
   }
-  for (const s of ghsa?.credits ?? []) out.push({ field: "ghsa.credits", text: sanitize(s) });
+  for (const s of ghsa?.credits ?? []) out.push({ field: "ghsa.credits", text: creditText(s) });
   return out;
 }
 
