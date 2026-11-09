@@ -51,8 +51,8 @@ Every carried file names its Europe source in its header comment.
 |---|---|---|
 | `scripts/lib/log.ts` | copied | |
 | `scripts/lib/lock.ts` | adapted | The lock appears atomically through a hard link, so a lost race returns the holder instead of throwing (PR 2 review) |
-| `scripts/lib/run.ts` | adapted | An `onLine` hook (returning `"stop"` kills the child) and a `stopped` flag, for the sandbox guard (SPEC §8.12) |
-| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.7) |
+| `scripts/lib/run.ts` | adapted | An `onLine` hook (returning `"stop"` kills the child) and a `stopped` flag, for the sandbox guard (SPEC §8.12); in P2 a 1,000,000-byte stdout limit by default, a per-call `maxStdoutBytes`, a `stdoutCut` flag and one decode of the kept bytes (SPEC §8.3) |
+| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.7); in P2 `git()` keeps 64 MiB of stdout and throws `GitOutputCut` when output is cut (SPEC §8.3) |
 | `scripts/lib/transcript.ts` | adapted | More fields (tools, MCP servers, permission mode, calls with results, denials, usage, terminal reason, limits, safety stops) and `scrubModels()` (SPEC §8.12) |
 | `scripts/lib/agent.ts` | adapted | `--restricted`, `--safe-mode`, no model flag, an isolated config dir. Written for the retired cloud run; P3 brings it back to Europe's Kobol harness (keychain token, `~/.cybertracker`, SPEC §9.4) |
 | `scripts/agent-check.ts` | adapted | `ask()` kept; sandbox tests and the canary test (SPEC §8.12). P3 drops the cloud-only `--find-passthrough` and `--network` and restores Europe's Mac sign-in check |
@@ -94,7 +94,8 @@ Every carried file names its Europe source in its header comment.
 | `scripts/metrics.ts`, `scripts/backfill.ts`, `scripts/lib/{appendix-d,cve-read-worker,cvelist-clone,feed-cache,feeds,git-source,kev-source}.ts` | The metrics run, the backfill, Appendix D, the clone and its worker threads, the collect cache reader, the feed readers, the git runner and the KEV source (SPEC §5.9, §8.4) |
 | `fixtures/src/{feeds,state,scrub-feed,zip-writer}.ts`, `fixtures/src/kev-extra.json`, `fixtures/src/tools/cvelist-clone.ts` | The feed fixtures, `fixtures/state/`, the capture scrubber, a zip writer and the one-time trimming tool for `fixtures/cvelist-clone/` |
 | `fixtures/feeds/**`, `fixtures/state/**`, `fixtures/reference/**`, `fixtures/cvelist-clone/**`, `fixtures/ai-credit/records/**` | CyberTracker's own data: real formats with invented prose, trimmed real CVE records with people's names replaced by "SAMPLE Researcher", and the reference counts (SPEC §3) |
-| `tests/setup/offline.ts` and the P2 tests (`ai-credit`, `backfill`, `collect`, `compute-metrics`, `contract`, `feeds`, `fix-side`, `fixture-safety`, `fixtures-state`, `flood`, `http`, `metrics-script`, `no-network`, `rank`, `reference`, `registry`, `series`, `shared`, `sources-check`), `tests/helpers/` | Vitest; no test touches the network (SPEC §8.1) |
+| `docs/SOURCES.md` | Each source's terms, attribution lines and limits, as P2 session 1 read them on Kobol (SPEC §10 P2 item 3) |
+| `tests/setup/offline.ts` and the P2 tests (`ai-credit`, `backfill`, `captures`, `collect`, `compute-metrics`, `contract`, `feed-readers`, `feeds`, `fix-side`, `fixture-safety`, `fixtures-state`, `flood`, `http`, `metrics-script`, `no-network`, `rank`, `reference`, `registry`, `run`, `series`, `shared`, `sources-check`), `tests/helpers/` | Vitest; no test touches the network (SPEC §8.1) |
 
 ## Site (`app/`, `components/`)
 
