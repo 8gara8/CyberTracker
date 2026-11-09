@@ -161,6 +161,13 @@ describe("seed counts (Appendix B)", () => {
       ["us-kev-three-day-deadline", "2026-06-10", null, "policy"],
       ["kernel-batch-2026-07", "2026-07-19", "2026-07-20", "data_change"],
     ]);
+    // Kobol session 1 (V19): the directive is BOD 26-04 with its own page; the kernel batch's per-day counts.
+    const a = (id: string) => c.annotations.annotations.find((x) => x.id === id)!;
+    expect([a("us-kev-three-day-deadline").label, a("us-kev-three-day-deadline").source_url]).toEqual([
+      "BOD 26-04: US 3-day KEV deadline", "https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk",
+    ]);
+    expect(a("kernel-batch-2026-07").detail).toBe("The Linux kernel CNA published 429 CVE records on 19 July and 9 on 20 July.");
+    expect([a("nvd-scoring-stop").label, a("nvd-scoring-stop").source_url]).toEqual(["NVD stops scoring most CVEs", "https://nvd.nist.gov/general/news"]);
     expect(c.watchWindows).toEqual({ schema_version: 1, windows: [] });
     expect(c.standingStories.stories.map((s) => s.id)).toEqual(["salt-typhoon", "volt-typhoon", "dprk-it-workers", "taiwan-undersea-cables"]);
     expect(c.standingStories.stories.every((s) => s.seed_last_development === null && s.seed_source_url === null)).toBe(true);
@@ -184,6 +191,7 @@ describe("seed counts (Appendix B)", () => {
     const c = prod();
     expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([2, 2, 2]);
     expect(c.sourceTiers.updated).toBe("2026-11-10");
+    expect(c.vendors.updated).toBe("2026-11-10");
     for (const f of [c.regions, c.actors]) expect(f.version).toBe(1);
   });
 });
@@ -333,22 +341,43 @@ describe("the P2 registry and the Verify items", () => {
     }
   });
 
-  it("source-tiers.json, regions.json and annotations.json hold no Verify note; vendors.json's are Appendix B.1's five domain and HQ checks", () => {
-    for (const f of ["source-tiers.json", "regions.json", "annotations.json"]) expect(read(`config/${f}`), f).not.toMatch(/\bverify\b/i);
-    const vendors = (json("config/vendors.json") as { vendors: { id: string; note: string | null }[] }).vendors;
-    expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual(["avtech", "digiever", "merit-lilin", "fxc", "sky"]);
+  it("source-tiers.json, regions.json, annotations.json and vendors.json hold no Verify note (Kobol session 1 settled them)", () => {
+    for (const f of ["source-tiers.json", "regions.json", "annotations.json", "vendors.json"]) expect(read(`config/${f}`), f).not.toMatch(/\bverify\b/i);
   });
 
   it("names no feed (unverified): Kobol session 1 confirmed gtig's feed path", () => {
     expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
   });
 
-  // TODO(Kobol session 1, build plan §5.1 K2 and K3): unskip once sources:check confirms gtig's feed path
-  // (or the entry is replaced or dropped, ruling R49) and V15 settles the five vendor domains and HQs.
-  it.skip("no registry name says (unverified) and no vendors.json note asks to Verify (after Kobol session 1)", () => {
+  // Kobol session 1 (K3) confirmed gtig's feed path and V15 settled the five vendor domains and HQs.
+  it("no registry name says (unverified) and no vendors.json note asks to Verify (after Kobol session 1)", () => {
     expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
     const vendors = (json("config/vendors.json") as { vendors: { id: string; note: string | null }[] }).vendors;
     expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual([]);
+  });
+
+  it("vendors.json holds V15's results: the five HQs as found, and the redirect targets no other vendor holds (C2)", () => {
+    const { vendors } = loadConfig({ root, fresh: true }).vendors;
+    const v = (id: string) => vendors.find((x) => x.id === id)!;
+    expect(["avtech", "digiever", "merit-lilin", "fxc", "sky"].map((id) => [id, v(id).country, v(id).domains, v(id).note])).toEqual([
+      ["avtech", "TW", ["avtech.com.tw"], "IP cameras; the site states no address, so the HQ stays Taiwan"],
+      ["digiever", "TW", ["digiever.com"], "NVR maker; its site calls it a Taiwan-based manufacturer"],
+      ["merit-lilin", "TW", ["meritlilin.com"], "IP cameras and NVRs; founded in Taiwan in 1980"],
+      ["fxc", "JP", ["fxc.jp"], "Network equipment; HQ Asakusabashi, Taito, Tokyo"],
+      ["sky", "JP", ["skygroup.jp"], "SKYSEA Client View; head offices in Tokyo and Osaka"],
+    ]);
+    // Redirects seen on Kobol (V15). A target joins the vendor whose domain redirected, unless another vendor
+    // already holds it; one owned by another company stays with that company's entry.
+    expect(v("brother").domains).toEqual(["brother.com", "global.brother"]);
+    expect(v("ruijie").domains).toEqual(["ruijienetworks.com", "ruijie.com"]);
+    expect(v("openssh").domains).toEqual(["openssh.com", "openssh.org", "openbsd.org"]);
+    expect(v("zoom").domains).toEqual(["zoom.us", "zoom.com"]);
+    const holders = (d: string) => vendors.filter((x) => x.domains.includes(d)).map((x) => x.id);
+    expect(holders("paloaltonetworks.com")).toEqual(["palo-alto-networks"]);
+    expect(holders("hpe.com")).toEqual(["hpe"]);
+    expect(holders("opentext.com")).toEqual(["opentext"]);
+    expect(holders("cohesity.com")).toEqual([]);
+    expect(holders("blog.google")).toEqual([]);
   });
 });
 
