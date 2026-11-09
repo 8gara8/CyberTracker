@@ -5,11 +5,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cvdPayloadUrl } from "@/lib/feeds/anthropic-cvd";
 import { cachePaths } from "@/lib/feeds/cache";
+import { epssUrlFor } from "@/lib/feeds/epss";
+import { endOfDayAsset } from "@/lib/feeds/github";
 import { fetchBudget, type FetchResult } from "@/lib/feeds/http";
+import { sha256Hex } from "@/lib/json";
 import type { FetchedFeed } from "@/lib/schema/registry";
-import { readRss, type FeedCtx } from "@/scripts/lib/feeds";
+import { cacheWrite, readCvd, readEpss, readKev, readRss, readZip, type FeedCtx } from "@/scripts/lib/feeds";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FEEDS = path.join(ROOT, "fixtures", "feeds");
@@ -17,6 +21,7 @@ const read = (rel: string) => fs.readFileSync(path.join(FEEDS, rel));
 
 const roots: string[] = [];
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const r of roots.splice(0)) fs.rmSync(r, { recursive: true, force: true });
 });
 
@@ -65,3 +70,49 @@ describe("readRss", () => {
     expect(utc.data!.newest).toBe("2026-10-13T18:12:00.000Z");
   });
 });
+
+// ── The disclosure dashboard (A3) ────────────────────────────────────────────────────────────────
+
+describe("readCvd: a payload left by an earlier run", () => {
+  const cvd = entry({ id: "anthropic-cvd", kind: "anthropic-cvd", url: "https://red.anthropic.com/2026/cvd/", coverage: ["ai"] });
+  const payloadUrl = cvdPayloadUrl(cvd.url);
+  const page37 = read("anthropic-cvd/page.html");
+  const payload37 = read("anthropic-cvd/payload.json");
+  const page40 = Buffer.from(page37.toString("utf8").replace("Revision 37", "Revision 40").replace("2026-10-13 19:30", "2026-11-02 19:30"));
+
+  it("is removed when today's payload is not read, so only today's page is in cache/", async () => {
+    const h = harness({ [cvd.url]: page37, [payloadUrl]: payload37 });
+    const first = await readCvd(cvd, h.ctx);
+    expect([first.ok, first.data?.revision, first.data?.found_n]).toEqual([true, "37", expect.any(Number)]);
+    const payloadFile = h.paths.feedBody("anthropic-cvd", "payload.json");
+    expect(fs.readFileSync(payloadFile)).toEqual(payload37);
+
+    const today = harness({ [cvd.url]: page40, [payloadUrl]: "timeout" });
+    const second = await readCvd(cvd, { ...today.ctx, paths: h.paths });
+    expect([second.ok, second.data?.revision, second.data?.as_of, second.data?.found_n]).toEqual([true, "40", "2026-11-02", null]);
+    expect(second.sha256).toBe(sha256Hex(page40));
+    expect(fs.existsSync(payloadFile)).toBe(false);
+    expect(fs.readFileSync(h.paths.feedBody("anthropic-cvd", "html"))).toEqual(page40);
+    expect(today.log.join("\n")).toMatch(/no payload at data\/payload\.json; reading the page alone/);
+  });
+
+  it("is removed when the payload answers an HTTP error too, and kept when it answers", async () => {
+    const h = harness({ [cvd.url]: page37, [payloadUrl]: payload37 });
+    await readCvd(cvd, h.ctx);
+    const payloadFile = h.paths.feedBody("anthropic-cvd", "payload.json");
+    await readCvd(cvd, { ...harness({ [cvd.url]: page40, [payloadUrl]: 404 }).ctx, paths: h.paths });
+    expect(fs.existsSync(payloadFile)).toBe(false);
+    const again = await readCvd(cvd, { ...harness({ [cvd.url]: page37, [payloadUrl]: payload37 }).ctx, paths: h.paths });
+    expect([again.sha256, fs.readFileSync(payloadFile).equals(payload37)]).toEqual([sha256Hex(payload37), true]);
+  });
+
+  it("is left alone past the deadline, when collect writes and removes nothing", async () => {
+    const h = harness({ [cvd.url]: page37, [payloadUrl]: payload37 });
+    await readCvd(cvd, h.ctx);
+    const late = harness({ [cvd.url]: page40, [payloadUrl]: "timeout" });
+    await readCvd(cvd, { ...late.ctx, paths: h.paths, deadline: Date.now() - 1 });
+    expect(fs.readFileSync(h.paths.feedBody("anthropic-cvd", "payload.json"))).toEqual(payload37);
+    expect(fs.readFileSync(h.paths.feedBody("anthropic-cvd", "html"))).toEqual(page37);
+  });
+});
+

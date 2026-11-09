@@ -57,6 +57,13 @@ export function cacheWrite(ctx: FeedCtx, file: string, data: string | Buffer): v
   fs.writeFileSync(file, data);
 }
 
+
+/** Removes a cache file unless the deadline has passed. */
+function cacheRemove(ctx: FeedCtx, file: string): void {
+  if (ctx.now() >= ctx.deadline) return;
+  fs.rmSync(file, { force: true });
+}
+
 /** The error class of a parser throw: FeedParseError's own, anything else "parse". */
 export function parseClass(e: unknown): FetchErrorClass {
   return e instanceof FeedParseError ? e.errorClass : "parse";
@@ -314,18 +321,26 @@ export async function readMyJvn(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<
   return { ...first, data: { notes, newest, totalRes: p1.totalRes, note } };
 }
 
-/** The dashboard page, then its payload (data/payload.json beside it) when it answers. */
+/**
+ * The dashboard page, then its payload (data/payload.json beside it) when it answers. When the payload is
+ * not read, a payload an earlier run cached is removed, so the metrics never read it beside today's page.
+ */
 export async function readCvd(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<CvdDashboard>> {
   const page = await get(ctx, entry.url);
   if (!page.ok || !page.body) return failed(page.error ?? "network", entry.url);
   cacheWrite(ctx, ctx.paths.feedBody(entry.id, "html"), page.body);
   const payloadUrl = cvdPayloadUrl(page.finalUrl || entry.url);
+  const payloadFile = ctx.paths.feedBody(entry.id, "payload.json");
   const payload = await get(ctx, payloadUrl, "kev", "payload"); // about 6.4 MB on 2026-11-09, over the 5 MiB default
-  if (payload.ok && payload.body) cacheWrite(ctx, ctx.paths.feedBody(entry.id, "payload.json"), payload.body);
-  else ctx.log(`anthropic-cvd: no payload at ${CVD_PAYLOAD_PATH}; reading the page alone.`);
+  const payloadBody = payload.ok && payload.body ? payload.body : null;
+  if (payloadBody) cacheWrite(ctx, payloadFile, payloadBody);
+  else {
+    ctx.log(`anthropic-cvd: no payload at ${CVD_PAYLOAD_PATH}; reading the page alone.`);
+    cacheRemove(ctx, payloadFile);
+  }
   try {
-    const d = parseAnthropicCvd(page.body, page.contentType, payload.ok ? payload.body : null);
-    return { ok: true, error: null, urlUsed: entry.url, triedFallback: false, fallbackUsed: false, sha256: sha256Hex(payload.ok && payload.body ? payload.body : page.body), data: d };
+    const d = parseAnthropicCvd(page.body, page.contentType, payloadBody);
+    return { ok: true, error: null, urlUsed: entry.url, triedFallback: false, fallbackUsed: false, sha256: sha256Hex(payloadBody ?? page.body), data: d };
   } catch (e) {
     ctx.log(`anthropic-cvd: did not parse: ${(e as Error).message.slice(0, 300)}`);
     return failed(parseClass(e), entry.url);
