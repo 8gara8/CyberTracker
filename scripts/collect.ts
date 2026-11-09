@@ -299,7 +299,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     for (const z of plan.zips) zipReads.set(z.asset, await readZip(ctx, z));
   });
   for (const entry of byKind("epss")) heavy.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
-  if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months); });
+  if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months, commits.ghsa); });
   await inTwoWaves(light, heavy, (t) => t());
   const fetchedAt = generatedAt;
 
@@ -626,7 +626,7 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
       case "kev": { const k = await readKev(entry, ctx, { sha: null, minVersion: null }); r = k; newest = k.data?.dateReleased ?? null; items = k.data?.count ?? 0; break; }
       case "cvelist": { const k = await readDeltaLog(entry, ctx, null); r = k; newest = k.data?.newest ?? null; items = k.data?.entries.length ?? 0; break; }
       case "epss": { const k = await readEpss(entry, ctx, day); r = k; newest = k.data?.e?.score_date ?? null; items = k.data?.rows ?? 0; break; }
-      case "ghsa": { const k = await readGhsa(ctx, git, ghsaMonths(addDays(day, -1))); r = k; newest = k.data?.headDate ?? null; items = k.data?.advisories.length ?? 0; break; }
+      case "ghsa": { const k = await readGhsa(ctx, git, ghsaMonths(addDays(day, -1)), null); r = k; newest = k.data?.headDate ?? null; items = k.data?.advisories.length ?? 0; break; }
       case "nvd": {
         // The window the morning run would read now: the Taipei edition date's pack window.
         const k = await readNvd(entry, ctx, packWindow(taipeiToday(new Date(ref)), config.run.pack));

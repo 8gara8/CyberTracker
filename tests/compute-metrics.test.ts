@@ -251,6 +251,14 @@ describe("computeMetrics: every block ok", () => {
     expect(computeMetrics(v.inputs).metrics.provenance.kev_data_commit).toBeNull();
   });
 
+  it("names the commit of the GHSA checkout read as ghsa_commit, else the ls-remote commit (round 2)", () => {
+    const v = world(D);
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, commits: { ...v.inputs.feeds.inputs.commits, ghsa: SHA40("e") } };
+    expect(computeMetrics(v.inputs).metrics.provenance.ghsa_commit).toBe(SHA40("c"));
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, ghsa: null };
+    expect(computeMetrics(v.inputs).metrics.provenance.ghsa_commit).toBe(SHA40("e"));
+  });
+
   it("lists the metrics feeds read, sorted by id", () => {
     expect(r.manifest.feeds.map((f) => f.id)).toEqual(["anthropic-cvd", "cvelist", "epss", "ghsa", "kev"]);
   });

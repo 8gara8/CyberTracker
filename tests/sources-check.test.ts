@@ -114,7 +114,7 @@ describe("checkFeeds reads in two waves and keeps its own cache (B1, B2)", () =>
   it("requests every light feed before the deltaLog, the EPSS files or the GHSA sync, and keeps registry order (B1)", async () => {
     const order: string[] = [];
     const base = fixtureGit(FEEDS);
-    const git: GitSource = { ...base, syncGhsa: async (dir, months) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months); } };
+    const git: GitSource = { ...base, syncGhsa: async (dir, months, sha) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months, sha); } };
     const fetch: typeof fetchFeed = (url, opts) => { order.push(url); return fetchFeed(url, opts); };
     const { rows } = await checkFeeds({ now: T0, root: tempRoot(), deps: { fetch, git } });
     const firstHeavy = order.findIndex(isHeavy);

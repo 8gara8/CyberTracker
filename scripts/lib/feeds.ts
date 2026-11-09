@@ -307,10 +307,13 @@ export interface GhsaRead {
   months: string[];
 }
 
-/** The sparse checkout of the months, then every advisory JSON under them, parsed (unreadable files skipped and logged). */
-export async function readGhsa(ctx: FeedCtx, git: GitSource, months: readonly string[]): Promise<Read<GhsaRead>> {
+/**
+ * The sparse checkout of the months at `sha` (collect's ls-remote commit; null: the tip of main), then every
+ * advisory JSON under them, parsed (unreadable files skipped and logged).
+ */
+export async function readGhsa(ctx: FeedCtx, git: GitSource, months: readonly string[], sha: string | null): Promise<Read<GhsaRead>> {
   ctx.budget.begin(ctx.now());
-  const head = await git.syncGhsa(ctx.paths.ghsaDir, months);
+  const head = await git.syncGhsa(ctx.paths.ghsaDir, months, sha);
   if (!head) return failed("network", null);
   const advisories: GhsaAdvisory[] = [];
   const walk = (d: string): void => {

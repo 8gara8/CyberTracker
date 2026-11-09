@@ -18,8 +18,11 @@ import { run } from "./run";
 export interface GitSource {
   /** ref → sha for the patterns, or null on any failure (30 s). */
   lsRemote(repo: string, patterns: readonly string[]): Promise<Map<string, string> | null>;
-  /** Checks out the months' advisories under `dir` (120 s); null on any failure. */
-  syncGhsa(dir: string, months: readonly string[]): Promise<{ commit: string; headDate: string; treeSha256: string } | null>;
+  /**
+   * Checks out the months' advisories under `dir` at `sha` (the commit collect's ls-remote gave; null: the
+   * tip of main), 120 s; null on any failure, a checkout at another commit included.
+   */
+  syncGhsa(dir: string, months: readonly string[], sha: string | null): Promise<{ commit: string; headDate: string; treeSha256: string } | null>;
 }
 
 export const LS_REMOTE_TIMEOUT_MS = 30_000;
@@ -27,6 +30,7 @@ export const GHSA_SYNC_TIMEOUT_MS = 120_000;
 const GHSA_REPO = "github/advisory-database";
 const MONTH_RE = /^\d{4}\/\d{2}$/;
 const REPO_RE = /^[\w.-]+\/[\w.-]+$/;
+const SHA_RE = /^[0-9a-f]{40}$/;
 
 /** The sparse paths of the months ("2026/10" → advisories/github-reviewed/2026/10). */
 export const ghsaMonthPaths = (months: readonly string[]) => months.map((m) => {
@@ -68,17 +72,21 @@ export function liveGit(root: string): GitSource {
       const out = await git(["ls-remote", `https://github.com/${repo}.git`, ...patterns], root, LS_REMOTE_TIMEOUT_MS);
       return out === null ? null : parseLsRemote(out);
     },
-    async syncGhsa(dir, months) {
+    async syncGhsa(dir, months, sha) {
       const deadline = Date.now() + GHSA_SYNC_TIMEOUT_MS;
       const left = () => deadline - Date.now();
       const paths = ghsaMonthPaths(months);
+      if (sha !== null && !SHA_RE.test(sha)) return null;
       try {
-        if (!fs.existsSync(path.join(dir, ".git"))) {
+        const fresh = !fs.existsSync(path.join(dir, ".git"));
+        if (fresh) {
           fs.rmSync(dir, { recursive: true, force: true });
           fs.mkdirSync(path.dirname(dir), { recursive: true });
           if (await git(["clone", "--depth", "1", "--filter=blob:none", "--sparse", `https://github.com/${GHSA_REPO}.git`, dir], root, left()) === null) return null;
-        } else {
-          if (await git(["fetch", "--depth", "1", "origin", "main"], dir, left()) === null) return null;
+        }
+        // The checkout is the commit the run sampled (§8.3 "One commit per repo per run"), not wherever main is now.
+        if (!fresh || sha !== null) {
+          if (await git(["fetch", "--depth", "1", "origin", sha ?? "main"], dir, left()) === null) return null;
           if (await git(["reset", "--hard", "FETCH_HEAD"], dir, left()) === null) return null;
         }
         if (await git(["sparse-checkout", "set", ...paths], dir, left()) === null) return null;
@@ -86,6 +94,7 @@ export function liveGit(root: string): GitSource {
         const when = (await git(["log", "-1", "--format=%cI"], dir, left()))?.trim();
         const tree = await git(["ls-tree", "-r", "HEAD", "--", ...paths], dir, left());
         if (!commit || !when || tree === null) return null;
+        if (sha !== null && commit !== sha) return null;
         const rows = tree.split("\n").flatMap((line) => {
           const m = /^\d+ blob ([0-9a-f]{40,64})\t(.+)$/.exec(line);
           return m ? [{ path: m[2]!, oid: m[1]! }] : [];
@@ -113,9 +122,9 @@ export function fixtureGit(feedsDir: string): GitSource {
       if (!refs) return null;
       return new Map(Object.entries(refs).filter(([ref]) => patterns.some((p) => patternMatches(ref, p))).sort(([a], [b]) => byCodeUnit(a, b)));
     },
-    async syncGhsa(dir, months) {
+    async syncGhsa(dir, months, sha) {
       const head = read().ghsa;
-      if (!head) return null;
+      if (!head || (sha !== null && sha !== head.commit)) return null;
       const src = path.join(feedsDir, "ghsa", "repo");
       fs.rmSync(dir, { recursive: true, force: true });
       const rows: { path: string; oid: string }[] = [];

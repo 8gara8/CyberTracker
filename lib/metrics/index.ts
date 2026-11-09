@@ -146,7 +146,8 @@ function provenanceOf(i: MetricsInputs, index: KevIndexFile, catalog: MetricsFee
     epss_model_version: pick("epss_model_version", f.epss.e?.model_version ?? f.inputs.epss?.model_version, prev?.epss_model_version, UNKNOWN),
     epss_date: pick("epss_date", f.epss.e ? utcDateOf(f.epss.e.score_date) : null, prev?.epss_date, dataCutoffFor(i.date)),
     ghsa_source: GHSA_CREDIT_SOURCE,
-    ghsa_commit: f.inputs.commits.ghsa ?? f.inputs.ghsa?.commit ?? null,
+    // The commit of the checkout the run read (collect pins it to the ls-remote commit, §8.3), else that commit.
+    ghsa_commit: f.inputs.ghsa?.commit ?? f.inputs.commits.ghsa ?? null,
     config_versions: configVersions(i.config),
     reference: { from: REFERENCE.from, to: REFERENCE.to },
     inputs_file: `metrics/inputs/${i.date}.json`,

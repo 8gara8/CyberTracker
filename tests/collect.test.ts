@@ -757,7 +757,7 @@ describe("collect's other runs", () => {
     process.env.CT_FIXTURE_FEEDS = FEEDS;
     const order: string[] = [];
     const base = fixtureGit(FEEDS);
-    const git: GitSource = { ...base, syncGhsa: async (dir, months) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months); } };
+    const git: GitSource = { ...base, syncGhsa: async (dir, months, sha) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months, sha); } };
     const fetch: typeof fetchFeed = (url, opts) => { order.push(url); return fetchFeed(url, opts); };
     await collect({ date: DATE, deadline: T0 + 300_000, root: tempRoot(true), deps: { now: () => T0, aiMatch, fetch, git } });
     // Phase A's light reads: the registry URLs of rss, myjvn, exchange and anthropic-cvd, and the KEV catalog
@@ -775,6 +775,23 @@ describe("collect's other runs", () => {
     expect(order.some((u) => u.endsWith(".csv.gz"))).toBe(true);
     expect(order.filter(isLight).length).toBeGreaterThan(25);
     expect(lastLight).toBeLessThan(firstHeavy);
+  });
+
+  it("checks the advisories out at the ls-remote commit, so the GHSA read names the run's one commit (round 2)", async () => {
+    process.env.CT_FIXTURE_FEEDS = FEEDS;
+    const ghsaSha = "a11ce00000000000000000000000000000001013";
+    const shas: (string | null)[] = [];
+    const base = fixtureGit(FEEDS);
+    const git: GitSource = { ...base, syncGhsa: async (dir, months, sha) => { shas.push(sha); return base.syncGhsa(dir, months, sha); } };
+    const r = await collect({ date: DATE, deadline: T0 + 300_000, root: tempRoot(true), deps: { now: () => T0, aiMatch, fetch: fetchFeed, git } });
+    expect(shas).toEqual([ghsaSha]);
+    expect(r.inputs.commits.ghsa).toBe(ghsaSha);
+    expect(r.inputs.ghsa?.commit).toBe(ghsaSha);
+    // main moved on after ls-remote: a checkout that cannot be at the sampled commit is not read.
+    const dir = path.join(tempRoot(true), "cache", "ghsa");
+    expect(await base.syncGhsa(dir, ["2026/10"], "b".repeat(40))).toBeNull();
+    expect((await base.syncGhsa(dir, ["2026/10"], ghsaSha))?.commit).toBe(ghsaSha);
+    expect((await base.syncGhsa(dir, ["2026/10"], null))?.commit).toBe(ghsaSha);
   });
 
   it("an hourly zip that ends before the record window makes cvelist stale, naming the hour, and invents no record (B9)", async () => {
