@@ -45,20 +45,19 @@ faster?
 - **2026-11-09:** JL merged the Foundation PR #2 at 07:37 Taipei (23:37 UTC on 2026-11-08) and the P1
   PR #3 at 17:19 Taipei (09:19 UTC; `main` at `a5c183c`): the seed configs in `config/`, the validator
   and its rules, the fixtures and the chat edition, with the spec changes in §0.4 rows 7 to 30.
-- **P2, in progress on `p2-feeds-metrics` (2026-11-10):** feeds, collect, rank, metrics, the backfill,
-  Appendix D and their tests are built in the cloud container; `--check-reference` passes from a fresh
-  clone (all 83 figures). Kobol read every feed URL once (2026-11-09, about 18:40 Taipei; §0.4 row 39).
-  AI-finder list v2 (`aisle` adds "Aisle Research" and "Aisle.com", `aixcc` "Team-Atlanta") and
-  `vendors.json` v2 (68 more `cna` lists) are in. The GitHub unfixed line is kept, and `ghsa_source`
-  stays `git` (REST credits are logins with no AI match). Kobol session 1 (2026-11-09, 22:15 to 22:50
-  Taipei) ran `sources:check`, made the Verify reads and pushed the first scrubbed captures (`f145953`);
-  session 2a (23:18 to 23:27 Taipei) passed `--check-reference` on Kobol from a fresh clone (06:24 to
-  clone, 00:16 to read) and reran `--fixtures` byte for byte. The review's 30 findings and session 1's
-  results were then fixed in the cloud container: spec changes in §0.4 rows 31 to 63 (44 onward for the
-  fix round). Left for Kobol session 2, at the PR's head: the final `sources:check`, recapturing the 13
-  feeds the scrubber refused and the 4 captures removed, the milestone backfill into `content/`, the
-  kernel batch count from `days.json`, and `docs/reports/D-p2-backfill.md`. P2's Kobol sessions run in a
-  worktree, `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics`.
+- **P2 on `p2-feeds-metrics`, done and in review (2026-11-10):** feeds, collect, rank, metrics, the
+  backfill, Appendix D and their tests, built in the cloud container; the review's 30 findings fixed
+  there (§0.4 rows 44 to 63). Kobol sessions 1 and 2a (2026-11-09) read every feed, made the Verify reads
+  and passed `--check-reference` from a fresh clone. Session 2 (2026-11-10, 01:39 to 01:52 Taipei) ran
+  the milestone: the final `sources:check`, the recaptures, collect for 2026-11-10 and two byte-identical
+  builds into `content/` at CVE List `658a966`, cutoff 2026-11-08. Then the scrubber's attribute and Open
+  Graph gaps were fixed, `google-security` moved to blog.google/security, and e-mail addresses were kept
+  out of `content/state/credit-candidates.json` (sessions 2c and 2d rebuilt it); §0.4 row 64. A Linux
+  rebuild gave the same state hashes. Report: `docs/reports/2026-11-10-p2-backfill.md`. The 26-week
+  Window shows no clear change against 2023 to 2024 (37% exploited at disclosure, median 17 days against
+  21) while the 13-week volume is 5.3 times the reference. After JL merges: fast-forward the main
+  checkout (rule 4), then remove the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics`
+  (its 4.8G `cache/cvelistV5` goes with it; P3 clones again if it needs one).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -78,7 +77,7 @@ faster?
 | Spec v1.0 | `spec` | #1 | Merged 2026-11-08 |
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
-| P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | | In progress |
+| P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | In review |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | | Not started |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |

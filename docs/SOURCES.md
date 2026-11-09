@@ -40,9 +40,10 @@ not been sent.
   only the matched tool name ("Claude", "Codex Security"), never the credit line.
 - **`content/state/credit-candidates.json`** keeps the credit strings that pass the AI-finder
   `prefilter`, copied from public CVE records (CVE Program data), so a change to the AI-finder list can
-  be rematched without a fresh clone. Those strings can include researchers' names as the CNAs publish
-  them. The file is never rendered: no page, brief, chat edition or metrics file shows more than the
-  matched tool name. At the reference cutoff it holds 1,430 strings from 1,377 records (about 189 KB).
+  be rematched without a fresh clone. Those strings can include researchers' names and handles as the
+  CNAs publish them; e-mail addresses are replaced by `[email]` before anything is stored. The file is
+  never rendered: no page, brief, chat edition or metrics file shows more than the matched tool name. At
+  the committed cutoff (2026-11-08) it holds 1,417 strings from 1,368 records (about 187 KB).
 - **News and agency feeds:** only the headline and a short snippet (at most 200 and 300 characters,
   sanitised) reach the agent, and an item is always shown with a link to the original. The brief's
   sentences are CyberTracker's own; no article text is republished.
