@@ -7,7 +7,7 @@
       "CVE-2021-47978",
       "2026-05-16",
       "cna.credits",
-      "Ai Ho (@j3ssiejjj)"
+      "Ai Ho [email]"
     ],
     [
       "CVE-2023-27524",
@@ -37,19 +37,19 @@
       "CVE-2024-9464",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai"
+      "Zach Hanley [email] of Horizon3.ai"
     ],
     [
       "CVE-2024-9465",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai"
+      "Zach Hanley [email] of Horizon3.ai"
     ],
     [
       "CVE-2024-9466",
       "2024-10-09",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai"
+      "Zach Hanley [email] of Horizon3.ai"
     ],
     [
       "CVE-2025-0133",
@@ -913,7 +913,7 @@
       "CVE-2025-24854",
       "2025-07-31",
       "cna.credits",
-      "The issue was separately discovered by both XBOW ([link], [link]) and Hamed Kohi ‹0x.hamy.1ATgmailDOTcom›"
+      "The issue was separately discovered by both XBOW ([link], [link]) and Hamed Kohi [email]"
     ],
     [
       "CVE-2025-27888",
@@ -1426,12 +1426,6 @@
       "ZAST.AI"
     ],
     [
-      "CVE-2026-3505",
-      "2026-04-15",
-      "cna.credits",
-      "Disclosure ‹disclosure@aisle.com›"
-    ],
-    [
       "CVE-2026-3673",
       "2026-04-22",
       "cna.credits",
@@ -1891,7 +1885,7 @@
       "CVE-2026-7874",
       "2026-06-30",
       "cna.credits",
-      "Akshat Sinha (akshatgit) akshat14132@iiitd.ac.in [link], (Kolega.dev ) kolega-ai-dev [link], Christopher Lusk (north-echo) [link]"
+      "Akshat Sinha (akshatgit) [email] [link], (Kolega.dev ) kolega-ai-dev [link], Christopher Lusk (north-echo) [link]"
     ],
     [
       "CVE-2026-8286",
@@ -2005,7 +1999,7 @@
       "CVE-2026-9256",
       "2026-05-22",
       "cna.credits",
-      "\"F5 acknowledges Mufeed VH of Winfunc Research, Nebula Security (@nebusecurity), and Vexera AI for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
+      "\"F5 acknowledges Mufeed VH of Winfunc Research, Nebula Security [email] and Vexera AI for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
     ],
     [
       "CVE-2026-9279",
@@ -2947,7 +2941,7 @@
       "CVE-2026-28477",
       "2026-03-05",
       "cna.credits",
-      "Aether AI (@aether-ai-agent)"
+      "Aether AI [email]"
     ],
     [
       "CVE-2026-28808",
@@ -3019,7 +3013,7 @@
       "CVE-2026-32061",
       "2026-03-11",
       "cna.credits",
-      "Aether AI (@aether-ai-agent)"
+      "Aether AI [email]"
     ],
     [
       "CVE-2026-32144",
@@ -3037,7 +3031,7 @@
       "CVE-2026-32897",
       "2026-03-21",
       "cna.credits",
-      "Aether AI (@aether-ai-agent)"
+      "Aether AI [email]"
     ],
     [
       "CVE-2026-33005",
@@ -3226,18 +3220,6 @@
       "bugbunny.ai"
     ],
     [
-      "CVE-2026-40914",
-      "2026-05-28",
-      "cna.credits",
-      "Isaac David ‹isaac@bugbunny.ai›"
-    ],
-    [
-      "CVE-2026-40914",
-      "2026-05-28",
-      "cna.credits",
-      "Arthur Gervais ‹arthur@bugbunny.ai›"
-    ],
-    [
       "CVE-2026-42009",
       "2026-05-18",
       "cna.credits",
@@ -3307,13 +3289,13 @@
       "CVE-2026-42530",
       "2026-06-17",
       "cna.credits",
-      "\"F5 acknowledges Trung Nguyen (@everping) of CyStack, Zhenpeng (Leo) Lin (depthfirst), Evan Hellman (@xintenseapple) of Trail of Bits in collaboration with OpenAI, AntAISecurityLab, and Nebula Security (@nebusecurity) for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
+      "\"F5 acknowledges Trung Nguyen [email] of CyStack, Zhenpeng (Leo) Lin (depthfirst), Evan Hellman [email] of Trail of Bits in collaboration with OpenAI, AntAISecurityLab, and Nebula Security [email] for bringing this issue to our attention and following the highest standards of coordinated disclosure.\""
     ],
     [
       "CVE-2026-42533",
       "2026-07-15",
       "cna.credits",
-      "F5 acknowledges Ming Xuan, DKD (@pidifn), Ji'an Zhou, and Zhen Yan of AntAISecurityLab, Rafael Gacek, Sergii Negodiuk of EVO.company, Lam Jun Rong of Calif.io, Mufeed VH of Winfunc Research (winfunc.com), Vexera AI ([link]), Tu Tran Dinh (@1w4y), Stan Shaw (cyberstan), qianshuidewajueji, zenneth (randomguy6407), Zhenpeng (Leo) Lin of depthfirst, Lukas Johannes Moeller, Melih Tolga Sahin of Vodafone Türkiye, Ayoub Nabil Boubagrat (GitHub: @ayoubnabil), and Milan Jovic (Kljunowsky) for independently bringing this issue to our attention and following the highest standards of coordinated disclosure."
+      "F5 acknowledges Ming Xuan, DKD [email] Ji'an Zhou, and Zhen Yan of AntAISecurityLab, Rafael Gacek, Sergii Negodiuk of EVO.company, Lam Jun Rong of Calif.io, Mufeed VH of Winfunc Research (winfunc.com), Vexera AI ([link]), Tu Tran Dinh [email] Stan Shaw (cyberstan), qianshuidewajueji, zenneth (randomguy6407), Zhenpeng (Leo) Lin of depthfirst, Lukas Johannes Moeller, Melih Tolga Sahin of Vodafone Türkiye, Ayoub Nabil Boubagrat (GitHub: @ayoubnabil), and Milan Jovic (Kljunowsky) for independently bringing this issue to our attention and following the highest standards of coordinated disclosure."
     ],
     [
       "CVE-2026-42535",
@@ -3508,12 +3490,6 @@
       "4ra2n (A code security AI agent)"
     ],
     [
-      "CVE-2026-47319",
-      "2026-06-04",
-      "cna.credits",
-      "Feng Ning, Innora Security Research (feng@innora.ai)"
-    ],
-    [
       "CVE-2026-47345",
       "2026-06-08",
       "cna.credits",
@@ -3565,13 +3541,7 @@
       "CVE-2026-48558",
       "2026-06-12",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai"
-    ],
-    [
-      "CVE-2026-48589",
-      "2026-05-25",
-      "cna.credits",
-      "Bartlomiej Dmitruk ‹bartek@striga.ai›"
+      "Zach Hanley [email] of Horizon3.ai"
     ],
     [
       "CVE-2026-48863",
@@ -4063,37 +4033,37 @@
       "CVE-2026-61500",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61501",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61502",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61503",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61504",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-61505",
       "2026-07-13",
       "cna.credits",
-      "Zach Hanley (@hacks_zach) of Horizon3.ai, in collaboration with Claude and Anthropic Research"
+      "Zach Hanley [email] of Horizon3.ai, in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-63272",
@@ -4879,7 +4849,7 @@
       "CVE-2026-75156",
       "2026-09-08",
       "cna.credits",
-      "NEO AI Engineer (@neo-ai-engineer, ProjectDiscovery)"
+      "NEO AI Engineer [email] ProjectDiscovery)"
     ],
     [
       "CVE-2026-75773",
@@ -6199,7 +6169,7 @@
       "CVE-2026-91048",
       "2026-09-29",
       "cna.credits",
-      "MopMonk-AI ‹mopmonk-ai@tophant.com›"
+      "MopMonk-AI [email]"
     ],
     [
       "CVE-2026-91104",
@@ -6373,7 +6343,7 @@
       "CVE-2026-92142",
       "2026-09-29",
       "cna.credits",
-      "MopMonk-AI ‹mopmonk-ai@tophant.com›"
+      "MopMonk-AI [email]"
     ],
     [
       "CVE-2026-92222",
@@ -7024,12 +6994,6 @@
       "Red Hat would like to thank AISLE for reporting this issue."
     ],
     [
-      "CVE-2026-97146",
-      "2026-10-07",
-      "cna.credits",
-      "mopmonk-ai@tophant.com"
-    ],
-    [
       "CVE-2026-97177",
       "2026-09-24",
       "cna.credits",
@@ -7172,12 +7136,6 @@
       "2026-09-28",
       "cna.credits",
       "This issue was discovered by Found by AISLE in partnership with Red Hat."
-    ],
-    [
-      "CVE-2026-102486",
-      "2026-10-21",
-      "cna.credits",
-      "afldl; Tristan Madani; Kimi Security Team ‹bug-report@moonshot.ai›"
     ],
     [
       "CVE-2026-102495",
@@ -7729,7 +7687,7 @@
       "CVE-2026-107350",
       "2026-10-14",
       "cna.credits",
-      "Thanks to Dave Aitel (@daveaitel-openai, OpenAI) for finding and reporting this issue."
+      "Thanks to Dave Aitel [email] OpenAI) for finding and reporting this issue."
     ],
     [
       "CVE-2026-107466",
@@ -7801,7 +7759,7 @@
       "CVE-2026-108094",
       "2026-10-12",
       "cna.credits",
-      "Red Hat would like to thank Calif.io (security-disclosures@calif.io), in collaboration with Anthropic for reporting this issue."
+      "Red Hat would like to thank Calif.io [email] in collaboration with Anthropic for reporting this issue."
     ],
     [
       "CVE-2026-108771",
@@ -7972,18 +7930,6 @@
       "OpenAI Codex Security - Khai Tran and Sylvie Mayer"
     ],
     [
-      "CVE-2026-111551",
-      "2026-10-28",
-      "cna.credits",
-      "Peyton Kennedy ‹pkennedy@endor.ai›"
-    ],
-    [
-      "CVE-2026-111551",
-      "2026-10-28",
-      "cna.credits",
-      "Bartlomiej Dmitruk ‹bartek@striga.ai›"
-    ],
-    [
       "CVE-2026-111868",
       "2026-10-18",
       "cna.credits",
@@ -8053,7 +7999,7 @@
       "CVE-2026-112375",
       "2026-10-28",
       "cna.credits",
-      "Arthur Chan ‹arthur.chan@adalogics.com›, Ada Logics and Anthropic Research"
+      "Arthur Chan [email] Ada Logics and Anthropic Research"
     ],
     [
       "CVE-2026-112375",
@@ -8128,18 +8074,6 @@
       "bugbunny.ai."
     ],
     [
-      "CVE-2026-114349",
-      "2026-10-28",
-      "cna.credits",
-      "Peyton Kennedy ‹pkennedy@endor.ai›"
-    ],
-    [
-      "CVE-2026-114349",
-      "2026-10-28",
-      "cna.credits",
-      "Bartłomiej Dmitruk ‹bartek@striga.ai›, Striga"
-    ],
-    [
       "CVE-2026-114690",
       "2026-10-30",
       "cna.credits",
@@ -8155,19 +8089,13 @@
       "CVE-2026-115189",
       "2026-10-26",
       "cna.credits",
-      "Submersion AI - Security Research Team (SRT) (@SRTSubmersionAI)"
+      "Submersion AI - Security Research Team (SRT) [email]"
     ],
     [
       "CVE-2026-115541",
       "2026-11-03",
       "cna.credits",
       "Fluid Attacks' AI SAST Scanner"
-    ],
-    [
-      "CVE-2026-115644",
-      "2026-10-28",
-      "cna.credits",
-      "Bartłomiej Dmitruk ‹bartek@striga.ai›, Striga"
     ],
     [
       "CVE-2026-115931",
@@ -8240,12 +8168,6 @@
       "2026-10-26",
       "cna.credits",
       "Claude Opus 5.5 (1M context)"
-    ],
-    [
-      "CVE-2026-116593",
-      "2026-10-28",
-      "cna.credits",
-      "Bartłomiej Dmitruk ‹bartek@striga.ai›, Striga"
     ],
     [
       "CVE-2026-117876",
