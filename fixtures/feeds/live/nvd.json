@@ -1,0 +1,723 @@
+{
+  "resultsPerPage": 6,
+  "startIndex": 0,
+  "totalResults": 6,
+  "format": "NVD_CVE",
+  "version": "2.0",
+  "timestamp": "2026-11-09T14:18:35.483",
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2026-124060",
+        "sourceIdentifier": "sample@example.com",
+        "published": "2026-11-07T21:17:00.150",
+        "lastModified": "2026-11-09T14:17:14.663",
+        "vulnStatus": "Deferred",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 1 vulnerability"
+          }
+        ],
+        "affected": [
+          {
+            "source": "sample@example.com",
+            "affectedData": [
+              {
+                "vendor": "TOTOLINK",
+                "product": "CA300-PoE",
+                "cpes": [
+                  "cpe:2.3:o:totolink:ca300-poe_firmware:*:*:*:*:*:*:*:*"
+                ],
+                "versions": [
+                  {
+                    "version": "6.2c.884",
+                    "status": "affected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {
+          "cvssMetricV40": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "4.0",
+                "vectorString": "SAMPLE vectorString 2",
+                "baseScore": 8.5,
+                "baseSeverity": "HIGH",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "attackRequirements": "NONE",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "vulnConfidentialityImpact": "HIGH",
+                "vulnIntegrityImpact": "HIGH",
+                "vulnAvailabilityImpact": "HIGH",
+                "subConfidentialityImpact": "HIGH",
+                "subIntegrityImpact": "HIGH",
+                "subAvailabilityImpact": "HIGH",
+                "exploitMaturity": "PROOF_OF_CONCEPT",
+                "confidentialityRequirement": "NOT_DEFINED",
+                "integrityRequirement": "NOT_DEFINED",
+                "availabilityRequirement": "NOT_DEFINED",
+                "modifiedAttackVector": "NOT_DEFINED",
+                "modifiedAttackComplexity": "NOT_DEFINED",
+                "modifiedAttackRequirements": "NOT_DEFINED",
+                "modifiedPrivilegesRequired": "NOT_DEFINED",
+                "modifiedUserInteraction": "NOT_DEFINED",
+                "modifiedVulnConfidentialityImpact": "NOT_DEFINED",
+                "modifiedVulnIntegrityImpact": "NOT_DEFINED",
+                "modifiedVulnAvailabilityImpact": "NOT_DEFINED",
+                "modifiedSubConfidentialityImpact": "NOT_DEFINED",
+                "modifiedSubIntegrityImpact": "NOT_DEFINED",
+                "modifiedSubAvailabilityImpact": "NOT_DEFINED",
+                "Safety": "NOT_DEFINED",
+                "Automatable": "NOT_DEFINED",
+                "Recovery": "NOT_DEFINED",
+                "valueDensity": "NOT_DEFINED",
+                "vulnerabilityResponseEffort": "NOT_DEFINED",
+                "providerUrgency": "NOT_DEFINED"
+              }
+            }
+          ],
+          "cvssMetricV31": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H",
+                "baseScore": 9.1,
+                "baseSeverity": "CRITICAL",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "CHANGED",
+                "confidentialityImpact": "HIGH",
+                "integrityImpact": "HIGH",
+                "availabilityImpact": "HIGH"
+              },
+              "exploitabilityScore": 2.3,
+              "impactScore": 6
+            }
+          ],
+          "cvssMetricV2": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "2.0",
+                "vectorString": "AV:N/AC:L/Au:M/C:C/I:C/A:C",
+                "baseScore": 8.3,
+                "accessVector": "NETWORK",
+                "accessComplexity": "LOW",
+                "authentication": "MULTIPLE",
+                "confidentialityImpact": "COMPLETE",
+                "integrityImpact": "COMPLETE",
+                "availabilityImpact": "COMPLETE"
+              },
+              "baseSeverity": "HIGH",
+              "exploitabilityScore": 6.4,
+              "impactScore": 10,
+              "acInsufInfo": false,
+              "obtainAllPrivilege": false,
+              "obtainUserPrivilege": false,
+              "obtainOtherPrivilege": false,
+              "userInteractionRequired": false
+            }
+          ],
+          "ssvcV203": [
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "ssvcData": {
+                "timestamp": "2026-11-09T13:47:38.796176Z",
+                "id": "CVE-2026-124060",
+                "options": [
+                  {
+                    "exploitation": "poc"
+                  },
+                  {
+                    "automatable": "no"
+                  },
+                  {
+                    "technicalImpact": "total"
+                  }
+                ],
+                "role": "SAMPLE role 3",
+                "version": "2.0.3"
+              }
+            }
+          ]
+        },
+        "weaknesses": [
+          {
+            "source": "sample@example.com",
+            "type": "Secondary",
+            "description": [
+              {
+                "lang": "en",
+                "value": "CWE-119"
+              },
+              {
+                "lang": "en",
+                "value": "CWE-120"
+              }
+            ]
+          }
+        ],
+        "references": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-99283",
+        "sourceIdentifier": "416baaa9-dc9f-4396-8d5f-8c081fb06d67",
+        "published": "2026-11-07T21:17:00.477",
+        "lastModified": "2026-11-07T21:17:00.477",
+        "vulnStatus": "Received",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 4 vulnerability"
+          }
+        ],
+        "affected": [
+          {
+            "source": "416baaa9-dc9f-4396-8d5f-8c081fb06d67",
+            "affectedData": [
+              {
+                "vendor": "Linux",
+                "product": "Linux",
+                "defaultStatus": "unaffected",
+                "programFiles": [
+                  "net/netfilter/nf_conntrack_proto_tcp.c"
+                ],
+                "repo": "https://git.kernel.org/ct-sample/linux",
+                "versions": [
+                  {
+                    "version": "1da177e4c3f41524e886b7f1b8a0c1fc7321cac2",
+                    "lessThan": "0c6d33329960b2d884a399196c8403643d8a9de6",
+                    "versionType": "git",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "1da177e4c3f41524e886b7f1b8a0c1fc7321cac2",
+                    "lessThan": "bf80e6802273a900311b44e47c9b1a59c6d2473c",
+                    "versionType": "git",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "0",
+                    "lessThan": "6.18.61",
+                    "versionType": "semver",
+                    "status": "affected"
+                  }
+                ]
+              },
+              {
+                "vendor": "Linux",
+                "product": "Linux",
+                "defaultStatus": "affected",
+                "programFiles": [
+                  "net/netfilter/nf_conntrack_proto_tcp.c"
+                ],
+                "repo": "https://git.kernel.org/ct-sample/linux",
+                "versions": [
+                  {
+                    "version": "6.18.61",
+                    "lessThanOrEqual": "6.18.*",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  },
+                  {
+                    "version": "7.3",
+                    "lessThanOrEqual": "*",
+                    "versionType": "original_commit_for_fix",
+                    "status": "unaffected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {},
+        "references": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-99284",
+        "sourceIdentifier": "416baaa9-dc9f-4396-8d5f-8c081fb06d67",
+        "published": "2026-11-07T21:17:00.603",
+        "lastModified": "2026-11-07T21:17:00.603",
+        "vulnStatus": "Received",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 5 vulnerability"
+          }
+        ],
+        "affected": [
+          {
+            "source": "416baaa9-dc9f-4396-8d5f-8c081fb06d67",
+            "affectedData": [
+              {
+                "vendor": "Linux",
+                "product": "Linux",
+                "defaultStatus": "unaffected",
+                "programFiles": [
+                  "net/core/skbuff.c"
+                ],
+                "repo": "https://git.kernel.org/ct-sample/linux",
+                "versions": [
+                  {
+                    "version": "af2806f8f90a150160be898cd85332459c83c5cb",
+                    "lessThan": "1c623e3cbf43f12dd4a72712079bfa247a9b8ba3",
+                    "versionType": "git",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "af2806f8f90a150160be898cd85332459c83c5cb",
+                    "lessThan": "d7d6ff98d5d1b400f02211f962ac32cc0020aeab",
+                    "versionType": "git",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "af2806f8f90a150160be898cd85332459c83c5cb",
+                    "lessThan": "1a9c180cd8435917b7516edfb1c9148032c28773",
+                    "versionType": "git",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "af2806f8f90a150160be898cd85332459c83c5cb",
+                    "lessThan": "79dc34beb1fdb3da79753e51e15c68591a2561fe",
+                    "versionType": "git",
+                    "status": "affected"
+                  }
+                ]
+              },
+              {
+                "vendor": "Linux",
+                "product": "Linux",
+                "defaultStatus": "affected",
+                "programFiles": [
+                  "net/core/skbuff.c"
+                ],
+                "repo": "https://git.kernel.org/ct-sample/linux",
+                "versions": [
+                  {
+                    "version": "3.14",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "0",
+                    "lessThan": "3.14",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  },
+                  {
+                    "version": "6.18.61",
+                    "lessThanOrEqual": "6.18.*",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  },
+                  {
+                    "version": "7.2.15",
+                    "lessThanOrEqual": "7.2.*",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  },
+                  {
+                    "version": "7.3.2",
+                    "lessThanOrEqual": "7.3.*",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  },
+                  {
+                    "version": "7.4-rc1",
+                    "lessThanOrEqual": "*",
+                    "versionType": "original_commit_for_fix",
+                    "status": "unaffected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {},
+        "references": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-120531",
+        "sourceIdentifier": "sample@example.com",
+        "published": "2026-11-07T22:16:36.090",
+        "lastModified": "2026-11-08T19:17:35.813",
+        "vulnStatus": "Deferred",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 6"
+          }
+        ],
+        "affected": [
+          {
+            "source": "sample@example.com",
+            "affectedData": [
+              {
+                "vendor": "wedevs",
+                "product": "SAMPLE product 7",
+                "defaultStatus": "unaffected",
+                "versions": [
+                  {
+                    "version": "0",
+                    "lessThanOrEqual": "10.47",
+                    "versionType": "semver",
+                    "status": "affected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N",
+                "baseScore": 7.2,
+                "baseSeverity": "HIGH",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "CHANGED",
+                "confidentialityImpact": "LOW",
+                "integrityImpact": "LOW",
+                "availabilityImpact": "NONE"
+              },
+              "exploitabilityScore": 3.9,
+              "impactScore": 2.7
+            }
+          ],
+          "ssvcV203": [
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "ssvcData": {
+                "timestamp": "2026-11-08T18:45:41.670642Z",
+                "id": "CVE-2026-120531",
+                "options": [
+                  {
+                    "exploitation": "none"
+                  },
+                  {
+                    "automatable": "yes"
+                  },
+                  {
+                    "technicalImpact": "partial"
+                  }
+                ],
+                "role": "SAMPLE role 8",
+                "version": "2.0.3"
+              }
+            }
+          ]
+        },
+        "weaknesses": [
+          {
+            "source": "sample@example.com",
+            "type": "Secondary",
+            "description": [
+              {
+                "lang": "en",
+                "value": "CWE-79"
+              }
+            ]
+          }
+        ],
+        "references": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-123493",
+        "sourceIdentifier": "sample@example.com",
+        "published": "2026-11-08T02:16:36.183",
+        "lastModified": "2026-11-08T02:16:36.350",
+        "vulnStatus": "Deferred",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 9 vulnerability authentication bypass"
+          }
+        ],
+        "affected": [
+          {
+            "source": "sample@example.com",
+            "affectedData": [
+              {
+                "vendor": "go-vikunja",
+                "product": "vikunja",
+                "defaultStatus": "unaffected",
+                "packageURL": "pkg:golang/code.vikunja.io/api",
+                "versions": [
+                  {
+                    "version": "2.4.0",
+                    "lessThan": "2.7.1",
+                    "versionType": "semver",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "2.7.1",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {
+          "cvssMetricV40": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "4.0",
+                "vectorString": "SAMPLE vectorString 10",
+                "baseScore": 5.3,
+                "baseSeverity": "MEDIUM",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "attackRequirements": "NONE",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "vulnConfidentialityImpact": "LOW",
+                "vulnIntegrityImpact": "LOW",
+                "vulnAvailabilityImpact": "NONE",
+                "subConfidentialityImpact": "NONE",
+                "subIntegrityImpact": "NONE",
+                "subAvailabilityImpact": "NONE",
+                "exploitMaturity": "NOT_DEFINED",
+                "confidentialityRequirement": "NOT_DEFINED",
+                "integrityRequirement": "NOT_DEFINED",
+                "availabilityRequirement": "NOT_DEFINED",
+                "modifiedAttackVector": "NOT_DEFINED",
+                "modifiedAttackComplexity": "NOT_DEFINED",
+                "modifiedAttackRequirements": "NOT_DEFINED",
+                "modifiedPrivilegesRequired": "NOT_DEFINED",
+                "modifiedUserInteraction": "NOT_DEFINED",
+                "modifiedVulnConfidentialityImpact": "NOT_DEFINED",
+                "modifiedVulnIntegrityImpact": "NOT_DEFINED",
+                "modifiedVulnAvailabilityImpact": "NOT_DEFINED",
+                "modifiedSubConfidentialityImpact": "NOT_DEFINED",
+                "modifiedSubIntegrityImpact": "NOT_DEFINED",
+                "modifiedSubAvailabilityImpact": "NOT_DEFINED",
+                "Safety": "NOT_DEFINED",
+                "Automatable": "NOT_DEFINED",
+                "Recovery": "NOT_DEFINED",
+                "valueDensity": "NOT_DEFINED",
+                "vulnerabilityResponseEffort": "NOT_DEFINED",
+                "providerUrgency": "NOT_DEFINED"
+              }
+            }
+          ],
+          "cvssMetricV31": [
+            {
+              "source": "sample@example.com",
+              "type": "Primary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+                "baseScore": 5.4,
+                "baseSeverity": "MEDIUM",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentialityImpact": "LOW",
+                "integrityImpact": "LOW",
+                "availabilityImpact": "NONE"
+              },
+              "exploitabilityScore": 2.8,
+              "impactScore": 2.5
+            }
+          ]
+        },
+        "weaknesses": [
+          {
+            "source": "sample@example.com",
+            "type": "Primary",
+            "description": [
+              {
+                "lang": "en",
+                "value": "CWE-613"
+              }
+            ]
+          }
+        ],
+        "references": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-123494",
+        "sourceIdentifier": "sample@example.com",
+        "published": "2026-11-08T02:16:36.413",
+        "lastModified": "2026-11-09T14:17:09.033",
+        "vulnStatus": "Deferred",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "SAMPLE value 11 vulnerability phishing"
+          }
+        ],
+        "affected": [
+          {
+            "source": "sample@example.com",
+            "affectedData": [
+              {
+                "vendor": "go-vikunja",
+                "product": "vikunja",
+                "defaultStatus": "unaffected",
+                "packageURL": "pkg:golang/code.vikunja.io/api",
+                "versions": [
+                  {
+                    "version": "0",
+                    "lessThan": "2.7.1",
+                    "versionType": "semver",
+                    "status": "affected"
+                  },
+                  {
+                    "version": "2.7.1",
+                    "versionType": "semver",
+                    "status": "unaffected"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "metrics": {
+          "cvssMetricV40": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "4.0",
+                "vectorString": "SAMPLE vectorString 12",
+                "baseScore": 5.1,
+                "baseSeverity": "MEDIUM",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "attackRequirements": "NONE",
+                "privilegesRequired": "LOW",
+                "userInteraction": "PASSIVE",
+                "vulnConfidentialityImpact": "NONE",
+                "vulnIntegrityImpact": "LOW",
+                "vulnAvailabilityImpact": "NONE",
+                "subConfidentialityImpact": "NONE",
+                "subIntegrityImpact": "NONE",
+                "subAvailabilityImpact": "NONE",
+                "exploitMaturity": "NOT_DEFINED",
+                "confidentialityRequirement": "NOT_DEFINED",
+                "integrityRequirement": "NOT_DEFINED",
+                "availabilityRequirement": "NOT_DEFINED",
+                "modifiedAttackVector": "NOT_DEFINED",
+                "modifiedAttackComplexity": "NOT_DEFINED",
+                "modifiedAttackRequirements": "NOT_DEFINED",
+                "modifiedPrivilegesRequired": "NOT_DEFINED",
+                "modifiedUserInteraction": "NOT_DEFINED",
+                "modifiedVulnConfidentialityImpact": "NOT_DEFINED",
+                "modifiedVulnIntegrityImpact": "NOT_DEFINED",
+                "modifiedVulnAvailabilityImpact": "NOT_DEFINED",
+                "modifiedSubConfidentialityImpact": "NOT_DEFINED",
+                "modifiedSubIntegrityImpact": "NOT_DEFINED",
+                "modifiedSubAvailabilityImpact": "NOT_DEFINED",
+                "Safety": "NOT_DEFINED",
+                "Automatable": "NOT_DEFINED",
+                "Recovery": "NOT_DEFINED",
+                "valueDensity": "NOT_DEFINED",
+                "vulnerabilityResponseEffort": "NOT_DEFINED",
+                "providerUrgency": "NOT_DEFINED"
+              }
+            }
+          ],
+          "cvssMetricV31": [
+            {
+              "source": "sample@example.com",
+              "type": "Secondary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:N/I:L/A:N",
+                "baseScore": 3.5,
+                "baseSeverity": "LOW",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentialityImpact": "NONE",
+                "integrityImpact": "LOW",
+                "availabilityImpact": "NONE"
+              },
+              "exploitabilityScore": 2.1,
+              "impactScore": 1.4
+            }
+          ],
+          "ssvcV203": [
+            {
+              "source": "134c704f-9b21-4f2e-91b3-4a467353bcc0",
+              "ssvcData": {
+                "timestamp": "2026-11-09T14:00:42.525107Z",
+                "id": "CVE-2026-123494",
+                "options": [
+                  {
+                    "exploitation": "none"
+                  },
+                  {
+                    "automatable": "no"
+                  },
+                  {
+                    "technicalImpact": "partial"
+                  }
+                ],
+                "role": "SAMPLE role 13",
+                "version": "2.0.3"
+              }
+            }
+          ]
+        },
+        "weaknesses": [
+          {
+            "source": "sample@example.com",
+            "type": "Secondary",
+            "description": [
+              {
+                "lang": "en",
+                "value": "CWE-352"
+              }
+            ]
+          }
+        ],
+        "references": []
+      }
+    }
+  ]
+}

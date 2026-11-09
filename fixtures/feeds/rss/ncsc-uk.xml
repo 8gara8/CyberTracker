@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0" xml:base="https://www.ncsc.gov.uk/ct-sample/home">
+  <channel>
+    <title>SAMPLE title 1</title>
+    <link>https://www.ncsc.gov.uk/ct-sample/home</link>
+    <description>SAMPLE text 8</description>
+    <language>en</language>
+    
+    <item>
+  <title>SAMPLE title 2</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/artificial-intelligence-and-cyber-intrus</link>
+  <description>SAMPLE text 9</description>
+  <pubDate>Tue, 03 Nov 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/artificial-intelligence-and-cyber-intrus</guid>
+    </item>
+<item>
+  <title>SAMPLE title 3 critical infrastructure</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/cyber-chief-uk-facing-ai-powered-attacks</link>
+  <description>SAMPLE text 10</description>
+  <pubDate>Tue, 03 Nov 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/cyber-chief-uk-facing-ai-powered-attacks</guid>
+    </item>
+<item>
+  <title>SAMPLE title 4</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/industry-concern-practical-action-value</link>
+  <description>SAMPLE text 11</description>
+  <pubDate>Tue, 27 Oct 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/industry-concern-practical-action-value</guid>
+    </item>
+<item>
+  <title>SAMPLE title 5</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/critical-security-issue-affecting-php</link>
+  <description>SAMPLE text 12 CVE-2026-109618 CVE-2026-109619</description>
+  <pubDate>Wed, 21 Oct 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/critical-security-issue-affecting-php</guid>
+    </item>
+<item>
+  <title>SAMPLE title 6 APT</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/introducing-new-ai-chapter-ncsc-research</link>
+  <description>SAMPLE text 13</description>
+  <pubDate>Tue, 20 Oct 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/introducing-new-ai-chapter-ncsc-research</guid>
+    </item>
+<item>
+  <title>SAMPLE title 7</title>
+  <link>https://www.ncsc.gov.uk/ct-sample/using-tls-to-protect-data</link>
+  <description>SAMPLE text 14</description>
+  <pubDate>Thu, 15 Oct 2026 12:00:00 +0000</pubDate>
+    <dc:creator/>
+    <guid isPermaLink="true">https://www.ncsc.gov.uk/ct-sample/using-tls-to-protect-data</guid>
+    </item>
+</channel>
+</rss>

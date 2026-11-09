@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rdf:RDF
+  xmlns="http://purl.org/rss/1.0/"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+  xml:lang="ja">
+ <channel rdf:about="https://www.ipa.go.jp/ct-sample/alert-rss">
+     <title>SAMPLE title 1</title>
+     <link>https://www.ipa.go.jp/ct-sample/index</link>
+     <description>SAMPLE text 8</description>
+     <dc:language>ja-jp</dc:language>
+     <items>
+         <rdf:Seq>
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/alert20261022" />
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/alert20261022" />
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/alert20261022" />
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/pre-alert20261021" />
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/1021-jre" />
+             <rdf:li rdf:resource="https://www.ipa.go.jp/ct-sample/1014-ms" />
+             </rdf:Seq>
+     </items>
+ </channel>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/alert20261022">
+  <title>SAMPLE title 2 脆弱性 CVE-2026-109618 CVE-2026-109619</title>
+  <link>https://www.ipa.go.jp/ct-sample/alert20261022</link>
+  <dc:creator>SAMPLE text 9</dc:creator>
+  <dc:date>2026-11-02T00:00:00+09:00</dc:date>
+ </item>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/alert20261022">
+  <title>SAMPLE title 3 脆弱性 CVE-2026-109618 CVE-2026-109619</title>
+  <link>https://www.ipa.go.jp/ct-sample/alert20261022</link>
+  <dc:creator>SAMPLE text 10</dc:creator>
+  <dc:date>2026-10-27T00:00:00+09:00</dc:date>
+ </item>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/alert20261022">
+  <title>SAMPLE title 4 脆弱性 CVE-2026-109618 CVE-2026-109619</title>
+  <link>https://www.ipa.go.jp/ct-sample/alert20261022</link>
+  <dc:creator>SAMPLE text 11</dc:creator>
+  <dc:date>2026-10-22T00:00:00+09:00</dc:date>
+ </item>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/pre-alert20261021">
+  <title>SAMPLE title 5</title>
+  <link>https://www.ipa.go.jp/ct-sample/pre-alert20261021</link>
+  <dc:creator>SAMPLE text 12</dc:creator>
+  <dc:date>2026-10-21T00:00:00+09:00</dc:date>
+ </item>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/1021-jre">
+  <title>SAMPLE title 6 脆弱性</title>
+  <link>https://www.ipa.go.jp/ct-sample/1021-jre</link>
+  <dc:creator>SAMPLE text 13</dc:creator>
+  <dc:date>2026-10-21T00:00:00+09:00</dc:date>
+ </item>
+ <item rdf:about="https://www.ipa.go.jp/ct-sample/1014-ms">
+  <title>SAMPLE title 7 脆弱性</title>
+  <link>https://www.ipa.go.jp/ct-sample/1014-ms</link>
+  <dc:creator>SAMPLE text 14</dc:creator>
+  <dc:date>2026-10-14T00:00:00+09:00</dc:date>
+ </item>
+ </rdf:RDF>

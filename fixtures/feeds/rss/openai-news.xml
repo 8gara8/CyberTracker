@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>SAMPLE title 1</title>
+        <description>SAMPLE text 9</description>
+        <link>https://openai.com/ct-sample/news</link>
+        <image>
+            <url>https://openai.com/ct-sample/apple-icon</url>
+            <title>SAMPLE title 2</title>
+            <link>https://openai.com/ct-sample/news</link>
+        </image>
+        <generator>SAMPLE text 20</generator>
+        <lastBuildDate>Mon, 09 Nov 2026 13:43:10 GMT</lastBuildDate>
+        <atom:link href="https://openai.com/ct-sample/rss" rel="self" type="application/rss+xml"/>
+        <language><![CDATA[en-US]]></language>
+        <item>
+            <title>SAMPLE title 3 hack vulnerabilities</title>
+            <description>SAMPLE text 10 hack vulnerabilities</description>
+            <link>https://openai.com/ct-sample/partnering-with-hacktron</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/partnering-with-hacktron</guid>
+            <category>SAMPLE text 16</category>
+            <pubDate>Fri, 06 Nov 2026 08:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>SAMPLE title 4 AI agent</title>
+            <description>SAMPLE text 11 AI agent</description>
+            <link>https://openai.com/ct-sample/measuring-how-ai-agents-handle-wet-lab-s</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/measuring-how-ai-agents-handle-wet-lab-s</guid>
+            <category>SAMPLE text 17</category>
+            <pubDate>Fri, 06 Nov 2026 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>SAMPLE title 5</title>
+            <description>SAMPLE text 12</description>
+            <link>https://openai.com/ct-sample/australian-universities-ai-native-gradua</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/australian-universities-ai-native-gradua</guid>
+            <category>SAMPLE text 18</category>
+            <pubDate>Thu, 05 Nov 2026 17:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>SAMPLE title 6</title>
+            <description>SAMPLE text 13</description>
+            <link>https://openai.com/ct-sample/cultfit-builds-with-codex</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/cultfit-builds-with-codex</guid>
+            <pubDate>Thu, 05 Nov 2026 20:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>SAMPLE title 7</title>
+            <description>SAMPLE text 14 vulnerabilities</description>
+            <link>https://openai.com/ct-sample/introducing-gpt-6-cyber</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/introducing-gpt-6-cyber</guid>
+            <category>SAMPLE text 19</category>
+            <pubDate>Thu, 05 Nov 2026 09:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>SAMPLE title 8</title>
+            <description>SAMPLE text 15</description>
+            <link>https://openai.com/ct-sample/merge-builds-with-openai</link>
+            <guid isPermaLink="true">https://openai.com/ct-sample/merge-builds-with-openai</guid>
+            <pubDate>Thu, 05 Nov 2026 08:00:00 GMT</pubDate>
+        </item>
+        </channel>
+</rss>

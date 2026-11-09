@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SAMPLE title 1</title>
+    <link>https://focustaiwan.tw/ct-sample/news</link>
+    <description>SAMPLE text 9</description>
+    <language>en</language>
+    <copyright>SAMPLE text 16</copyright>
+    <lastBuildDate>Mon, 09 Nov 2026 21:05:20 GMT</lastBuildDate>
+    <ttl>15</ttl>
+    <image>
+      <title>SAMPLE title 2</title>
+      <width>400</width>
+      <height>300</height>
+      <link>https://focustaiwan.tw/ct-sample/news</link>
+      <url>https://focustaiwan.tw/ct-sample/default</url>
+    </image>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090021</guid>
+      <title>SAMPLE title 3 data breach breach</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090021</link>
+      <pubDate>Mon, 09 Nov 2026 19:32:54 +0800</pubDate>
+      <description>SAMPLE text 10 data breach breach</description>
+    </item>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090020</guid>
+      <title>SAMPLE title 4</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090020</link>
+      <pubDate>Mon, 09 Nov 2026 19:26:52 +0800</pubDate>
+      <description>SAMPLE text 11</description>
+    </item>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090019</guid>
+      <title>SAMPLE title 5</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090019</link>
+      <pubDate>Mon, 09 Nov 2026 19:11:50 +0800</pubDate>
+      <description>SAMPLE text 12</description>
+    </item>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090018</guid>
+      <title>SAMPLE title 6</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090018</link>
+      <pubDate>Mon, 09 Nov 2026 17:02:45 +0800</pubDate>
+      <description>SAMPLE text 13</description>
+    </item>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090017</guid>
+      <title>SAMPLE title 7</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090017</link>
+      <pubDate>Mon, 09 Nov 2026 16:54:43 +0800</pubDate>
+      <description>SAMPLE text 14</description>
+    </item>
+    <item>
+      <guid isPermaLink="false">CNA/20261109/202611090016</guid>
+      <title>SAMPLE title 8 breach</title>
+      <link>https://focustaiwan.tw/ct-sample/202611090016</link>
+      <pubDate>Mon, 09 Nov 2026 16:53:41 +0800</pubDate>
+      <description>SAMPLE text 15</description>
+    </item>
+    </channel>
+</rss>
