@@ -28,7 +28,7 @@
       "to": "2024-12-31"
     },
     "inputs_file": "metrics/inputs/2026-10-14.json",
-    "inputs_sha256": "8995be32390ac9921153e7470c92c0addb0f7a3e68a5091b4a91dfc1ca46332f"
+    "inputs_sha256": "d3ef8199b34443d8bc0352388754aa8da9d1c9786c3710f6620efc254108e2c4"
   },
   "blocks": {
     "flood": {
@@ -291,8 +291,8 @@
     "new_since_last_edition": {
       "since_catalog_version": "2026.10.08",
       "cve_ids": [
-        "CVE-2026-104935",
-        "CVE-2026-96951"
+        "CVE-2026-96951",
+        "CVE-2026-104935"
       ]
     }
   },

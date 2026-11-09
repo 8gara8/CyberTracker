@@ -31,8 +31,8 @@ const FEEDS = path.join(ROOT, "fixtures", "feeds");
 const readJson = (file: string): unknown => JSON.parse(fs.readFileSync(file, "utf8"));
 const readRef = (name: string) => readJson(path.join(ROOT, "fixtures", "reference", name));
 const config = loadConfig({ root: ROOT });
-/** D's two new KEV entries (world.ts lists them in code-unit order; KEV order puts 96951 first). */
-const NEW_IDS = [...EDITIONS.weekday.kev.newIds].sort(compareCveIds);
+/** D's two new KEV entries, in KEV order (date_added, then CVE number: 96951 before 104935), as kevSummary() lists them. */
+const NEW_IDS = [...EDITIONS.weekday.kev.newIds];
 
 describe("fixtures/state/", () => {
   it("holds exactly the six state files, each parsing with its schema and equal to what fixtureState() builds", () => {
@@ -78,6 +78,7 @@ describe("fixtures/state/", () => {
   });
 
   it("kev-index.json is catalog 2026.10.08; the fixture catalog minus the index is exactly the morning's two new ids", () => {
+    expect(NEW_IDS).toEqual([...NEW_IDS].sort(compareCveIds));
     const index = fixtureState()["kev-index.json"];
     expect(index.catalog_version).toBe(STATE_WORLD.kevAsOf.version);
     expect(index.catalog_version).toBe(EDITIONS.weekday.kev.since);

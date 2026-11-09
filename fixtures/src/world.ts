@@ -61,7 +61,7 @@ export const EDITIONS: Readonly<Record<EditionName, EditionTimes>> = {
   quiet: times("quiet", "2026-10-11", "04:58:10", { ...KEV_1008, since: "2026.10.08", newIds: [] }, "cve_2026-10-10_2000Z"),
   monday: times("monday", "2026-10-12", "05:04:30", { ...KEV_1008, since: "2026.10.08", newIds: [] }, "cve_2026-10-11_2000Z"),
   weekday: times("weekday", "2026-10-14", "05:06:12", {
-    ...KEV_1013, since: "2026.10.08", newIds: ["CVE-2026-104935", "CVE-2026-96951"],
+    ...KEV_1013, since: "2026.10.08", newIds: ["CVE-2026-96951", "CVE-2026-104935"],
   }, "cve_2026-10-13_2000Z"),
 };
 

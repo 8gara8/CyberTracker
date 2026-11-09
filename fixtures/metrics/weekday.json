@@ -291,8 +291,8 @@
     "new_since_last_edition": {
       "since_catalog_version": "2026.10.08",
       "cve_ids": [
-        "CVE-2026-104935",
-        "CVE-2026-96951"
+        "CVE-2026-96951",
+        "CVE-2026-104935"
       ]
     }
   },

@@ -2037,8 +2037,8 @@
     "reference_sha256": "fecad3fe464f5d1a4f360834932115d6582248254b97e1cd1bc74efadc6c9712"
   },
   "kev_new": [
-    "CVE-2026-104935",
-    "CVE-2026-96951"
+    "CVE-2026-96951",
+    "CVE-2026-104935"
   ],
   "flood": {
     "days": [
