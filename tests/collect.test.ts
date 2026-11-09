@@ -28,6 +28,7 @@ import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pac
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
 import { collect, CollectTimeout, FixtureGuardError, fixtureGuard, main } from "../scripts/collect";
+import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
 
 const ROOT = path.resolve(__dirname, "..");
 const FEEDS = path.join(ROOT, "fixtures", "feeds");
@@ -578,6 +579,30 @@ describe("collect's other runs", () => {
     await expect(run(root, { now, deadline: T0 + 300_000 })).rejects.toBeInstanceOf(CollectTimeout);
     const files = written(root);
     for (const f of OUTPUTS) expect(files).not.toContain(f);
+  });
+
+  it("phase A reads every light feed first, then the deltaLog, the zips, the EPSS files and the GHSA sync (B1)", async () => {
+    process.env.CT_FIXTURE_FEEDS = FEEDS;
+    const order: string[] = [];
+    const base = fixtureGit(FEEDS);
+    const git: GitSource = { ...base, syncGhsa: async (dir, months) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months); } };
+    const fetch: typeof fetchFeed = (url, opts) => { order.push(url); return fetchFeed(url, opts); };
+    await collect({ date: DATE, deadline: T0 + 300_000, root: tempRoot(true), deps: { now: () => T0, aiMatch, fetch, git } });
+    // Phase A's light reads: the registry URLs of rss, myjvn, exchange and anthropic-cvd, and the KEV catalog
+    // (pinned to the kev-data commit, so matched by its file name). nvd is phase C, after the records.
+    const lightUrls = cfg.sources.feeds
+      .filter((f) => ["rss", "myjvn", "exchange", "anthropic-cvd", "kev"].includes(f.kind))
+      .flatMap((f) => { const e = f as { url: string; fallback_url: string | null }; return [e.url, e.fallback_url]; })
+      .filter((u): u is string => typeof u === "string");
+    const isLight = (u: string) => lightUrls.includes(u) || u.endsWith("/known_exploited_vulnerabilities.json");
+    const isHeavy = (u: string) => u === "ghsa-sync" || /(?:deltaLog\.json|\.zip|\.csv\.gz)$/.test(u);
+    const firstHeavy = order.findIndex(isHeavy);
+    const lastLight = order.reduce((at, u, i) => (isLight(u) ? i : at), -1);
+    expect(order.filter((u) => u.endsWith(".zip")).length).toBeGreaterThan(0);
+    expect(order).toContain("ghsa-sync");
+    expect(order.some((u) => u.endsWith(".csv.gz"))).toBe(true);
+    expect(order.filter(isLight).length).toBeGreaterThan(25);
+    expect(lastLight).toBeLessThan(firstHeavy);
   });
 
   it("a rerun that dies leaves no inputs.json or index.json from the earlier run (B8)", async () => {

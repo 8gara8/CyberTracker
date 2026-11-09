@@ -19,7 +19,7 @@ import {
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
 import { addDays, at, dataCutoffFor, isValidDate, taipeiTimestamp, taipeiToday, utcDateOf } from "../lib/dates";
-import { cachePaths } from "../lib/feeds/cache";
+import { cachePaths, type CachePaths } from "../lib/feeds/cache";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { epssMovers } from "../lib/feeds/epss";
 import { ghsaMonths } from "../lib/feeds/ghsa";
@@ -110,6 +110,39 @@ export function fixtureGuard(env: NodeJS.ProcessEnv = process.env, fixtureOk = f
 }
 
 const PHASE_A_POOL = 8;
+/**
+ * Phase A's two waves (§8.3): the light reads first, then the heavy downloads (the cvelist deltaLog and
+ * zips, the EPSS files, the GHSA sync), each wave a pool of 8 under the one budget and deadline. Run 1 on
+ * Kobol timed out six small feeds while the 37 MB deltaLog, EPSS and GHSA downloads ran beside them.
+ */
+const HEAVY_KINDS: ReadonlySet<FetchedFeed["kind"]> = new Set(["cvelist", "epss", "ghsa"]);
+
+/** Runs `light` then `heavy`, each as a pool of PHASE_A_POOL; the results in the order given, light first. */
+async function inTwoWaves<T, R>(light: readonly T[], heavy: readonly T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const first = await pool(light, PHASE_A_POOL, fn);
+  return [...first, ...(await pool(heavy, PHASE_A_POOL, fn))];
+}
+
+/**
+ * sources:check's own cache root, cache/check/ (§8.10): cachePaths()'s layout moved under it, so a check
+ * never rewrites collect's bodies, zips, EPSS files or GHSA checkout, and scrub-feed.ts reads its bodies
+ * from cache/check/feeds/.
+ */
+export function checkCachePaths(root: string): CachePaths {
+  const from = path.join(root, "cache");
+  const to = path.join(from, "check");
+  const move = (p: string) => path.join(to, path.relative(from, p));
+  const p = cachePaths(root);
+  return {
+    feedsDir: move(p.feedsDir), feedIndex: move(p.feedIndex), collectInputs: move(p.collectInputs),
+    feedBody: (id, ext) => move(p.feedBody(id, ext)),
+    zipsDir: move(p.zipsDir), zip: (asset) => move(p.zip(asset)), recordsDir: move(p.recordsDir),
+    epssFile: (date) => move(p.epssFile(date)), ghsaDir: move(p.ghsaDir), cvelistClone: move(p.cvelistClone),
+    stagedMetrics: (date) => move(p.stagedMetrics(date)), stagedBackfill: move(p.stagedBackfill),
+    // Not a cache path (logs/recompute); a check never writes it.
+    recompute: p.recompute,
+  };
+}
 const PER_ID_POOL = 16;
 const BUDGET_MS = 240_000;
 const REJOIN_FROM = "2023-01-01";
@@ -252,22 +285,24 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   let cvd: Awaited<ReturnType<typeof readCvd>> | null = null;
   const months = ghsaMonths(cutoff);
 
-  const tasks: (() => Promise<void>)[] = [];
-  for (const entry of byKind("kev")) tasks.push(async () => {
+  // The light wave, then the heavy wave (HEAVY_KINDS); nvd is phase C here.
+  const light: (() => Promise<void>)[] = [];
+  const heavy: (() => Promise<void>)[] = [];
+  for (const entry of byKind("kev")) light.push(async () => {
     kevRead = await readKev(entry, ctx, { sha: commits.kev_data, minVersion: state.kevIndex?.catalog_version ?? null });
     catalog = kevRead.data;
   });
-  for (const entry of byKind("cvelist")) tasks.push(async () => {
+  for (const entry of byKind("myjvn")) light.push(async () => { myjvn = await readMyJvn(entry, ctx); });
+  for (const entry of byKind("anthropic-cvd")) light.push(async () => { cvd = await readCvd(entry, ctx); });
+  for (const entry of byKind("exchange")) light.push(async () => { exchangeReads.set(entry.id, await readExchange(entry, ctx)); });
+  for (const entry of byKind("rss")) light.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
+  for (const entry of byKind("cvelist")) heavy.push(async () => {
     deltaLog = await readDeltaLog(entry, ctx, commits.cvelist);
     for (const z of plan.zips) zipReads.set(z.asset, await readZip(ctx, z));
   });
-  for (const entry of byKind("epss")) tasks.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
-  if (byKind("ghsa").length) tasks.push(async () => { ghsa = await readGhsa(ctx, git, months); });
-  for (const entry of byKind("myjvn")) tasks.push(async () => { myjvn = await readMyJvn(entry, ctx); });
-  for (const entry of byKind("anthropic-cvd")) tasks.push(async () => { cvd = await readCvd(entry, ctx); });
-  for (const entry of byKind("exchange")) tasks.push(async () => { exchangeReads.set(entry.id, await readExchange(entry, ctx)); });
-  for (const entry of byKind("rss")) tasks.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
-  await pool(tasks, PHASE_A_POOL, (t) => t());
+  for (const entry of byKind("epss")) heavy.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
+  if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months); });
+  await inTwoWaves(light, heavy, (t) => t());
   const fetchedAt = generatedAt;
 
   // CVE records: oldest zip first, so X + 1's copy wins.
@@ -541,7 +576,7 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
   const ref = o.now ?? clock();
   const fixtures = process.env.CT_FIXTURE_FEEDS ? path.resolve(process.env.CT_FIXTURE_FEEDS) : null;
   const git = o.deps?.git ?? (fixtures ? fixtureGit(fixtures) : liveGit(root));
-  const paths = cachePaths(root);
+  const paths = checkCachePaths(root);
   for (const d of [paths.feedsDir, paths.zipsDir, path.dirname(paths.epssFile("2026-01-01"))]) fs.mkdirSync(d, { recursive: true });
   const ctx: FeedCtx = {
     fetch: o.deps?.fetch ?? fetchFeed, budget: fetchBudget(BUDGET_MS), deadline: clock() + 5 * 60_000, now: clock, log: o.deps?.log ?? (() => {}), paths,
@@ -550,7 +585,9 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
   const entries = config.sources.feeds.filter((f) => !o.id || f.id === o.id);
   if (o.id && !entries.length) throw new Error(`sources:check: no registry entry "${o.id}"`);
   const day = new Date(ref).toISOString().slice(0, 10);
-  const rows = await pool(entries, PHASE_A_POOL, async (entry): Promise<CheckRow> => {
+  // Two waves as in collect (HEAVY_KINDS last), the rows put back in registry order.
+  const heavyFirst = (e: (typeof entries)[number]) => e.kind !== "search" && HEAVY_KINDS.has(e.kind);
+  const waves = await inTwoWaves(entries.filter((e) => !heavyFirst(e)), entries.filter(heavyFirst), async (entry): Promise<CheckRow> => {
     if (entry.kind === "search") return { id: entry.id, kind: entry.kind, status: "SKIP", items: 0, newest: null, fresh: "-", priority: entry.priority, error: null };
     let r: Read<unknown>;
     let newest: string | null = null;
@@ -574,6 +611,8 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
     const s = feedState(entry.kind, out, entry, ref);
     return { id: entry.id, kind: entry.kind, status: s.label, items, newest: newestOf(newest), fresh: freshColumn(entry.kind, s.label, newest, ref), priority: entry.priority, error: s.state === "failed" ? r.error ?? "network" : null };
   });
+  const byId = new Map(waves.map((row) => [row.id, row]));
+  const rows = entries.map((e) => byId.get(e.id)!);
   const bad = rows.some((row) => row.priority === 1 && (row.status === "FAIL" || row.status === "NODATE" || row.status === "STALE"));
   return { rows, exitCode: bad ? 1 : 0 };
 }
