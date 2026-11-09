@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
-  recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan, type FeedOutcome, type ItemContext, type ItemDraft,
+  recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
 } from "../lib/collect";
 import { loadConfig, matchCredit } from "../lib/config";
 import { addDays } from "../lib/dates";
@@ -208,6 +208,22 @@ describe("zipPlan", () => {
     expect(p.days.map((d) => d.date)).toEqual(p.missing);
     expect(assets(p)).toEqual(expect.arrayContaining(["2026-10-08_delta_CVEs_at_end_of_day.zip", "2026-10-09_delta_CVEs_at_end_of_day.zip"]));
     expect(assets(p)).not.toContain("2026-09-17_delta_CVEs_at_end_of_day.zip");
+  });
+
+  it("names the hour the zips read reach when they end before the record window (B9)", () => {
+    const p = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: "cve_2026-10-13_1900Z", knownDays: null });
+    expect(zipsReach(p.zips)).toBe("2026-10-13T19:00:00Z");
+    expect(zipsShortNote(zipsReach(p.zips), rw)).toBe("Stale: the CVE List zips read end at 19:00 UTC on 2026-10-13, before the record window ends at 20:00 UTC on 2026-10-13.");
+    const full = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: null });
+    expect(zipsShortNote(zipsReach(full.zips), rw)).toBeNull();
+    // No hourly zip at all (a guessed tag on the wrong UTC day): the end-of-day zip of 12 Oct reaches 13 Oct, 00:00 UTC.
+    const none = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: null, knownDays: null });
+    expect(zipsReach(none.zips)).toBe("2026-10-13T00:00:00Z");
+    expect(zipsShortNote(zipsReach(none.zips), rw)).toMatch(/^Stale: the CVE List zips read end at 00:00 UTC on 2026-10-13, /);
+    expect(zipsShortNote(null, rw)).toBeNull();
+    const ok = { ...skippedOutcome(), skipped: false, ok: true, newest: "2026-10-13T19:58:00Z" };
+    expect(feedState("cvelist", { ...ok, staleNote: zipsShortNote(zipsReach(p.zips), rw) }, { fresh_days: 2 }, Date.parse(rw.end))).toMatchObject({ state: "stale", label: "STALE" });
+    expect(feedState("cvelist", ok, { fresh_days: 2 }, Date.parse(rw.end)).state).toBe("ok");
   });
 
   it("plans no missed day after more than 25, when the metrics count none (a backfill --catch-up fills them)", () => {
@@ -603,6 +619,25 @@ describe("collect's other runs", () => {
     expect(order.some((u) => u.endsWith(".csv.gz"))).toBe(true);
     expect(order.filter(isLight).length).toBeGreaterThan(25);
     expect(lastLight).toBeLessThan(firstHeavy);
+  });
+
+  it("an hourly zip that ends before the record window makes cvelist stale, naming the hour, and invents no record (B9)", async () => {
+    const hourly = (hhmm: string) => `https://github.com/CVEProject/cvelistV5/releases/download/cve_2026-10-13_${hhmm}Z/2026-10-13_delta_CVEs_at_${hhmm}Z.zip`;
+    const feeds = feedsVariant((idx) => { idx[hourly("1900")] = idx[hourly("2000")]!; });
+    const refs = JSON.parse(fs.readFileSync(path.join(feeds, "git-refs.json"), "utf8"));
+    delete refs.repos["CVEProject/cvelistV5"]["refs/tags/cve_2026-10-13_2000Z"];
+    fs.writeFileSync(path.join(feeds, "git-refs.json"), JSON.stringify(refs));
+    const log: string[] = [];
+    const r = await run(tempRoot(true), { feeds, log });
+    const note = "Stale: the CVE List zips read end at 19:00 UTC on 2026-10-13, before the record window ends at 20:00 UTC on 2026-10-13.";
+    expect(r.index.feeds.find((f) => f.id === "cvelist")).toMatchObject({ status: "stale", note, version: "cve_2026-10-13_1900Z" });
+    expect(r.pack.feeds.find((f) => f.id === "cvelist")).toMatchObject({ ok: true, stale: true });
+    expect(r.inputs.cvelist.zips.map((z) => z.asset)).toEqual(["2026-10-12_delta_CVEs_at_end_of_day.zip", "2026-10-13_delta_CVEs_at_1900Z.zip"]);
+    expect(log).toContain(`cvelist: ${note}`);
+    // The same morning with the 2000Z zip: ok, and the records are the zips' own, never more.
+    const full = await run(tempRoot(true));
+    expect(full.index.feeds.find((f) => f.id === "cvelist")).toMatchObject({ status: "ok", note: null });
+    expect(r.pack.records.length).toBe(full.pack.records.length);
   });
 
   it("a rerun that dies leaves no inputs.json or index.json from the earlier run (B8)", async () => {

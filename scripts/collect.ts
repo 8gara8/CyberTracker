@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
   freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow,
-  provisionalRecords, recordWindow, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, type FeedOutcome,
+  provisionalRecords, recordWindow, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
   type ItemDraft, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
@@ -449,9 +449,12 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const zipFail = windowZips.map((z) => zipReads.get(z.asset)).find((r) => r && !r.ok);
     const notes = windowZips.filter((z) => !zipReads.get(z.asset)?.ok).map((z) => `CVE List: ${z.asset} not read.`);
     const ok = dl.ok && !zipFail && windowZips.length > 0;
+    // Zips that end before the record window does leave its last hours in no zip read: stale, with the hour.
+    const staleNote = ok ? zipsShortNote(zipsReach(windowZips), rw) : null;
+    if (staleNote) log(`cvelist: ${staleNote}`);
     outcomes.set(cveEntry.id, {
       ...outcomeOf(dl, fetchedAt), ok, error: ok ? null : dl.error ?? zipFail?.error ?? "network", newest: dl.data?.newest ?? null,
-      items: dl.data?.entries.length ?? 0, version: hourlyTag, notes: notes.slice(0, 2),
+      items: dl.data?.entries.length ?? 0, version: hourlyTag, notes: notes.slice(0, 2), staleNote,
     });
   }
   if (epssEntry && epss) {

@@ -8,7 +8,7 @@ import { addDays, taipeiDateOf, utcDateOf } from "./dates";
 import type { FetchErrorClass } from "./feeds/http";
 import type { CertNote, CheckLabel, CvdDashboard, CveRecord, EpssDay, ExchangeNotice, FeedState, GhsaAdvisory, JvnNote, KevEntry, RawItem } from "./feeds/types";
 import { epssJump } from "./feeds/epss";
-import { endOfDayAsset, hourlyAsset, type ReleaseAsset } from "./feeds/github";
+import { endOfDayAsset, hourlyAsset, tagTime, type ReleaseAsset } from "./feeds/github";
 import { kevNoteUrls } from "./feeds/kev";
 import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
@@ -167,6 +167,30 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
   });
   const ordered = [...zips.values()].sort((a, b) => byCodeUnit(a.utc_day, b.utc_day) || (a.kind === b.kind ? byCodeUnit(a.asset, b.asset) : a.kind === "end_of_day" ? -1 : 1));
   return { zips: ordered, days, missing };
+}
+
+/**
+ * The instant the zips read reach (§8.3): an end-of-day zip of X reaches X + 1 at 00:00Z, T's hourly zip
+ * its tag's hour; the latest of them, or null when none was read.
+ */
+export function zipsReach(zips: readonly PlannedZip[]): string | null {
+  let reach: string | null = null;
+  for (const z of zips) {
+    const end = z.kind === "end_of_day" ? `${addDays(z.utc_day, 1)}T00:00:00Z` : tagTime(z.tag);
+    if (end && (reach === null || end > reach)) reach = end;
+  }
+  return reach;
+}
+
+/**
+ * The cvelist note when the zips read end before the record window does (the minus-40-minute guess after
+ * a failed ls-remote, or a late hourly release): the records of the gap are in no zip read, so the feed
+ * is stale, never ok, and nothing is invented for the gap. Null when the zips reach the window's end.
+ */
+export function zipsShortNote(reach: string | null, recordWindow: TimeWindow): string | null {
+  if (reach === null || Date.parse(reach) >= Date.parse(recordWindow.end)) return null;
+  const at = (iso: string) => `${iso.slice(11, 16)} UTC on ${iso.slice(0, 10)}`;
+  return `Stale: the CVE List zips read end at ${at(reach)}, before the record window ends at ${at(new Date(Date.parse(recordWindow.end)).toISOString())}.`;
 }
 
 // ── Items ────────────────────────────────────────────────────────────────────────────────────────
@@ -606,11 +630,13 @@ export interface FeedOutcome {
   skipped: boolean;
   /** Fixed-template notes beyond the state ("MyJVN: 500 of 612 read."). */
   notes: string[];
+  /** A fixed-template reason a read that is ok is stale all the same (zipsShortNote()), or null. */
+  staleNote: string | null;
 }
 
 export const skippedOutcome = (): FeedOutcome => ({
   ok: false, error: null, triedFallback: false, fallbackUsed: false, urlUsed: null, newest: null, items: 0, kept: 0, records: 0,
-  version: null, sha256: null, fetchedAt: null, skipped: true, notes: [],
+  version: null, sha256: null, fetchedAt: null, skipped: true, notes: [], staleNote: null,
 });
 
 /** Kinds whose freshness is the registry's `fresh_days` (ruling R40); nvd, exchange and anthropic-cvd follow §8.3's own rules. */
@@ -644,6 +670,7 @@ export function feedState(kind: FetchedFeedKind, r: FeedOutcome, entry: Pick<Fet
       return { state: "stale", label: "STALE", note: [`Stale: newest entry ${newest.slice(0, 10)}.`, ...notes].join(" ") };
     }
   }
+  if (r.staleNote) return { state: "stale", label: "STALE", note: [r.staleNote, ...notes].join(" ") };
   return { state: "ok", label: "OK", note: notes.join(" ") || null };
 }
 
