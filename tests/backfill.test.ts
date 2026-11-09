@@ -148,6 +148,61 @@ describe("the clone reader", () => {
   }, SLOW);
 });
 
+describe("the clone stays inside cache/cvelistV5 (B12)", () => {
+  /** The enclosing repo's state that a clone command run against it would change. */
+  const outer = (root: string) => ({
+    head: sh(root, "rev-parse", "HEAD"), branch: sh(root, "symbolic-ref", "HEAD"), remotes: sh(root, "remote"),
+    shallow: fs.existsSync(path.join(root, ".git", "shallow")), status: sh(root, "status", "--porcelain"),
+  });
+
+  it("removes a broken .git and clones fresh, never running git against the enclosing repo", async () => {
+    const r = makeRoot();
+    const dir = path.join(r.root, "cache", "cvelistV5");
+    fs.mkdirSync(path.join(dir, ".git"), { recursive: true }); // an interrupted rm -rf: .git without HEAD
+    write(path.join(dir, "cves", "left-over.txt"), "partial copy");
+    write(path.join(r.root, "config", "run.json"), `${fs.readFileSync(path.join(r.root, "config", "run.json"), "utf8")}\n`); // an uncommitted edit
+    const before = outer(r.root);
+    expect(before.status).toBe("M config/run.json");
+    const info = await ensureClone(dir, r.url, r.sha);
+    expect(info).toMatchObject({ commit: r.sha, reused: false });
+    expect(outer(r.root)).toEqual(before);
+    expect(sh(dir, "rev-parse", "--show-toplevel")).toBe(fs.realpathSync(dir));
+    expect(fs.existsSync(path.join(dir, "cves", "left-over.txt"))).toBe(false);
+  }, SLOW);
+
+  it("ignores GIT_DIR and GIT_WORK_TREE in the environment", async () => {
+    const r = makeRoot();
+    const dir = path.join(r.root, "cache", "cvelistV5");
+    const before = outer(r.root);
+    const saved = { dir: process.env.GIT_DIR, tree: process.env.GIT_WORK_TREE };
+    process.env.GIT_DIR = path.join(r.root, ".git");
+    process.env.GIT_WORK_TREE = r.root;
+    try {
+      const info = await ensureClone(dir, r.url, r.sha);
+      expect(info.commit).toBe(r.sha);
+      expect((await ensureClone(dir, r.url, r.sha)).reused).toBe(true);
+    } finally {
+      if (saved.dir === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = saved.dir;
+      if (saved.tree === undefined) delete process.env.GIT_WORK_TREE;
+      else process.env.GIT_WORK_TREE = saved.tree;
+    }
+    expect(outer(r.root)).toEqual(before);
+    expect(sh(dir, "rev-parse", "--show-toplevel")).toBe(fs.realpathSync(dir));
+  }, SLOW);
+
+  it("removes nothing that is not <repo>/cache/cvelistV5", async () => {
+    const r = makeRoot();
+    const elsewhere = path.join(r.root, "cache", "other");
+    fs.mkdirSync(path.join(elsewhere, ".git"), { recursive: true });
+    write(path.join(elsewhere, "keep.txt"), "not a clone");
+    const before = outer(r.root);
+    await expect(ensureClone(elsewhere, r.url, r.sha)).rejects.toThrow(/not a clone of its own.*cache\/cvelistV5/);
+    expect(fs.readFileSync(path.join(elsewhere, "keep.txt"), "utf8")).toBe("not a clone");
+    expect(outer(r.root)).toEqual(before);
+  }, SLOW);
+});
+
 describe("the default build", () => {
   it("writes the state and E's metrics from the clone and the catalog", async () => {
     const r = makeRoot();

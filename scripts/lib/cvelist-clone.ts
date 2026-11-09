@@ -1,15 +1,18 @@
 // The backfill's CVE List clone (SPEC §5.9 step 1, ruling R26): updated in place at one commit, then read
 // with worker threads into CveFacts. In place means `git init` once, then a shallow fetch of the commit and
 // a forced checkout with `git clean -fdx`, so a second commit transfers only what changed and the tree is
-// the commit's exactly. A clone already at the commit and clean is reused. Git runs through P1's
-// scripts/lib/git.ts (GIT_TERMINAL_PROMPT=0); both repos are public, so no credential is ever involved.
+// the commit's exactly. A clone already at the commit and clean is reused. Every git command runs as
+// `git -C <dir>` with GIT_DIR and GIT_WORK_TREE removed from its environment and the search for a repo
+// stopped at the clone's parent (GIT_CEILING_DIRECTORIES), so a broken cache/cvelistV5/.git can never send a
+// command to the enclosing CyberTracker repo (GIT_TERMINAL_PROMPT=0 as in P1's scripts/lib/git.ts); both
+// repos are public, so no credential is ever involved.
 
 import fs from "node:fs";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import type { CveFacts } from "../../lib/feeds/types";
 import { byCodeUnit, compareCveIds } from "../../lib/ids";
-import { git, type Git } from "./git";
+import { GitError, type Git } from "./git";
 import { readBuckets, type BucketRead, type CveReadJob } from "./cve-read-worker";
 import { run } from "./run";
 
@@ -45,6 +48,46 @@ export async function diskBytes(dir: string): Promise<number> {
   return r.code === 0 && Number.isFinite(kb) ? kb * 1024 : 0;
 }
 
+/** Variables that point git at another repo, index or object store; none of them reaches a clone command. */
+const REPO_ENV = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE"];
+
+/**
+ * git for the clone in `dir` only: `git -C <dir>`, REPO_ENV removed, and GIT_CEILING_DIRECTORIES set to
+ * the parent, so git looks for a repo in `dir` and nowhere above it.
+ */
+export function cloneGit(dir: string): Git {
+  const abs = path.resolve(dir);
+  const env: Record<string, string | undefined> = { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_CEILING_DIRECTORIES: path.dirname(abs) };
+  for (const k of REPO_ENV) delete env[k];
+  const fn = (async (args: string[], timeoutMs = 60_000) => {
+    const r = await run("git", ["-C", abs, ...args], { env, timeoutMs });
+    if (r.code !== 0) throw new GitError(`git ${args.join(" ")} failed (${r.timedOut ? "timeout" : `exit ${r.code}`}): ${r.stderr.trim().slice(0, 400)}`);
+    return r.stdout.replace(/\s+$/, "");
+  }) as Git;
+  fn.cwd = abs;
+  fn.deadline = null;
+  return fn;
+}
+
+/** True when `dir` holds a repo of its own: `git rev-parse --show-toplevel` there is `dir` itself (real paths). */
+async function isOwnRepo(g: Git, dir: string): Promise<boolean> {
+  if (!fs.existsSync(path.join(dir, ".git"))) return false;
+  try {
+    return fs.realpathSync(await g(["rev-parse", "--show-toplevel"])) === fs.realpathSync(dir);
+  } catch {
+    return false;
+  }
+}
+
+/** Only <repo>/cache/cvelistV5 (a folder named cvelistV5 in a cache folder of a git checkout) is ever removed. */
+function assertRemovable(dir: string): void {
+  const abs = path.resolve(dir);
+  const repo = path.dirname(path.dirname(abs));
+  if (path.basename(abs) !== "cvelistV5" || path.basename(path.dirname(abs)) !== "cache" || !fs.existsSync(path.join(repo, ".git"))) {
+    throw new Error(`${abs} is not a clone of its own, and only <repo>/cache/cvelistV5 is removed and cloned again.`);
+  }
+}
+
 async function headOf(g: Git): Promise<string | null> {
   try {
     return await g(["rev-parse", "--verify", "HEAD^{commit}"]);
@@ -62,13 +105,23 @@ export async function ensureClone(dir: string, url: string, commit: string | nul
   if (commit !== null && !SHA_RE.test(commit)) throw new Error(`Not a full commit SHA: ${JSON.stringify(commit)}`);
   const started = Date.now();
   fs.mkdirSync(dir, { recursive: true });
-  const g = git(dir);
-  const isRepo = fs.existsSync(path.join(dir, ".git"));
+  const g = cloneGit(dir);
+  let isRepo = await isOwnRepo(g, dir);
+  if (!isRepo && fs.existsSync(path.join(dir, ".git"))) {
+    // A .git that is not a repo of its own (an interrupted removal, a partial copy): start again from nothing.
+    assertRemovable(dir);
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.mkdirSync(dir, { recursive: true });
+  }
   let reused = false;
   if (isRepo && commit !== null && (await headOf(g)) === commit && (await g(["status", "--porcelain", "--untracked-files=all"], CHECKOUT_TIMEOUT_MS)) === "") {
     reused = true;
   } else {
-    if (!isRepo) await g(["init", "--quiet"]);
+    if (!isRepo) {
+      await g(["init", "--quiet"]);
+      isRepo = await isOwnRepo(g, dir);
+      if (!isRepo) throw new Error(`git init in ${dir} did not make a repo of its own.`);
+    }
     const remotes = (await g(["remote"])).split("\n").filter(Boolean);
     await g(remotes.includes("origin") ? ["remote", "set-url", "origin", url] : ["remote", "add", "origin", url]);
     await g(["fetch", "--quiet", "--depth", "1", "--no-tags", "origin", commit ?? "main"], FETCH_TIMEOUT_MS);
