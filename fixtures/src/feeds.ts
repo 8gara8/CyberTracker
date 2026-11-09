@@ -27,6 +27,7 @@ import { compareCveIds } from "../../lib/ids";
 import { addDays } from "../../lib/dates";
 import { jsonText } from "../../lib/json";
 import { endOfDayAsset, hourlyAsset } from "../../lib/feeds/github";
+import { blockedReason } from "../../lib/sources";
 import { KevIndexRow } from "../../lib/schema/metrics";
 import { FIXTURES_DIR, KEV_DUE, KEV_ROWS, REPO_ROOT } from "./world";
 import { storedZip } from "./zip-writer";
@@ -78,15 +79,18 @@ export function fixtureKevRows(): KevIndexRow[] {
   return rows.sort(byAdded);
 }
 
-/** A vendor's first domain from config/vendors.json, by name or alias (case-insensitive), or null. */
+/**
+ * Each vendor's first domain from config/vendors.json, by name or alias (lower-cased), skipping a vendor
+ * whose first domain is on a blocked host (a code-hosting vendor such as GitLab), which gets example.com.
+ */
 function vendorDomains(): Map<string, string> {
-  const file = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "config", "vendors.json"), "utf8")) as {
-    vendors: { name: string; aliases: string[]; domains: string[] }[];
-  };
+  const read = (f: string) => JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "config", f), "utf8")) as unknown;
+  const file = read("vendors.json") as { vendors: { name: string; aliases: string[]; domains: string[] }[] };
+  const tiers = read("source-tiers.json") as { github: { tier1_paths: string[] } };
   const out = new Map<string, string>();
   for (const v of file.vendors) {
     const domain = v.domains[0];
-    if (!domain) continue;
+    if (!domain || blockedReason(`https://${domain}/ct-sample/x`, tiers) !== null) continue;
     for (const n of [v.name, ...v.aliases]) if (!out.has(n.toLowerCase())) out.set(n.toLowerCase(), domain);
   }
   return out;
@@ -99,8 +103,8 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
  * newest first; real cveID, vendorProject, product, dateAdded, knownRansomwareCampaignUse; invented
  * vulnerabilityName ("<vendor> <product> Vulnerability (SAMPLE)"), shortDescription and requiredAction
  * ("SAMPLE …"); dueDate = KEV_DUE where world.ts has it, else dateAdded + 21; notes = a vendor
- * /ct-sample/ URL (example.com for a vendor not in config/vendors.json) and the NVD record URL; cwes [];
- * one unknown extra key on the newest entry.
+ * /ct-sample/ URL (example.com for a vendor not in config/vendors.json or on a blocked host) and the NVD
+ * record URL; cwes []; one unknown extra key on the newest entry.
  */
 export function fixtureKevCatalog(): unknown {
   const domains = vendorDomains();

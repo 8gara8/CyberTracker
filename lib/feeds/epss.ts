@@ -4,6 +4,7 @@
 
 import zlib from "node:zlib";
 import { z } from "zod";
+import { isValidDate } from "../dates";
 import { compareCveIds } from "../ids";
 import { sha256Hex } from "../json";
 import type { EpssMover } from "../schema/metrics";
@@ -106,7 +107,7 @@ export function parseEpssApi(body: Buffer): Map<string, EpssScore & { date: stri
  * name or a "{date}" placeholder becomes "epss_scores-<date>.csv.gz". Throws for any other URL.
  */
 export function epssUrlFor(registryUrl: string, date: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`epssUrlFor: invalid date ${date}`);
+  if (!isValidDate(date)) throw new Error(`epssUrlFor: invalid date ${date}`);
   if (registryUrl.includes("{date}")) return registryUrl.replace("{date}", date);
   const re = /epss_scores-(?:current|\d{4}-\d{2}-\d{2})\.csv\.gz/;
   if (!re.test(registryUrl)) throw new Error(`epssUrlFor: not an EPSS CSV URL: ${registryUrl}`);

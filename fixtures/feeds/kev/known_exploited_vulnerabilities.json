@@ -431,7 +431,7 @@
       "requiredAction": "SAMPLE action, invented for the fixture: apply mitigations per vendor instructions, or discontinue use of the product if mitigations are unavailable.",
       "dueDate": "2026-10-02",
       "knownRansomwareCampaignUse": "Unknown",
-      "notes": "https://about.gitlab.com/ct-sample/cve-2026-85706 ; https://nvd.nist.gov/vuln/detail/CVE-2026-85706",
+      "notes": "https://example.com/ct-sample/gitlab-cve-2026-85706 ; https://nvd.nist.gov/vuln/detail/CVE-2026-85706",
       "cwes": []
     },
     {
