@@ -8,18 +8,21 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  buildPack, capItems, capRecords, dedupe, epssJumps, epssPackRecords, feedState, freshColumn, injectionCount, inWindow,
-  isDegraded, MD_LINE_MAX, packWindow, provisionalRecords, recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan,
-  type FeedOutcome, type ItemContext, type ItemDraft,
+  buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
+  injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
+  recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan, type FeedOutcome, type ItemContext, type ItemDraft,
 } from "../lib/collect";
 import { loadConfig, matchCredit } from "../lib/config";
 import { parseEpssCsv } from "../lib/feeds/epss";
+import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
 import type { CveRecord, RawItem } from "../lib/feeds/types";
 import { sha256Hex } from "../lib/json";
 import type { AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
+import { CANARY_URL_MARK } from "../lib/vocab";
+import { matchRecord } from "../lib/metrics/ai-credit";
 import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
@@ -96,11 +99,25 @@ afterAll(() => {
   else process.env.CT_FIXTURE_FEEDS = savedFeeds;
 });
 
-function run(root: string, o: { feeds?: string; now?: number | (() => number); deadline?: number; date?: string; log?: string[] } = {}) {
+function run(root: string, o: { feeds?: string; now?: number | (() => number); deadline?: number; date?: string; log?: string[]; urls?: string[] } = {}) {
   process.env.CT_FIXTURE_FEEDS = o.feeds ?? FEEDS;
   const now = typeof o.now === "function" ? o.now : () => (o.now as number | undefined) ?? T0;
-  return collect({ date: o.date ?? DATE, deadline: o.deadline ?? now() + 300_000, root, deps: { now, aiMatch, log: (l) => o.log?.push(l) } });
+  const fetch: typeof fetchFeed = (url, opts) => {
+    o.urls?.push(url);
+    return fetchFeed(url, opts);
+  };
+  return collect({ date: o.date ?? DATE, deadline: o.deadline ?? now() + 300_000, root, deps: { now, aiMatch, fetch, log: (l) => o.log?.push(l) } });
 }
+
+/** WP4's matchRecord() is a stub in this lane; the command-line run needs the real one. */
+const wp4Ready = (() => {
+  try {
+    matchRecord({ credits: [] } as unknown as Parameters<typeof matchRecord>[0], null, cfg.compiled.aiFinders);
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 /** Every file under `root` except config/ and content/, relative, sorted. */
 function written(root: string): string[] {
@@ -187,6 +204,46 @@ const itemCtx: ItemContext = {
 };
 const raw = (title: string, url: string, at = "2026-10-13T10:00:00Z", snippet = ""): RawItem => ({ title, url, published_at: at, snippet });
 
+describe("scores and keywords", () => {
+  it("packScore is 10 × (4 − priority) + 3 × keyword hits (at most 5) + recency 0 to 5 + 4 for tier 1", () => {
+    const end = { title: "x", snippet: "", published_at: "2026-10-13T20:29:59Z" };
+    expect(packScore(end, 1, 3, [], window, 12)).toBe(35);
+    expect(packScore(end, 1, 1, [], window, 12)).toBe(39);
+    expect(packScore({ ...end, published_at: "2026-10-12T08:30:00Z" }, 3, 2, [], window, 12)).toBe(10);
+    const kw = ["ransomware", "zero-day", "漏洞", "脆弱性", "攻撃", "breach"];
+    expect(packScore({ ...end, title: "ransomware zero-day 漏洞 脆弱性 攻撃 breach" }, 2, 2, kw, window, 12)).toBe(20 + 15 + 5);
+    // Half way through the 36-hour span: recency 2.5.
+    expect(packScore({ ...end, published_at: "2026-10-13T02:30:00Z" }, 2, 2, [], window, 12)).toBe(22.5);
+  });
+
+  it("keywordHits counts case-insensitive substrings in English, Chinese and Japanese", () => {
+    expect(keywordHits("SAMPLE Ransomware hits a Zero-Day", ["ransomware", "zero-day", "breach"])).toBe(2);
+    expect(keywordHits("SAMPLE 駭客利用漏洞發動勒索軟體攻擊", ["漏洞", "勒索", "ransomware"])).toBe(2);
+    expect(keywordHits("SAMPLE 不正アクセスで情報漏えい", ["不正アクセス", "情報漏えい", "脆弱性"])).toBe(2);
+    expect(keywordHits("SAMPLE weather", cfg.sources.keywords)).toBe(0);
+  });
+
+  it("cveIdsIn finds ids in any case, once each, in first-seen order", () => {
+    expect(cveIdsIn("cve-2026-104935 and CVE-2026-96951, then CVE-2026-104935 again; CVE-26-1 is not one")).toEqual(["CVE-2026-104935", "CVE-2026-96951"]);
+  });
+
+  it("an agency's alert URL marks the item; a newsroom quoting the same URL does not", () => {
+    const alertUrl = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-012/";
+    const agency = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE alerte de sécurité", alertUrl)], itemCtx).drafts;
+    expect(agency[0]!.alert).toBe(true);
+    const news = toItemDrafts(feedById("therecord"), [raw("SAMPLE France warns of attacks", "https://therecord.media/ct-sample/france-alert", "2026-10-13T10:00:00Z", `See ${alertUrl}`)], itemCtx).drafts;
+    expect(news[0]!.alert).toBe(false);
+    const bulletin = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE bulletin", "https://www.cert.ssi.gouv.fr/actualite/CERTFR-2026-ACT-040/")], itemCtx).drafts;
+    expect(bulletin[0]!.alert).toBe(false);
+  });
+
+  it("items take their publisher and tier from the link, not the feed", () => {
+    const d = toItemDrafts(feedById("thehackernews"), [raw("SAMPLE a vendor advisory", "https://www.cisa.gov/ct-sample/advisory")], itemCtx).drafts;
+    expect(d[0]!.outlet).toBe(feedById("thehackernews").name);
+    expect(d[0]!.publisher).not.toBe(feedById("thehackernews").name);
+  });
+});
+
 describe("items", () => {
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
     const d = toItemDrafts(feedById("nhk"), [
@@ -226,6 +283,35 @@ describe("items", () => {
     expect(toPackItems(c.kept).map((i) => i.id).slice(0, 2)).toEqual(["p0001", "p0002"]);
   });
 
+  it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut items first", () => {
+    const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const many = (n: number, coverage: (i: number) => ItemDraft["coverage"]) => Array.from({ length: n }, (_, i) => ({
+      ...base, feed_id: `feed-${i % 20}`, key: `k${i}`, url: `https://therecord.media/ct-sample/item-${i}`, coverage: coverage(i), score: 50 - i / 10,
+    }));
+    expect(capItems(many(100, () => ["exploits"])).kept.length).toBe(60);
+    const spread = capItems(many(400, (i) => [(["exploits", "breaches", "ai", "policy", "taiwan", "japan"] as const)[i % 6]!]));
+    expect(spread.kept.length).toBe(200);
+    expect(Object.values(spread.cutByFeed).reduce((a, b) => a + b, 0)).toBe(200);
+
+    const rec = (i: number, source: "kev" | "epss") => ({
+      key: `${source}:${i}`, source, record_id: `CVE-2026-${String(10000 + i)}`, url: `https://www.cve.org/CVERecord?id=CVE-2026-${10000 + i}`, advisory_urls: [],
+      title: `SAMPLE ${"t".repeat(190)}`, text: `SAMPLE ${"x".repeat(990)}`, date: "2026-10-13", vendor: null, product: null, cve_ids: [`CVE-2026-${10000 + i}`], facts: {}, flags: [], flagged: 0,
+    });
+    const drafts = [...Array.from({ length: 60 }, (_, i) => rec(i, "kev")), ...Array.from({ length: 400 }, (_, i) => rec(100 + i, "epss"))];
+    const capped = capRecords(provisionalRecords(drafts), new Set());
+    expect(capped.kept.length).toBe(400);
+    expect(capped.kept.filter((r) => r.source === "kev").length).toBe(60);
+    const allKev = capRecords(provisionalRecords(Array.from({ length: 410 }, (_, i) => rec(i, "kev"))), new Set());
+    expect(allKev.kept.length).toBe(410);
+
+    const items = toPackItems(capItems(many(200, (i) => [(["exploits", "breaches", "ai", "policy", "taiwan", "japan"] as const)[i % 6]!]).map((d) => ({ ...d, snippet: "s".repeat(290) }))).kept);
+    const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capped.kept, injectionFlags: 0 }, cfg.sources);
+    expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(built.sizeCut.items).toBe(items.length);
+    expect(built.sizeCut.records).toBeGreaterThan(0);
+    expect(built.pack.records.filter((r) => r.source === "kev").length).toBe(60);
+  });
+
   it("a planted instruction is flagged, counted and wrapped in the Markdown", async () => {
     const planted = await parseRss(fs.readFileSync(path.join(ROOT, "fixtures", "injection", "item.xml")));
     const at = Date.parse(planted.entries[0]!.published_at!);
@@ -239,6 +325,8 @@ describe("items", () => {
     expect(built.pack.injection_flags).toBe(d[0]!.flagged);
     const lines = built.md.split("\n").filter((l) => l.includes("ExampleOS"));
     expect(lines.length).toBeGreaterThan(0);
+    expect(built.md).not.toContain(CANARY_URL_MARK);
+    expect(built.md).toContain("[link]");
     for (const l of lines) {
       expect(l).toContain("⚠");
       const inside = l.slice(l.indexOf('<untrusted source="therecord">'), l.indexOf("</untrusted>"));
@@ -264,6 +352,12 @@ describe("items", () => {
     const wrapped = built.md.split("\n").filter((l) => l.includes("<untrusted source="));
     expect(wrapped.length).toBeGreaterThanOrEqual(4);
     for (const l of wrapped) expect(l).toMatch(/<untrusted source="[a-z-]+">[^<]*<\/untrusted>/);
+  });
+
+  it("the empty pack parses and its Markdown is one line", () => {
+    const p = emptyPack(DATE, window, GENERATED_AT, "2026-10-12");
+    expect(Pack.parse(p)).toMatchObject({ degraded: true, items: [], records: [], injection_flags: 0 });
+    expect(emptyPackMd(DATE).split("\n").filter(Boolean)).toHaveLength(1);
   });
 });
 
@@ -336,10 +430,13 @@ describe("collect on the fixture world (2026-10-14)", () => {
   let first: Record<string, string>;
   let stateBefore: string[];
 
+  const urls: string[] = [];
   beforeAll(async () => {
     root = tempRoot(true);
+    fs.mkdirSync(path.join(root, "cache", "cvelist", "records"), { recursive: true });
+    fs.writeFileSync(path.join(root, "cache", "cvelist", "records", "CVE-2020-0001.json"), "{}");
     stateBefore = fs.readdirSync(path.join(root, "content", "state")).map((f) => `${f} ${sha256Hex(fs.readFileSync(path.join(root, "content", "state", f)))}`);
-    result = await run(root);
+    result = await run(root, { urls });
     first = Object.fromEntries(OUTPUTS.map((f) => [f, readOut(root, f)]));
   });
 
@@ -405,6 +502,33 @@ describe("collect on the fixture world (2026-10-14)", () => {
     expect(result.pack.records.filter((r) => r.source === "jpcert" && r.facts.alert === true).length).toBeGreaterThan(0);
   });
 
+  it("empties the records cache first, and the next zip's copy of a record wins", () => {
+    const records = path.join(root, "cache", "cvelist", "records");
+    expect(fs.existsSync(path.join(records, "CVE-2020-0001.json"))).toBe(false);
+    const both = JSON.parse(fs.readFileSync(path.join(records, "CVE-2026-108917.json"), "utf8")) as { cveMetadata: { dateUpdated: string } };
+    expect(both.cveMetadata.dateUpdated).toBe("2026-10-13T16:04:13.730Z");
+  });
+
+  it("renders the Markdown layout: header, sections with back-references, records with advisory lines, within 150 KB", () => {
+    const md = first[`packs/${DATE}.md`]!;
+    expect(Buffer.byteLength(md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    const lines = md.split("\n");
+    expect(lines[1]).toBe("Window: 2026-10-13 04:30 to 2026-10-14 04:30 Taipei (items up to 12 hours earlier kept for context).");
+    expect(lines).toContain("Failed: Krebs on Security (timeout), " + `${cfg.sources.feeds.find((f) => f.id === "gtig")!.name} (http_503).`);
+    for (const h of ["## Exploits (", "## Breaches (", "## AI (", "## Policy (", "## Taiwan (", "## Japan (", "## Records ("]) expect(lines.some((l) => l.startsWith(h)), h).toBe(true);
+    expect(lines.some((l) => / see (Exploits|Breaches|AI|Policy|Taiwan): <untrusted source=/.test(l))).toBe(true);
+    expect(lines.some((l) => /^- \[r\d{4}\] KEV 2026-10-13 \(US date\) · CVE-2026-\d+ · <untrusted source="kev">/.test(l))).toBe(true);
+    expect(lines.some((l) => l.startsWith("  advisory: https://"))).toBe(true);
+  });
+
+  it("a rerun reuses the cached zips and EPSS files", async () => {
+    const zipUrls = urls.filter((u) => u.endsWith(".zip") || u.endsWith(".csv.gz"));
+    expect(zipUrls.length).toBe(5);
+    const again: string[] = [];
+    await run(root, { urls: again });
+    expect(again.filter((u) => u.endsWith(".zip") || u.endsWith(".csv.gz"))).toEqual([]);
+  });
+
   it("a rerun on the same inputs differs only in generated_at", async () => {
     const later = T0 + 60_000;
     const again = await run(root, { now: later });
@@ -438,6 +562,7 @@ describe("collect's other runs", () => {
     expect(r.inputs.cvelist.by_id.not_found.length).toBeGreaterThan(0);
     const log = CandidateLogFile.parse(JSON.parse(readOut(root, `logs/${DATE}.candidates.json`)));
     expect(log.log.map((l) => l.code)).toContain("KEV_INDEX_MISSING");
+    expect(r.inputs.cvelist.zips.map((z) => z.asset)).toEqual(["2026-10-12_delta_CVEs_at_end_of_day.zip", "2026-10-13_delta_CVEs_at_2000Z.zip"]);
     expect(fs.existsSync(path.join(root, "content"))).toBe(false);
   });
 
@@ -492,6 +617,15 @@ describe("the command line", () => {
       expect(await main(argv, { io: c.io, env: { NODE_ENV: "test" } as unknown as NodeJS.ProcessEnv, root: tempRoot(false) }), argv.join(" ")).toBe(2);
       expect(c.err.join("\n")).toMatch(/Usage:/);
     }
+  });
+
+  it.skipIf(!wp4Ready)("exits 0 when the pack is written, degraded or not (needs WP4's matchRecord)", async () => {
+    process.env.CT_FIXTURE_FEEDS = FEEDS;
+    const root = tempRoot(true);
+    const c = io();
+    expect(await main(["--date", DATE], { io: c.io, env: process.env, root })).toBe(0);
+    expect(c.out[0]).toMatch(/^Pack 2026-10-14: /);
+    expect(fs.existsSync(path.join(root, "packs", `${DATE}.json`))).toBe(true);
   });
 
   it("CT_FIXTURE_FEEDS outside a test run exits 2 and writes nothing", async () => {

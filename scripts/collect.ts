@@ -553,8 +553,8 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
       case "epss": { const k = await readEpss(entry, ctx, day); r = k; newest = k.data?.e?.score_date ?? null; items = k.data?.rows ?? 0; break; }
       case "ghsa": { const k = await readGhsa(ctx, git, ghsaMonths(addDays(day, -1))); r = k; newest = k.data?.headDate ?? null; items = k.data?.advisories.length ?? 0; break; }
       case "nvd": {
-        const end = new Date(Date.parse(`${day}T00:00:00Z`)).toISOString();
-        const k = await readNvd(entry, ctx, { start: new Date(Date.parse(end) - 86_400_000).toISOString(), end });
+        // The window the morning run would read now: the Taipei edition date's pack window.
+        const k = await readNvd(entry, ctx, packWindow(taipeiToday(new Date(ref)), config.run.pack));
         r = k; items = k.data?.total ?? 0; break;
       }
       case "myjvn": { const k = await readMyJvn(entry, ctx); r = k; newest = k.data?.newest ?? null; items = k.data?.totalRes ?? 0; break; }
