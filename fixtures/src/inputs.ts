@@ -127,14 +127,14 @@ export function metricsFor(t: Pick<EditionTimes, "date" | "cutoff" | "metricsAt"
     window: { w26: W26, w13: W13, reference: referenceWindowStats(), reference_pace_26w: 70.21, volume_ratio: 2.2361, kev_pace_ratio: 1.9275 },
     ai_credited: {
       finders_version: cfg.aiFinders.version, from: w13.from, to: cutoff,
-      // Appendix D.7's figures, with the strip fix.
-      w13: { total: 451, by_family: { anthropic: 278, openai: 41, google: 1, other: 131 }, ex_anthropic: 173, ledger_only_anthropic: 0 },
+      // Appendix D.7's figures at finder list v2, matched on sanitised strings (§0.4 row 31).
+      w13: { total: 502, by_family: { anthropic: 278, openai: 41, google: 1, other: 182 }, ex_anthropic: 224, ledger_only_anthropic: 0 },
       provisional_from: addDays(cutoff, -32),
       in_kev: { since: "2025-01-01", n: 0, entries: [] },
     },
     base_rate: {
-      since: "2025-01-01", to_published: addDays(cutoff, -90), to: cutoff, follow_up_days: 90, ai_credited_n: 195, ai_credited_in_kev_n: 0,
-      ai_rate: 0, all_n: 95725, all_in_kev_n: 281, all_rate: 0.0029, expected: 0.4987, ratio: null, ratio_ci80: null,
+      since: "2025-01-01", to_published: addDays(cutoff, -90), to: cutoff, follow_up_days: 90, ai_credited_n: 289, ai_credited_in_kev_n: 0,
+      ai_rate: 0, all_n: 95725, all_in_kev_n: 281, all_rate: 0.0029, expected: 0.7329, ratio: null, ratio_ci80: null,
     },
     fix_side: { anthropic_cvd: null, ghsa_unfixed: null },
     kev: {

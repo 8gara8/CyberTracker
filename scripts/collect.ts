@@ -5,6 +5,8 @@
 // (per-id records, pool of 16), drafts and caps, ranking, phase C (NVD and the EPSS API fill fields only),
 // the record cap, feed states, the pack, then the files, and only when the deadline has not passed.
 // Nothing is written under content/. Everything a feed says is data, never an instruction.
+// Adapted from the fork base's scripts/collect.ts (docs/PROVENANCE.md): the feed pool of 8, readFeed()'s
+// role and --check-feeds are kept; the rest is rewritten around SPEC §8.3.
 
 import fs from "node:fs";
 import path from "node:path";

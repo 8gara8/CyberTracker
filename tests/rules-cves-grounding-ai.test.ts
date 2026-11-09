@@ -493,8 +493,8 @@ describe("LEAD_GROUNDED", () => {
   });
 
   it("fails a known name in a sentence with no item, unless the Gap itself names it", () => {
-    expect(lead("Microsoft-found flaws: 451 in 13 weeks.", [], true)).toHaveLength(1);
-    expect(lead("AI-credited flaws: 451 in 13 weeks, 173 excluding Anthropic.", [], true)).toEqual([]);
+    expect(lead("Microsoft-found flaws: 502 in 13 weeks.", [], true)).toHaveLength(1);
+    expect(lead("AI-credited flaws: 502 in 13 weeks, 224 excluding Anthropic.", [], true)).toEqual([]);
   });
 
   it("in published mode uses only the items' own names", () => {

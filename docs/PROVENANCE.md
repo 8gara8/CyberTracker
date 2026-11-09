@@ -59,7 +59,7 @@ Every carried file names its Europe source in its header comment.
 | `scripts/publish.ts` | later (P3) | Commits only `content/` to `main` in this repo and pushes (SPEC §8.7) |
 | `scripts/daily.ts` | later (P3) | Data-only edition first, run records, CyberTracker's stages (SPEC §8.2) |
 | `scripts/preflight.ts` | later (P3) | Europe's arm64, keychain and push-path checks |
-| `scripts/collect.ts` | adapted (P2) | Rewritten around SPEC §8.3: one commit per repo through `GitSource`, the delta zips, per-id records, phase A and B pools, ranking, the record cap and the cache files (`cache/feeds/index.json`, `inputs.json`). Kept from Europe: the feed pool of 8, `readFeed()`'s role and `--check-feeds`, which becomes `sources:check` (SPEC §8.10). Its header comment does not yet name the Europe source |
+| `scripts/collect.ts` | adapted (P2) | Rewritten around SPEC §8.3: one commit per repo through `GitSource`, the delta zips, per-id records, phase A and B pools, ranking, the record cap and the cache files (`cache/feeds/index.json`, `inputs.json`). Kept from Europe: the feed pool of 8, `readFeed()`'s role and `--check-feeds`, which becomes `sources:check` (SPEC §8.10). Its header comment names the Europe source |
 | `scripts/build-context.ts` | later (P3) | |
 | `scripts/validate.ts`, `scripts/gen-json-schema.ts` | later (P1) | |
 | `scripts/lib/summary.ts` | later (P1) | Becomes `lib/chat.ts` and `scripts/chat.ts` (four formats; `changes()` dropped) |

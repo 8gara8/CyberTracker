@@ -28,7 +28,7 @@
       "to": "2024-12-31"
     },
     "inputs_file": "metrics/inputs/2026-10-08.json",
-    "inputs_sha256": "c240aa26e4abcb9ccfc00b6b386a70bfe679a393f3f9061c769e2b0c651ec5f5"
+    "inputs_sha256": "dcb4f76c1c7d38bff5cf62b516dd2d7c60397f08306fd3f1bf10b53ccd5e15bd"
   },
   "blocks": {
     "flood": {
@@ -64,7 +64,7 @@
   },
   "headline": {
     "text": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
-    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     "at_disclosure_direction": "no_clear_change",
     "after_disclosure_direction": "no_clear_change",
     "quoted": [
@@ -114,7 +114,7 @@
       },
       {
         "path": "ai_credited.w13.total",
-        "display": "451"
+        "display": "502"
       },
       {
         "path": "constant",
@@ -122,7 +122,7 @@
       },
       {
         "path": "ai_credited.w13.ex_anthropic",
-        "display": "173"
+        "display": "224"
       }
     ]
   },
@@ -248,14 +248,14 @@
     "from": "2026-07-08",
     "to": "2026-10-06",
     "w13": {
-      "total": 451,
+      "total": 502,
       "by_family": {
         "anthropic": 278,
         "openai": 41,
         "google": 1,
-        "other": 131
+        "other": 182
       },
-      "ex_anthropic": 173,
+      "ex_anthropic": 224,
       "ledger_only_anthropic": 0
     },
     "provisional_from": "2026-09-04",
@@ -270,13 +270,13 @@
     "to_published": "2026-07-08",
     "to": "2026-10-06",
     "follow_up_days": 90,
-    "ai_credited_n": 195,
+    "ai_credited_n": 289,
     "ai_credited_in_kev_n": 0,
     "ai_rate": 0,
     "all_n": 95725,
     "all_in_kev_n": 281,
     "all_rate": 0.0029,
-    "expected": 0.4987,
+    "expected": 0.7329,
     "ratio": null,
     "ratio_ci80": null
   },
