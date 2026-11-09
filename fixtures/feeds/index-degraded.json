@@ -1,4 +1,8 @@
 {
+  "https://blog.google/security/rss/": {
+    "file": "rss/nodate.xml",
+    "content_type": "application/xml"
+  },
   "https://cert.europa.eu/publications/security-advisories-rss": {
     "error": "network"
   },
@@ -21,10 +25,6 @@
   "https://epss.empiricalsecurity.com/epss_scores-current.csv.gz": {
     "file": "epss/epss_scores-2026-10-13.csv.gz",
     "content_type": "application/gzip"
-  },
-  "https://feeds.feedburner.com/GoogleOnlineSecurityBlog": {
-    "file": "rss/nodate.xml",
-    "content_type": "application/atom+xml"
   },
   "https://feeds.feedburner.com/TheHackersNews": {
     "error": "dns"

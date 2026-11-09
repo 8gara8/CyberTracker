@@ -81,8 +81,10 @@ Settled by session 1's `sources:check` on 2026-11-09:
 
 - `gtig` reads the feed at cloudblog.withgoogle.com/topics/threat-intelligence/rss/ (the old URL was an
   HTML page).
-- `google-security` reads https://feeds.feedburner.com/GoogleOnlineSecurityBlog directly (the blog's own
-  URL redirected to an http feedburner address).
+- `google-security` reads https://blog.google/security/rss/. Session 1 first moved it to
+  https://feeds.feedburner.com/GoogleOnlineSecurityBlog (the blog's own URL redirected to an http
+  feedburner address); session 2 (2026-11-10) found that feed's newest entry was 2026-04-23: the blog moved
+  to blog.google/security, whose RSS (20 items, newest 2026-10-21) is https end to end.
 - `bsi` reads BSI's press and events feed (the old URL answered 404).
 - `cisa-advisories` reads the joint advisories feed (about 1.4 MB, about one a month, fresh for 60 days),
   and the new `cisa-alerts` reads CISA's alerts (about 110 KB): the all-items feed was 5,685,118 bytes,

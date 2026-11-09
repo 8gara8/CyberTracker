@@ -2,7 +2,8 @@
 # 2026-11-09 (the curl read of every URL and P2 session 1's `npm run sources:check`). MyJVN, the Anthropic
 # dashboard, iThome, Focus Taiwan, NHK, the Google Threat Intelligence blog, Google's security blog, BSI and
 # the CISA advisories moved to the paths that answer; TPEx and CISA's alerts joined; the MSRC blog (no feed)
-# left. iThome's zone-less dates are Taipei time (date_zone).
+# left. iThome's zone-less dates are Taipei time (date_zone). Google's security blog moved to
+# blog.google/security (session 2, 2026-11-10: the feedburner feed stopped at 2026-04-23).
 schema_version: 1
 keywords:            # ranking boosts and filters for news items; any language; case-insensitive
   - zero-day
@@ -319,9 +320,9 @@ feeds:
     must_match: false
     date_zone: null
   - id: google-security
-    name: Google Online Security Blog
+    name: Google Security Blog
     kind: rss
-    url: https://feeds.feedburner.com/GoogleOnlineSecurityBlog
+    url: https://blog.google/security/rss/
     fallback_url: null
     language: en
     region: GLOBAL

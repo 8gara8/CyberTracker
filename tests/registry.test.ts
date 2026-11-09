@@ -152,7 +152,8 @@ describe("the registry as Kobol's reads finalised it", () => {
 
   it("reads the feed paths that answered", () => {
     expect(byId("gtig")).toMatchObject({ name: "Google Threat Intelligence blog", url: "https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/" });
-    expect(byId("google-security").url).toBe("https://feeds.feedburner.com/GoogleOnlineSecurityBlog");
+    // Session 2 (2026-11-10): the feedburner feed stopped at 2026-04-23; the blog moved to blog.google/security.
+    expect(byId("google-security")).toMatchObject({ name: "Google Security Blog", url: "https://blog.google/security/rss/" });
     expect(byId("bsi")).toMatchObject({
       name: "BSI press and events", url: "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml",
     });
@@ -178,6 +179,8 @@ describe("the registry as Kobol's reads finalised it", () => {
     expect(tierOf(byId("gtig").url)).toEqual([1, "mandiant"]);
     expect(tierOf(byId("google-security").url)).toEqual([1, "google-security"]);
     expect(tierOf("https://feeds.feedburner.com/googleonlinesecurityblog/")).toEqual([1, "google-security"]);
+    expect(tierOf("https://blog.google/security/a-post/")).toEqual([1, "google-security"]);
+    expect(tierOf("https://blog.google/threat-analysis-group/a-post/")).toEqual([1, "google-tag"]);
     expect(tierOf(byId("bsi").url)).toEqual([1, "bsi"]);
     expect(tierOf(byId("cisa-alerts").url)).toEqual([1, "cisa"]);
     expect(tierOf("https://acs.gov.tw/")).toEqual([1, "moda-acs"]);

@@ -2300,7 +2300,7 @@ Reuters, AP, Nikkei and agencies without a feed are `search` entries.
 
 | Region | `rss` entries (`id`: URL) | `search` entries |
 |---|---|---|
-| Global and US | `therecord`: therecord.media/feed · `bleepingcomputer`: www.bleepingcomputer.com/feed/ (priority 1, `fresh_days` 2) · `securityweek`: www.securityweek.com/feed/ · `krebs`: krebsonsecurity.com/feed/ · `thehackernews`: feeds.feedburner.com/TheHackersNews · `techcrunch-security`: techcrunch.com/category/security/feed/ · `cisa-advisories`: www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml (joint advisories, `fresh_days` 60) · `cisa-alerts`: www.cisa.gov/cybersecurity-advisories/alerts.xml (priority 1, `fresh_days` 7) · `gtig`: cloudblog.withgoogle.com/topics/threat-intelligence/rss/ · `msft-security`: www.microsoft.com/en-us/security/blog/feed/ · `unit42`: unit42.paloaltonetworks.com/feed/ · `volexity`: www.volexity.com/feed/ · `project-zero`: googleprojectzero.blogspot.com/feeds/posts/default · `google-security`: feeds.feedburner.com/GoogleOnlineSecurityBlog · `openai-news`: openai.com/news/rss.xml | `q-reuters`, `q-ap` (cyberattacks, hacking, vulnerabilities) · `q-anthropic-red` (red.anthropic.com) |
+| Global and US | `therecord`: therecord.media/feed · `bleepingcomputer`: www.bleepingcomputer.com/feed/ (priority 1, `fresh_days` 2) · `securityweek`: www.securityweek.com/feed/ · `krebs`: krebsonsecurity.com/feed/ · `thehackernews`: feeds.feedburner.com/TheHackersNews · `techcrunch-security`: techcrunch.com/category/security/feed/ · `cisa-advisories`: www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml (joint advisories, `fresh_days` 60) · `cisa-alerts`: www.cisa.gov/cybersecurity-advisories/alerts.xml (priority 1, `fresh_days` 7) · `gtig`: cloudblog.withgoogle.com/topics/threat-intelligence/rss/ · `msft-security`: www.microsoft.com/en-us/security/blog/feed/ · `unit42`: unit42.paloaltonetworks.com/feed/ · `volexity`: www.volexity.com/feed/ · `project-zero`: googleprojectzero.blogspot.com/feeds/posts/default · `google-security`: blog.google/security/rss/ · `openai-news`: openai.com/news/rss.xml | `q-reuters`, `q-ap` (cyberattacks, hacking, vulnerabilities) · `q-anthropic-red` (red.anthropic.com) |
 | Europe | `ncsc-uk`: www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml · `cert-eu`: CERT-EU security advisories (`fresh_days` 30: its newest item was 16 days old on 2026-11-09) · `bsi`: www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml (de, BSI press and events) · `cert-fr`: www.cert.ssi.gouv.fr/feed/ (fr) | `q-enisa` |
 | Taiwan | `twcert-tvn` · `focustaiwan`: feeds.feedburner.com/rsscna/engnews/ · `taipeitimes`: www.taipeitimes.com/xml/index.rss (`must_match`) · `cna`: feeds.feedburner.com/rsscna/technology (zh-Hant, `must_match`) · `ithome-security`: www.ithome.com.tw/rss/security (zh-Hant, `date_zone` +08:00) | `q-acs-tw` · `q-mjib-tw` (調查局 資安) · `q-nsb-tw` (國安局 網路攻擊) |
 | Japan | `jpcert` · `ipa`: www.ipa.go.jp/security/alert-rss.rdf (ja) · `security-next`: www.security-next.com/feed (ja) · `nhk`: www.nhk.or.jp/rss/news/cat0.xml (`must_match`) | `q-nco-jp` (国家サイバー統括室) · `q-npa-jp` (警察庁 サイバー) · `q-nikkei` (日経 サイバー攻撃) |
@@ -2323,11 +2323,13 @@ Reuters, AP, Nikkei and agencies without a feed are `search` entries.
 
 - 35 to 60 entries; ids unique. Every coverage value has at least 3 entries; `taiwan` at least 5 (two in
   `zh-Hant-TW`); `japan` at least 4 (two in `ja`).
-- Every `rss` URL resolves through `publisherFor()` to tier 1 or 2. The three feedburner feeds do so
-  through path-prefixed domains: `feeds.feedburner.com/thehackersnews` on `the-hacker-news`,
-  `feeds.feedburner.com/rsscna` on `cna` and `feeds.feedburner.com/googleonlinesecurityblog` on
-  `google-security` (written in lower case, as the `Domain` schema requires; `matchPath()` lower-cases
-  the URL's path); any other feedburner path stays tier 3. Google's cloud blog is tier 1 only under
+- Every `rss` URL resolves through `publisherFor()` to tier 1 or 2. The feedburner feeds do so through
+  path-prefixed domains: `feeds.feedburner.com/thehackersnews` on `the-hacker-news`,
+  `feeds.feedburner.com/rsscna` on `cna` and `feeds.feedburner.com/googleonlinesecurityblog` (the
+  Google blog's old feed, kept for its links) on `google-security` (written in lower case, as the `Domain`
+  schema requires; `matchPath()` lower-cases the URL's path); any other feedburner path stays tier 3. On
+  blog.google, `blog.google/security` is `google-security` and `blog.google/threat-analysis-group`
+  `google-tag` (§0.4 row 64). Google's cloud blog is tier 1 only under
   `cloudblog.withgoogle.com/topics/threat-intelligence` (on `mandiant`). `kev` and `cvelist` read
   `raw.githubusercontent.com` by script only; their records are cited by canonical record URLs (cve.org,
   cisa.gov).
