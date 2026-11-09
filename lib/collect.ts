@@ -21,7 +21,8 @@ import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanit
 import type { EpssMover } from "./schema/metrics";
 import type { RunFile, SourceTiersFile } from "./schema/config";
 import type { Evidence } from "./schema/misc";
-import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource } from "./schema/pack";
+import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type RankLogEntry } from "./schema/pack";
+import type { Candidate } from "./schema/context";
 import type { FetchedFeed, FetchedFeedKind, SourcesFile } from "./schema/registry";
 import type { TimeWindow } from "./schema/common";
 import { blockedReason, publisherFor, type PublisherConfig } from "./sources";
@@ -601,6 +602,26 @@ export function capRecords(records: readonly PackRecord[], referenced: ReadonlyS
   const idMap = new Map<string, string>();
   keep.forEach((r, i) => idMap.set(r.id, kept[i]!.id));
   return { kept, idMap, cut: records.length - kept.length };
+}
+
+/** What a record the cap removed is called in the candidates and the log: no id, so it matches no kept record. */
+export const CAPPED_ID = "capped";
+
+/**
+ * Rewrites provisional record ids to capRecords()' final ids (§4.14 Caps, §5.12 step 6): the candidates'
+ * own ids and pack_ids, the cut entries (`merged:<id>` included) and the ranking log's MERGED and BUNDLED
+ * details. A record the cap removed is CAPPED_ID, and leaves pack_ids. Item ids pass through.
+ */
+export function remapIds(kept: readonly Candidate[], cut: readonly CutEntry[], log: readonly RankLogEntry[], idMap: ReadonlyMap<string, string>): { kept: Candidate[]; cut: CutEntry[]; log: RankLogEntry[] } {
+  const isRecord = (id: string) => /^r\d{4,}$/.test(id);
+  const one = (id: string) => (isRecord(id) ? idMap.get(id) ?? CAPPED_ID : id);
+  const ids = (xs: readonly string[]) => xs.filter((x) => !isRecord(x) || idMap.has(x)).map(one).sort(byCodeUnit);
+  const detail = (text: string) => text.replace(/(^|\s)(r\d{4,})(?=[\s.,:;]|$)/g, (_, pre: string, id: string) => `${pre}${one(id)}`);
+  return {
+    kept: kept.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids) })),
+    cut: cut.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids), reason: c.reason.startsWith("merged:") ? `merged:${one(c.reason.slice(7))}` : c.reason })),
+    log: log.map((l) => (l.code === "MERGED" || l.code === "BUNDLED" ? { ...l, detail: detail(l.detail) } : { ...l })),
+  };
 }
 
 // ── Feed states (§8.3 Feed status) ───────────────────────────────────────────────────────────────

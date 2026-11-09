@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
-  recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
+  recordWindow, remapIds, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
 } from "../lib/collect";
 import { loadConfig, matchCredit } from "../lib/config";
 import { addDays } from "../lib/dates";
@@ -417,6 +417,38 @@ describe("records", () => {
     expect(recs.map((r) => r.record_id)).toEqual(jumps.map((j) => j.cve_id));
     expect(recs[0]!.facts.epss_delta_7d).toBe(0.2);
     expect(epssJumps(e, null)).toEqual([]);
+  });
+
+  it("remapIds gives the candidates, cut entries and MERGED and BUNDLED log lines final ids, and a capped record none (B10)", () => {
+    // r0001 and r0002 swap places in display order; r0350 fell to the cap of 400.
+    const idMap = new Map([["r0001", "r0002"], ["r0002", "r0001"]]);
+    const cand = (id: string, pack_ids: string[]) => ({ id, pack_ids }) as unknown as Parameters<typeof remapIds>[0][number];
+    const cutEntry = (id: string, reason: string, pack_ids = [id]) => ({ id, score: 1, reason, pack_ids, cve_ids: [] });
+    const r = remapIds(
+      [cand("r0001", ["r0350", "r0001", "p0003"])],
+      [cutEntry("r0350", "merged:r0001"), cutEntry("p0004", "merged:r0350"), cutEntry("r0002", "below_cap"), cutEntry("r0350", "below_cap")],
+      [
+        { code: "MERGED", detail: "r0350 (jpcert) merged into r0001 by CVE-2026-0001." },
+        { code: "MERGED", detail: "p0004 (therecord) merged into r0350 by title." },
+        { code: "BUNDLED", detail: "rel-sample: 3 records bundled, 1 exploited, 0 also kept as their own candidates." },
+        { code: "KEV_INDEX_MISSING", detail: "No kev-index.json: every catalog entry counts as new (r0001)." },
+      ],
+      idMap,
+    );
+    expect(r.kept.map((c) => [c.id, c.pack_ids])).toEqual([["r0002", ["p0003", "r0002"]]]);
+    expect(r.cut.map((c) => [c.id, c.reason, c.pack_ids])).toEqual([
+      ["capped", "merged:r0002", []], ["p0004", "merged:capped", ["p0004"]], ["r0001", "below_cap", ["r0001"]], ["capped", "below_cap", []],
+    ]);
+    expect(r.log.map((l) => l.detail)).toEqual([
+      "capped (jpcert) merged into r0002 by CVE-2026-0001.",
+      "p0004 (therecord) merged into capped by title.",
+      "rel-sample: 3 records bundled, 1 exploited, 0 also kept as their own candidates.",
+      "No kev-index.json: every catalog entry counts as new (r0001).",
+    ]);
+    // Nothing capped and nothing moved: every id stays as it was.
+    const same = remapIds([cand("r0001", ["r0001"])], [cutEntry("r0002", "merged:r0001")], [{ code: "MERGED", detail: "r0002 (jvn) merged into r0001 by title." }], new Map([["r0001", "r0001"], ["r0002", "r0002"]]));
+    expect(same.cut[0]).toMatchObject({ id: "r0002", reason: "merged:r0001" });
+    expect(same.log[0]!.detail).toBe("r0002 (jvn) merged into r0001 by title.");
   });
 
   it("capRecords keeps KEV records and referenced ones first, renumbers in display order, and maps the ids", () => {

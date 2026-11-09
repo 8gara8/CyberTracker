@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
   freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow,
-  provisionalRecords, recordWindow, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
+  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
   type ItemDraft, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
@@ -34,10 +34,9 @@ import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { AnthropicCvdFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
-  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type CutEntry, type FeedIndexEntry, type PackItem,
+  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem,
   type RankLogEntry, type ZipRead,
 } from "../lib/schema/pack";
-import type { Candidate } from "../lib/schema/context";
 import type { FetchedFeed } from "../lib/schema/registry";
 import {
   cacheWrite, readCveById, readCvd, readDeltaLog, readEpss, readEpssApi, readExchange, readGhsa, readKev, readMyJvn, readNvd,
@@ -194,16 +193,6 @@ function indexEntry(entry: FetchedFeed, o: FeedOutcome, ref: number): FeedIndexE
     id: entry.id, kind: entry.kind, status: s.state, label: s.label, error_class: s.state === "failed" ? o.error ?? "network" : null,
     url_used: o.urlUsed, fallback_used: o.fallbackUsed, newest: newestOf(o.newest), items: o.items, records: o.records,
     version: o.version, sha256: o.sha256, fetched_at: o.fetchedAt, note: s.note ? s.note.slice(0, 200) : null,
-  };
-}
-
-function remapIds(kept: Candidate[], cut: CutEntry[], idMap: ReadonlyMap<string, string>): { kept: Candidate[]; cut: CutEntry[] } {
-  const isRecord = (id: string) => /^r\d{4,}$/.test(id);
-  const one = (id: string) => (isRecord(id) ? idMap.get(id) ?? id : id);
-  const ids = (xs: readonly string[]) => xs.filter((x) => !isRecord(x) || idMap.has(x)).map(one).sort(byCodeUnit);
-  return {
-    kept: kept.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids) })),
-    cut: cut.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids), reason: c.reason.startsWith("merged:") ? `merged:${one(c.reason.slice(7))}` : c.reason })),
   };
 }
 
@@ -435,7 +424,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id)));
   const capR = capRecords(provisional, referenced);
   if (capR.cut) log(`records: ${capR.cut} over the cap of 400.`);
-  const remapped = remapIds(kept, ranked.cut, capR.idMap);
+  const remapped = remapIds(kept, ranked.cut, ranked.log, capR.idMap);
   kept = remapped.kept;
 
   // Step 11: feed states, the degraded rule, the pack.
@@ -518,7 +507,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const byReason = { below_cap: 0, merged: 0, bundled: 0 };
   for (const c of cut) byReason[c.reason === "below_cap" ? "below_cap" : c.reason.startsWith("merged:") ? "merged" : "bundled"] += 1;
   const candidates: CandidatesFile = { schema_version: 1, date: D, kept, cut: { count: cut.length, by_reason: byReason } };
-  const rankLog: RankLogEntry[] = [...ranked.log];
+  const rankLog: RankLogEntry[] = remapped.log;
   const candidateLog = { schema_version: 1 as const, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog };
 
   const kevData = kr?.data ?? null;
