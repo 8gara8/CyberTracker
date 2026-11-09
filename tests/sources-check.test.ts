@@ -5,8 +5,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { gunzipSync } from "node:zlib";
 import { loadConfig } from "../lib/config";
+import { parseAnthropicCvd } from "../lib/feeds/anthropic-cvd";
+import { parseEpssCsv } from "../lib/feeds/epss";
+import { parseExchange } from "../lib/feeds/exchange";
+import { parseNvdPage } from "../lib/feeds/nvd";
+import { parseRss } from "../lib/feeds/rss";
+import { blockedReason } from "../lib/sources";
+import { BLOCKED_HOSTS } from "../lib/vocab";
 import { checkFeeds, formatCheckTable, main, type CheckRow } from "../scripts/collect";
+import { EPSS_FILLER_ROWS, fixtureCveIds, main as scrubMain, SCRUB_ITEMS_MAX, scrubFeed, ScrubRefused } from "../fixtures/src/scrub-feed";
 
 const ROOT = path.resolve(__dirname, "..");
 const FEEDS = path.join(ROOT, "fixtures", "feeds");
@@ -135,5 +144,136 @@ describe("checkFeeds exit codes and options", () => {
     expect(code).toBe(rows[0]!.status === "OK" ? 0 : 1);
     expect(await main(["--check-feeds", "--id", "no-such-feed"], { io, root: tempRoot(), env: process.env })).toBe(2);
     expect(err.join("\n")).toContain("no registry entry");
+  });
+});
+
+// ── fixtures/src/scrub-feed.ts: what sources:check leaves in cache/feeds/, scrubbed into a fixture ─────
+
+describe("scrub-feed", () => {
+  const opts = { sourceTiers: cfg.sourceTiers, keywords: cfg.sources.keywords };
+  const links = (text: string) => text.replace(/&amp;/g, "&").match(/https?:\/\/[^\s"'<>\\)\]]+/g) ?? [];
+  const NS = /^http:\/\/(?:purl\.org|www\.w3\.org|jvn\.jp\/rss|data-marking\.mitre\.org|jvndb\.jvn\.jp\/myjvn|www\.us-cert\.gov\/tlp)\//;
+  const safe = (text: string) => {
+    for (const u of links(text)) {
+      if (u.startsWith("http://")) expect(u).toMatch(NS);
+      else expect(blockedReason(u, cfg.sourceTiers), u).toBeNull();
+    }
+  };
+
+  it("an RSS body from sources:check: six items, invented titles, links rewritten, dates and structure kept", async () => {
+    const root = tempRoot();
+    await checkFeeds({ id: "bleepingcomputer", now: T0, root });
+    const body = fs.readFileSync(path.join(root, "cache", "feeds", "bleepingcomputer.xml"));
+    const before = await parseRss(body);
+    const out = scrubFeed("rss", body, opts);
+    const after = await parseRss(out);
+    expect(after.total).toBe(SCRUB_ITEMS_MAX);
+    expect(after.entries.map((e) => e.published_at)).toEqual(before.entries.slice(0, SCRUB_ITEMS_MAX).map((e) => e.published_at));
+    for (const e of after.entries) {
+      expect(e.title).toMatch(/^SAMPLE title \d+/);
+      expect(e.url).toMatch(/^https:\/\/[a-z0-9.-]+\/ct-sample\/[a-z0-9-]+$/);
+    }
+    expect(new Set(after.entries.map((e) => e.url)).size).toBe(SCRUB_ITEMS_MAX);
+    safe(out.toString("utf8"));
+  });
+
+  it("keeps keywords and CVE ids, removes people and addresses, upgrades links, and keeps RDF's item list in step", async () => {
+    const rdf = `<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel rdf:about="http://www.example.org/feed.rdf"><title>Example feed</title><link>http://www.example.org/</link>
+<description>Channel text</description><dc:creator>Jane Example (jane@example.org)</dc:creator>
+<items><rdf:Seq>${Array.from({ length: 8 }, (_, i) => `<rdf:li rdf:resource="https://www.example.org/news/${i}.html"/>`).join("")}</rdf:Seq></items></channel>
+${Array.from({ length: 8 }, (_, i) => `<item rdf:about="https://www.example.org/news/${i}.html"><title>Ransomware hits a hospital, CVE-2026-104935 exploited (${i})</title>
+<link>https://www.example.org/news/${i}.html?utm_source=rss&amp;utm_medium=feed#top</link><description><![CDATA[<p>Story by Jane Example. Contact jane@example.org</p>]]></description>
+<dc:creator>Jane Example</dc:creator><dc:date>2026-10-13T1${i}:00:00+09:00</dc:date></item>`).join("\n")}
+</rdf:RDF>`;
+    const out = scrubFeed("rdf", Buffer.from(rdf), opts).toString("utf8");
+    expect(out).not.toMatch(/Jane|jane@|Story by|hospital/);
+    expect(out.match(/<item /g)!.length).toBe(SCRUB_ITEMS_MAX);
+    expect(out.match(/<rdf:li /g)!.length).toBe(SCRUB_ITEMS_MAX);
+    const parsed = await parseRss(Buffer.from(out));
+    expect(parsed.entries[0]!.title).toBe("SAMPLE title 2 ransomware CVE-2026-104935");
+    expect(parsed.entries[0]!.url).toBe("https://www.example.org/ct-sample/0");
+    expect(parsed.entries[0]!.published_at).toBe("2026-10-13T01:00:00.000Z");
+    const about = [...out.matchAll(/<item rdf:about="([^"]+)"/g)].map((m) => m[1]);
+    const li = [...out.matchAll(/<rdf:li rdf:resource="([^"]+)"/g)].map((m) => m[1]);
+    expect(li).toEqual(about);
+    expect(out).toContain('xmlns="http://purl.org/rss/1.0/"');
+    safe(out);
+  });
+
+  it("refuses a capture that would keep a blocked host, another scheme or an unknown namespace", () => {
+    const blocked = BLOCKED_HOSTS.find((b) => b.reason === "shortener")!.pattern;
+    const rss = (link: string, ns = "") => Buffer.from(`<?xml version="1.0"?><rss version="2.0"${ns}><channel><title>x</title><item><title>t</title><link>${link}</link><pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate></item></channel></rss>`);
+    expect(() => scrubFeed("rss", rss(`https://${blocked}/abc`), opts)).toThrow(ScrubRefused);
+    expect(() => scrubFeed("rss", rss("javascript:void(0)"), opts)).toThrow(ScrubRefused);
+    expect(() => scrubFeed("rss", rss("https://www.example.org/a", ' xmlns:media="http://search.yahoo.com/mrss/"'), opts)).toThrow(ScrubRefused);
+    expect(() => scrubFeed("rss", rss("https://www.example.org/a"), opts)).not.toThrow();
+  });
+
+  it("EPSS keeps the fixture CVEs' rows and 40 filler rows, with the model line", () => {
+    const gz = fs.readFileSync(path.join(FEEDS, "epss", "epss_scores-2026-10-13.csv.gz"));
+    const before = parseEpssCsv(gz).day;
+    const keep = new Set(["CVE-2023-34362", "CVE-2024-21762", "CVE-2026-104935"]);
+    const out = scrubFeed("epss", gz, { ...opts, keepCves: keep });
+    const after = parseEpssCsv(out).day;
+    expect(after.model_version).toBe(before.model_version);
+    expect(after.score_date).toBe(before.score_date);
+    for (const id of keep) if (before.scores.has(id)) expect(after.scores.get(id)).toEqual(before.scores.get(id));
+    expect(after.scores.size).toBe([...keep].filter((id) => before.scores.has(id)).length + Math.min(EPSS_FILLER_ROWS, before.scores.size - keep.size));
+    expect(gunzipSync(out).toString("utf8").split("\n")[0]).toMatch(/^#model_version:/);
+    expect(fixtureCveIds(FEEDS).has("CVE-2026-104935")).toBe(true);
+  });
+
+  it("NVD: six vulnerabilities at most, references dropped, NIST's scores kept, other addresses replaced", () => {
+    const body = fs.readFileSync(path.join(FEEDS, "nvd", "page-1.json"));
+    const out = scrubFeed("nvd", body, opts);
+    const json = JSON.parse(out.toString("utf8"));
+    expect(parseNvdPage(out).scores).toEqual(parseNvdPage(body).scores);
+    for (const v of json.vulnerabilities) {
+      expect(v.cve.references).toEqual([]);
+      expect(v.cve.sourceIdentifier).toBe("sample@example.com");
+      for (const d of v.cve.descriptions) expect(d.value).toMatch(/^SAMPLE /);
+    }
+    expect(json.totalResults).toBe(json.vulnerabilities.length);
+    safe(out.toString("utf8"));
+  });
+
+  it("the exchange keeps its notices' cyber terms, dates and codes, and invents the rest", () => {
+    const body = fs.readFileSync(path.join(FEEDS, "exchange-tw", "twse.json"));
+    const out = scrubFeed("exchange", body, opts);
+    const before = parseExchange(body, "twse").entries;
+    const after = parseExchange(out, "twse").entries;
+    expect(after.map((n) => [n.company_code, n.spoken_at])).toEqual(before.slice(0, SCRUB_ITEMS_MAX).map((n) => [n.company_code, n.spoken_at]));
+    expect(after.every((n) => n.company.startsWith("SAMPLE"))).toBe(true);
+    expect(after.some((n) => /資安|網路攻擊|駭客|勒索/.test(`${n.subject} ${n.text}`))).toBe(true);
+  });
+
+  it("the dashboard page and payload keep the revision, the date and the ids", () => {
+    const page = fs.readFileSync(path.join(FEEDS, "anthropic-cvd", "page.html"));
+    const payload = fs.readFileSync(path.join(FEEDS, "anthropic-cvd", "payload.json"));
+    const before = parseAnthropicCvd(page, "text/html", payload);
+    const p2 = scrubFeed("anthropic-cvd", page, opts);
+    const j2 = scrubFeed("anthropic-cvd", payload, opts);
+    const after = parseAnthropicCvd(p2, "text/html", j2);
+    expect({ revision: after.revision, as_of: after.as_of }).toEqual({ revision: before.revision, as_of: before.as_of });
+    expect(after.ledger_ids.every((id) => before.ledger_ids.includes(id))).toBe(true);
+    safe(p2.toString("utf8"));
+    safe(j2.toString("utf8"));
+  });
+
+  it("the command line writes on success, writes nothing when it refuses, and exits 2 on usage", async () => {
+    const dir = tmp("ct-scrub-");
+    const io = { out: () => {}, err: () => {} };
+    const from = path.join(FEEDS, "rss", "zoneless.rdf");
+    expect(scrubMain(["rdf", from, path.join(dir, "ok.rdf")], io, ROOT)).toBe(0);
+    expect((await parseRss(fs.readFileSync(path.join(dir, "ok.rdf")))).total).toBeGreaterThan(0);
+    const bad = path.join(dir, "bad.xml");
+    fs.writeFileSync(bad, `<rss version="2.0"><channel><item><title>t</title><link>javascript:void(0)</link></item></channel></rss>`);
+    expect(scrubMain(["rss", bad, path.join(dir, "bad.out.xml")], io, ROOT)).toBe(1);
+    expect(fs.existsSync(path.join(dir, "bad.out.xml"))).toBe(false);
+    expect(scrubMain(["html", from, path.join(dir, "x")], io, ROOT)).toBe(2);
+    expect(scrubMain(["rss", from], io, ROOT)).toBe(2);
+    expect(scrubMain(["epss", from, path.join(dir, "x"), "--keep"], io, ROOT)).toBe(2);
   });
 });
