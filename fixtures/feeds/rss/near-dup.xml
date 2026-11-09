@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE near duplicates</title>
+<link>https://www.example.com/ct-sample/near-dup</link>
+<description>SAMPLE: copies of one story that dedupe must fold.</description>
+<language>zh-tw</language>
+<item>
+<title>SAMPLE 駭客利用 Ivanti 零時差漏洞入侵企業網路</title>
+<link>https://www.ithome.com.tw/ct-sample/near-dup-1</link>
+<pubDate>2026-10-13 10:05</pubDate>
+<description>SAMPLE: 內容為虛構。</description>
+</item>
+<item>
+<title>SAMPLE 駭客利用 Ivanti 零時差漏洞入侵企業網絡</title>
+<link>https://www.ithome.com.tw/ct-sample/near-dup-2</link>
+<pubDate>2026-10-13 10:20</pubDate>
+<description>SAMPLE: 內容為虛構，標題只差一個字。</description>
+</item>
+<item>
+<title>SAMPLE: Attackers exploit Ivanti Connect Secure flaw CVE-2026-104935</title>
+<link>https://www.example.com/ct-sample/story-a</link>
+<pubDate>Tue, 13 Oct 2026 16:05:00 +0000</pubDate>
+<description>SAMPLE: the first copy.</description>
+</item>
+<item>
+<title>SAMPLE: Attackers exploit Ivanti Connect Secure flaw (CVE-2026-104935)</title>
+<link>https://www.example.org/ct-sample/story-b</link>
+<pubDate>Tue, 13 Oct 2026 16:40:00 +0000</pubDate>
+<description>SAMPLE: the second copy, at another URL.</description>
+</item>
+<item>
+<title>SAMPLE: Microsoft patches an exploited Windows Shell flaw</title>
+<link>https://www.example.com/ct-sample/story-c</link>
+<pubDate>Tue, 13 Oct 2026 18:10:00 +0000</pubDate>
+<description>SAMPLE: the plain URL.</description>
+</item>
+<item>
+<title>SAMPLE: Microsoft patches an exploited Windows Shell flaw</title>
+<link>https://www.example.com/ct-sample/story-c?utm_source=rss&amp;utm_medium=feed</link>
+<pubDate>Tue, 13 Oct 2026 18:12:00 +0000</pubDate>
+<description>SAMPLE: the same URL with tracking parameters.</description>
+</item>
+</channel>
+</rss>

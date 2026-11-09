@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-5jmp-7q8r-9v2w",
+  "modified": "2026-10-13T11:30:02Z",
+  "published": "2026-10-13T11:30:00Z",
+  "aliases": [],
+  "summary": "SAMPLE: ct-sample-router matches routes case-insensitively",
+  "details": "SAMPLE details, invented for the fixture. Fixed in 1.8.3.",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ct-sample-router"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "1.2.0"
+            },
+            {
+              "fixed": "1.8.3"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://example.com/ct-sample/ghsa-5jmp-7q8r-9v2w"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://example.org/ct-sample/ct-sample-router"
+    }
+  ],
+  "database_specific": {
+    "cwe_ids": [
+      "CWE-178"
+    ],
+    "severity": "MODERATE",
+    "github_reviewed": true,
+    "github_reviewed_at": "2026-10-13T11:30:02Z",
+    "nvd_published_at": null
+  }
+}

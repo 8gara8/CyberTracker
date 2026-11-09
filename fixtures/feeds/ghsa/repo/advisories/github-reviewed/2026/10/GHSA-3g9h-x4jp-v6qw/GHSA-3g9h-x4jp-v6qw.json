@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-3g9h-x4jp-v6qw",
+  "modified": "2026-10-13T09:12:45Z",
+  "published": "2026-10-13T09:12:44Z",
+  "aliases": [],
+  "summary": "SAMPLE: ct-sample-template-engine evaluates untrusted templates",
+  "details": "SAMPLE details, invented for the fixture. A package with no CVE id; no fixed version is listed.",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ct-sample-template-engine"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "last_affected": "3.4.1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://example.com/ct-sample/ghsa-3g9h-x4jp-v6qw"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://example.org/ct-sample/ct-sample-template-engine"
+    }
+  ],
+  "database_specific": {
+    "cwe_ids": [
+      "CWE-94"
+    ],
+    "severity": "CRITICAL",
+    "github_reviewed": true,
+    "github_reviewed_at": "2026-10-13T09:12:45Z",
+    "nvd_published_at": null
+  }
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xml:lang="ja">
+<channel rdf:about="https://www.example.com/ct-sample/zoneless-rdf">
+<title>SAMPLE zone-less RDF</title>
+<link>https://www.example.com/ct-sample/zoneless-rdf</link>
+<description>SAMPLE: the channel dc:date is +09:00; the item dc:date has no zone.</description>
+<dc:date>2026-10-13T21:00+09:00</dc:date>
+<items><rdf:Seq>
+<rdf:li rdf:resource="https://www.example.com/ct-sample/zoneless-rdf-1"/>
+<rdf:li rdf:resource="https://www.example.com/ct-sample/zoneless-rdf-2"/>
+</rdf:Seq></items>
+</channel>
+<item rdf:about="https://www.example.com/ct-sample/zoneless-rdf-1">
+<title>SAMPLE 情報漏えいの可能性について</title>
+<link>https://www.example.com/ct-sample/zoneless-rdf-1</link>
+<description>SAMPLE: no zone on this item.</description>
+<dc:date>2026-10-13T17:00:00</dc:date>
+</item>
+<item rdf:about="https://www.example.com/ct-sample/zoneless-rdf-2">
+<title>SAMPLE 脆弱性情報の更新</title>
+<link>https://www.example.com/ct-sample/zoneless-rdf-2</link>
+<description>SAMPLE: a zoned item.</description>
+<dc:date>2026-10-13T12:00:00+09:00</dc:date>
+</item>
+</rdf:RDF>

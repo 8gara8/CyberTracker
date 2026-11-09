@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-4hcj-5m6p-q7r8",
+  "modified": "2026-10-13T12:00:03Z",
+  "published": "2026-10-12T22:05:31Z",
+  "withdrawn": "2026-10-13T12:00:03Z",
+  "aliases": [],
+  "summary": "SAMPLE: Duplicate advisory, withdrawn",
+  "details": "SAMPLE details, invented for the fixture. This advisory was withdrawn as a duplicate.",
+  "severity": [],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "ct-sample-yaml"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "fixed": "6.0.4"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://example.com/ct-sample/ghsa-4hcj-5m6p-q7r8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://example.org/ct-sample/ct-sample-yaml"
+    }
+  ],
+  "database_specific": {
+    "cwe_ids": [
+      "CWE-502"
+    ],
+    "severity": "HIGH",
+    "github_reviewed": true,
+    "github_reviewed_at": "2026-10-13T12:00:03Z",
+    "nvd_published_at": null
+  }
+}

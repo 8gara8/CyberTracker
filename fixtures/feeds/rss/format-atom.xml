@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>SAMPLE Atom feed</title>
+<link href="https://www.example.com/ct-sample/atom"/>
+<id>tag:example.com,2026:ct-sample-atom</id>
+<updated>2026-10-13T14:30:54-08:00</updated>
+<entry>
+<title>SAMPLE: a zero-day in a browser engine</title>
+<link href="https://www.example.com/ct-sample/atom-1"/>
+<id>tag:example.com,2026:atom-1</id>
+<published>2026-10-13T09:00:00-08:00</published>
+<updated>2026-10-13T14:30:54-08:00</updated>
+<summary>SAMPLE: an Atom entry with an offset and a summary.</summary>
+</entry>
+<entry>
+<title>SAMPLE: a patch for a supply chain issue</title>
+<link href="https://www.example.com/ct-sample/atom-2"/>
+<id>tag:example.com,2026:atom-2</id>
+<updated>2026-10-12T05:51:28.036-05:00</updated>
+<summary>SAMPLE: an entry with updated only.</summary>
+</entry>
+</feed>

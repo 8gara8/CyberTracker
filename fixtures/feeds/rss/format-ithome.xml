@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE iThome-style feed</title>
+<link>https://www.ithome.com.tw/ct-sample/security</link>
+<description>SAMPLE: dates in YYYY-MM-DD HH:mm(:ss) form.</description>
+<language>zh-tw</language>
+<item>
+<title>SAMPLE 資安廠商揭露新型勒索軟體</title>
+<link>https://www.ithome.com.tw/ct-sample/ithome-1</link>
+<pubDate>2026-10-13  12:11:50</pubDate>
+</item>
+<item>
+<title>SAMPLE 政府機關遭網路攻擊</title>
+<link>https://www.ithome.com.tw/ct-sample/ithome-2</link>
+<pubDate>2026-10-13 18:12</pubDate>
+</item>
+</channel>
+</rss>

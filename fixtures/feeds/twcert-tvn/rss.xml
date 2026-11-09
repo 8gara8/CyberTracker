@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>TWCERT/CC 漏洞資訊 (SAMPLE)</title>
+<link>https://www.twcert.org.tw/ct-sample/tvn</link>
+<description>SAMPLE: 試驗用的 TVN 漏洞公告摘要，內容皆為虛構。</description>
+<language>zh-tw</language>
+<lastBuildDate>Tue, 13 Oct 2026 16:45:00 GMT</lastBuildDate>
+<item>
+<title>TVN-202610012 Ivanti Connect Secure 存在身分鑑別繞過漏洞 (CVE-2026-104935)</title>
+<link>https://www.twcert.org.tw/ct-sample/tvn-202610012</link>
+<description>SAMPLE: Ivanti Connect Secure 存在身分鑑別繞過漏洞，此漏洞已被利用，請儘速更新。內容為虛構。</description>
+<pubDate>Tue, 13 Oct 2026 16:40:00 GMT</pubDate>
+<guid>https://www.twcert.org.tw/ct-sample/tvn-202610012</guid>
+</item>
+<item>
+<title>TVN-202610013 奇偶科技 GV-E-Map Server 明文儲存資料庫密碼 (CVE-2026-107437)</title>
+<link>https://www.twcert.org.tw/ct-sample/tvn-202610013</link>
+<description>SAMPLE: GV-E-Map Server 以明文儲存資料庫密碼。內容為虛構。</description>
+<pubDate>Tue, 13 Oct 2026 03:25:00 GMT</pubDate>
+<guid>https://www.twcert.org.tw/ct-sample/tvn-202610013</guid>
+</item>
+<item>
+<title>TVN-202610011 D-Link DCS-930L 網路攝影機存在簽章驗證不當漏洞 (CVE-2026-108971)</title>
+<link>https://www.twcert.org.tw/ct-sample/tvn-202610011</link>
+<description>SAMPLE: DCS-930L 未正確驗證韌體簽章。該產品已停止支援。內容為虛構。</description>
+<pubDate>Tue, 13 Oct 2026 02:10:00 GMT</pubDate>
+<guid>https://www.twcert.org.tw/ct-sample/tvn-202610011</guid>
+</item>
+<item>
+<title>TVN-202610008 SAMPLE 範例軟體存在跨站腳本漏洞</title>
+<link>https://www.twcert.org.tw/ct-sample/tvn-202610008</link>
+<description>SAMPLE: 視窗之外的舊公告，內容為虛構。</description>
+<pubDate>Thu, 08 Oct 2026 07:00:00 GMT</pubDate>
+<guid>https://www.twcert.org.tw/ct-sample/tvn-202610008</guid>
+</item>
+</channel>
+</rss>

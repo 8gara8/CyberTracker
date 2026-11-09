@@ -158,7 +158,7 @@ describe("sanitize: idempotent", () => {
     if (!fs.existsSync(abs)) continue;
     for (const f of fs.readdirSync(abs, { recursive: true }) as string[]) {
       const file = path.join(abs, f);
-      if (fs.statSync(file).isFile() && fs.statSync(file).size < 512 * 1024) samples.push(fs.readFileSync(file, "utf8"));
+      if (fs.statSync(file).isFile() && fs.statSync(file).size < 512 * 1024 && !/\.(?:zip|gz)$/.test(f)) samples.push(fs.readFileSync(file, "utf8"));
     }
   }
   it("gives the same text when run twice", () => {
