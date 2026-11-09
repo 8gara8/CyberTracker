@@ -433,7 +433,7 @@ const PACK: Pick<Pack, "items" | "records"> = {
     },
     {
       id: "p0003", feed_id: "jpcert-at", outlet: "JPCERT/CC", publisher: "jpcert", tier: 1, language: "ja", region: "JP", coverage: ["japan"],
-      title: "VPN 製品の脆弱性を悪用する攻撃に関する注意喚起", snippet: "注意喚起", url: "https://jpcert.or.jp/at/2026/at260031.html",
+      title: "VPN 製品の脆弱性を悪用する攻撃に関する注意喚起", snippet: "注意喚起。悪用する攻撃が確認されています。", url: "https://jpcert.or.jp/at/2026/at260031.html",
       published_at: "2026-11-06T01:00:00Z", cve_ids: ["CVE-2026-60010"], alert: true, flags: [], score: 8,
     },
   ],
@@ -520,10 +520,53 @@ describe("collectSignals", () => {
   });
 
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {
-    for (const t of ["exploited in the wild", "Actively Exploited", "is being exploited", "exploitation has been observed", "悪用", "攻撃が確認", "遭利用", "已被利用", "攻擊活動"]) {
+    for (const t of [
+      "exploited in the wild", "Actively Exploited", "is being exploited", "exploitation has been observed",
+      "本脆弱性を悪用する攻撃が確認されています", "悪用が確認されています", "攻撃に悪用されていることを確認しています",
+      "遭利用", "已被利用", "攻擊活動",
+    ]) {
       expect(CERT_EXPLOITATION_RE.test(t), t).toBe(true);
     }
     expect(CERT_EXPLOITATION_RE.test("A flaw that could allow code execution")).toBe(false);
+  });
+
+  // V12 (Kobol, 2026-11-09): bare 悪用 matched JVNDB and JPCERT boilerplate that reports no exploitation.
+  it("matches Japanese only when 悪用 or 攻撃 is confirmed in an affirmative form in the same sentence (C1)", () => {
+    for (const t of [
+      "悪用が確認されており、対策を急いでください", "本脆弱性を悪用した攻撃を確認しております",
+      "攻撃が確認されました。", "ベンダーは悪用を確認しました", "悪用された事例が確認された。", "攻撃を確認した",
+      "SAMPLE 注意喚起 本脆弱性を悪用する攻撃を確認しています。詳細は架空です。",
+    ]) {
+      expect(CERT_EXPLOITATION_RE.test(t), t).toBe(true);
+    }
+    for (const t of [
+      // Bare words and the conditional boilerplate V12 found.
+      "悪用", "攻撃", "攻撃が確認", "悪用を確認", "容易に悪用可能", "悪用が困難", "悪用された場合、任意のコードが実行される可能性があります",
+      "悪用されると、情報が漏えいする可能性があります",
+      // Negative and request forms.
+      "現時点で悪用は確認されていません", "本脆弱性の悪用を確認していません", "悪用は確認されていない", "悪用の有無を確認してください",
+      "現時点で本脆弱性を悪用した攻撃は確認されておりません", "当社では攻撃を確認しておりません",
+      // Conditional forms of an affirmative ending.
+      "悪用が確認された場合は直ちに連絡してください", "攻撃を確認したら報告してください", "攻撃の影響を確認した上で対策を実施してください",
+      // The first 確認 after the word decides; a later one in the sentence does not count.
+      "悪用は確認されていませんが、修正版の公開を確認しました",
+      // A sentence boundary ends the reach.
+      "悪用に注意してください。修正版の公開を確認しました",
+      // More than 40 characters between the word and 確認.
+      `悪用${"あ".repeat(41)}確認されています`,
+    ]) {
+      expect(CERT_EXPLOITATION_RE.test(t), t).toBe(false);
+    }
+    expect(CERT_EXPLOITATION_RE.test(`悪用${"あ".repeat(40)}確認されています`)).toBe(true);
+
+    // A JPCERT alert whose title only names attacks gives its agency_alert, and no cert_exploitation.
+    const titleOnly = { items: [{ ...PACK.items[2]!, snippet: "注意喚起" }], records: [] };
+    expect(collectSignals(titleOnly, null, null, CONFIG, DATE).map((x) => x.type)).toEqual(["agency_alert"]);
+    const boilerplate = {
+      items: [],
+      records: [{ ...PACK.records[0]!, title: "SAMPLE 製品の脆弱性", text: "本脆弱性は容易に悪用可能です。悪用された場合、任意のコードが実行される可能性があります。" }],
+    };
+    expect(collectSignals(boilerplate, null, null, CONFIG, DATE)).toEqual([]);
   });
 });
 

@@ -150,11 +150,28 @@ export const BASELINE_REASON = "No rule fired.";
 // ── Signals ──────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * A national CERT reporting exploitation (§5.11), case-insensitive: English "exploited in the wild",
- * "actively exploited", "being exploited", "exploitation has been observed"; Japanese 悪用 and 攻撃が確認;
- * Chinese 遭利用, 已被利用 and 攻擊活動.
+ * The Japanese half of CERT_EXPLOITATION_RE: 悪用 or 攻撃, then within the same sentence (at most 40
+ * characters, no 。！？ or line break) the first 確認 after it in an affirmative form: 確認されています,
+ * 確認されており, 確認しています, 確認しており, 確認されました, 確認しました, 確認された or 確認した. Kobol's
+ * read of 2026-11-09 (V12) found bare 悪用 matching conditional boilerplate (容易に悪用可能, 悪用が困難,
+ * 悪用された場合, 悪用されると), so neither word counts alone. A negative or conditional ending never counts:
+ * 確認されていません, 確認していない and 確認してください have no affirmative form, and the lookahead refuses
+ * 確認しておりません, 確認された場合, 確認したら, 確認した上で and the like. The gap may not hold 確認 itself, so
+ * "悪用は確認されていませんが、修正を確認しました" does not match on the second 確認.
  */
-export const CERT_EXPLOITATION_RE = /exploited\s+in\s+the\s+wild|actively\s+exploited|being\s+exploited|exploitation\s+has\s+been\s+observed|悪用|攻撃が確認|遭利用|已被利用|攻擊活動/iu;
+const JA_EXPLOITATION =
+  "(?:悪用|攻撃)(?:(?!確認)[^。！？!?\\r\\n]){0,40}確認(?:されています|されており|しています|しており|されました|しました|された|した)" +
+  "(?!ません|ず|場合|ら|い|か|時|とき|際|上)";
+
+/**
+ * A national CERT reporting exploitation (§5.11), case-insensitive: English "exploited in the wild",
+ * "actively exploited", "being exploited", "exploitation has been observed"; Japanese 悪用 or 攻撃 confirmed
+ * in an affirmative form (JA_EXPLOITATION above); Chinese 遭利用, 已被利用 and 攻擊活動.
+ */
+export const CERT_EXPLOITATION_RE = new RegExp(
+  `exploited\\s+in\\s+the\\s+wild|actively\\s+exploited|being\\s+exploited|exploitation\\s+has\\s+been\\s+observed|${JA_EXPLOITATION}|遭利用|已被利用|攻擊活動`,
+  "iu",
+);
 
 /** The KEV signals' publisher id (§5.11). */
 export const KEV_PUBLISHER = "cisa-kev";

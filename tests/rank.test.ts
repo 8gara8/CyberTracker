@@ -305,7 +305,7 @@ describe("rankCandidates() on built cases", () => {
     const r = rec("CVE-2026-5555", { affected: [{ vendor: "Ivanti", product: "Connect Secure" }], cvss: { score: 9.1, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } });
     const window = W.window;
     const notes = notePackRecords("jpcert", [{
-      id: "at260031", title: "SAMPLE 注意喚起 CVE-2026-5555", url: "https://jpcert.or.jp/at/2026/at260031.html", text: "SAMPLE 悪用を確認", published_at: "2026-10-13T06:00:00Z", cve_ids: ["CVE-2026-5555"], alert: true,
+      id: "at260031", title: "SAMPLE 注意喚起 CVE-2026-5555", url: "https://jpcert.or.jp/at/2026/at260031.html", text: "SAMPLE 悪用を確認しています", published_at: "2026-10-13T06:00:00Z", cve_ids: ["CVE-2026-5555"], alert: true,
     }, {
       id: "wr264101", title: "SAMPLE weekly report", url: "https://jpcert.or.jp/wr/2026/wr264101.html", text: "SAMPLE", published_at: "2026-10-13T06:00:00Z", cve_ids: ["CVE-2026-7777"], alert: false,
     }], window);
