@@ -224,9 +224,9 @@ describe("buildCredits (§5.9 step 2, §4.7)", () => {
     // The replacement changes no match: B.2's examples, D.7's must-not-match credits and the strings above.
     const examples = config.aiFinders.finders.flatMap((f) => [...f.examples.match, ...f.examples.no_match]);
     for (const x of [...examples, ...strings]) expect(matchCredit(creditText(x), cfg), x).toEqual(matchCredit(sanitize(x), cfg));
-    // A bare handle stays; one with a character before its @ goes, as strip rule 1 already takes it.
+    // A handle is not an address and stays, bare or in parentheses.
     expect(creditText("SAMPLE Researcher @handle of Team-Atlanta")).toBe("SAMPLE Researcher @handle of Team-Atlanta");
-    expect(creditText("SAMPLE Researcher (@handle) of Team-Atlanta")).toBe("SAMPLE Researcher [email] of Team-Atlanta");
+    expect(creditText("SAMPLE Researcher (@handle) of Team-Atlanta")).toBe("SAMPLE Researcher (@handle) of Team-Atlanta");
   });
 
   it("counts only PUBLISHED records dated on or before the cutoff, with no lower bound (ruling R4)", () => {

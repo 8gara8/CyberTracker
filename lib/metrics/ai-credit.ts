@@ -89,13 +89,14 @@ export interface CreditText {
 }
 
 /**
- * An e-mail address in a credit string: one written plainly, as ai-finders.json's first strip rule
- * writes it (`\S+@\S+`), or spelt out inside one token ("nameATexampleDOTcom", "name[at]example[dot]com").
+ * An e-mail address in a credit string, as the whole token that holds it: one written plainly
+ * ("name@example.com", "<name@example.org>"), or spelt out ("nameATexampleDOTcom", "name[at]example[dot]com").
  * creditText() puts EMAIL in its place before anything is matched or stored, so credit-candidates.json
- * (public, §4.7) holds no address. Matching is unchanged: the strip rule removed every plain address
- * anyway, and a spelt-out one is a single token no prefilter or pattern word matches inside (§0.4 row 64).
+ * (public, §4.7) holds no address; a handle ("@name", "(@name)") is not an address and stays. Matching is
+ * unchanged: ai-finders.json's strip rule 1 (`\S+@\S+`) removes every plain-address token anyway, and a
+ * spelt-out one is a single token no prefilter or pattern word matches inside (§0.4 row 64).
  */
-export const CREDIT_EMAIL_RE = /\S+@\S+|\S+(?:AT|\[at\]|\(at\))\S+(?:DOT|\[dot\]|\(dot\))\S+/g;
+export const CREDIT_EMAIL_RE = /\S*[\w.+-]@[\w-]+(?:\.[\w-]+)+\S*|\S+(?:AT|\[at\]|\(at\))\S+(?:DOT|\[dot\]|\(dot\))\S+/g;
 export const EMAIL = "[email]";
 
 /** A sanitised credit string with its e-mail addresses replaced by EMAIL. */
