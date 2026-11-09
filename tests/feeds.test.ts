@@ -653,7 +653,10 @@ describe("fixture safety under fixtures/feeds", () => {
           continue;
         }
         const cvelistRaw = f === "cvelist/deltaLog.json" && u.startsWith("https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/");
-        if (!cvelistRaw) expect(blockedReason(u, TIERS), `${f}: ${u}`).toBeNull();
+        // collect's fixture index maps the registry's own fetch URLs (tests/registry.test.ts pins them).
+        const indexFetch = /^index(?:-degraded)?\.json$/.test(f)
+          && /^https:\/\/(?:raw\.githubusercontent\.com|github\.com)\/(?:CVEProject\/cvelistV5|cisagov\/kev-data)\//.test(u);
+        if (!cvelistRaw && !indexFetch) expect(blockedReason(u, TIERS), `${f}: ${u}`).toBeNull();
         if (RECORD_FILE.test(f)) expect(u, f).toMatch(/^https:\/\/[a-z0-9.-]+\/ct-sample\/[a-z0-9-]+$|^https:\/\/www\.cisa\.gov\/known-exploited-vulnerabilities-catalog\?field_cve=CVE-\d{4}-\d+$/);
       }
     }
