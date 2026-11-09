@@ -16,6 +16,9 @@ export const NOTE_MAX = 200;
 export const BLOCK_NOTES = {
   /** Window, KEV and home vendors when today's KEV catalog could not be read. */
   kevNotRead: "CISA's KEV catalog could not be read today.",
+  /** Window, KEV and home vendors when today's catalog is older than the one kev-index.json already holds (never moved back). */
+  kevOlder: (read: string, index: string): string =>
+    `CISA's KEV catalog read today (${read}) is older than the one already counted (${index}), so it was not used.`,
   /** Flood and AI-credited when some UTC days before the cutoff are not yet counted. */
   daysMissing: (n: number, from: string): string =>
     `${n === 1 ? "One UTC day" : `${n} UTC days`} from ${shortDate(from)} could not be counted from the CVE List today.`,

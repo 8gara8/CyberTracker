@@ -301,6 +301,42 @@ describe("computeMetrics: KEV not read", () => {
   });
 });
 
+describe("computeMetrics: a KEV catalog older than kev-index.json (B4)", () => {
+  const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+  const older = (w: World) => {
+    const idx = w.inputs.state["kev-index.json"];
+    // One day before the index's catalog: the mirror answered behind what the index already holds.
+    const version = versionOf(addDays(`${idx.catalog_version.replaceAll(".", "-")}`, -1));
+    w.inputs.feeds.kev.catalog = { ...w.inputs.feeds.kev.catalog!, catalogVersion: version };
+    return { version, indexVersion: idx.catalog_version };
+  };
+
+  it("never moves the index back: Window, KEV and home vendors carry as stale with today's reason", () => {
+    const w = world(D, { previous });
+    const v = older(w);
+    const r = computeMetrics(w.inputs);
+    const { metrics, manifest } = parsed(r);
+    expect(r.state["kev-index.json"]).toBeUndefined();
+    const note = BLOCK_NOTES.kevOlder(v.version, v.indexVersion);
+    expect(note.length).toBeLessThanOrEqual(NOTE_MAX);
+    for (const k of ["window", "kev", "home_vendors"] as const) expect(metrics.blocks[k]).toEqual({ status: "stale", as_of: previous.data_cutoff_utc, note });
+    expect(metrics.kev!.new_since_last_edition.cve_ids).toEqual([]);
+    expect(manifest.kev_new).toEqual([]);
+    expect(metrics.provenance.kev_catalog_version).toBe(previous.provenance.kev_catalog_version);
+    expect(r.log).toContain(`KEV catalog ${v.version} is older than kev-index ${v.indexVersion}: the index is not moved back.`);
+    expect(manifestIssues(metrics, manifest)).toEqual([]);
+  });
+
+  it("does the same inside a build (frozenState) instead of refusing", () => {
+    const w = world(D, { frozen: true });
+    const v = older(w);
+    const r = computeMetrics(w.inputs);
+    expect(r.state).toEqual({});
+    expect(statuses(r.metrics)).toMatchObject({ window: "failed", kev: "failed", home_vendors: "failed" });
+    expect(r.metrics.blocks.kev.note).toBe(BLOCK_NOTES.kevOlder(v.version, v.indexVersion));
+  });
+});
+
 describe("computeMetrics: CVE List days", () => {
   it("leaves a day whose zips failed uncounted: Flood and AI-credited stale with the note", () => {
     const previous = computeMetrics(world("2026-11-07").inputs).metrics;
