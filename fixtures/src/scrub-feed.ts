@@ -5,7 +5,8 @@
 //   kind: rss | rdf | atom | epss | anthropic-cvd | exchange | myjvn | nvd
 //
 // It keeps the structure, namespaces, dates, ids and structured NVD fields (CVSS vectors, status words);
-// replaces titles, descriptions, summaries and other free text with invented SAMPLE text (keeping only the
+// replaces titles, descriptions, summaries, other free text and text attributes (title=, term=, label=, alt=)
+// with invented SAMPLE text (keeping only the
 // registry keywords, exchange terms and CVE ids the text held, so the fixture still exercises must_match
 // and merging), and authors, names and credits with SAMPLE Author or SAMPLE Researcher, whatever their
 // namespace prefix (dc:, a10:, atom:, itunes:); rewrites every link to https://<host>/ct-sample/<slug>,
@@ -39,12 +40,12 @@ export const EPSS_FILLER_ROWS = 40;
  * follows. The http ones are exactly the prefixes tests/feeds.test.ts and tests/fixture-safety.test.ts allow
  * over http; a capture that declares another namespace is refused until the lists grow together. Kobol's
  * captures of 2026-11-09 added the comment API (WordPress feeds), Media RSS, the iTunes podcast DTD and
- * NHK's news module.
+ * NHK's news module; session 2 (2026-11-10) the Open Graph namespace (gtig's feed declares xmlns:og).
  */
 export const NAMESPACE_PREFIXES = [
   "http://purl.org/", "http://www.w3.org/", "http://jvn.jp/rss/", "http://data-marking.mitre.org/", "http://jvndb.jvn.jp/myjvn/",
   "http://www.us-cert.gov/tlp/", "http://wellformedweb.org/CommentAPI/", "http://search.yahoo.com/mrss/",
-  "http://www.itunes.com/dtds/podcast-1.0.dtd", "http://news.web.nhk/rss/rss2.0/modules/nhknews/",
+  "http://www.itunes.com/dtds/podcast-1.0.dtd", "http://news.web.nhk/rss/rss2.0/modules/nhknews/", "http://ogp.me/ns",
   "https://purl.org/", "https://www.w3.org/", "https://jvndb.jvn.jp/schema/",
 ] as const;
 /** Organisational addresses a parser reads (NVD marks its own scores with it); every other address is replaced. */
@@ -186,6 +187,12 @@ const FREE_TEXT_TAGS = [
 const PERSON_RE = /<((?:[\w.-]+:)?)(creator|contributor|author|managingEditor|webMaster)(\s[^>]*)?>([\s\S]*?)<\/\1\2>/g;
 const PERSON_PART_RE = /<((?:[\w.-]+:)?)(name|email)(\s[^>]*)?>[\s\S]*?<\/\1\2>/g;
 const SAMPLE_AUTHOR = "SAMPLE Author";
+/**
+ * Attributes that carry text a reader sees, under any prefix: an Atom link's title, a category's term or
+ * label, an image's alt. A value that is not empty becomes SAMPLE (Kobol's session 2 found project-zero's
+ * Atom links keeping the real post titles in title="…").
+ */
+export const TEXT_ATTR_RE = /(\s(?:[\w.-]+:)?(?:title|label|alt|term)\s*=\s*)(["'])([^"']*)\2/gi;
 const withoutCdata = (s: string) => s.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "");
 
 function replaceElements(xml: string, tag: string, label: string, counter: { n: number }, o: ScrubOptions): string {
@@ -209,6 +216,7 @@ export function scrubXml(xml: string, kind: "rss" | "rdf" | "atom" | "myjvn", o:
   out = out.replace(/<!--[\s\S]*?-->/g, "");
   const counter = { n: 0 };
   for (const tag of FREE_TEXT_TAGS) out = replaceElements(out, tag, tag === "title" ? "title" : "text", counter, o);
+  out = out.replace(TEXT_ATTR_RE, (m, a: string, q: string, v: string) => (/\S/.test(v) ? `${a}${q}SAMPLE${q}` : m));
   out = out.replace(PERSON_RE, (m, p: string, tag: string, attrs: string | undefined, inner: string) => {
     if (/<[A-Za-z]/.test(withoutCdata(inner))) return m;
     return /\S/.test(inner) ? `<${p}${tag}${attrs ?? ""}>${SAMPLE_AUTHOR}</${p}${tag}>` : m;

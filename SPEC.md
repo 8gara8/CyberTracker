@@ -2211,21 +2211,24 @@ has its F, S or T case.
   `cache/check/feeds/` (§8.10), into `fixtures/feeds/rss/<registry id>.xml` and `fixtures/feeds/live/`.
   It keeps structure, namespaces, dates, ids and structured NVD fields (CVSS vectors, `vulnStatus`, the ADP
   role) as written; replaces titles, descriptions and other free text with invented SAMPLE text (keeping
-  registry keywords, exchange terms and CVE ids); replaces authors, creators, contributors and names under
+  registry keywords, exchange terms and CVE ids), and the text attributes `title`, `term`, `label` and
+  `alt` under any prefix with "SAMPLE"; replaces authors, creators, contributors and names under
   any namespace prefix with "SAMPLE Author" and JSON credits with "SAMPLE Researcher"; replaces e-mail
   addresses (a JSON string that held one besides the address is invented whole); and rewrites every link
   to `https://<host>/ct-sample/<slug>`, where `<host>` is the link's own only for a registry host or a
   listed publisher (else `www.example.com`) and `<slug>` is `home`, the id the path ended in (CVE, GHSA,
   JVNDB, TVN, JPCERT `at`/`wr`) or a counter (`item-N`, `img-N`), never other path text. It refuses (exit
   1, nothing written) a link in another scheme and an XML namespace not in `NAMESPACE_PREFIXES` (Kobol's
-  captures added the WordPress comment API, Media RSS, the iTunes podcast DTD and NHK's news module).
+  captures added the WordPress comment API, Media RSS, the iTunes podcast DTD, NHK's news module and the
+  Open Graph namespace http://ogp.me/ns, §0.4 row 64).
   `tests/fixture-safety.test.ts` checks every text file, zip entry and gunzipped `.gz` file under the P2
   fixture folders: links are https in any letter case (an http XML namespace from scrub-feed's list
   aside, the two lists held equal), on no blocked host and no exploit path, and on a listed publisher, a
   registry host, a record page, a repo the run reads or a reserved example domain; every credit in any
   JSON fixture (CVE `value`, OSV `name`, GitHub `login`) is one of the test's exact SAMPLE strings or a
   listed organisation; every author, creator, contributor and name element of a feed fixture, under any
-  prefix, is empty, "SAMPLE Author", "SAMPLE text N" or a listed organisation; no `PAYLOAD_PATTERNS`
+  prefix, is empty, "SAMPLE Author", "SAMPLE text N" or a listed organisation; every `title`, `term`,
+  `label` and `alt` attribute of a feed fixture is empty or "SAMPLE"; no `PAYLOAD_PATTERNS`
   match (an empty `<script></script>` in the dashboard page aside); no model id, credential-shaped string
   or scanner query. Each check also runs on planted bad samples. `tests/captures.test.ts` parses every
   committed capture with the production parser (`parseRss` with the entry's `date_zone`; the EPSS,

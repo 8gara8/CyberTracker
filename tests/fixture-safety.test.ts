@@ -49,7 +49,7 @@ const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const XML_NAMESPACE_PREFIXES = [
   "http://purl.org/", "http://www.w3.org/", "http://jvn.jp/rss/", "http://data-marking.mitre.org/", "http://jvndb.jvn.jp/myjvn/",
   "http://www.us-cert.gov/tlp/", "http://wellformedweb.org/CommentAPI/", "http://search.yahoo.com/mrss/",
-  "http://www.itunes.com/dtds/podcast-1.0.dtd", "http://news.web.nhk/rss/rss2.0/modules/nhknews/",
+  "http://www.itunes.com/dtds/podcast-1.0.dtd", "http://news.web.nhk/rss/rss2.0/modules/nhknews/", "http://ogp.me/ns",
 ];
 const XML_NAMESPACE = new RegExp(`^(?:${XML_NAMESPACE_PREFIXES.map((p) => p.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")).join("|")})`, "i");
 const isHttp = (u: string) => /^http:\/\//i.test(u);
@@ -250,6 +250,16 @@ function personProblems(file: string, xml: string, bad: string[]): string[] {
   return bad;
 }
 
+/**
+ * A title, term, label or alt attribute in a feed fixture that holds text other than SAMPLE (an Atom link's
+ * title kept a real post title in Kobol's session 2 capture of project-zero).
+ */
+const TEXT_ATTR = /\s((?:[\w.-]+:)?(?:title|label|alt|term))\s*=\s*(["'])([^"']*)\2/gi;
+function textAttrProblems(texts: readonly FixtureText[]): string[] {
+  return texts.filter((x) => /\.(?:xml|rdf|atom)$/.test(x.file)).flatMap((t) =>
+    [...t.text.matchAll(TEXT_ATTR)].filter((m) => /\S/.test(m[3]!) && m[3] !== "SAMPLE").map((m) => `${t.file}: ${m[1]}="${m[3]}"`));
+}
+
 /** An author, creator, contributor or name in a feed fixture that is not empty, a SAMPLE form or a listed organisation. */
 function authorProblems(texts: readonly FixtureText[]): string[] {
   return texts.filter((x) => /\.(?:xml|rdf|atom)$/.test(x.file)).flatMap((t) => personProblems(t.file, t.text, []));
@@ -347,6 +357,10 @@ describe("fixture safety: people", () => {
     expect(TEXTS.some((t) => /<dc:creator>SAMPLE text \d+<\/dc:creator>/.test(t.text))).toBe(true);
     expect(authorProblems(TEXTS)).toEqual([]);
   });
+
+  it("every title, term, label or alt attribute in a feed fixture is empty or SAMPLE", () => {
+    expect(textAttrProblems(TEXTS)).toEqual([]);
+  });
 });
 
 describe("fixture safety: content", () => {
@@ -394,6 +408,14 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
     expect(authorProblems([xml]).map((p) => p.replace("fixtures/feeds/rss/planted.xml: ", ""))).toEqual([
       "<managingEditor> Kenji Realperson", "<dc:creator> Kenji Realperson", "<dc:creator> Jane Realperson", "<a10:name> Jane Q. Realperson",
       "<name> Bob Realperson", "<atom:name> Dana Realperson", "<itunes:author> Dana Realperson",
+    ]);
+  });
+
+  it("a real title, term, label or alt in an attribute fails under any prefix; SAMPLE and empty pass", () => {
+    const xml = planted("fixtures/feeds/rss/planted.xml", `<feed><entry><link rel="alternate" type="text/html" href="https://www.example.com/ct-sample/item-1" title="A SAMPLE-free real post title"/>
+<category term='Realperson interview'/><media:thumbnail media:label="Jane Realperson"/><img alt="SAMPLE"/><link title=""/></entry></feed>`);
+    expect(textAttrProblems([xml]).map((p) => p.replace("fixtures/feeds/rss/planted.xml: ", ""))).toEqual([
+      'title="A SAMPLE-free real post title"', 'term="Realperson interview"', 'media:label="Jane Realperson"',
     ]);
   });
 

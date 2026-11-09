@@ -207,7 +207,7 @@ describe("checkFeeds exit codes and options", () => {
 describe("scrub-feed", () => {
   const opts = { sourceTiers: cfg.sourceTiers, keywords: cfg.sources.keywords };
   const links = (text: string) => text.replace(/&amp;/g, "&").match(/https?:\/\/[^\s"'<>\\)\]]+/g) ?? [];
-  const NS = /^http:\/\/(?:purl\.org\/|www\.w3\.org\/|jvn\.jp\/rss\/|data-marking\.mitre\.org\/|jvndb\.jvn\.jp\/myjvn\/|www\.us-cert\.gov\/tlp\/|wellformedweb\.org\/CommentAPI\/|search\.yahoo\.com\/mrss\/|www\.itunes\.com\/dtds\/podcast-1\.0\.dtd|news\.web\.nhk\/rss\/rss2\.0\/modules\/nhknews\/)/;
+  const NS = /^http:\/\/(?:purl\.org\/|www\.w3\.org\/|jvn\.jp\/rss\/|data-marking\.mitre\.org\/|jvndb\.jvn\.jp\/myjvn\/|www\.us-cert\.gov\/tlp\/|wellformedweb\.org\/CommentAPI\/|search\.yahoo\.com\/mrss\/|www\.itunes\.com\/dtds\/podcast-1\.0\.dtd|news\.web\.nhk\/rss\/rss2\.0\/modules\/nhknews\/|ogp\.me\/ns)/;
   const safe = (text: string) => {
     for (const u of links(text)) {
       if (u.startsWith("http://")) expect(u).toMatch(NS);
@@ -405,6 +405,22 @@ ${Array.from({ length: 8 }, (_, i) => `<item rdf:about="https://www.example.org/
     }
     expect(out).toContain('<media:content url="https://www.bleepingcomputer.com/ct-sample/img-1"/>');
     expect((await parseRss(Buffer.from(out))).total).toBe(1);
+  });
+
+  it("replaces text attributes (an Atom link's title, a category's term) and keeps the Open Graph namespace (Kobol session 2)", async () => {
+    const atom = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:og="http://ogp.me/ns#"><title>Example blog</title><updated>2026-10-27T07:00:00Z</updated>
+<entry><title>A real post title</title><link rel="alternate" type="text/html" href="https://googleprojectzero.blogspot.com/2026/10/real-post.html" title="A real post title"/>
+<category scheme="http://www.blogger.com/atom/ns#" term="Jane Realperson"/><published>2026-10-27T07:00:00Z</published><updated>2026-10-27T07:00:00Z</updated></entry>
+</feed>`;
+    const out = scrubFeed("atom", Buffer.from(atom), full).toString("utf8");
+    expect(out).not.toMatch(/real post|Realperson/i);
+    expect(out).toContain('title="SAMPLE"');
+    expect(out).toContain('term="SAMPLE"');
+    expect(out).toContain('xmlns:og="http://ogp.me/ns#"');
+    const parsed = await parseRss(Buffer.from(out));
+    expect(parsed.total).toBe(1);
+    expect(parsed.entries[0]!.published_at).toBe("2026-10-27T07:00:00.000Z");
   });
 
   it("rewrites the dashboard's GitHub advisory links to www.example.com instead of refusing its own output (C5)", () => {
