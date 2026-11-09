@@ -348,7 +348,7 @@ export async function readExchange(entry: FetchedFeed, ctx: FeedCtx): Promise<Re
 
 export async function readRss(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<{ items: RawItem[]; newest: string | null; total: number }>> {
   return withFallback(ctx, entry, entry.url, async (b) => {
-    const p = await parseRss(b);
+    const p = await parseRss(b, entry.date_zone);
     return { items: p.entries, newest: p.newest, total: p.total };
   }, { body: (b) => cacheWrite(ctx, ctx.paths.feedBody(entry.id, "xml"), b) });
 }

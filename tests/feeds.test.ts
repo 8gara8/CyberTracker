@@ -24,7 +24,7 @@ import {
 import { kevBaseline, kevNoteUrls, newKevIds, parseKev } from "@/lib/feeds/kev";
 import { myjvnPageUrls, parseMyJvn } from "@/lib/feeds/myjvn";
 import { nvdUrls, parseNvdPage } from "@/lib/feeds/nvd";
-import { feedDate, jpcertRecords, parseRss, rssItems, tvnRecords, zoneOf } from "@/lib/feeds/rss";
+import { feedDate, itemZone, jpcertRecords, parseRss, rssItems, tvnRecords, zoneOf } from "@/lib/feeds/rss";
 import { FeedParseError, type CveFacts, type KevCatalog, type KevEntry } from "@/lib/feeds/types";
 import { crc32, parseDeltaZip, readZip } from "@/lib/feeds/zip";
 import {
@@ -888,9 +888,33 @@ describe("RSS: parseRss, feedDate and zoneOf", () => {
     expect(await dates("rss/zoneless.rdf")).toEqual(["2026-10-13T08:00:00.000Z", "2026-10-13T03:00:00.000Z"]);
   });
 
+  // Kobol 2026-11-09: iThome's /rss/security writes "YYYY-MM-DD HH:mm" with no zone and no channel date, and
+  // the newest item read at 22:20 Taipei was "21:16": Taipei time. The registry's date_zone says so.
+  it("gives a zone-less date the registry's date_zone when the channel writes no zone: iThome in Taipei time", async () => {
+    const zoned = async (rel: string, zone: string | null) => (await parseRss(read(rel), zone)).entries.map((e) => e.published_at);
+    expect(await zoned("rss/format-ithome.xml", "+08:00")).toEqual(["2026-10-13T04:11:50.000Z", "2026-10-13T10:12:00.000Z"]);
+    expect((await parseRss(read("rss/format-ithome.xml"), "+08:00")).newest).toBe("2026-10-13T10:12:00.000Z");
+    expect(await zoned("rss/format-ithome.xml", null)).toEqual(await dates("rss/format-ithome.xml"));
+    // The channel's own offset still wins: zoneless.xml's channel is +09:00, zoneless.rdf's +08:00.
+    expect(await zoned("rss/zoneless.xml", "-05:00")).toEqual(await dates("rss/zoneless.xml"));
+    expect(await zoned("rss/zoneless.rdf", "-05:00")).toEqual(await dates("rss/zoneless.rdf"));
+    // A channel date that says GMT is an offset too; one written without a zone is not.
+    const chan = (date: string) => ({ lastBuildDate: date, items: [{ title: "SAMPLE", link: "https://example.com/ct-sample/a", pubDate: "2026-10-13 09:00" }] });
+    expect(rssItems(chan("Tue, 13 Oct 2026 10:00:00 GMT"), "+08:00")[0]!.published_at).toBe("2026-10-13T09:00:00.000Z");
+    expect(rssItems(chan("2026-10-13 10:00"), "+08:00")[0]!.published_at).toBe("2026-10-13T01:00:00.000Z");
+    expect(rssItems({ items: chan("x").items }, "+08:00")[0]!.published_at).toBe("2026-10-13T01:00:00.000Z");
+    expect(rssItems({ items: chan("x").items })[0]!.published_at).toBe("2026-10-13T09:00:00.000Z");
+    // An item date with its own zone never takes date_zone.
+    expect(rssItems({ items: [{ title: "SAMPLE", link: "https://example.com/ct-sample/a", pubDate: "Tue, 13 Oct 2026 09:00:00 +0000" }] }, "+08:00")[0]!.published_at)
+      .toBe("2026-10-13T09:00:00.000Z");
+    expect(itemZone(undefined, "+08:00")).toBe("+08:00");
+    expect(itemZone("Tue, 13 Oct 2026 16:36:26 CEST", "+08:00")).toBe("+02:00");
+    expect(itemZone(undefined)).toBe("Z");
+  });
+
   it("never reads the machine's zone", async () => {
     const files = ["rss/zoneless.xml", "rss/zoneless.rdf", "rss/format-ithome.xml", "rss/near-dup.xml"];
-    const all = async () => Promise.all(files.map(dates));
+    const all = async () => [...await Promise.all(files.map(dates)), (await parseRss(read("rss/format-ithome.xml"), "+08:00")).entries.map((e) => e.published_at)];
     const utc = await withTzAsync("UTC", all);
     expect(await withTzAsync("Asia/Taipei", all)).toEqual(utc);
     expect(await withTzAsync("America/New_York", all)).toEqual(utc);

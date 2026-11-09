@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse as parseYaml } from "yaml";
 import { packWindow } from "../lib/collect";
 import { loadConfig } from "../lib/config";
 import { addDays } from "../lib/dates";
@@ -13,7 +14,7 @@ import { cvdPayloadUrl } from "../lib/feeds/anthropic-cvd";
 import { epssUrlFor } from "../lib/feeds/epss";
 import { cveRecordRawUrl, endOfDayAsset, hourlyAsset, rawAtCommit, REPOS } from "../lib/feeds/github";
 import { nvdUrls } from "../lib/feeds/nvd";
-import type { FetchedFeed } from "../lib/schema/registry";
+import { FetchedFeed } from "../lib/schema/registry";
 import { FEED_WORLD } from "../fixtures/src/feeds";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -148,6 +149,24 @@ describe("the URL helpers on the committed registry", () => {
     const sha = "0123456789abcdef0123456789abcdef01234567";
     expect(rawAtCommit(one("kev").url, sha)).toBe(`https://raw.githubusercontent.com/cisagov/kev-data/${sha}/known_exploited_vulnerabilities.json`);
     expect(rawAtCommit(one("cvelist").url, sha)).toBe(`https://raw.githubusercontent.com/CVEProject/cvelistV5/${sha}/cves/deltaLog.json`);
+  });
+
+  it("every fetched entry writes date_zone out: +08:00 for ithome-security (Kobol 2026-11-09), null for every other", () => {
+    const raw = parseYaml(fs.readFileSync(path.join(ROOT, "config", "sources.yaml"), "utf8")) as { feeds: Record<string, unknown>[] };
+    for (const f of raw.feeds) {
+      if (f.kind === "search") expect(Object.keys(f), String(f.id)).not.toContain("date_zone");
+      else expect(Object.keys(f), String(f.id)).toContain("date_zone");
+    }
+    expect(fetched.filter((f) => f.date_zone !== null).map((f) => [f.id, f.date_zone])).toEqual([["ithome-security", "+08:00"]]);
+  });
+
+  it("the schema needs date_zone on a fetched entry and takes only an offset like +08:00 or null", () => {
+    const base = structuredClone(fetched.find((f) => f.id === "ithome-security")!) as Record<string, unknown>;
+    expect(FetchedFeed.safeParse(base).success).toBe(true);
+    for (const zone of ["+09:00", "-05:00", "+05:30", null]) expect(FetchedFeed.safeParse({ ...base, date_zone: zone }).success, String(zone)).toBe(true);
+    for (const zone of ["Z", "+8:00", "+0800", "08:00", "Asia/Taipei", "+25:00", ""]) expect(FetchedFeed.safeParse({ ...base, date_zone: zone }).success, zone).toBe(false);
+    const { date_zone: _left, ...without } = base;
+    expect(FetchedFeed.safeParse(without).success).toBe(false);
   });
 
   it("every fetched entry's URL is https", () => {

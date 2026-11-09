@@ -2,7 +2,8 @@
 // JPCERT's. The harness (rssParser, feedDate, zoneOf, rssItems) is the fork base's lib/collect.ts,
 // adapted: Google News <source> handling is gone, the RDF channel's dc:date and Atom's <updated> are read,
 // and dates in "YYYY-MM-DD HH:mm" form or with a named European or Asian zone parse. A date without a zone
-// takes the channel's own offset, else UTC, never the machine's zone. Every string is raw feed data.
+// takes the channel's own offset, else the registry entry's `date_zone`, else UTC, never the machine's
+// zone. Every string is raw feed data.
 
 import Parser from "rss-parser";
 import { sha256Hex } from "../json";
@@ -70,9 +71,27 @@ export interface RssParsed {
   }[];
 }
 
-/** Items from an rss-parser result: a title and a link each, the first readable date, the plain-text snippet. */
-export function rssItems(parsed: RssParsed): RawItem[] {
-  const zone = zoneOf(parsed.pubDate ?? parsed.lastBuildDate ?? parsed["dc:date"] ?? parsed.updated);
+/** True when a date string ends in a zone: an offset, Z, GMT, UTC, a US zone or one of NAMED_ZONES. */
+function hasZone(date: string): boolean {
+  const s = squash(date);
+  return HAS_ZONE.test(s) || NAMED_ZONE_RE.test(s);
+}
+
+/**
+ * The zone for an item's zone-less dates: the channel date's own offset when it writes one (zoneOf), else
+ * `dateZone` (the registry entry's `date_zone`, "+08:00"), else UTC.
+ */
+export function itemZone(channelDate: string | undefined, dateZone: string | null = null): string {
+  if (channelDate !== undefined && hasZone(channelDate)) return zoneOf(channelDate);
+  return dateZone ?? "Z";
+}
+
+/**
+ * Items from an rss-parser result: a title and a link each, the first readable date, the plain-text snippet.
+ * `dateZone` is the registry entry's `date_zone`, used only when the channel's date writes no zone.
+ */
+export function rssItems(parsed: RssParsed, dateZone: string | null = null): RawItem[] {
+  const zone = itemZone(parsed.pubDate ?? parsed.lastBuildDate ?? parsed["dc:date"] ?? parsed.updated, dateZone);
   return (parsed.items ?? []).flatMap((i) => {
     const title = typeof i.title === "string" ? squash(i.title) : "";
     const url = typeof i.link === "string" ? i.link.trim() : "";
@@ -87,15 +106,16 @@ export function rssItems(parsed: RssParsed): RawItem[] {
 /**
  * One RSS 2.0, RSS 1.0 (RDF) or Atom body. `newest` is the latest item date; a feed with items but no
  * readable dates has `newest` null (sources:check's NODATE). Anything rss-parser cannot read is "parse".
+ * `dateZone` is the registry entry's `date_zone` (rssItems).
  */
-export async function parseRss(body: Buffer): Promise<Parsed<RawItem>> {
+export async function parseRss(body: Buffer, dateZone: string | null = null): Promise<Parsed<RawItem>> {
   let parsed: RssParsed;
   try {
     parsed = (await rssParser().parseString(body.toString("utf8").replace(/^﻿/, ""))) as unknown as RssParsed;
   } catch (e) {
     throw new FeedParseError("parse", `RSS: ${(e as Error).message.slice(0, 200)}`);
   }
-  const entries = rssItems(parsed);
+  const entries = rssItems(parsed, dateZone);
   let newest: string | null = null;
   for (const it of entries) if (it.published_at !== null && (newest === null || it.published_at > newest)) newest = it.published_at;
   return { newest, entries, version: null, sha256: sha256Hex(body), total: entries.length };
