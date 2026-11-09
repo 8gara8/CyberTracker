@@ -554,15 +554,18 @@ function dataOnlyLines(input: Extract<ChatInput, { kind: "data_only" }>, site: s
   const first = input.dryRun
     ? `**${SITE_NAME} ${D} · dry run (data-only edition)**${code}`
     : `**${SITE_NAME} ${D} · data-only edition, published ${taipeiTime(b.published_at)}**${code}`;
-  // The count is every KEV entry new since the last edition, not only the (at most 10) the brief holds.
-  const newKev = b.items.length ? Math.max(b.items.length, input.kevNew ?? 0) : 0;
+  // The count is every KEV entry new since the last edition, not only the (at most 10) the brief holds,
+  // and never fewer than the items (§8.8), even when the brief holds none of them.
+  const newKev = Math.max(b.items.length, input.kevNew ?? 0);
   const shown = b.items.slice(0, 5);
-  const kev = newKev
-    ? `New on CISA's exploited list (${newKev}): ${[
-      ...shown.map(kevEntry),
-      ...(newKev > shown.length ? [`and ${newKev - shown.length} more`] : []),
-    ].join(" · ")}`
-    : "New on CISA's exploited list: none since the last edition.";
+  const kev = !newKev
+    ? "New on CISA's exploited list: none since the last edition."
+    : shown.length
+      ? `New on CISA's exploited list (${newKev}): ${[
+        ...shown.map(kevEntry),
+        ...(newKev > shown.length ? [`and ${newKev - shown.length} more`] : []),
+      ].join(" · ")}`
+      : `New on CISA's exploited list (${newKev}).`;
   const epss = b.epss_movers.length
     ? `EPSS movers (7 days): ${b.epss_movers.slice(0, 3).map((m) =>
       `${m.cve_id} ${signed2(m.delta_7d)} to ${fmt2(m.score)}`).join(" · ")}`

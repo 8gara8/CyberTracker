@@ -443,6 +443,21 @@ describe("chat edition: data-only format", () => {
     expect(kevLine({ date: D, kev: null })).toMatch(/\(7\): .* and 2 more$/);
   });
 
+  it("keeps the metrics KEV count when the data-only brief holds no items", () => {
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, []);
+    const runs = [record(D, { outcome: "published_data_only", edition: "data_only", error_code: "E_AGENT", data_only_published_at: b.data_only_published_at })];
+    const kev = (n: number) => ({
+      catalog_version: "2026.11.10", catalog_count: 1500, date_released: "2026-11-10T18:00:00Z",
+      new_since_last_edition: { since_catalog_version: "2026.11.09", cve_ids: Array.from({ length: n }, (_, i) => `CVE-2026-${60000 + i}`) },
+    });
+    const kevLine = (metrics: Parameters<typeof chatInputFor>[0]["metrics"]) =>
+      render(chatInputFor({ date: D, brief: b, runs, metrics })).split("\n").find((l) => l.startsWith("New on CISA's exploited list"));
+    expect(kevLine({ date: D, kev: kev(3) })).toBe("New on CISA's exploited list (3).");
+    expect(kevLine({ date: D, kev: kev(0) })).toBe("New on CISA's exploited list: none since the last edition.");
+    expect(kevLine(null)).toBe("New on CISA's exploited list: none since the last edition.");
+  });
+
   it("a data-only edition from --data-only: no code, no KEV additions, no EPSS line", () => {
     const D = "2026-11-13";
     const b = dataOnlyBrief(D, [], { published_at: at(D, "09:12:30"), data_only_published_at: at(D, "09:12:30"), generated_at: at(D, "09:12:00") });

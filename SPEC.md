@@ -215,7 +215,7 @@ rows are what review and building found.
 | 27 | #3 | §7 | `gapHeadlineLine(brief, gapOk)`, `regionSummary()` returns `{ head, reason }`, `cveTimeline`, `releaseLine` and `fixSideLines` take `editionDate`; the card shows the release line, else the first CVE timeline; a data-only notice names stale feeds; `gapNotices()` names Flood, Window, AI-credited and Fix-side; the footer's second line only when `live_from` is after the first week | Dates need the edition year, and §7 named no block or casing |
 | 28 | #3 | §8.3 | The Partial rung names `PARTIAL_FEED_IDS`; the sanitiser strips HTML tags and comments only, drops script, style, template and noscript with their content, turns `<pre>` into `[code removed]`, decodes semicolon entities only, repeats steps 1 to 6 until stable (`CLEAN_PASSES` 32) and keeps "…" | `<untrusted>` must stay visible, and the output must be idempotent |
 | 29 | #3 | §8.2, §8.6 | `NEXT_STEP`'s "10:00" is `publish_until` minus one hour and "11:00" `publish_until`; `logs/D.regions-input.json` holds `date`, `history`, `signals`, `kevIndex`; `--all [DIR] [--json]`; " Hint:" on the issue line; plural summary; an unparsable draft is SCHEMA at `(file)`, exit 1; `--all` prefixes paths `<file>: ` | The agent's repair reads one line per issue |
-| 30 | #3 | §8.8 | `ChatInput` adds `notes` to failed and `kevNew` to data-only; E_TIMEOUT has an agent-ran text; counts plural; the usage note names its window; `chatGuard()` also removes Markdown destinations, autolinks and `//host` URLs; `safePath()` hides odd paths; `<A>` counts records whose draft stage ran; `npm run chat` reads `dry_run` records and limits stale feeds to `PARTIAL_FEED_IDS`; the data-only KEV count reads the metrics; EPSS through `fmt2()` | The chat must match the site and never link off-site |
+| 30 | #3 | §8.8 | `ChatInput` adds `notes` to failed and `kevNew` to data-only; E_TIMEOUT has an agent-ran text; counts plural; the usage note names its window; `chatGuard()` also removes Markdown destinations, autolinks and `//host` URLs; `safePath()` hides odd paths; `<A>` counts records whose draft stage ran; `npm run chat` reads `dry_run` records and limits stale feeds to `PARTIAL_FEED_IDS`; the data-only KEV count reads the metrics, also when the brief holds no items (`New on CISA's exploited list (<n>).`); EPSS through `fmt2()` | The chat must match the site and never link off-site |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -4575,8 +4575,9 @@ Run HH:MM–HH:MM · data-only HH:MM · <A> attempt[s][, <R> repair[s]] · data 
 
 The code is the failed attempt's (none after `--data-only` or a start after 05:30). KEV: `<n>` is the
 count of `metrics.kev.new_since_last_edition` (the brief holds at most 10 items, §4.5), never fewer
-than the items; at most 5 shown, then `and <k> more`; none: `New on CISA's exploited list: none since
-the last edition.`; vendor and product from the frozen CVE block. EPSS: at most 3, the move signed,
+than the items, even when the brief holds none (the line then ends `(<n>).`); at most 5 shown, then
+`and <k> more`; none: `New on CISA's exploited list: none since the last edition.`; vendor and
+product from the frozen CVE block. EPSS: at most 3, the move signed,
 both through `fmt2()` (§5.2), line left out when `epss_movers` is empty. `What
 happened`: the code's `WHAT_HAPPENED` template, `Data-only run requested (--data-only).` or `Started
 after 05:30: no editorial pass today.`; `Next step`: `NEXT_STEP[code]`, left out when none.
