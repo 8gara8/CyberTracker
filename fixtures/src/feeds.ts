@@ -15,7 +15,9 @@
 // (2026-10-12 end of day; 2026-10-13 20:00 UTC): CISA ADP containers dated later removed and dateUpdated
 // set back to the record's last change before the cut; the CVE Program container, legacy v4 blocks,
 // exploit and timeline blocks dropped; exploit-tagged and code-hosting references dropped and the rest
-// rewritten to <host>/ct-sample/<slug>; credits naming a person replaced by "SAMPLE Researcher"; at most 4
+// rewritten to <host>/ct-sample/<slug>, or to example.com/ct-sample/<name>-<slug> when the host is no
+// listed publisher in source-tiers.json or vendors.json (a researcher's site, a mailing-list archive, a
+// code browser); credits naming a person replaced by "SAMPLE Researcher"; at most 4
 // affected entries. Two exceptions are moved, not trimmed: CVE-2022-38369 and CVE-2022-38370 (zone-less
 // datePublished) carry a dateUpdated on 2026-10-12 so the end-of-day zip holds them. The P1 records
 // (CVE-2026-104935, -96951, -108917, -110036) are world.ts's cveRecord(), and the end-of-day copy of
