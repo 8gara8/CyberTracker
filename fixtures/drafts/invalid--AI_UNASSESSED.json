@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "generated_at": "2026-10-14T05:06:12+08:00",
+  "lead": [
+    {
+      "text": "Ivanti and Microsoft each fixed a flaw that attackers were already using, and CISA listed both as exploited on 13 October.",
+      "item_ids": [
+        "cve-2026-104935",
+        "pt-microsoft-2026-10"
+      ],
+      "gap": false
+    },
+    {
+      "text": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, the same share as in 2023–24.",
+      "item_ids": [],
+      "gap": true
+    },
+    {
+      "text": "TeamT5 says a China-nexus group phished Taiwanese chip equipment makers with lures that Focus Taiwan reports were written by AI.",
+      "item_ids": [
+        "camp-tw-semiconductor-2026-10"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "Red Hat has credited AISLE with 24 flaws since 1 October.",
+    "source_id": "s13",
+    "metric_path": null,
+    "as_of": "2026-10-13",
+    "counterpoint": "Red Hat rated none of them critical, and most are local bugs that need a user to open a crafted file.",
+    "counterpoint_source_ids": [
+      "s13"
+    ],
+    "claim_id": "SB-01"
+  },
+  "region_raises": [
+    {
+      "region": "US",
+      "reason": "CISA gave federal agencies three days to patch exploited Ivanti Connect Secure gateways.",
+      "trigger_class": "agency_alert",
+      "item_ids": [
+        "cve-2026-104935"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "cve-2026-104935",
+      "kind": "exploited_flaw",
+      "headline": "Attackers exploit an Ivanti Connect Secure flaw that lets them run commands",
+      "summary": "Ivanti says attackers exploited CVE-2026-104935, an authentication bypass in Connect Secure that lets an unauthenticated attacker run commands, before it shipped version 25.1.3. CISA listed the flaw as exploited on 13 October.",
+      "why_it_matters": "Connect Secure gateways sit on the edge of many corporate networks, and Shadowserver counts about 9,000 still unpatched.",
+      "severity": "critical",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-104935"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-104935",
+          "kind": "exploited",
+          "basis": "vendor_confirmed",
+          "date": "2026-10-13",
+          "source_id": "s2"
+        },
+        {
+          "cve_id": "CVE-2026-104935",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-10-13",
+          "source_id": "s2"
+        }
+      ],
+      "exploit_reported_in_sources": false,
+      "exposure": {
+        "text": "about 9,000 internet-facing Connect Secure instances unpatched, as reported by Shadowserver",
+        "source_id": "s3"
+      },
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2",
+        "s3"
+      ]
+    },
+    {
+      "id": "pt-microsoft-2026-10",
+      "kind": "patch_batch",
+      "headline": "Microsoft's October update fixes 1,384 flaws, one already exploited",
+      "summary": "Microsoft's October security update covers 1,384 flaws, 60 of them rated critical. One, CVE-2026-96951, a Windows Shell security feature bypass, was exploited before the fix, and CISA listed it as exploited the same day.",
+      "why_it_matters": "A batch this large forces triage, and the one flaw already exploited is where patching should start.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-96951"
+      ],
+      "release_id": "rel-microsoft-2026-10",
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-96951",
+          "kind": "exploited",
+          "basis": "vendor_confirmed",
+          "date": "2026-10-13",
+          "source_id": "s4"
+        },
+        {
+          "cve_id": "CVE-2026-96951",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-10-13",
+          "source_id": "s4"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4",
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "id": "camp-tw-semiconductor-2026-10",
+      "kind": "campaign",
+      "headline": "TeamT5 says a China-nexus group phished Taiwanese chip equipment makers",
+      "summary": "TeamT5 says the group, which it calls Paper Kestrel, has sent fake supplier invoices to at least 12 Taiwanese semiconductor equipment makers since September. Focus Taiwan reports that the phishing emails were drafted with a generative AI model.",
+      "why_it_matters": "Taiwan's chip supply chain is a standing espionage target, and AI-written lures make such phishing cheaper to run at scale.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s8",
+          "quote": "the phishing emails were drafted with a generative AI model",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [
+        "semiconductor"
+      ],
+      "attribution": [
+        {
+          "attributed_by": "TeamT5",
+          "basis": "vendor",
+          "actor_name_as_used": "Paper Kestrel",
+          "sponsor_claimed": "China",
+          "nexus": "prc",
+          "confidence_text": "moderate confidence",
+          "confidence_level": "moderate",
+          "date": "2026-10-13",
+          "source_id": "s7"
+        }
+      ],
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s7",
+        "s8"
+      ]
+    },
+    {
+      "id": "cve-2026-108917",
+      "kind": "critical_flaw",
+      "headline": "Unpatched Edimax router flaw rated 10 will get no fix",
+      "summary": "Details of a command injection flaw in the end-of-life BR-6208AC router are public; VulDB says Edimax never responded, so no fix is coming.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-108917"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s9",
+        "s10"
+      ]
+    },
+    {
+      "id": "inc-transport-jp-2026-10",
+      "kind": "breach",
+      "headline": "Ransomware group claims an attack on a Japanese logistics company",
+      "summary": "Security NEXT reports a leak-site post naming a Japanese logistics company, claimed by NightCrane, unverified. The company has not confirmed an incident.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "self_reported",
+      "regions": [
+        "JP"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": {
+        "victim": null,
+        "description": "a Japanese logistics company",
+        "sector": "transport",
+        "country": "JP",
+        "impact": "Data theft claimed; no disruption reported",
+        "disruption": false,
+        "status": "claimed",
+        "claimed_by": "NightCrane",
+        "status_source_ids": [
+          "s11"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s11"
+      ]
+    },
+    {
+      "id": "ai-aisle-red-hat-2026-10",
+      "kind": "ai_capability",
+      "headline": "Red Hat credits AISLE's AI system with 24 Linux flaws so far this month",
+      "summary": "Red Hat rated none of them critical; the newest, a local crash bug scored 3.3, was published on 13 October.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_found",
+      "ai_role_secondary": null,
+      "ai_confidence": "confirmed",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s12",
+          "quote": "This issue was discovered by Found by AISLE in partnership with Red Hat.",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-110036"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12",
+        "s13"
+      ]
+    },
+    {
+      "id": "ai-glasswing-2026-10",
+      "kind": "ai_capability",
+      "headline": "Anthropic says Project Glasswing partners have disclosed 4,212 flaws found by Claude",
+      "summary": "Anthropic says 497 are patched upstream so far; The Record notes that no partner has published its own count.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_found",
+      "ai_role_secondary": null,
+      "ai_confidence": "claimed",
+      "ai_claimant": "Anthropic",
+      "ai_evidence": [
+        {
+          "source_id": "s14",
+          "quote": "Project Glasswing partners have now disclosed 4,212 vulnerabilities that Claude found in their code.",
+          "from_claimant": true
+        }
+      ],
+      "claim_type": "self_reported",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s14",
+        "s15"
+      ]
+    },
+    {
+      "id": "pol-tw-incident-reporting-2026-10",
+      "kind": "policy",
+      "headline": "Taiwan's Cabinet backs one-hour incident reporting for critical infrastructure",
+      "summary": "The Executive Yuan approved a draft amendment requiring critical infrastructure operators to report serious incidents within one hour; the legislature must still pass it.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": true,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "TW"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s16",
+        "s17"
+      ]
+    }
+  ],
+  "taiwan_lens": {
+    "analysis": "TeamT5 attributes phishing of Taiwanese chip equipment makers to a China-nexus group with moderate confidence. An Edimax router flaw rated 10 will get no fix, and the Cabinet's one-hour incident reporting draft now goes to the legislature.",
+    "item_ids": [
+      "camp-tw-semiconductor-2026-10",
+      "cve-2026-108917",
+      "pol-tw-incident-reporting-2026-10"
+    ],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": "The Cabinet approved a draft requiring critical infrastructure operators to report serious incidents within one hour.",
+        "item_ids": [
+          "pol-tw-incident-reporting-2026-10"
+        ],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": "No new Taiwanese vendor flaw was reported exploited today; details of an unfixed Edimax router flaw are public.",
+        "item_ids": [
+          "cve-2026-108917"
+        ],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": "Fake supplier invoices reached at least 12 equipment makers, TeamT5 says.",
+        "item_ids": [
+          "camp-tw-semiconductor-2026-10"
+        ],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": "TeamT5 attributes the phishing to a China-nexus group it calls Paper Kestrel, with moderate confidence.",
+        "item_ids": [
+          "camp-tw-semiconductor-2026-10"
+        ],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": "A ransomware group claims data from a Japanese logistics company; nothing is confirmed.",
+      "item_ids": [
+        "inc-transport-jp-2026-10"
+      ],
+      "source_ids": []
+    }
+  },
+  "scoreboard_entries": [
+    {
+      "claim_id": "SB-02",
+      "summary": "The NCSC's annual review says attackers used AI to speed up reconnaissance against UK organisations, but reports no confirmed AI-powered malware in an attack on critical infrastructure.",
+      "quote": "We have not yet seen AI-powered malware used in an attack on UK critical national infrastructure.",
+      "quote_source_id": "s18",
+      "reported_value": null,
+      "claim_type": "government",
+      "meets": null
+    }
+  ],
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [
+    {
+      "title": "Japan asks local governments to check their backup systems against ransomware",
+      "source_id": "s19"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE Record: CVE-2026-104935",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-104935",
+      "source_type": "cve_record",
+      "published_at": "2026-10-13T23:31:07+08:00"
+    },
+    {
+      "id": "s2",
+      "title": "SAMPLE: Security Advisory: Ivanti Connect Secure (CVE-2026-104935)",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Ivanti",
+      "url": "https://www.ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-10-13T22:00:00+08:00"
+    },
+    {
+      "id": "s3",
+      "title": "SAMPLE: Ivanti warns of Connect Secure flaw exploited in attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://www.bleepingcomputer.com/ct-sample/ivanti-connect-secure-flaw-exploited-in-attacks",
+      "source_type": "press",
+      "published_at": "2026-10-14T00:40:00+08:00"
+    },
+    {
+      "id": "s4",
+      "title": "SAMPLE: October 2026 security update",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Microsoft Security Response Center",
+      "url": "https://msrc.microsoft.com/ct-sample/october-2026-security-update",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-10-14T01:00:00+08:00"
+    },
+    {
+      "id": "s5",
+      "title": "CVE Record: CVE-2026-96951",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-96951",
+      "source_type": "cve_record",
+      "published_at": "2026-10-14T03:01:26+08:00"
+    },
+    {
+      "id": "s6",
+      "title": "SAMPLE: Microsoft patches 1,384 flaws, one exploited before the fix",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://www.securityweek.com/ct-sample/microsoft-october-2026-patch-tuesday",
+      "source_type": "press",
+      "published_at": "2026-10-14T03:40:00+08:00"
+    },
+    {
+      "id": "s7",
+      "title": "SAMPLE: Paper Kestrel targets Taiwan's semiconductor equipment makers",
+      "title_en": null,
+      "language": "en",
+      "outlet": "TeamT5",
+      "url": "https://teamt5.org/ct-sample/paper-kestrel-invoice-phishing",
+      "source_type": "research",
+      "published_at": "2026-10-13T16:00:00+08:00"
+    },
+    {
+      "id": "s8",
+      "title": "SAMPLE: Taiwan chip equipment makers targeted with AI-written phishing, TeamT5 says",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan",
+      "url": "https://focustaiwan.tw/ct-sample/chip-equipment-makers-phishing",
+      "source_type": "press",
+      "published_at": "2026-10-13T19:20:00+08:00"
+    },
+    {
+      "id": "s9",
+      "title": "CVE Record: CVE-2026-108917",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-108917",
+      "source_type": "cve_record",
+      "published_at": "2026-10-13T01:45:15+08:00"
+    },
+    {
+      "id": "s10",
+      "title": "SAMPLE：Edimax BR-6208AC 路由器命令注入漏洞 CVSS 達 10 分，原廠未回應",
+      "title_en": "SAMPLE: Edimax BR-6208AC router command injection flaw rated CVSS 10, vendor silent",
+      "language": "zh-Hant",
+      "outlet": "iThome",
+      "url": "https://www.ithome.com.tw/ct-sample/edimax-br-6208ac-command-injection",
+      "source_type": "press",
+      "published_at": "2026-10-13T11:30:00+08:00"
+    },
+    {
+      "id": "s11",
+      "title": "SAMPLE：物流会社のデータ窃取を主張、ランサムウェアグループ「NightCrane」",
+      "title_en": "SAMPLE: Ransomware group NightCrane claims data theft from a logistics company",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://www.security-next.com/ct-sample/logistics-ransomware-claim",
+      "source_type": "press",
+      "published_at": "2026-10-13T14:10:00+08:00"
+    },
+    {
+      "id": "s12",
+      "title": "CVE Record: CVE-2026-110036",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-110036",
+      "source_type": "cve_record",
+      "published_at": "2026-10-14T02:45:47+08:00"
+    },
+    {
+      "id": "s13",
+      "title": "SAMPLE: Red Hat keeps crediting an AI bug hunter",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Register",
+      "url": "https://www.theregister.com/ct-sample/red-hat-aisle-ai-bug-credits",
+      "source_type": "press",
+      "published_at": "2026-10-13T21:00:00+08:00"
+    },
+    {
+      "id": "s14",
+      "title": "SAMPLE: Project Glasswing: an update from our partners",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Anthropic",
+      "url": "https://red.anthropic.com/ct-sample/glasswing-partner-update",
+      "source_type": "finder_writeup",
+      "published_at": "2026-10-13T09:00:00+08:00"
+    },
+    {
+      "id": "s15",
+      "title": "SAMPLE: Anthropic says Glasswing partners disclosed 4,212 flaws found by its AI",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/ct-sample/anthropic-glasswing-disclosures",
+      "source_type": "press",
+      "published_at": "2026-10-13T22:15:00+08:00"
+    },
+    {
+      "id": "s16",
+      "title": "SAMPLE：行政院會通過資通安全管理法修正草案，關鍵基礎設施重大資安事件須一小時內通報",
+      "title_en": "SAMPLE: Cabinet approves draft amendment requiring one-hour reporting of serious incidents at critical infrastructure",
+      "language": "zh-Hant",
+      "outlet": "行政院",
+      "url": "https://www.ey.gov.tw/ct-sample/cyber-security-act-amendment-one-hour-reporting",
+      "source_type": "government",
+      "published_at": "2026-10-13"
+    },
+    {
+      "id": "s17",
+      "title": "SAMPLE: Cabinet backs one-hour incident reporting rule",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Taipei Times",
+      "url": "https://www.taipeitimes.com/ct-sample/cabinet-backs-one-hour-incident-reporting",
+      "source_type": "press",
+      "published_at": "2026-10-14T02:00:00+08:00"
+    },
+    {
+      "id": "s18",
+      "title": "SAMPLE: NCSC Annual Review 2026",
+      "title_en": null,
+      "language": "en",
+      "outlet": "NCSC",
+      "url": "https://www.ncsc.gov.uk/ct-sample/annual-review-2026",
+      "source_type": "government",
+      "published_at": "2026-10-13T17:00:00+08:00"
+    },
+    {
+      "id": "s19",
+      "title": "SAMPLE：総務省 自治体にバックアップ体制の点検を要請",
+      "title_en": "SAMPLE: Internal affairs ministry asks local governments to check backup systems",
+      "language": "ja",
+      "outlet": "NHK",
+      "url": "https://www3.nhk.or.jp/news/ct-sample/local-government-backup-checks",
+      "source_type": "press",
+      "published_at": "2026-10-13T20:00:00+08:00"
+    }
+  ]
+}

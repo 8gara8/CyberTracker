@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-11",
+  "edition": "full",
+  "generated_at": "2026-10-11T04:58:10+08:00",
+  "published_at": "2026-10-11T04:59:30+08:00",
+  "data_only_published_at": "2026-10-11T04:47:31+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-10-09",
+  "lead": [
+    {
+      "text": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, unchanged from 2023–24.",
+      "item_ids": [],
+      "gap": true
+    },
+    {
+      "text": "For the rest, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
+      "item_ids": [],
+      "gap": true
+    }
+  ],
+  "angle": {
+    "text": "New CVE records are arriving at 5.2 times the 2023–24 pace.",
+    "source_id": null,
+    "metric_path": "flood.vs_reference_ratio",
+    "as_of": "2026-10-09",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null,
+    "claim_text": null
+  },
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 0
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-10-11.json",
+    "metrics_sha256": "eda82d7b56b7328be4cc2f243c858d36d06908d47172656322eeb22b2e7174fa",
+    "as_of": "2026-10-09"
+  },
+  "items": [],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "No fresh Taiwan-relevant development today; the rows below still apply.",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 9 Oct (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 9 Oct (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": []
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0001",
+      "date": "2026-10-09",
+      "claim_id": "SB-01",
+      "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [],
+  "feeds_stale": [],
+  "sources": [],
+  "computed": {
+    "word_count": 406,
+    "reading_minutes": 2,
+    "item_count": 0,
+    "ai_linked": {
+      "linked": 0,
+      "total": 0
+    },
+    "source_count": 0,
+    "publisher_count": 0
+  }
+}

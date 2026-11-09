@@ -15,7 +15,7 @@ import { SITE_NAME, siteUrl as configuredSiteUrl } from "./site";
 import { splitSentences } from "./text";
 import { defang } from "./urls";
 import {
-  AI_ROLE_INFO, CANARY_TOKEN, IOC_TLDS, REGION_CHANGE, REGION_LEVEL_INFO, SEVERITY_INFO, TAIWAN_NO_NEWS, WITHHELD_HEADLINE,
+  AI_ROLE_INFO, CANARY_TOKEN, IOC_TLDS, REGION_CHANGE, REGION_LEVEL_INFO, SEVERITY_INFO, TAIWAN_NO_NEWS, WITHHELD_HEADLINE, WITHHELD_MARK,
 } from "./vocab";
 
 export const CHAT_MAX_LINES = 15;
@@ -491,7 +491,8 @@ function publishedLines(input: Extract<ChatInput, { kind: "published" }>, site: 
   const first = input.dryRun
     ? `**${SITE_NAME} ${D} · dry run (${edition} edition)**`
     : `**${SITE_NAME} ${D} · ${edition} edition, published ${taipeiTime(b.published_at)}${b.late ? " (late)" : ""}**`;
-  const lead = oneLine(b.lead.map((l) => l.text).join(" "));
+  // A withheld Lead sentence reads WITHHELD_MARK on the page (§4.10); the chat drops it.
+  const lead = oneLine(b.lead.filter((l) => l.text.trim() !== WITHHELD_MARK).map((l) => l.text).join(" "));
   const top = b.items.slice(0, 3).map((item, i) =>
     `${i + 1}. ${kicker(item)} · ${item.withheld ? WITHHELD_HEADLINE : oneLine(item.headline)} · ${site}/brief/${D}#${item.id}`);
   const more = b.items.length - 3;

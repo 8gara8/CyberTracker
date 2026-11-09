@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-11",
+  "window": {
+    "start": "2026-10-10T04:30:00+08:00",
+    "end": "2026-10-11T04:30:00+08:00"
+  },
+  "generated_at": "2026-10-11T04:41:05+08:00",
+  "data_cutoff_utc": "2026-10-09",
+  "degraded": false,
+  "feeds": [
+    {
+      "id": "kev",
+      "kind": "kev",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-08T17:05:40Z",
+      "items_total": 6,
+      "items_kept": 0,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "cvelist",
+      "kind": "cvelist",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-10T20:00:00Z",
+      "items_total": 6,
+      "items_kept": 0,
+      "error": null,
+      "sha256": null
+    }
+  ],
+  "items": [],
+  "records": [],
+  "injection_flags": 0
+}

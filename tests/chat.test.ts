@@ -1,7 +1,8 @@
 // The chat edition (SPEC §8.8): every case in all four formats and their dry-run forms, on Brief and
-// RunRecord objects built by hand and parsed through their schemas. Sample text is invented and labelled
-// SAMPLE. Each case checks the rendered text exactly and the §8.8 invariants: at most 15 lines, no line
-// starting "|", no emoji, every URL on the site, and the run line's pattern.
+// RunRecord objects built by hand and parsed through their schemas, and the ten snapshots on
+// fixtures/site-content/ (the last block). Sample text is invented and labelled SAMPLE. Each case checks
+// the rendered text exactly and the §8.8 invariants: at most 15 lines, no line starting "|", no emoji,
+// every URL on the site, and the run line's pattern.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -20,9 +21,10 @@ import { RunRecord, StatusFile, type RunStage, type StageRecord } from "@/lib/sc
 import { siteUrl } from "@/lib/site";
 import { CANARY_TOKEN, KEV_ABSENCE_NOTE, RUN_STAGES, TAIWAN_LENS_ROWS, TAIWAN_NO_NEWS } from "@/lib/vocab";
 import { chatFromContent, main as chatMain, newestEdition } from "@/scripts/chat";
+import { SITE_CONTENT_DIR } from "@/fixtures/src/site";
 
 const SITE = siteUrl();
-const RUN_LINE_RE = /^Run \d\d:\d\d–\d\d:\d\d( · data-only \d\d:\d\d)? · \d attempts?(, \d repairs?)?( · \d+ sources)? · data to \d{1,2} [A-Z][a-z]{2} UTC$/;
+const RUN_LINE_RE = /^Run \d\d:\d\d–\d\d:\d\d( · data-only \d\d:\d\d)? · \d attempts?(, \d repairs?)?( · \d+ sources?)? · data to \d{1,2} [A-Z][a-z]{2} UTC$/;
 const FAILED_RUN_RE = /^Run: started \d\d:\d\d, ended \d\d:\d\d · attempts \d, repairs \d$/;
 const CUTOFF: Record<string, string> = {};
 const cutoff = (d: string) => (CUTOFF[d] ??= new Date(Date.parse(`${d}T00:00:00Z`) - 2 * 86_400_000).toISOString().slice(0, 10));
@@ -852,5 +854,194 @@ describe("npm run chat -- --date D", () => {
     const D = "2026-11-15";
     const dir = contentWith({ [`status/${D}.json`]: { schema_version: 1, date: D, runs: [{ run_id: "https://evil.example/poc" }] } });
     expect(() => chatFromContent(dir, D, SITE)).toThrow(/^status\/2026-11-15\.json fails its schema; run npm run validate:all\.$/);
+  });
+});
+
+// ── The ten editions on fixtures/site-content ────────────────────────────────────────────────────
+
+describe("chat edition: the ten §8.8 snapshots on fixtures/site-content", () => {
+  const CONTENT = path.join(__dirname, "..", SITE_CONTENT_DIR);
+  const dirs: string[] = [];
+  afterEach(() => {
+    for (const d of dirs.splice(0)) fs.rmSync(d, { recursive: true, force: true });
+  });
+
+  const siteBrief = (d: string) => Brief.parse(JSON.parse(fs.readFileSync(path.join(CONTENT, "briefs", `${d}.json`), "utf8")));
+  /** The Gap line rule for a brief whose Gap is ok: its headline, then its second line. */
+  const gap = (d: string) => {
+    const b = siteBrief(d);
+    expect(b.gap.status).toBe("ok");
+    return [b.gap.headline, b.gap.second_line];
+  };
+  /** `npm run chat -- --date D` on the sample, with the §8.8 invariants checked. */
+  const fromContent = (d: string, dir = CONTENT) => {
+    const text = chatFromContent(dir, d, SITE);
+    checkChat(text);
+    return text;
+  };
+
+  it("weekday full (14 October): the Taiwan line is the analysis's first sentence", () => {
+    const D = "2026-10-14";
+    const taiwan = "TeamT5 attributes phishing of Taiwanese chip equipment makers to a China-nexus group with moderate confidence.";
+    expect(siteBrief(D).taiwan_lens.analysis.startsWith(`${taiwan} `)).toBe(true);
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-14 · full edition, published 05:07**",
+      ...gap(D),
+      "Ivanti and Microsoft each fixed a flaw that attackers were already using, and CISA listed both as exploited on 13 October. 37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, the same share as in 2023–24. TeamT5 says a China-nexus group phished Taiwanese chip equipment makers with lures that Focus Taiwan reports were written by AI.",
+      `1. ●●●● CRITICAL · US GLOBAL · Attackers exploit an Ivanti Connect Secure flaw that lets them run commands · ${SITE}/brief/2026-10-14#cve-2026-104935`,
+      `2. ●●●○ HIGH · GLOBAL · Microsoft's October update fixes 1,384 flaws, one already exploited · ${SITE}/brief/2026-10-14#pt-microsoft-2026-10`,
+      `3. ●●○○ ELEVATED · AI-weapon · TW · TeamT5 says a China-nexus group phished Taiwanese chip equipment makers · ${SITE}/brief/2026-10-14#camp-tw-semiconductor-2026-10`,
+      `Taiwan: ${taiwan}`,
+      "Regions: US ●●●● CRITICAL ↑ (raised) · EU ●○○○ BASELINE = · TW ●●○○ ELEVATED ↑ · JP ●○○○ BASELINE = · GLOBAL 5",
+      `Also today (5): ${SITE}/brief/2026-10-14#also-today`,
+      "Run 04:37–05:11 · data-only 04:48 · 1 attempt, 1 repair · 19 sources · data to 12 Oct UTC",
+    ));
+  });
+
+  it("partial (13 October): a stale feed and the corrections the edition lists", () => {
+    const D = "2026-10-13";
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-13 · partial edition, published 04:58**",
+      ...gap(D),
+      "Details of an Edimax router flaw rated 10 are public, and VulDB says Edimax never responded, so no fix is coming. 37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, the same share as in 2023–24.",
+      `1. ●○○○ WATCH · TW GLOBAL · Unpatched Edimax router flaw rated 10 will get no fix · ${SITE}/brief/2026-10-13#cve-2026-108917`,
+      "Taiwan: No Taiwanese vendor flaw was reported exploited today.",
+      "Regions: US ●●●○ HIGH = · EU ●○○○ BASELINE = · TW ●○○○ BASELINE = · JP ●○○○ BASELINE = · GLOBAL 1",
+      `Full brief: ${SITE}/brief/2026-10-13`,
+      "Corrections: C-0001 name withheld to inc-health-us-2026-10 (12 Oct); C-0002 clarification to pol-jp-active-cyber-defence-2026-10 (12 Oct)",
+      "Notes: feeds stale: ithome-security",
+      "Run 04:37–05:01 · data-only 04:47 · 1 attempt · 1 source · data to 11 Oct UTC",
+    ));
+  });
+
+  it("Monday (12 October), as archived after its first item was withheld", () => {
+    const D = "2026-10-12";
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-12 · full edition, published 05:05**",
+      ...gap(D),
+      "CVERC, a PRC state source, says US agencies broke into a national time service network, and it offered nothing others can check. For flaws not exploited at disclosure, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
+      `1. ●●●○ HIGH · US · Item under review · ${SITE}/brief/2026-10-12#inc-health-us-2026-10`,
+      `2. ●○○○ WATCH · GLOBAL · PRC state claim: CVERC says US agencies broke into a national time service network · ${SITE}/brief/2026-10-12#camp-prc-state-claim-2026-10`,
+      `3. JP · Japan's police set rules for disabling attack servers under the new cyber defence law · ${SITE}/brief/2026-10-12#pol-jp-active-cyber-defence-2026-10`,
+      "Taiwan: Nothing today targets Taiwan directly.",
+      "Regions: US ●●●○ HIGH ↑ · EU ●○○○ BASELINE = · TW ●○○○ BASELINE = · JP ●○○○ BASELINE = · GLOBAL 1",
+      `Full brief: ${SITE}/brief/2026-10-12`,
+      "Run 04:37–05:09 · data-only 04:47 · 1 attempt · 7 sources · data to 10 Oct UTC",
+    ));
+  });
+
+  it("quiet day (11 October): no items", () => {
+    const D = "2026-10-11";
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-11 · full edition, published 04:59**",
+      ...gap(D),
+      "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, unchanged from 2023–24. For the rest, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
+      "No top stories today.",
+      "Taiwan: No fresh Taiwan-relevant development today; the rows below still apply.",
+      "Regions: US ●○○○ BASELINE = · EU ●○○○ BASELINE = · TW ●○○○ BASELINE = · JP ●○○○ BASELINE = · GLOBAL 0",
+      `Full brief: ${SITE}/brief/2026-10-11`,
+      "Run 04:37–05:03 · data-only 04:47 · 1 attempt · 0 sources · data to 9 Oct UTC",
+    ));
+  });
+
+  it("data-only after E_VALIDATION (9 October)", () => {
+    const D = "2026-10-09";
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-09 · data-only edition, published 04:48** (E_VALIDATION)",
+      ...gap(D),
+      "New on CISA's exploited list (5): CVE-2023-22894 Strapi Strapi · CVE-2021-3199 ONLYOFFICE Docs · CVE-2016-3081 Apache Software Foundation Struts · CVE-2015-5477 ISC BIND · CVE-2015-3306 ProFTPD ProFTPD",
+      "Taiwan: KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 7 Oct (US date). KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 7 Oct (US date).",
+      "Regions: US ●○○○ BASELINE · EU ●○○○ BASELINE · TW ●○○○ BASELINE · JP ●○○○ BASELINE · GLOBAL 5",
+      "What happened: The draft still had 2 validation errors after 2 repairs and 1 attempt.",
+      `Next step: ${RERUN}; the draft is in needs-review/2026-10-09/`,
+      `Brief: ${SITE}/brief/2026-10-09`,
+      "Run 04:37–05:10 · data-only 04:48 · 1 attempt, 2 repairs · data to 7 Oct UTC",
+    ));
+  });
+
+  it("data-only from --data-only (15 October)", () => {
+    const D = "2026-10-15";
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-15 · data-only edition, published 04:51**",
+      ...gap(D),
+      "New on CISA's exploited list (4): CVE-2026-76519 Cisco Secure Email Gateway · CVE-2026-105134 Ahsay AhsayCBS · CVE-2026-105133 Ahsay AhsayCBS · CVE-2026-0322 Palo Alto Networks PAN-OS",
+      "Taiwan: KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 13 Oct (US date). KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 13 Oct (US date).",
+      "Regions: US ●●●○ HIGH ↓ · EU ●○○○ BASELINE = · TW ●●○○ ELEVATED = · JP ●○○○ BASELINE = · GLOBAL 4",
+      "What happened: Data-only run requested (--data-only).",
+      `Brief: ${SITE}/brief/2026-10-15`,
+      "Run 04:42–04:54 · data-only 04:51 · 0 attempts · data to 13 Oct UTC",
+    ));
+  });
+
+  it("E_METRICS failure (16 October): the site still shows the 15 October data-only edition", () => {
+    const D = "2026-10-16";
+    expect(fs.existsSync(path.join(CONTENT, "briefs", `${D}.json`))).toBe(false);
+    expect(fromContent(D)).toBe(lines(
+      "**CyberTracker 2026-10-16 · failed** (E_METRICS)",
+      "What happened: No metrics file was written, so nothing could be published.",
+      "Site shows: the 2026-10-15 data-only edition",
+      "Draft and logs: needs-review/2026-10-16/",
+      `Next step: read logs/2026-10-16.metrics.log; fix in a PR, then ${RERUN}`,
+      "Run: started 04:37, ended 04:41 · attempts 0, repairs 0",
+    ));
+  });
+
+  it("skip: a manual run at 07:02 on 14 October, after the full edition", () => {
+    const D = "2026-10-14";
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-chat-site-"));
+    dirs.push(dir);
+    fs.cpSync(CONTENT, dir, { recursive: true });
+    const file = path.join(dir, "status", `${D}.json`);
+    const status = StatusFile.parse(JSON.parse(fs.readFileSync(file, "utf8")));
+    status.runs.push(record(D, {
+      trigger: "manual", started_at: at(D, "07:02:00"), finished_at: at(D, "07:02:40"), outcome: "skipped", edition: "full",
+      stage: { ...skippedStages(RUN_STAGES.filter((s) => s !== "preflight")), preflight: { note: STAGE_NOTES.alreadyPublished("05:07") } },
+    }));
+    fs.writeFileSync(file, `${JSON.stringify(StatusFile.parse(status), null, 2)}\n`);
+    expect(fromContent(D, dir)).toBe(lines(
+      "**CyberTracker 2026-10-14 · skipped.** The full edition was already published at 05:07.",
+      `${SITE}/brief/2026-10-14`,
+    ));
+  });
+
+  it("dry run of the 14 October full edition", () => {
+    const D = "2026-10-14";
+    const runs = [record(D, {
+      trigger: "dry_run", outcome: "dry_run", edition: "full", started_at: at(D, "14:02:00"), finished_at: at(D, "14:40:12"),
+      deploy: { triggered: false, ready_at: null, shows_date: null, shows_edition: null },
+      stage: skippedStages(["deploy", "links"]),
+    })];
+    expect(render(chatInputFor({ date: D, brief: siteBrief(D), runs }))).toBe(lines(
+      "**CyberTracker 2026-10-14 · dry run (full edition)**",
+      ...gap(D),
+      "Ivanti and Microsoft each fixed a flaw that attackers were already using, and CISA listed both as exploited on 13 October. 37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, the same share as in 2023–24. TeamT5 says a China-nexus group phished Taiwanese chip equipment makers with lures that Focus Taiwan reports were written by AI.",
+      `1. ●●●● CRITICAL · US GLOBAL · Attackers exploit an Ivanti Connect Secure flaw that lets them run commands · ${SITE}/brief/2026-10-14#cve-2026-104935`,
+      `2. ●●●○ HIGH · GLOBAL · Microsoft's October update fixes 1,384 flaws, one already exploited · ${SITE}/brief/2026-10-14#pt-microsoft-2026-10`,
+      `3. ●●○○ ELEVATED · AI-weapon · TW · TeamT5 says a China-nexus group phished Taiwanese chip equipment makers · ${SITE}/brief/2026-10-14#camp-tw-semiconductor-2026-10`,
+      "Taiwan: TeamT5 attributes phishing of Taiwanese chip equipment makers to a China-nexus group with moderate confidence.",
+      "Regions: US ●●●● CRITICAL ↑ (raised) · EU ●○○○ BASELINE = · TW ●●○○ ELEVATED ↑ · JP ●○○○ BASELINE = · GLOBAL 5",
+      "Dry run: nothing was published; files in logs/dry-run/2026-10-14/",
+      "Run 14:02–14:40 · data-only 04:48 · 1 attempt · 19 sources · data to 12 Oct UTC",
+    ));
+  });
+
+  it("dry-run data-only after E_SIMULATED, on the 15 October data-only brief", () => {
+    const D = "2026-10-15";
+    const runs = [record(D, {
+      trigger: "dry_run", outcome: "dry_run", edition: "data_only", error_code: "E_SIMULATED", started_at: at(D, "15:00:00"), finished_at: at(D, "15:31:09"),
+      validation: { errors: 0, warnings: 0, codes: [] },
+      deploy: { triggered: false, ready_at: null, shows_date: null, shows_edition: null },
+    })];
+    expect(render(chatInputFor({ date: D, brief: siteBrief(D), runs }))).toBe(lines(
+      "**CyberTracker 2026-10-15 · dry run (data-only edition)** (E_SIMULATED)",
+      ...gap(D),
+      "New on CISA's exploited list (4): CVE-2026-76519 Cisco Secure Email Gateway · CVE-2026-105134 Ahsay AhsayCBS · CVE-2026-105133 Ahsay AhsayCBS · CVE-2026-0322 Palo Alto Networks PAN-OS",
+      "Taiwan: KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 13 Oct (US date). KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 13 Oct (US date).",
+      "Regions: US ●●●○ HIGH ↓ · EU ●○○○ BASELINE = · TW ●●○○ ELEVATED = · JP ●○○○ BASELINE = · GLOBAL 4",
+      "What happened: A simulated failure (--simulate-failure) stopped the run after a valid draft.",
+      "Next step: nothing: this was a test of the failure path",
+      "Dry run: nothing was published; files in logs/dry-run/2026-10-15/",
+      "Run 15:00–15:31 · data-only 04:51 · 1 attempt · data to 13 Oct UTC",
+    ));
   });
 });

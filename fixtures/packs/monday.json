@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "window": {
+    "start": "2026-10-11T04:30:00+08:00",
+    "end": "2026-10-12T04:30:00+08:00"
+  },
+  "generated_at": "2026-10-12T04:41:05+08:00",
+  "data_cutoff_utc": "2026-10-10",
+  "degraded": false,
+  "feeds": [
+    {
+      "id": "kev",
+      "kind": "kev",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-08T17:05:40Z",
+      "items_total": 6,
+      "items_kept": 0,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "cvelist",
+      "kind": "cvelist",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-11T20:00:00Z",
+      "items_total": 6,
+      "items_kept": 0,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "therecord",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-10T22:20:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    }
+  ],
+  "items": [
+    {
+      "id": "p0001",
+      "feed_id": "therecord",
+      "outlet": "The Record",
+      "publisher": "the-record",
+      "tier": 2,
+      "language": "en",
+      "region": "GLOBAL",
+      "coverage": [
+        "exploits",
+        "breaches",
+        "policy"
+      ],
+      "title": "SAMPLE: Example Health Group says hackers copied patient records",
+      "snippet": "SAMPLE text. Example Health Group, a US hospital operator, told the SEC an intruder copied patient records from its billing systems. It is notifying about 410,000 people. Services were not disrupted.",
+      "url": "https://therecord.media/ct-sample/example-health-group-breach",
+      "published_at": "2026-10-10T22:20:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 90
+    }
+  ],
+  "records": [],
+  "injection_flags": 0
+}

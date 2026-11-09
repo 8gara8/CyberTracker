@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-15",
+  "claims_version": 1,
+  "claims": [
+    {
+      "id": "SB-01",
+      "text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": "SE-0001"
+    },
+    {
+      "id": "SB-02",
+      "text": "SAMPLE. By the end of 2028, AI-powered malware is used in an attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": "SE-0002"
+    }
+  ],
+  "entries": [
+    {
+      "id": "SE-0001",
+      "date": "2026-10-09",
+      "claim_id": "SB-01",
+      "origin": "metric",
+      "direction": "neutral",
+      "summary": "SAMPLE. First reading: the base-rate ratio has no value yet, because no AI-credited flaw since 2025 has reached CISA's list.",
+      "value": null,
+      "reported_value": null,
+      "quote": null,
+      "claim_type": null,
+      "source_url": null,
+      "metrics_ref": {
+        "file": "metrics/2026-10-09.json",
+        "path": "base_rate.ratio"
+      }
+    },
+    {
+      "id": "SE-0002",
+      "date": "2026-10-14",
+      "claim_id": "SB-02",
+      "origin": "report",
+      "direction": "neutral",
+      "summary": "The NCSC's annual review says attackers used AI to speed up reconnaissance against UK organisations, but reports no confirmed AI-powered malware in an attack on critical infrastructure.",
+      "value": null,
+      "reported_value": null,
+      "quote": "We have not yet seen AI-powered malware used in an attack on UK critical national infrastructure.",
+      "claim_type": "government",
+      "source_url": "https://www.ncsc.gov.uk/ct-sample/annual-review-2026",
+      "metrics_ref": null
+    }
+  ]
+}

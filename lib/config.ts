@@ -15,6 +15,7 @@ import {
   WatchWindowsFile, type Finder, type RegionRule, type Vendor,
 } from "./schema/config";
 import { SourcesFile } from "./schema/registry";
+import type { ValidationIssue } from "./rules/types";
 import { contentDir, isSampleData } from "./site";
 import { countWords } from "./text";
 import {
@@ -68,14 +69,8 @@ export type ConfigFiles = { [K in ConfigKey]: z.output<(typeof SCHEMAS)[K]> };
 export const CONFIG_CODES = ["CONFIG_SCHEMA", "CONFIG_DUP", "CONFIG_REF", "CONFIG_REGEX"] as const;
 export type ConfigCode = (typeof CONFIG_CODES)[number];
 
-/** The same shape as lib/rules/types.ts ValidationIssue (§4.12), so config issues join the validator's reports. */
-export interface ConfigIssue {
-  code: string;
-  severity: "error" | "warning";
-  path: string;
-  message: string;
-  hint: string | null;
-}
+/** lib/rules/types.ts ValidationIssue (§4.12): one shape, so config issues join the validator's reports. */
+export type ConfigIssue = ValidationIssue;
 
 function issue(code: ConfigCode, where: string, message: string, hint: string | null = null): ConfigIssue {
   return { code, severity: "error", path: where, message, hint };

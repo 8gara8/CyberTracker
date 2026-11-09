@@ -1,0 +1,506 @@
+{
+  "schema_version": 1,
+  "editions": [
+    {
+      "date": "2026-10-15",
+      "edition": "data_only",
+      "published_at": "2026-10-15T04:51:27+08:00",
+      "item_count": 4,
+      "corrected": false
+    },
+    {
+      "date": "2026-10-14",
+      "edition": "full",
+      "published_at": "2026-10-14T05:07:44+08:00",
+      "item_count": 8,
+      "corrected": false
+    },
+    {
+      "date": "2026-10-13",
+      "edition": "partial",
+      "published_at": "2026-10-13T04:58:02+08:00",
+      "item_count": 1,
+      "corrected": false
+    },
+    {
+      "date": "2026-10-12",
+      "edition": "full",
+      "published_at": "2026-10-12T05:05:52+08:00",
+      "item_count": 3,
+      "corrected": true
+    },
+    {
+      "date": "2026-10-11",
+      "edition": "full",
+      "published_at": "2026-10-11T04:59:30+08:00",
+      "item_count": 0,
+      "corrected": false
+    },
+    {
+      "date": "2026-10-10",
+      "edition": "data_only",
+      "published_at": "2026-10-10T05:51:33+08:00",
+      "item_count": 0,
+      "corrected": false
+    },
+    {
+      "date": "2026-10-09",
+      "edition": "data_only",
+      "published_at": "2026-10-09T04:48:20+08:00",
+      "item_count": 5,
+      "corrected": false
+    }
+  ],
+  "urls": {
+    "https://cve.org/CVERecord?id=CVE-2023-22894": {
+      "first_cited": "2026-10-09",
+      "item_ids": [
+        "2026-10-09/cve-2023-22894"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2021-3199": {
+      "first_cited": "2026-10-09",
+      "item_ids": [
+        "2026-10-09/cve-2021-3199"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2016-3081": {
+      "first_cited": "2026-10-09",
+      "item_ids": [
+        "2026-10-09/cve-2016-3081"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2015-5477": {
+      "first_cited": "2026-10-09",
+      "item_ids": [
+        "2026-10-09/cve-2015-5477"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2015-3306": {
+      "first_cited": "2026-10-09",
+      "item_ids": [
+        "2026-10-09/cve-2015-3306"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://sec.gov/ct-sample/example-health-group-form-8-k": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/inc-health-us-2026-10"
+      ],
+      "sha256": "d6566e4f16385d2ce635a40e086d5b9f1542ac55ef0896df05f4a00a443fadac",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://therecord.media/ct-sample/example-health-group-breach": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/inc-health-us-2026-10"
+      ],
+      "sha256": "216fc90afbd104abac58b0ac84a927cf71bc559380102edbbe8ca68f4bed64ac",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cverc.org.cn/ct-sample/national-time-service-network-report": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/camp-prc-state-claim-2026-10"
+      ],
+      "sha256": "80146dc8da9e343c2f84a4798c3e8ce5076100b804359c7ff83444bdd17b8b5b",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://scmp.com/ct-sample/cverc-time-service-network-claim": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/camp-prc-state-claim-2026-10"
+      ],
+      "sha256": "cb332f51a4c21f2f622f709743bd51bb984887a43750acb695b751d8e55be3b2",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://npa.go.jp/ct-sample/active-cyber-defence-guidelines": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/pol-jp-active-cyber-defence-2026-10"
+      ],
+      "sha256": "32ca63f9eb5884e337d49a19948b4ca71c3e011a48ab7650012ab9c11cae52e9",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers": {
+      "first_cited": "2026-10-12",
+      "item_ids": [
+        "2026-10-12/pol-jp-active-cyber-defence-2026-10"
+      ],
+      "sha256": "15929ff07d5d192b01d62f28a4f601ca4c8c150eae32a1165176ca47e48d46b2",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-107466": {
+      "first_cited": "2026-10-12",
+      "item_ids": [],
+      "sha256": "2ed8cdb80c60c6cb70d533a9f73ce3db2fcd4bb0f3a940fdc90a97e3f0ce40be",
+      "hashed_at": "2026-10-12T05:04:30+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-108917": {
+      "first_cited": "2026-10-13",
+      "item_ids": [
+        "2026-10-13/cve-2026-108917",
+        "2026-10-14/cve-2026-108917"
+      ],
+      "sha256": "ae35c694e7aaa1ddfbc87669beefb146f9131786efa28da8769603dab3c040d4",
+      "hashed_at": "2026-10-13T04:56:40+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-104935": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/cve-2026-104935"
+      ],
+      "sha256": "5cb75a984fcd59b47e1f5910f98f86b2fb34bcb1afce1c30dd60cbc214d63b36",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/cve-2026-104935"
+      ],
+      "sha256": "05d8d8a11dc233e9f21dfa5d1e10bdbb41f7dbb3ebbd472f66d688a53135dbfa",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://bleepingcomputer.com/ct-sample/ivanti-connect-secure-flaw-exploited-in-attacks": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/cve-2026-104935"
+      ],
+      "sha256": "41f5af16a0869345aca7d2d0baf37799eec8ddc20a9f3e1e460ccaf863e923ea",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://msrc.microsoft.com/ct-sample/october-2026-security-update": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/pt-microsoft-2026-10"
+      ],
+      "sha256": "55bfa5a46cdbbe9ef93f653ca9bc7600b42ec635217e2545f1245e833b6530b2",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-96951": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/pt-microsoft-2026-10"
+      ],
+      "sha256": "4297fffb2a11d68c37006df142da5da707cc6a264bbf811ad70494bdb4906c25",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://securityweek.com/ct-sample/microsoft-october-2026-patch-tuesday": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/pt-microsoft-2026-10"
+      ],
+      "sha256": "a99e2e06456af89d52764bd0a8fd4bba438ffa325a67d015d367285a4b8fe30f",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://teamt5.org/ct-sample/paper-kestrel-invoice-phishing": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/camp-tw-semiconductor-2026-10"
+      ],
+      "sha256": "468e703101ad71c084f381619003f0f3beccf1a5f89ff084c60056d865622de6",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://focustaiwan.tw/ct-sample/chip-equipment-makers-phishing": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/camp-tw-semiconductor-2026-10"
+      ],
+      "sha256": "dcd56d992eea503b01a121aff8e04d5cb77e66a23a70944654057ddfd9ce6fc9",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://ithome.com.tw/ct-sample/edimax-br-6208ac-command-injection": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/cve-2026-108917"
+      ],
+      "sha256": "b20f7c742720486db90480f248bcdf6f9842e74f5b8808c5db883bf18835f7a8",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://security-next.com/ct-sample/logistics-ransomware-claim": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/inc-transport-jp-2026-10"
+      ],
+      "sha256": "88c5e03f47c93b9adf402d163a6e863d3f1f871a735b10eea25f31161213d440",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-110036": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/ai-aisle-red-hat-2026-10"
+      ],
+      "sha256": "e295480b2c0c92712fd7d7ce7717b34de5851f85d56de8dd6276e0f7f2fc637d",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://theregister.com/ct-sample/red-hat-aisle-ai-bug-credits": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/ai-aisle-red-hat-2026-10"
+      ],
+      "sha256": "6096962dd557898f8bc9234a184f7940d26953c0da3d7509b11c31e610fa7158",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://red.anthropic.com/ct-sample/glasswing-partner-update": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/ai-glasswing-2026-10"
+      ],
+      "sha256": "ad255116b117df2054c9998ff7bb45e4ad21c2f51dd354b4e5e2155e698711bd",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://therecord.media/ct-sample/anthropic-glasswing-disclosures": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/ai-glasswing-2026-10"
+      ],
+      "sha256": "0ce01037d268973a8d8f044aa8c12a413d26fd2954162d05c4645bb5c2b92fc9",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://ey.gov.tw/ct-sample/cyber-security-act-amendment-one-hour-reporting": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/pol-tw-incident-reporting-2026-10"
+      ],
+      "sha256": "3ce1741007f52e7090f5bb509016f6f9800e7e510ae66682950507f6d73991a7",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://taipeitimes.com/ct-sample/cabinet-backs-one-hour-incident-reporting": {
+      "first_cited": "2026-10-14",
+      "item_ids": [
+        "2026-10-14/pol-tw-incident-reporting-2026-10"
+      ],
+      "sha256": "7b82316b14737e3ba12946b7b95de211ac64c948bf3fd106b08f9f9224858b8e",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://ncsc.gov.uk/ct-sample/annual-review-2026": {
+      "first_cited": "2026-10-14",
+      "item_ids": [],
+      "sha256": "2bddd06f8bd20378ee546cd0250a11fa9af1791e24fa5093beeaf1fd68c92bf2",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://www3.nhk.or.jp/news/ct-sample/local-government-backup-checks": {
+      "first_cited": "2026-10-14",
+      "item_ids": [],
+      "sha256": "6a0111293751a9b68c8adece62059851557095b723010ba64a965d93dfd52dcf",
+      "hashed_at": "2026-10-14T05:06:12+08:00",
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-76519": {
+      "first_cited": "2026-10-15",
+      "item_ids": [
+        "2026-10-15/cve-2026-76519"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-105134": {
+      "first_cited": "2026-10-15",
+      "item_ids": [
+        "2026-10-15/cve-2026-105134"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-105133": {
+      "first_cited": "2026-10-15",
+      "item_ids": [
+        "2026-10-15/cve-2026-105133"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-0322": {
+      "first_cited": "2026-10-15",
+      "item_ids": [
+        "2026-10-15/cve-2026-0322"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": {
+        "date": "2026-10-15",
+        "result": "ok",
+        "http": 200
+      }
+    }
+  }
+}

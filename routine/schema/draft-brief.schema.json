@@ -1,0 +1,924 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CyberTracker DraftBrief",
+  "description": "The drafting agent's output, drafts/YYYY-MM-DD.json (SPEC.md §4.4). Generated from lib/schema by `npm run schema:gen`; do not edit by hand. Word budgets, counts and cross-references in descriptions are enforced by the validator.",
+  "type": "object",
+  "properties": {
+    "schema_version": {"type":"number","const":1},
+    "date": {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$","description":"The edition date from the context"},
+    "generated_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d{1,9})?)?(?:Z|[+-]\\d{2}:\\d{2})$",
+      "description": "When you finished; within the context's window end and deadline"
+    },
+    "lead": {
+      "minItems": 1,
+      "maxItems": 5,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "(?:[.?!][\"'”’)\\]]*|^\\[withheld\\])$",
+            "description": "One sentence ending in . ? or !; no URL. All Lead sentences together: 15 to 90 words"
+          },
+          "item_ids": {
+            "type": "array",
+            "items": {"type":"string"},
+            "description": "Items this sentence draws on; at least 1 unless gap is true"
+          },
+          "gap": {
+            "type": "boolean",
+            "description": "true when it quotes Gap numbers; each must match the metrics' headline.quoted"
+          }
+        },
+        "required": ["text","item_ids","gap"],
+        "additionalProperties": false
+      },
+      "description": "1 to 5 sentences, at most 90 words in all; write it last"
+    },
+    "angle": {
+      "type": "object",
+      "properties": {
+        "text": {"type":"string","description":"At most 30 words, holding exactly one number"},
+        "source_id": {
+          "description": "The source of the number; exactly one of source_id and metric_path is non-null",
+          "type": ["string","null"]
+        },
+        "metric_path": {
+          "anyOf": [{"type":"string","pattern":"^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)*$"},{"type":"null"}],
+          "description": "A dotted path into the metrics file, e.g. \"window.w26.at_disclosure_share\"; the number in text equals its display string"
+        },
+        "as_of": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The source's date, or data_cutoff_utc for a metric"
+        },
+        "counterpoint": {
+          "type": "string",
+          "description": "At most 30 words: the strongest evidence against over-reading the number, or exactly \"none found\""
+        },
+        "counterpoint_source_ids": {"type":"array","items":{"type":"string"},"description":"At least 1, or [] with \"none found\""},
+        "claim_id": {"description":"An open claim in the context's scoreboard, or null","type":["string","null"]}
+      },
+      "required": ["text","source_id","metric_path","as_of","counterpoint","counterpoint_source_ids","claim_id"],
+      "additionalProperties": false
+    },
+    "region_raises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "region": {"type":"string","enum":["US","EU","TW","JP"]},
+          "reason": {"type":"string","description":"At most 20 words; rendered as \"Editor raised: {reason}\""},
+          "trigger_class": {
+            "type": "string",
+            "enum": [
+              "confirmed_disruption",
+              "agency_alert",
+              "confirmed_breach",
+              "victim_in_region",
+              "campaign_target",
+              "home_vendor_kev",
+              "national_cert_exploitation"
+            ],
+            "description": "The rule type whose spirit the event meets"
+          },
+          "item_ids": {
+            "type": "array",
+            "items": {"type":"string"},
+            "description": "At least 1 item in this brief that carries the region"
+          }
+        },
+        "required": ["region","reason","trigger_class","item_ids"],
+        "additionalProperties": false
+      },
+      "description": "0 to 4, at most one per region"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "cve-YYYY-NNNNN (the first CVE id, lower case) for a flaw item with a CVE; else the kind's slug prefix, e.g. pt-microsoft-2026-11, inc-retail-nl-2026-10. Never names a victim. At most 64 characters"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "exploited_flaw",
+              "critical_flaw",
+              "patch_batch",
+              "breach",
+              "supply_chain",
+              "campaign",
+              "policy",
+              "ai_capability",
+              "ecosystem"
+            ]
+          },
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 90,
+            "description": "At most 90 characters, plain text, no URL"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Top stories (items 0 to 2): at most 55 words; Also-today rows: at most 25 words"
+          },
+          "why_it_matters": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "One strategic sentence of at most 25 words; required for the top three in a full edition; summary + why_it_matters at most 70 words"
+              },
+              {"type":"null"}
+            ]
+          },
+          "severity": {
+            "anyOf": [{"type":"string","enum":["critical","high","elevated","watch"]},{"type":"null"}],
+            "description": "Required for kinds whose severity is required; null for policy, ai_capability and ecosystem"
+          },
+          "landmark": {"type":"boolean","description":"Only on a kind without severity; sorts as Elevated"},
+          "ai_role": {
+            "type": "string",
+            "enum": ["ai_found","ai_weapon","ai_target","ai_defend","ai_actor","none","unassessed"],
+            "description": "none unless a source says otherwise; never guessed. unassessed is for data-only editions only"
+          },
+          "ai_role_secondary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["ai_found","ai_weapon","ai_target","ai_defend","ai_actor","none","unassessed"]
+              },
+              {"type":"null"}
+            ],
+            "description": "An AI-linked role different from ai_role"
+          },
+          "ai_confidence": {
+            "anyOf": [{"type":"string","enum":["confirmed","claimed","reported"]},{"type":"null"}],
+            "description": "null exactly when ai_role is none or unassessed"
+          },
+          "ai_claimant": {
+            "anyOf": [{"type":"string","minLength":1,"maxLength":60},{"type":"null"}],
+            "description": "Required when ai_confidence is claimed"
+          },
+          "ai_evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": {"type":"string","description":"A source in the item's source_ids"},
+                "quote": {"type":"string","description":"At most 25 words, verbatim from that source"},
+                "from_claimant": {
+                  "type": "boolean",
+                  "description": "true when the source is the AI lab or AI security vendor making the claim"
+                }
+              },
+              "required": ["source_id","quote","from_claimant"],
+              "additionalProperties": false
+            },
+            "description": "1 to 3 when ai_role is AI-linked; [] otherwise"
+          },
+          "claim_type": {"type":"string","enum":["independent","self_reported","government"]},
+          "regions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {"type":"string","enum":["US","EU","TW","JP","GLOBAL"]},
+            "description": "At least 1, no repeats, in the order US, EU, TW, JP, GLOBAL"
+          },
+          "topics": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "government",
+                "ot_cni",
+                "telecom",
+                "undersea_cable",
+                "semiconductor",
+                "defence_industry",
+                "influence_op",
+                "election",
+                "illicit_finance",
+                "market"
+              ]
+            },
+            "description": "0 to 3 of government, ot_cni, telecom, undersea_cable, semiconductor, defence_industry, influence_op, election, illicit_finance, market"
+          },
+          "attribution": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "attributed_by": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "description": "At most 80 characters, e.g. \"Mandiant\", \"US Department of Justice\""
+                },
+                "basis": {"type":"string","enum":["government","vendor","media"]},
+                "actor_name_as_used": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "description": "The attributor's own name for the actor, e.g. \"UNC5807\""
+                },
+                "sponsor_claimed": {
+                  "anyOf": [{"type":"string","minLength":1,"maxLength":60},{"type":"null"}],
+                  "description": "The sponsor or country as stated; null if none stated"
+                },
+                "nexus": {
+                  "type": "string",
+                  "enum": ["prc","russia","dprk","iran","other_state","hacktivist","criminal","unknown"],
+                  "description": "\"unknown\" whenever sponsor_claimed is null"
+                },
+                "confidence_text": {
+                  "anyOf": [{"type":"string","maxLength":80},{"type":"null"}],
+                  "description": "The attributor's own confidence words, verbatim; null only with unstated"
+                },
+                "confidence_level": {"type":"string","enum":["high","moderate","low","unstated"]},
+                "date": {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},
+                "source_id": {"type":"string"}
+              },
+              "required": [
+                "attributed_by",
+                "basis",
+                "actor_name_as_used",
+                "sponsor_claimed",
+                "nexus",
+                "confidence_text",
+                "confidence_level",
+                "date",
+                "source_id"
+              ],
+              "additionalProperties": false
+            },
+            "description": "0 to 4, one per attributor"
+          },
+          "incident": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "victim": {
+                    "anyOf": [{"type":"string","minLength":1,"maxLength":80},{"type":"null"}],
+                    "description": "Only when status is confirmed or reported; never an individual"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60,
+                    "description": "Always present, e.g. \"a Taiwanese electronics maker\"; shown when victim is null"
+                  },
+                  "sector": {
+                    "type": "string",
+                    "enum": [
+                      "government",
+                      "defence",
+                      "energy",
+                      "water",
+                      "transport",
+                      "telecom",
+                      "health",
+                      "finance",
+                      "semiconductor",
+                      "manufacturing",
+                      "technology",
+                      "education",
+                      "retail",
+                      "media",
+                      "other"
+                    ]
+                  },
+                  "country": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "AD",
+                          "AE",
+                          "AF",
+                          "AG",
+                          "AI",
+                          "AL",
+                          "AM",
+                          "AO",
+                          "AQ",
+                          "AR",
+                          "AS",
+                          "AT",
+                          "AU",
+                          "AW",
+                          "AX",
+                          "AZ",
+                          "BA",
+                          "BB",
+                          "BD",
+                          "BE",
+                          "BF",
+                          "BG",
+                          "BH",
+                          "BI",
+                          "BJ",
+                          "BL",
+                          "BM",
+                          "BN",
+                          "BO",
+                          "BQ",
+                          "BR",
+                          "BS",
+                          "BT",
+                          "BV",
+                          "BW",
+                          "BY",
+                          "BZ",
+                          "CA",
+                          "CC",
+                          "CD",
+                          "CF",
+                          "CG",
+                          "CH",
+                          "CI",
+                          "CK",
+                          "CL",
+                          "CM",
+                          "CN",
+                          "CO",
+                          "CR",
+                          "CU",
+                          "CV",
+                          "CW",
+                          "CX",
+                          "CY",
+                          "CZ",
+                          "DE",
+                          "DJ",
+                          "DK",
+                          "DM",
+                          "DO",
+                          "DZ",
+                          "EC",
+                          "EE",
+                          "EG",
+                          "EH",
+                          "ER",
+                          "ES",
+                          "ET",
+                          "FI",
+                          "FJ",
+                          "FK",
+                          "FM",
+                          "FO",
+                          "FR",
+                          "GA",
+                          "GB",
+                          "GD",
+                          "GE",
+                          "GF",
+                          "GG",
+                          "GH",
+                          "GI",
+                          "GL",
+                          "GM",
+                          "GN",
+                          "GP",
+                          "GQ",
+                          "GR",
+                          "GS",
+                          "GT",
+                          "GU",
+                          "GW",
+                          "GY",
+                          "HK",
+                          "HM",
+                          "HN",
+                          "HR",
+                          "HT",
+                          "HU",
+                          "ID",
+                          "IE",
+                          "IL",
+                          "IM",
+                          "IN",
+                          "IO",
+                          "IQ",
+                          "IR",
+                          "IS",
+                          "IT",
+                          "JE",
+                          "JM",
+                          "JO",
+                          "JP",
+                          "KE",
+                          "KG",
+                          "KH",
+                          "KI",
+                          "KM",
+                          "KN",
+                          "KP",
+                          "KR",
+                          "KW",
+                          "KY",
+                          "KZ",
+                          "LA",
+                          "LB",
+                          "LC",
+                          "LI",
+                          "LK",
+                          "LR",
+                          "LS",
+                          "LT",
+                          "LU",
+                          "LV",
+                          "LY",
+                          "MA",
+                          "MC",
+                          "MD",
+                          "ME",
+                          "MF",
+                          "MG",
+                          "MH",
+                          "MK",
+                          "ML",
+                          "MM",
+                          "MN",
+                          "MO",
+                          "MP",
+                          "MQ",
+                          "MR",
+                          "MS",
+                          "MT",
+                          "MU",
+                          "MV",
+                          "MW",
+                          "MX",
+                          "MY",
+                          "MZ",
+                          "NA",
+                          "NC",
+                          "NE",
+                          "NF",
+                          "NG",
+                          "NI",
+                          "NL",
+                          "NO",
+                          "NP",
+                          "NR",
+                          "NU",
+                          "NZ",
+                          "OM",
+                          "PA",
+                          "PE",
+                          "PF",
+                          "PG",
+                          "PH",
+                          "PK",
+                          "PL",
+                          "PM",
+                          "PN",
+                          "PR",
+                          "PS",
+                          "PT",
+                          "PW",
+                          "PY",
+                          "QA",
+                          "RE",
+                          "RO",
+                          "RS",
+                          "RU",
+                          "RW",
+                          "SA",
+                          "SB",
+                          "SC",
+                          "SD",
+                          "SE",
+                          "SG",
+                          "SH",
+                          "SI",
+                          "SJ",
+                          "SK",
+                          "SL",
+                          "SM",
+                          "SN",
+                          "SO",
+                          "SR",
+                          "SS",
+                          "ST",
+                          "SV",
+                          "SX",
+                          "SY",
+                          "SZ",
+                          "TC",
+                          "TD",
+                          "TF",
+                          "TG",
+                          "TH",
+                          "TJ",
+                          "TK",
+                          "TL",
+                          "TM",
+                          "TN",
+                          "TO",
+                          "TR",
+                          "TT",
+                          "TV",
+                          "TW",
+                          "TZ",
+                          "UA",
+                          "UG",
+                          "UM",
+                          "US",
+                          "UY",
+                          "UZ",
+                          "VA",
+                          "VC",
+                          "VE",
+                          "VG",
+                          "VI",
+                          "VN",
+                          "VU",
+                          "WF",
+                          "WS",
+                          "YE",
+                          "YT",
+                          "ZA",
+                          "ZM",
+                          "ZW"
+                        ],
+                        "description": "ISO 3166-1 alpha-2, upper case"
+                      },
+                      {"type":"null"}
+                    ],
+                    "description": "The victim's country"
+                  },
+                  "impact": {"type":"string","description":"At most 12 words; incident cards lead with it"},
+                  "disruption": {"type":"boolean","description":"Services disrupted, not only data stolen"},
+                  "status": {"type":"string","enum":["confirmed","reported","claimed"]},
+                  "claimed_by": {
+                    "anyOf": [{"type":"string","minLength":1,"maxLength":60},{"type":"null"}],
+                    "description": "Required when status is claimed"
+                  },
+                  "status_source_ids": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {"type":"string"},
+                    "description": "At least 1: the sources that establish the status"
+                  }
+                },
+                "required": [
+                  "victim",
+                  "description",
+                  "sector",
+                  "country",
+                  "impact",
+                  "disruption",
+                  "status",
+                  "claimed_by",
+                  "status_source_ids"
+                ],
+                "additionalProperties": false
+              },
+              {"type":"null"}
+            ],
+            "description": "Required for breach; allowed for supply_chain and campaign; else null"
+          },
+          "cve_ids": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {"type":"string","pattern":"^CVE-\\d{4}-\\d{4,}$"},
+            "description": "0 to 20, upper case; at least 1 when id starts cve-, and then id is cve_ids[0] lower-cased"
+          },
+          "release_id": {
+            "anyOf": [{"type":"string","pattern":"^rel-[a-z0-9-]+-\\d{4}-\\d{2}(?:-\\d{2})?$"},{"type":"null"}],
+            "description": "Required for patch_batch: the release candidate's release_id; else null"
+          },
+          "flaw_evidence": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cve_id": {"type":"string","pattern":"^CVE-\\d{4}-\\d{4,}$","description":"One of the item's cve_ids"},
+                "kind": {"type":"string","enum":["exploited","patched"]},
+                "basis": {
+                  "type": "string",
+                  "enum": ["vendor_confirmed","cert_confirmed","news_reported","vendor_advisory"],
+                  "description": "exploited: vendor_confirmed, cert_confirmed or news_reported; patched: vendor_advisory"
+                },
+                "date": {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$","description":"Date of the statement"},
+                "source_id": {
+                  "type": "string",
+                  "description": "vendor_*: on the vendor's own domain; cert_confirmed: a CERT; news_reported: a tier 2 newsroom"
+                }
+              },
+              "required": ["cve_id","kind","basis","date","source_id"],
+              "additionalProperties": false
+            }
+          },
+          "exploit_reported_in_sources": {
+            "description": "true when a cited source reports a public exploit or proof of concept; false when one says none is known; null when sources are silent. Never a link",
+            "type": ["boolean","null"]
+          },
+          "exposure": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "At most 20 words, e.g. \"about 12,000 exposed instances, as reported by Shadowserver\""
+                  },
+                  "source_id": {"type":"string"}
+                },
+                "required": ["text","source_id"],
+                "additionalProperties": false
+              },
+              {"type":"null"}
+            ],
+            "description": "Only when a public source gives an exposure figure"
+          },
+          "standing_story": {
+            "anyOf": [{"type":"string","pattern":"^[a-z0-9][a-z0-9-]*$"},{"type":"null"}],
+            "description": "An id from the context's standing_stories"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {"type":"string"},
+            "description": "At least 1, from this brief's sources, at least 1 of tier 1 or 2; a critical item needs two publishers, one of tier 1"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "headline",
+          "summary",
+          "why_it_matters",
+          "severity",
+          "landmark",
+          "ai_role",
+          "ai_role_secondary",
+          "ai_confidence",
+          "ai_claimant",
+          "ai_evidence",
+          "claim_type",
+          "regions",
+          "topics",
+          "attribution",
+          "incident",
+          "cve_ids",
+          "release_id",
+          "flaw_evidence",
+          "exploit_reported_in_sources",
+          "exposure",
+          "standing_story",
+          "source_ids"
+        ],
+        "additionalProperties": false
+      },
+      "description": "0 to 10, in display order; the first three are the top stories"
+    },
+    "taiwan_lens": {
+      "type": "object",
+      "properties": {
+        "analysis": {
+          "type": "string",
+          "description": "1 to 120 words; links to items rather than repeating them; its first sentence is the chat edition's Taiwan line. Exactly \"No fresh Taiwan-relevant development today; the rows below still apply.\" when nothing new qualifies"
+        },
+        "item_ids": {"type":"array","items":{"type":"string"},"description":"Items in this brief"},
+        "source_ids": {"type":"array","items":{"type":"string"},"description":"Extra sources the analysis cites"},
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "row": {
+                "type": "string",
+                "enum": ["gov_infra","home_vendors","chips_defence","cables_telecom","influence_ops","china_axis"]
+              },
+              "text": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "At most 30 words, or null for nothing new; non-null text needs at least 1 item or source"
+                  },
+                  {"type":"null"}
+                ]
+              },
+              "item_ids": {"type":"array","items":{"type":"string"},"description":"Items in this brief"},
+              "source_ids": {"type":"array","items":{"type":"string"},"description":"Extra sources"}
+            },
+            "required": ["row","text","item_ids","source_ids"],
+            "additionalProperties": false
+          },
+          "description": "Exactly 6, one per row id in order: gov_infra, home_vendors, chips_defence, cables_telecom, influence_ops, china_axis"
+        },
+        "japan": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "anyOf": [{"type":"string","description":"At most 40 words, or null for nothing new"},{"type":"null"}]
+            },
+            "item_ids": {"type":"array","items":{"type":"string"},"description":"Items in this brief"},
+            "source_ids": {"type":"array","items":{"type":"string"},"description":"Extra sources"}
+          },
+          "required": ["text","item_ids","source_ids"],
+          "additionalProperties": false,
+          "description": "The Japan sub-block"
+        }
+      },
+      "required": ["analysis","item_ids","source_ids","rows","japan"],
+      "additionalProperties": false
+    },
+    "scoreboard_entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "claim_id": {"type":"string","description":"A claim with judged_by \"report\""},
+          "summary": {"type":"string","description":"At most 40 words: what was reported, by whom, when"},
+          "quote": {"type":"string","description":"At most 25 words, verbatim from the quote source"},
+          "quote_source_id": {"type":"string","description":"A tier 1 or 2 source"},
+          "reported_value": {
+            "anyOf": [{"type":"string","minLength":1,"maxLength":40},{"type":"null"}],
+            "description": "At most 40 characters, e.g. \"3 incidents\"; null when the report has no number"
+          },
+          "claim_type": {
+            "type": "string",
+            "enum": ["independent","self_reported","government"],
+            "description": "self_reported always enters as neutral"
+          },
+          "meets": {
+            "anyOf": [{"type":"string","enum":["support","challenge"]},{"type":"null"}],
+            "description": "Which preset event threshold the report meets"
+          }
+        },
+        "required": ["claim_id","summary","quote","quote_source_id","reported_value","claim_type","meets"],
+        "additionalProperties": false
+      },
+      "description": "Report-judged claims only"
+    },
+    "week_in_review": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "text": {"type":"string","description":"At most 150 words"},
+            "strongest_against": {
+              "type": "object",
+              "properties": {
+                "text": {"type":"string","description":"At most 50 words, or exactly \"none found\""},
+                "claim_id": {"type":["string","null"]},
+                "source_ids": {
+                  "type": "array",
+                  "items": {"type":"string"},
+                  "description": "At least 1 tier 1 or 2 source; [] only with \"none found\""
+                }
+              },
+              "required": ["text","claim_id","source_ids"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["text","strongest_against"],
+          "additionalProperties": false
+        },
+        {"type":"null"}
+      ],
+      "description": "Non-null exactly when date is a Monday"
+    },
+    "corrections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {"type":"string","description":"An item in the context's corrections.flagged"},
+          "edition_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "The archived brief that holds it"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["correction","clarification","update"],
+            "description": "name_removed is script-only"
+          },
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "At most 60 characters: dotted path inside the item, e.g. \"headline\", \"cves.0.kev\""
+          },
+          "after": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "At most 300 characters: the corrected text or value"
+          },
+          "reason": {"type":"string","description":"At most 40 words"},
+          "source_id": {"description":"The source that shows the correction is right","type":["string","null"]}
+        },
+        "required": ["item_id","edition_date","type","field","after","reason","source_id"],
+        "additionalProperties": false
+      },
+      "description": "Only for items in the context's corrections.flagged"
+    },
+    "elsewhere": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {"type":"string","minLength":1,"maxLength":120,"description":"At most 120 characters, English"},
+          "source_id": {"type":"string","description":"A tier 1 or 2 source"}
+        },
+        "required": ["title","source_id"],
+        "additionalProperties": false
+      },
+      "description": "0 to 6"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","description":"s1, s2, s3 ... in array order, no gaps"},
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "At most 200 characters, in the page's own language"
+          },
+          "title_en": {
+            "anyOf": [{"type":"string","minLength":1,"maxLength":200},{"type":"null"}],
+            "description": "English title, at most 200 characters; null when title is English"
+          },
+          "language": {"type":"string","pattern":"^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2})?$"},
+          "outlet": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "At most 80 characters, e.g. \"BleepingComputer\", \"JPCERT/CC\", \"中央社\""
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "description": "https URL from the pack, a page you fetched or a search result. Never news.google.com, an archive or a redirect wrapper"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "cve_record",
+              "vendor_advisory",
+              "finder_writeup",
+              "government",
+              "regulator_filing",
+              "victim",
+              "research",
+              "press",
+              "other"
+            ]
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d{1,9})?)?(?:Z|[+-]\\d{2}:\\d{2})$"
+                  },
+                  {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"}
+                ]
+              },
+              {"type":"null"}
+            ],
+            "description": "ISO 8601 timestamp with offset when the source gives a time, YYYY-MM-DD when it gives only the day, else null. Never invent a time"
+          }
+        },
+        "required": ["id","title","title_en","language","outlet","url","source_type","published_at"],
+        "additionalProperties": false
+      },
+      "description": "Every URL the draft cites, ids s1 to sN in order"
+    }
+  },
+  "required": [
+    "schema_version",
+    "date",
+    "generated_at",
+    "lead",
+    "angle",
+    "region_raises",
+    "items",
+    "taiwan_lens",
+    "scoreboard_entries",
+    "week_in_review",
+    "corrections",
+    "elsewhere",
+    "sources"
+  ],
+  "additionalProperties": false
+}
