@@ -50,13 +50,30 @@ export async function get(ctx: FeedCtx, url: string, limit: Limit = "default", m
   return r;
 }
 
-/** Writes a cache file unless the deadline has passed (collect writes nothing after it). */
+/**
+ * Writes a cache file unless the deadline has passed (collect writes nothing after it), through a temporary
+ * file renamed into place, so a partial write never takes the final name. It never throws: when the write
+ * fails (a full disk), the line is logged and neither the partial file nor an earlier one stays under the
+ * name, so nothing later reads bytes this run did not keep.
+ */
 export function cacheWrite(ctx: FeedCtx, file: string, data: string | Buffer): void {
   if (ctx.now() >= ctx.deadline) return;
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, data);
+  const tmp = `${file}.tmp-${process.pid}`;
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(tmp, data);
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    ctx.log(`cache: could not write ${path.basename(file)}: ${(e as Error).message.slice(0, 300)}`);
+    for (const f of [tmp, file]) {
+      try {
+        fs.rmSync(f, { force: true });
+      } catch {
+        // nothing more to do
+      }
+    }
+  }
 }
-
 
 /** Removes a cache file unless the deadline has passed. */
 function cacheRemove(ctx: FeedCtx, file: string): void {
@@ -158,23 +175,30 @@ export async function readDeltaLog(entry: FetchedFeed, ctx: FeedCtx, sha: string
   }, { limit: "deltaLog", max: "deltaLog", body: (b) => cacheWrite(ctx, ctx.paths.feedBody(entry.id, "deltaLog.json"), b) });
 }
 
-/** One delta zip: the cached asset of the same name when present (assets are immutable per tag), else fetched and kept. */
+/**
+ * One delta zip: the cached asset of the same name when present and it parses (assets are immutable per
+ * tag), else fetched and kept. A cached file that no longer parses (a partial write) is removed and the
+ * asset fetched once more.
+ */
 export async function readZip(ctx: FeedCtx, asset: ReleaseAsset): Promise<Read<{ raws: unknown[]; reused: boolean }>> {
   const file = ctx.paths.zip(asset.asset);
-  let body: Buffer | null = null;
-  let reused = false;
+  const ok = (body: Buffer, raws: unknown[], reused: boolean): Read<{ raws: unknown[]; reused: boolean }> =>
+    ({ ok: true, error: null, urlUsed: asset.url, triedFallback: false, fallbackUsed: false, sha256: sha256Hex(body), data: { raws, reused } });
   if (fs.existsSync(file)) {
-    body = fs.readFileSync(file);
-    reused = true;
-  } else {
-    const r = await get(ctx, asset.url, "zip", "zip");
-    if (!r.ok || !r.body) return failed(r.error ?? "network", asset.url);
-    body = r.body;
+    const cached = fs.readFileSync(file);
+    try {
+      return ok(cached, parseDeltaZip(cached).records, true);
+    } catch (e) {
+      ctx.log(`cvelist: the cached ${asset.asset} did not parse (${(e as Error).message.slice(0, 200)}); fetching it again.`);
+      cacheRemove(ctx, file);
+    }
   }
+  const r = await get(ctx, asset.url, "zip", "zip");
+  if (!r.ok || !r.body) return failed(r.error ?? "network", asset.url);
   try {
-    const { records } = parseDeltaZip(body);
-    if (!reused) cacheWrite(ctx, file, body);
-    return { ok: true, error: null, urlUsed: asset.url, triedFallback: false, fallbackUsed: false, sha256: sha256Hex(body), data: { raws: records, reused } };
+    const { records } = parseDeltaZip(r.body);
+    cacheWrite(ctx, file, r.body);
+    return ok(r.body, records, false);
   } catch (e) {
     ctx.log(`cvelist: ${asset.asset} did not parse: ${(e as Error).message.slice(0, 300)}`);
     return failed(parseClass(e), asset.url);
@@ -206,22 +230,26 @@ export interface EpssRead {
   rows: number;
 }
 
+/** One EPSS day: the cached file when present and it parses, else fetched and kept; a cached file that no longer parses is removed and fetched once more. */
 async function epssFile(entry: FetchedFeed, ctx: FeedCtx, date: string): Promise<{ day: EpssDay; sha256: string; total: number; url: string } | FetchErrorClass> {
   const file = ctx.paths.epssFile(date);
   const url = epssUrlFor(entry.url, date);
-  let body: Buffer;
-  let fresh = false;
-  if (fs.existsSync(file)) body = fs.readFileSync(file);
-  else {
-    const r = await get(ctx, url, "epss", "epss");
-    if (!r.ok || !r.body) return r.error ?? "network";
-    body = r.body;
-    fresh = true;
+  if (fs.existsSync(file)) {
+    const cached = fs.readFileSync(file);
+    try {
+      const p = parseEpssCsv(cached);
+      return { day: p.day, sha256: sha256Hex(cached), total: p.day.scores.size, url };
+    } catch (e) {
+      ctx.log(`epss: the cached ${date} file did not parse (${(e as Error).message.slice(0, 200)}); fetching it again.`);
+      cacheRemove(ctx, file);
+    }
   }
+  const r = await get(ctx, url, "epss", "epss");
+  if (!r.ok || !r.body) return r.error ?? "network";
   try {
-    const p = parseEpssCsv(body);
-    if (fresh) cacheWrite(ctx, file, body);
-    return { day: p.day, sha256: sha256Hex(body), total: p.day.scores.size, url };
+    const p = parseEpssCsv(r.body);
+    cacheWrite(ctx, file, r.body);
+    return { day: p.day, sha256: sha256Hex(r.body), total: p.day.scores.size, url };
   } catch (e) {
     ctx.log(`epss: ${date} did not parse: ${(e as Error).message.slice(0, 300)}`);
     return parseClass(e);

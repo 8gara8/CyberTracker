@@ -198,3 +198,70 @@ describe("readRss: a body that does not parse is not cached", () => {
   });
 });
 
+// ── Cached zips and EPSS files (A6) ──────────────────────────────────────────────────────────────
+
+describe("cached files that no longer parse", () => {
+  const asset = endOfDayAsset("2026-10-12");
+  const zip = read(`cvelist/zips/${asset.asset}`);
+
+  it("readZip: a cached zip that does not parse is removed and fetched once more", async () => {
+    const h = harness({ [asset.url]: zip });
+    fs.mkdirSync(h.paths.zipsDir, { recursive: true });
+    fs.writeFileSync(h.paths.zip(asset.asset), zip.subarray(0, Math.floor(zip.length / 2)));
+    const r = await readZip(h.ctx, asset);
+    expect([r.ok, r.data?.reused, r.sha256]).toEqual([true, false, sha256Hex(zip)]);
+    expect(r.data!.raws.length).toBeGreaterThan(0);
+    expect(h.fetched).toEqual([asset.url]);
+    expect(fs.readFileSync(h.paths.zip(asset.asset))).toEqual(zip);
+    expect(h.log.join("\n")).toMatch(/the cached 2026-10-12_delta_CVEs_at_end_of_day\.zip did not parse .*; fetching it again/);
+    // The next run reuses it without a fetch.
+    const next = harness({});
+    const again = await readZip({ ...next.ctx, paths: h.paths }, asset);
+    expect([again.ok, again.data?.reused, next.fetched]).toEqual([true, true, []]);
+  });
+
+  it("readZip: when the fetch fails too, the broken file is gone, so the next run fetches it", async () => {
+    const h = harness({ [asset.url]: "timeout" });
+    fs.mkdirSync(h.paths.zipsDir, { recursive: true });
+    fs.writeFileSync(h.paths.zip(asset.asset), zip.subarray(0, 100));
+    const r = await readZip(h.ctx, asset);
+    expect([r.ok, r.error]).toEqual([false, "timeout"]);
+    expect(fs.existsSync(h.paths.zip(asset.asset))).toBe(false);
+  });
+
+  it("readEpss: a cached EPSS file that does not parse is removed and fetched once more", async () => {
+    const epss = entry({ id: "epss", kind: "epss", url: "https://epss.empiricalsecurity.com/epss_scores-current.csv.gz", fallback_url: null });
+    const days = ["2026-10-13", "2026-10-12", "2026-10-06"];
+    const bodies = Object.fromEntries(days.map((d) => [epssUrlFor(epss.url, d), read(`epss/epss_scores-${d}.csv.gz`)]));
+    const h = harness(bodies);
+    for (const d of days) {
+      fs.mkdirSync(path.dirname(h.paths.epssFile(d)), { recursive: true });
+      fs.writeFileSync(h.paths.epssFile(d), d === "2026-10-13" ? read(`epss/epss_scores-${d}.csv.gz`).subarray(0, 40) : read(`epss/epss_scores-${d}.csv.gz`));
+    }
+    const r = await readEpss(epss, h.ctx, "2026-10-13");
+    expect(r.ok).toBe(true);
+    expect(r.data!.files.map((f) => [f.role, f.date])).toEqual([["e", "2026-10-13"], ["e1", "2026-10-12"], ["e7", "2026-10-06"]]);
+    expect(h.fetched).toEqual([epssUrlFor(epss.url, "2026-10-13")]);
+    expect(fs.readFileSync(h.paths.epssFile("2026-10-13"))).toEqual(read("epss/epss_scores-2026-10-13.csv.gz"));
+  });
+
+  it("cacheWrite: a write that fails half-way leaves neither the partial file nor the earlier one under the name, and never throws", () => {
+    const h = harness({});
+    const file = h.paths.zip(asset.asset);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "SAMPLE earlier bytes");
+    const real = fs.writeFileSync;
+    vi.spyOn(fs, "writeFileSync").mockImplementation((target, data) => {
+      real(target, (data as Buffer).subarray(0, 10));
+      throw Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" });
+    });
+    expect(() => cacheWrite(h.ctx, file, zip)).not.toThrow();
+    vi.restoreAllMocks();
+    expect(fs.existsSync(file)).toBe(false);
+    expect(fs.readdirSync(path.dirname(file))).toEqual([]);
+    expect(h.log.join("\n")).toMatch(/cache: could not write 2026-10-12_delta_CVEs_at_end_of_day\.zip: ENOSPC/);
+    cacheWrite(h.ctx, file, zip);
+    expect(fs.readFileSync(file)).toEqual(zip);
+    expect(fs.readdirSync(path.dirname(file))).toEqual([asset.asset]);
+  });
+});
