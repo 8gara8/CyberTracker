@@ -74,14 +74,14 @@ export const namingSafetyComputedCases: InvalidCase[] = [
     },
   },
   {
-    // A new tier 3 source (medium.com, listed) whose invented path holds "poc", cited beside the policy
-    // item's tier 1 and 2 sources. The page doesn't exist; nothing at it is actionable.
+    // A new source on a reserved example domain (unlisted, so tier 3) whose path holds "poc", cited beside
+    // the policy item's tier 1 and 2 sources (§4.12 F: blocked-URL cases use a reserved example domain).
     code: "NO_EXPLOIT_LINK", file: "invalid--NO_EXPLOIT_LINK.json",
     mutate: (d) => {
       const id = `s${d.sources.length + 1}`;
       d.sources.push({
-        id, title: "SAMPLE: notes on the incident-reporting draft", title_en: null, language: "en", outlet: "Medium",
-        url: "https://medium.com/ct-sample/poc", source_type: "other", published_at: null,
+        id, title: "SAMPLE: notes on the incident-reporting draft", title_en: null, language: "en", outlet: "SAMPLE",
+        url: "https://example.org/sample/poc", source_type: "other", published_at: null,
       });
       d.items[at(d, I.landmark)]!.source_ids.push(id);
     },

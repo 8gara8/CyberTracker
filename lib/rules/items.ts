@@ -252,7 +252,9 @@ export function termIn(text: string, term: string): boolean {
 
 /** A source's date for the new-fact tests: its pack date (packDates, by normalised URL), else its published_at. */
 function sourceDate(input: RuleInput, s: AnySource): string | null {
-  return input.packDates?.[normalizeUrl(s.url)] ?? s.published_at ?? null;
+  const key = normalizeUrl(s.url);
+  const packed = input.packDates && Object.hasOwn(input.packDates, key) ? input.packDates[key] : undefined; // never Object.prototype
+  return (typeof packed === "string" ? packed : null) ?? s.published_at ?? null;
 }
 
 /**

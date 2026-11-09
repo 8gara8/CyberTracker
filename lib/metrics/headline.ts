@@ -202,27 +202,19 @@ export function footerLine(m: Pick<Metrics, "data_cutoff_utc" | "provenance" | "
   ].join(" · ");
 }
 
-/** A finder's id and display name, as config/ai-finders.json lists them. */
-export interface FinderName {
-  id: string;
-  name: string;
-}
-
 /**
- * The in-KEV line under chart C (§5.5): the head "AI-credited and now on CISA's list: {n} since 1 Jan
- * 2025", then one line per entry "{CVE id}: {matched} ({finder name}), listed {fmtDate(kev_date_added)}
- * (US date)", in the file's order. A finder no longer in the list shows its id.
+ * The in-KEV line under chart C (§5.5, §7): the head "AI-credited and now on CISA's list: {n} since 1 Jan
+ * 2025", then one line per entry "{CVE id}: {matched} ({finder id}), listed {fmtDate(kev_date_added)}
+ * (US date)", in the file's order. The finder is named by its id, which the metrics file freezes (as
+ * Appendix D.7 shows it), so a rename in config/ai-finders.json never changes an archived page, its word
+ * count or the numbers the validator reads from it; the page (chartCaptions()) and metricDisplays() both
+ * render this one form.
  */
-export function inKevLine(
-  ai: Pick<AiCredited, "in_kev">,
-  finders: readonly FinderName[],
-  editionDate: string,
-): { head: string; entries: string[] } {
-  const names = new Map(finders.map((f) => [f.id, f.name]));
+export function inKevLine(ai: Pick<AiCredited, "in_kev">, editionDate: string): { head: string; entries: string[] } {
   return {
     head: `AI-credited and now on CISA's list: ${fmtInt(ai.in_kev.n)} since ${shortDate(ai.in_kev.since)}`,
     entries: ai.in_kev.entries.map((e) =>
-      `${e.cve_id}: ${e.matched} (${names.get(e.finder_id) ?? e.finder_id}), listed ${fmtDate(e.kev_date_added, editionDate)} (US date)`),
+      `${e.cve_id}: ${e.matched} (${e.finder_id}), listed ${fmtDate(e.kev_date_added, editionDate)} (US date)`),
   };
 }
 
@@ -296,11 +288,11 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
  * The strings metricNumbers() parses (§5.8, §4.12): `headline.quoted[].display`, every display string
  * of the Gap data table, the in-KEV line and the Taiwan Lens KEV lines, all from the §5.2 helpers.
  */
-export function metricDisplays(metrics: Metrics, finders: readonly FinderName[]): string[] {
+export function metricDisplays(metrics: Metrics): string[] {
   const out = metrics.headline.quoted.map((q) => q.display);
   if (metrics.window) out.push(...gapTableDisplays(metrics.window).map((d) => d.display));
   if (metrics.ai_credited) {
-    const line = inKevLine(metrics.ai_credited, finders, metrics.date);
+    const line = inKevLine(metrics.ai_credited, metrics.date);
     out.push(line.head, ...line.entries);
   }
   const lens = kevLines(metrics);
@@ -309,6 +301,6 @@ export function metricDisplays(metrics: Metrics, finders: readonly FinderName[])
 }
 
 /** §4.12's metricNumbers(metrics): the numbers in metricDisplays(), read with numbersIn(). Matching against them is exact. */
-export function metricNumbers(metrics: Metrics, finders: readonly FinderName[]): NumberToken[] {
-  return metricDisplays(metrics, finders).flatMap((s) => numbersIn(s));
+export function metricNumbers(metrics: Metrics): NumberToken[] {
+  return metricDisplays(metrics).flatMap((s) => numbersIn(s));
 }

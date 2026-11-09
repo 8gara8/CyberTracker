@@ -464,6 +464,11 @@ describe("the Gap panel", () => {
       "Anthropic disclosure dashboard (one lab, open source only, self-reported), revision 38, 20 Oct: 5,087 disclosed, 629 patched upstream. Not updated since 20 Oct.");
     const bare = FixSide.parse({ anthropic_cvd: { ...CVD, found_n: null, disclosed_n: null, patched_n: null, as_of: "2025-12-20" }, ghsa_unfixed: null });
     expect(fixSideLines(bare, "2026-01-05")[0]).toBe("Anthropic disclosure dashboard (one lab, open source only, self-reported), revision 40, 20 Dec 2025.");
+    // No share from fewer than MIN_N (30) cases: the GitHub line is left out below it.
+    const few = (n_unfixed: number, n_total: number) => FixSide.parse({ anthropic_cvd: null, ghsa_unfixed: { ...GHSA, n_unfixed, n_total, share: n_unfixed / n_total } });
+    expect(fixSideLines(few(1, 5), D)).toEqual([FIX_SIDE_CAPTION]);
+    expect(fixSideLines(few(1, 29), D)).toEqual([FIX_SIDE_CAPTION]);
+    expect(fixSideLines(few(3, 30), D)[0]).toBe("10% of GitHub-reviewed advisories published 30 to 120 days ago still list no fixed version (3 of 30, 6 Nov).");
   });
 
   it("gapFooter: footerLine(), then the reconstructed-weeks line while the axis starts before live_from", () => {

@@ -7,12 +7,13 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  CONFIG_DIR, CONFIG_FILES, CONFIG_KEYS, ConfigError, cnaConfirms, compileConfig, configVersions, loadConfig, matchCredit,
-  matchVendor, normalizeVendor, SAMPLE_CLAIMS_FILE, validateConfig, type ConfigFiles, type ConfigKey,
+  ALERT_PATTERN_FLAGS, CONFIG_DIR, CONFIG_FILES, CONFIG_KEYS, ConfigError, cnaConfirms, compileConfig, configVersions, loadConfig,
+  matchCredit, matchVendor, normalizeVendor, SAMPLE_CLAIMS_FILE, validateConfig, type ConfigFiles, type ConfigKey,
 } from "@/lib/config";
+import { liveIndicators, listedHosts } from "@/lib/rules/safety";
 import { ClaimsFile } from "@/lib/schema/scoreboard";
 import { contentDir, isSampleData, issueFormUrl, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
-import { publisherFor } from "@/lib/sources";
+import { compileTier1Paths, publisherFor, TIER1_PATH_FLAGS } from "@/lib/sources";
 import { blockedEntry, hostMatches } from "@/lib/urls";
 import { COVERAGE, LEVELLED_REGIONS, REGION_RULE_TYPES } from "@/lib/vocab";
 
@@ -117,8 +118,23 @@ describe("seed counts (Appendix B)", () => {
     expect(publishers.filter((p) => !p.sole_newsroom_for_critical).map((p) => p.id)).toEqual(["the-hacker-news"]);
     expect(github.tier1_paths).toEqual(["^/advisories/GHSA-[\\w-]+", "^/[^/]+/[^/]+/security/advisories/GHSA-[\\w-]+", "^/CVEProject/",
       "^/cisagov/", "^/github/advisory-database/"]);
-    // github.com counts only through github.tier1_paths (B.3), never as a plain domain.
-    expect(publishers.find((p) => p.id === "github-advisories")?.domains).toEqual([]);
+    // B.3 lists github.com for github-advisories; publisherFor() still gives tier 1 only to github.tier1_paths.
+    expect(publishers.find((p) => p.id === "github-advisories")?.domains).toEqual(["github.com"]);
+  });
+
+  it("github.com: tier 1 only on github.tier1_paths, yet a listed domain for NO_LIVE_IOC", () => {
+    const c = prod();
+    expect(publisherFor("https://github.com/advisories/GHSA-abcd-efgh-ijkl", "cve_record", c).publisher).toBe("github-advisories");
+    const other = publisherFor("https://github.com/example/example", "press", c);
+    expect([other.tier, other.publisher]).toEqual([3, "host:github.com"]);
+    expect(liveIndicators("The maintainers posted the fix on github.com.", listedHosts(c))).toEqual([]);
+  });
+
+  it("compiles alert_patterns and tier1_paths only to check them, with the flags lib/regions.ts and lib/sources.ts use", () => {
+    const c = prod();
+    expect(Object.keys(c.compiled)).toEqual(["aiFinders"]);
+    expect([ALERT_PATTERN_FLAGS, TIER1_PATH_FLAGS]).toEqual(["iu", "iu"]);
+    expect(compileTier1Paths(c.sourceTiers).map((re) => re.flags)).toEqual(c.sourceTiers.github.tier1_paths.map(() => TIER1_PATH_FLAGS));
   });
 
   it("B.4 regions: four regions, EU is the EU 27 plus IS, LI, NO, CH and GB, seven rules", () => {
@@ -258,18 +274,18 @@ describe("source registry (§4.13)", () => {
     }
   });
 
-  // §4.13 asks that every rss URL resolve through publisherFor() to tier 1 or 2. Two Foundation URLs
-  // are feedburner relays (an unlisted host, so tier 3): P2's sources:check replaces them, and this
-  // list must then be emptied.
-  const FEEDBURNER_PENDING_P2 = ["thehackernews", "cna"];
-
   function listedTier(url: string): 1 | 2 | 3 {
     return publisherFor(url, "press", { sourceTiers, vendors }).tier;
   }
 
-  it("resolves every rss URL to a tier 1 or 2 publisher, except the feedburner relays P2 replaces", () => {
+  // §4.13: every rss URL resolves through publisherFor() to tier 1 or 2, with no exemptions. The Hacker News
+  // and CNA publish through feedburner, so their publishers list their feed paths on feeds.feedburner.com.
+  it("resolves every rss URL to a tier 1 or 2 publisher", () => {
     const off = feeds.filter((f) => f.kind === "rss" && ![1, 2].includes(listedTier(f.url))).map((f) => f.id);
-    expect(off).toEqual(FEEDBURNER_PENDING_P2);
+    expect(off).toEqual([]);
+    const pub = (id: string) => publisherFor((feeds.find((f) => f.id === id) as { url: string }).url, "press", { sourceTiers, vendors }).publisher;
+    expect([pub("thehackernews"), pub("cna")]).toEqual(["the-hacker-news", "cna"]);
+    expect(publisherFor("https://feeds.feedburner.com/SomeOtherFeed", "press", { sourceTiers, vendors }).tier).toBe(3);
     const aggregators = sourceTiers.publishers.filter((p) => p.kind === "aggregator").flatMap((p) => p.domains);
     for (const f of feeds) if (f.kind === "rss") expect(aggregators.some((d) => hostMatches(new URL(f.url).hostname, d)), f.id).toBe(false);
   });
@@ -397,6 +413,10 @@ describe("broken copies (CONFIG_SCHEMA, CONFIG_DUP, CONFIG_REF, CONFIG_REGEX)", 
     { name: "watch-windows.json: two windows share an id", code: "CONFIG_DUP", overrides: () => ({
       watchWindows: { schema_version: 1, windows: [window("w-sample", "2026-11-08", "2026-11-09"), window("w-sample", "2026-11-10", "2026-11-11")] },
     }) },
+    // An unknown lens row or claim metric path fails the schema's enum (TaiwanLensRowId, ClaimMetricPath), not CONFIG_REF.
+    { name: "watch-windows.json: an unknown lens row", code: "CONFIG_SCHEMA", overrides: () => ({
+      watchWindows: { schema_version: 1, windows: [{ ...window("w-sample", "2026-11-08", "2026-11-09"), lens_row: "no-such-row" }] },
+    }) },
     { name: "standing-stories.json: an unknown actor", code: "CONFIG_REF", overrides: () => { const s = copyOf("standingStories"); s.stories[0]!.actors.push("no-such-actor"); return { standingStories: s }; } },
     { name: "standing-stories.json: a summary over 40 words", code: "CONFIG_SCHEMA", overrides: () => {
       const s = copyOf("standingStories");
@@ -406,6 +426,11 @@ describe("broken copies (CONFIG_SCHEMA, CONFIG_DUP, CONFIG_REF, CONFIG_REGEX)", 
     { name: "claims.json: a report claim with a metric path", code: "CONFIG_SCHEMA", overrides: () => {
       const c = ClaimsFile.parse(json(SAMPLE_CLAIMS_FILE));
       (c.claims[1] as { metric_path: string | null }).metric_path = "base_rate.ratio";
+      return { claims: c };
+    } },
+    { name: "claims.json: an unknown metric path", code: "CONFIG_SCHEMA", overrides: () => {
+      const c = ClaimsFile.parse(json(SAMPLE_CLAIMS_FILE));
+      (c.claims[0] as { metric_path: string | null }).metric_path = "no.such.path";
       return { claims: c };
     } },
     { name: "claims.json: an interval bound on a metric without one", code: "CONFIG_REF", overrides: () => {

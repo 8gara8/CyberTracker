@@ -52,9 +52,20 @@ export const IsoDate = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Expected a date as YYYY-MM-DD", abort: true })
   .refine(isValidDate, { error: "Not a real calendar date" });
 
+/**
+ * A timestamp TIMESTAMP_RE accepts that names a real instant: a real calendar date, hour ≤ 23, minute and
+ * second ≤ 59, and an offset within ±14:00. Date.parse alone rolls 2026-02-30 and 24:00 over instead.
+ */
+function isRealTimestamp(s: string): boolean {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-](\d{2}):(\d{2}))$/.exec(s);
+  if (!m || !isValidDate(m[1]!)) return false;
+  const [h, min, sec, oh, om] = [m[2], m[3], m[4], m[5], m[6]].map((x) => Number(x ?? "0")) as [number, number, number, number, number];
+  return h <= 23 && min <= 59 && sec <= 59 && om <= 59 && oh * 60 + om <= 14 * 60 && !Number.isNaN(Date.parse(s));
+}
+
 export const IsoTimestamp = z.string()
   .regex(TIMESTAMP_RE, { error: "Expected an ISO 8601 timestamp with an offset, e.g. 2026-11-08T04:50:12+08:00", abort: true })
-  .refine((s) => !Number.isNaN(Date.parse(s)), { error: "Not a real timestamp" });
+  .refine(isRealTimestamp, { error: "Not a real timestamp" });
 
 /** A source date: a timestamp when the source gives a time, a bare date when it gives only the day, else null. */
 export const PublishedAt = z.union([IsoTimestamp, IsoDate]).nullable()

@@ -15,8 +15,8 @@
         "code": "US",
         "level": "baseline",
         "computed_level": "baseline",
-        "previous_level": null,
-        "change": "new",
+        "previous_level": "baseline",
+        "change": "same",
         "rule_id": null,
         "reason": "No rule fired.",
         "item_ids": [],
@@ -27,8 +27,8 @@
         "code": "EU",
         "level": "baseline",
         "computed_level": "baseline",
-        "previous_level": null,
-        "change": "new",
+        "previous_level": "baseline",
+        "change": "same",
         "rule_id": null,
         "reason": "No rule fired.",
         "item_ids": [],
@@ -39,8 +39,8 @@
         "code": "TW",
         "level": "baseline",
         "computed_level": "baseline",
-        "previous_level": null,
-        "change": "new",
+        "previous_level": "baseline",
+        "change": "same",
         "rule_id": null,
         "reason": "No rule fired.",
         "item_ids": [],
@@ -51,8 +51,8 @@
         "code": "JP",
         "level": "baseline",
         "computed_level": "baseline",
-        "previous_level": null,
-        "change": "new",
+        "previous_level": "baseline",
+        "change": "same",
         "rule_id": null,
         "reason": "No rule fired.",
         "item_ids": [],
@@ -559,26 +559,13 @@
     "watch_windows": []
   },
   "scoreboard": {
-    "entries": [
-      {
-        "id": "SE-0001",
-        "date": "2026-10-09",
-        "claim_id": "SB-01",
-        "origin": "metric",
-        "direction": "neutral",
-        "summary": "SAMPLE. First reading: the base-rate ratio has no value yet, because no AI-credited flaw since 2025 has reached CISA's list.",
-        "value": null,
-        "reported_value": null,
-        "quote": null,
-        "claim_type": null,
-        "source_url": null,
-        "metrics_ref": {
-          "file": "metrics/2026-10-09.json",
-          "path": "base_rate.ratio"
-        }
-      }
-    ],
-    "last": null
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0001",
+      "date": "2026-10-06",
+      "claim_id": "SB-01",
+      "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
+    }
   },
   "week_in_review": null,
   "corrections": [],

@@ -241,6 +241,13 @@ const cvePublished = defineRule({
         if (why) out.push(error("CVE_PUBLISHED", f.path, `${f.path} cites ${cve}, but ${why}.`, UNPUBLISHED_HINT));
       }
     }
+
+    // Draft mode without a CVE List: say the PUBLISHED test was skipped, as SOURCE_UNSEEN does without evidence.
+    if (!published && !input.cveList
+      && (items.some((it) => (it?.cve_ids ?? []).length > 0) || [...proseFields(draft), ...quotedFields(draft)].some((f) => cveIdsIn(f.text).length > 0))) {
+      out.push(warning("CVE_PUBLISHED", "(cveList)", "Skipped the PUBLISHED test: no CVE List was given, so the draft's CVE ids were not checked against the CVE records.",
+        "Pass the morning's CVE records (--cve-cache) and validate again."));
+    }
     return out;
   },
 });

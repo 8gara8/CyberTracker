@@ -1,7 +1,8 @@
 // npm run chat -- --date D: prints D's chat edition from the content folder alone (SPEC §8.8). It reads
 // the last run's records in status/D.json (the last schedule, manual or dry_run record and any retry
-// after it) and the committed brief, rebuilds every note from them through chatInputFor(), the same
-// function daily.ts calls at finish, and prints renderChat()'s text. It equals logs/D.summary.md except
+// after it), the committed brief and metrics/D.json (for the data-only KEV count), rebuilds every note
+// from them through chatInputFor(), the same function daily.ts calls at finish (with the same metrics),
+// and prints renderChat()'s text. It equals logs/D.summary.md except
 // "status not saved" and, for a failed run, the paths in First errors (the status file keeps codes only).
 //
 //   tsx scripts/chat.ts --date YYYY-MM-DD
@@ -17,6 +18,7 @@ import { chatInputFor, lastRunRecords, renderChat } from "../lib/chat";
 import { isValidDate } from "../lib/dates";
 import { Brief } from "../lib/schema/brief";
 import type { Edition } from "../lib/schema/common";
+import { Metrics } from "../lib/schema/metrics";
 import { StatusFile } from "../lib/schema/status";
 import { contentDir, siteUrl } from "../lib/site";
 
@@ -70,7 +72,11 @@ export function chatFromContent(dir: string, date: string, site: string = siteUr
     if (typeof parsed === "string") throw new Error(parsed);
     brief = parsed;
   }
-  return renderChat(chatInputFor({ date, brief, runs, siteShows: newestEdition(dir, date), siteUrl: site }), site);
+  // metrics/D.json gives the data-only KEV count (the brief holds at most 10 items); without a valid one, the item count.
+  const metricsFile = path.join(dir, "metrics", `${date}.json`);
+  const parsedMetrics = fs.existsSync(metricsFile) ? readJson(metricsFile, Metrics, `metrics/${date}.json`) : null;
+  const metrics = typeof parsedMetrics === "string" ? null : parsedMetrics;
+  return renderChat(chatInputFor({ date, brief, runs, siteShows: newestEdition(dir, date), siteUrl: site, metrics }), site);
 }
 
 export function main(argv: string[] = process.argv.slice(2)): number {

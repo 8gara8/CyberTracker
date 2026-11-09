@@ -38,7 +38,7 @@ import type { CveBlock, DraftItem } from "@/lib/schema/item";
 import type { InputsManifest, Metrics } from "@/lib/schema/metrics";
 import { publisherFor } from "@/lib/sources";
 import { ARCHIVE_WARNING_CODES, runRules, validateDraft } from "@/lib/validate";
-import { UNNAMED_CLAIM } from "@/lib/vocab";
+import { CANARY_TOKEN, UNNAMED_CLAIM } from "@/lib/vocab";
 
 const MINE: readonly Rule[] = [...namingRules, ...safetyRules, ...computedRules, ...snapshotRules];
 const I = WEEKDAY_ITEMS;
@@ -397,9 +397,18 @@ describe("ATTRIBUTION_CONFIDENCE", () => {
     expect(paths(conf((a) => { a.sponsor_claimed = null; }))).toEqual([`${p}.sponsor_claimed`]);
   });
 
-  it("fails a stated confidence level with no confidence_text, and passes unstated", () => {
+  it("fails a stated confidence level with no confidence_text, and passes unstated from a government", () => {
     expect(paths(conf((a) => { a.confidence_text = null; }))).toEqual([`${p}.confidence_text`]);
-    expect(conf((a) => { a.confidence_text = null; a.confidence_level = "unstated"; })).toEqual([]);
+    expect(conf((a) => { a.confidence_text = null; a.confidence_level = "unstated"; a.basis = "government"; })).toEqual([]);
+  });
+
+  it("fails an unstated entry from a vendor or newsroom that names a sponsor, as §4.6's qualifying entry says", () => {
+    const e = conf((a) => { a.confidence_text = null; a.confidence_level = "unstated"; });
+    expect(paths(e)).toEqual([`${p}.sponsor_claimed`, `${p}.nexus`]);
+    expect(e[0]!.message).toContain('basis is "vendor"');
+    expect(conf((a) => { a.confidence_text = null; a.confidence_level = "unstated"; a.sponsor_claimed = null; a.nexus = "unknown"; })).toEqual([]);
+    // The prose rule and the computed actor_nexus agree: such an entry never qualifies.
+    expect(actorNexusOf([{ confidence_level: "unstated", basis: "vendor", confidence_text: null, nexus: "prc" }])).toBe("unknown");
   });
 });
 
@@ -416,6 +425,22 @@ describe("NO_LIVE_IOC", () => {
     expect(kinds("traffic to 192.0.2.10 was seen")).toEqual(["ipv4"]);
     expect(kinds("lures from update.example.org")).toEqual(["domain"]);
     expect(kinds("ftp://files.example.net and 198.51.100.7")).toEqual(["url", "ipv4"]);
+  });
+
+  it("reads the host after a defanged scheme, which defangs only the scheme", () => {
+    expect(kinds("lures from hxxps://update.example.org/x.")).toEqual(["domain"]);
+    expect(kinds("beacons to hxxp://192.0.2.10/x")).toEqual(["ipv4"]);
+    expect(kinds("lures from hxxps://update[.]example[.]org/x and hxxp://192[.]0[.]2[.]10/x")).toEqual([]);
+    expect(liveIndicators("from hxxps://update.example.org/x.", hosts)[0]!.text).toBe("update.example.org");
+    const at = idx(weekdayDraft(), I.claimedVictim);
+    const e = only(check(draftWith((d) => { item(d, I.claimedVictim).summary += " The post links to hxxps://leaks.example.org/a."; })), "NO_LIVE_IOC");
+    expect(paths(e)).toEqual([`items[${at}].summary`]);
+  });
+
+  it("reports a listed domain followed by a path as a URL, but passes the bare name", () => {
+    expect(kinds("the lure sat at sites.google.com/view/ct-sample-login")).toEqual(["url"]);
+    expect(liveIndicators("hosted on drive.google.com/ct-sample?id=SAMPLE.", hosts)).toEqual([{ kind: "url", text: "drive.google.com/ct-sample?id=SAMPLE" }]);
+    expect(kinds("files shared through drive.google.com and bleepingcomputer.com/.")).toEqual([]);
   });
 
   it("passes defanged forms, listed domains, capitalised names and version numbers", () => {
@@ -471,14 +496,35 @@ describe("NO_EXPLOIT_LINK", () => {
     expect(exploitLinkProblem("https://pastebin.com/", 3, st)).toMatch(/paste or raw-file host/);
     expect(exploitLinkProblem("https://t.me/", 3, st)).toMatch(/messaging service/);
     expect(exploitLinkProblem("https://github.com/", 3, st)).toMatch(/code repositories are never cited/);
-    expect(exploitLinkProblem("https://medium.com/ct-sample/poc", 3, st)).toMatch(/path holds "poc"/);
-    expect(exploitLinkProblem("https://medium.com/ct-sample/exploits/notes", 3, st)).toMatch(/path holds "exploits"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/poc", 3, st)).toMatch(/path holds "poc"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/exploits/notes", 3, st)).toMatch(/path holds "exploits"/);
+    expect(exploitLinkProblem("https://api.github.com/", 3, st)).toMatch(/paste or raw-file host/);
+  });
+
+  it("finds the words inside a segment, split on - _ and .", () => {
+    expect(exploitLinkProblem("https://example.org/ct-sample/poc-notes", 3, st)).toMatch(/path holds "poc"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/CVE-2026-1234-PoC", 3, st)).toMatch(/path holds "poc"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/exploit.txt", 3, st)).toMatch(/path holds "exploit"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/0day_notes", 3, st)).toMatch(/path holds "0day"/);
+    expect(exploitLinkProblem("https://example.org/ct-sample/exploitation-report", 3, st)).toBeNull();
+  });
+
+  it("checks the path of an unlisted publisher whatever its tier (an unlisted victim site is tier 1)", () => {
+    const url = "https://ct-sample-victim.example/exploits/notice";
+    expect(publisherFor(url, "victim", config)).toMatchObject({ tier: 1, publisher: "host:ct-sample-victim.example" });
+    expect(exploitLinkProblem(url, 1, st, "host:ct-sample-victim.example")).toMatch(/an unlisted page whose path holds "exploits"/);
+    expect(exploitLinkProblem("https://www.bleepingcomputer.com/ct-sample/poc", 2, st, "bleepingcomputer")).toBeNull();
+    const e = only(check(draftWith((d) => {
+      d.sources.push({ ...d.sources[0]!, id: `s${d.sources.length + 1}`, url, source_type: "victim", title: "SAMPLE statement", title_en: null });
+      item(d, I.claimedVictim).source_ids.push(`s${d.sources.length}`);
+    })), "NO_EXPLOIT_LINK");
+    expect(paths(e)).toEqual([`sources[${weekdayDraft().sources.length}].url`]);
   });
 
   it("passes advisory paths, tier 1 and 2 pages, other segments, redirects and archives", () => {
     expect(exploitLinkProblem("https://github.com/advisories/GHSA-ct00-samp-le00", 1, st)).toBeNull();
     expect(exploitLinkProblem("https://www.bleepingcomputer.com/ct-sample/poc", 2, st)).toBeNull();
-    expect(exploitLinkProblem("https://medium.com/ct-sample/poc-notes", 3, st)).toBeNull();
+    expect(exploitLinkProblem("https://medium.com/ct-sample/notes", 3, st)).toBeNull();
     expect(exploitLinkProblem("https://news.google.com/", 3, st)).toBeNull();
     expect(exploitLinkProblem("https://web.archive.org/", 3, st)).toBeNull();
   });
@@ -498,6 +544,11 @@ describe("NO_EXPLOIT_LINK", () => {
     expect(hasScannerQuery(query)).toBe(true);
     expect(hasScannerQuery("Shodan counts about 9,000 exposed hosts.")).toBe(false);
     expect(hasScannerQuery("Shodan counts hosts. See https://www.example.org/")).toBe(false);
+    // FOFA's and ZoomEye's field="value" (with && chains), and Censys's field=value: invented fields.
+    expect(hasScannerQuery(["SAMPLE: a FOFA search for", 'ctsample="none"', "&&", 'ctzone="none"', "lists units."].join(" "))).toBe(true);
+    expect(hasScannerQuery(["SAMPLE: ZoomEye query", 'ctsample == "none"'].join(" "))).toBe(true);
+    expect(hasScannerQuery(["SAMPLE: Censys query", "ctsample.field=0"].join(" "))).toBe(true);
+    expect(hasScannerQuery("Censys says the ratio a = b holds for 9,000 hosts.")).toBe(false);
 
     const at = idx(weekdayDraft(), I.taiwanVendor);
     const e = only(check(draftWith((d) => {
@@ -529,6 +580,10 @@ describe("SECRET_LIKE", () => {
     ["a Google API key", join("AI", "za", "CTSAMPLE".repeat(4), "000")],
     ["an sk- secret key", sampleSecret()],
     ["a private key block", join("-----BEGIN ", "PRIVATE", " KEY-----")],
+    ["an AWS access key id", join("AS", "IA", "CTSAMPLE", "00000000")],
+    ["a prefixed sk- secret key", join("sk-", "ant-", "api03-", "CTSAMPLE-".repeat(3))],
+    ["a prefixed sk- secret key", join("sk-", "proj-", "CTSAMPLE_".repeat(3))],
+    ["a Stripe live key", join("sk", "_live_", "CTSAMPLE".repeat(3))],
   ];
 
   it.each(SAMPLES)("matches %s", (name, sample) => {
@@ -537,6 +592,16 @@ describe("SECRET_LIKE", () => {
 
   it("passes ordinary text", () => {
     expect(secretsIn("ask-me-anything and AKIA are words; risk-based triage")).toEqual([]);
+    expect(secretsIn("inc-sk-telecom-usim-breach-2026-10 and sk-telecom-says-customers-were-notified")).toEqual([]);
+  });
+
+  it("keeps CANARY and SECRET_LIKE where a schema error overlaps their path (best effort)", () => {
+    const r = validateDraft(draftWith((d) => {
+      d.lead[0]!.text = `${d.lead[0]!.text.replace(/\.$/u, "")} ${CANARY_TOKEN}`; // no final period: SCHEMA
+      d.elsewhere[0]!.title = `${SAMPLES[0]![1]}${" x".repeat(200)}`; // over the length limit: SCHEMA
+    }), draftInputs("weekday"));
+    const got = r.errors.map((e) => `${e.code} ${e.path}`);
+    expect(got).toEqual(expect.arrayContaining(["SCHEMA lead[0].text", "CANARY lead[0].text", "SCHEMA elsewhere[0].title", "SECRET_LIKE elsewhere[0].title"]));
   });
 
   it("fails any string, names the path and pattern, and never shows the match", () => {
@@ -810,8 +875,14 @@ describe("dropUnverified() on the S fixtures", () => {
     expect(draft.items.map((it) => it.id)).toEqual(before.items.map((it) => it.id).filter((x) => x !== id));
     expect(report.items.map((x) => x.id)).toEqual([id]);
     expect(report.items[0]!.codes).toEqual([code]);
-    const ids = [...draft.lead.flatMap((l) => l.item_ids), ...draft.taiwan_lens.item_ids, ...draft.region_raises.flatMap((r) => r.item_ids)];
-    expect(ids).not.toContain(id);
+    // Every item_ids list (§4.12 step 3): the Lead, the Lens with its rows and Japan block, the raises.
+    const idsOf = (x: typeof draft) => [
+      ...x.lead.flatMap((l) => l.item_ids), ...x.taiwan_lens.item_ids, ...x.taiwan_lens.rows.flatMap((r) => r.item_ids),
+      ...x.taiwan_lens.japan.item_ids, ...x.region_raises.flatMap((r) => r.item_ids),
+    ];
+    expect(idsOf(draft)).not.toContain(id);
+    // The China-axis item sits in a Lens row, so SNAP_QUOTE shows a row's ids are cleaned too.
+    if (code === "SNAP_QUOTE") expect(before.taiwan_lens.rows.flatMap((r) => r.item_ids)).toContain(id);
     expect(draft.sources).toHaveLength(before.sources.length);
     expect(draft.angle).not.toBeNull();
   });

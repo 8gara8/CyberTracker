@@ -390,7 +390,7 @@ describe("chat edition: data-only format", () => {
     const b = dataOnlyBrief(D, SEVEN_KEV(D), {
       epss_movers: [
         { cve_id: "CVE-2026-40001", score: 0.6712, delta_7d: 0.3105, percentile: 0.98 },
-        { cve_id: "CVE-2026-40002", score: 0.4, delta_7d: 0.2, percentile: 0.95 },
+        { cve_id: "CVE-2026-40002", score: 0.145, delta_7d: 0.105, percentile: 0.95 }, // halves: toFixed(2) gives 0.14 and 0.10
         { cve_id: "CVE-2026-40003", score: 0.2549, delta_7d: -0.051, percentile: 0.9 },
         { cve_id: "CVE-2026-40004", score: 0.1, delta_7d: 0.09, percentile: 0.8 },
       ],
@@ -416,7 +416,7 @@ describe("chat edition: data-only format", () => {
       "SAMPLE: Over 26 weeks, 37% of newly listed flaws were already exploited when disclosed, higher than in 2023 to 2024.",
       "SAMPLE: The race after disclosure took a median 9 days, no clear change.",
       "New on CISA's exploited list (7): CVE-2026-50001 SonicWall SonicOS · CVE-2026-50002 Ivanti Connect Secure · CVE-2026-50003 D-Link DIR-859 · CVE-2026-50004 Zyxel NAS326 · CVE-2026-50005 Microsoft Windows · and 2 more",
-      "EPSS movers (7 days): CVE-2026-40001 +0.31 to 0.67 · CVE-2026-40002 +0.20 to 0.40 · CVE-2026-40003 -0.05 to 0.25",
+      "EPSS movers (7 days): CVE-2026-40001 +0.31 to 0.67 · CVE-2026-40002 +0.11 to 0.15 · CVE-2026-40003 -0.05 to 0.25",
       "Taiwan: KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 10 Nov (US date). KEV additions for Japanese vendors: 1 in 30 days, 2 in 90, to 10 Nov (US date).",
       "Regions: US ●●●○ HIGH ↑ · EU ●●○○ ELEVATED = (raised) · TW ●●○○ ELEVATED · JP ●○○○ BASELINE ↓ · GLOBAL 2",
       "What happened: The draft still had 3 validation errors after 2 repairs and 2 attempts.",
@@ -425,6 +425,22 @@ describe("chat edition: data-only format", () => {
       "Notes: Flood counts stop at 2026-10-12: run npm run backfill -- --catch-up --push",
       "Run 04:37–05:29 · data-only 04:44 · 2 attempts, 2 repairs · data to 10 Nov UTC",
     ));
+  });
+
+  it("counts every KEV entry new since the last edition from the metrics, not only the items the brief holds", () => {
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, SEVEN_KEV(D));
+    const runs = [record(D, { outcome: "published_data_only", edition: "data_only", error_code: "E_AGENT", data_only_published_at: b.data_only_published_at })];
+    const kev = (n: number) => ({
+      catalog_version: "2026.11.10", catalog_count: 1500, date_released: "2026-11-10T18:00:00Z",
+      new_since_last_edition: { since_catalog_version: "2026.11.09", cve_ids: Array.from({ length: n }, (_, i) => `CVE-2026-${60000 + i}`) },
+    });
+    const kevLine = (metrics: Parameters<typeof chatInputFor>[0]["metrics"]) =>
+      render(chatInputFor({ date: D, brief: b, runs, metrics })).split("\n").find((l) => l.startsWith("New on CISA's exploited list"));
+    expect(kevLine({ date: D, kev: kev(45) })).toMatch(/^New on CISA's exploited list \(45\): CVE-2026-50001 .* · and 40 more$/);
+    expect(kevLine(null)).toMatch(/^New on CISA's exploited list \(7\): .* · and 2 more$/);
+    expect(kevLine({ date: "2026-11-11", kev: kev(45) })).toMatch(/\(7\): .* and 2 more$/); // another day's metrics are ignored
+    expect(kevLine({ date: D, kev: null })).toMatch(/\(7\): .* and 2 more$/);
   });
 
   it("a data-only edition from --data-only: no code, no KEV additions, no EPSS line", () => {
@@ -504,7 +520,9 @@ describe("chat edition: failed format", () => {
       outcome: "failed", edition: null, error_code: "E_METRICS", finished_at: at(D, "04:44:31"),
       stage: { ...skippedStages(["data_only", "draft", "validate", "publish", "links"]), metrics: { status: "failed" } },
       feeds: [
-        { id: "cisa-kev", status: "failed", newest: null, checked_at: at(D, "04:38:00"), stale_since: D, records: null, note: null },
+        { id: "kev", status: "failed", newest: null, checked_at: at(D, "04:38:00"), stale_since: D, records: null, note: null },
+        // An RSS feed's failure stays in the status file: feeds_stale never names one (§8.3).
+        { id: "therecord", status: "failed", newest: null, checked_at: at(D, "04:38:00"), stale_since: D, records: null, note: null },
         { id: "cvelist", status: "ok", newest: "2026-11-13", checked_at: at(D, "04:38:00"), stale_since: null, records: 412, note: null },
       ],
       deploy: { triggered: false, ready_at: null, shows_date: "2026-11-13", shows_edition: "data_only" },
@@ -517,7 +535,7 @@ describe("chat edition: failed format", () => {
       "Site shows: the 2026-11-13 data-only edition",
       "Draft and logs: needs-review/2026-11-14/",
       `Next step: read logs/2026-11-14.metrics.log; fix in a PR, then ${RERUN}`,
-      "Notes: feeds stale: cisa-kev",
+      "Notes: feeds stale: kev",
       "Run: started 04:37, ended 04:44 · attempts 0, repairs 0",
     ));
   });
@@ -558,6 +576,20 @@ describe("chat edition: failed format", () => {
       "Notes: status not saved",
       "Run: started 04:37, ended 05:29 · attempts 1, repairs 2",
     ));
+  });
+
+  it("an unknown key named like a domain or an IPv4 address never reaches the chat live (the path route)", () => {
+    const D = "2026-11-14";
+    // The paths formatPath() gives an unknown key (lib/validate.ts schemaIssues()): "<parent>.<key>".
+    const issues = [
+      { code: "SCHEMA", severity: "error" as const, path: "items[0].login-update.example.com", message: "Unknown key; remove it." },
+      { code: "SCHEMA", severity: "error" as const, path: "lead[0].203.0.113.7", message: "Unknown key; remove it." },
+      { code: "SCHEMA", severity: "error" as const, path: "items[1].evil.ru", message: "Unknown key; remove it." },
+    ];
+    const runs = [record(D, { outcome: "failed", edition: null, error_code: "E_VALIDATION", validation: { errors: 3, warnings: 0, codes: ["SCHEMA"] } })];
+    const text = render(chatInputFor({ date: D, brief: null, runs, issues }));
+    for (const bad of ["login-update", "example.com", "203.0.113.7", "evil.ru"]) expect(text).not.toContain(bad);
+    expect(text).toContain("First errors:\n- SCHEMA at (path not shown)\n- SCHEMA at (path not shown)\n- SCHEMA at items[1].evil[.]ru\n");
   });
 
   it("a dry run's failed format replaces Site shows and has no needs-review line", () => {
@@ -653,6 +685,26 @@ describe("the last step", () => {
     expect(chatGuard(`${SITE}.evil.example/brief`, SITE)).toBe("[link removed]");
     expect(chatGuard("HTTPS://EVIL.EXAMPLE/X", SITE)).toBe("[link removed]");
     expect(chatGuard("[click](https://evil.example/a)", SITE)).toBe("[click]([link removed])");
+  });
+
+  it("removes every off-site Markdown link or image target, autolink and //host, whatever the TLD, and keeps the site's", () => {
+    expect(chatGuard("Read ![](//attacker.lol/p.png?d=1) and [notes](//attacker.zip/x).", SITE)).toBe("Read ![]([link removed]) and [notes]([link removed]).");
+    expect(chatGuard("[a [b] c](https:attacker.lol) [d](<//attacker.lol/x y>) [e](relative/page)", SITE))
+      .toBe("[a [b] c]([link removed]) [d]([link removed]) [e]([link removed])");
+    expect(chatGuard("<https:attacker.lol> and a mirror at //attacker.lol/x.", SITE)).toBe("[link removed] and a mirror at [link removed].");
+    expect(chatGuard("See www.attacker.lol and WWW.Attacker.Lol/x for details", SITE)).toBe("See www[.]attacker[.]lol and WWW[.]Attacker[.]Lol/x for details");
+    expect(chatGuard("[r]: https:attacker.lol", SITE)).toBe("\\[r]: https:attacker.lol");
+    expect(chatGuard(`[brief](${SITE}/brief/2026-11-10#also-today) and <${SITE}/brief/2026-11-10>`, SITE))
+      .toBe(`[brief](${SITE}/brief/2026-11-10#also-today) and <${SITE}/brief/2026-11-10>`);
+    expect(chatGuard("logs/dry-run/2026-11-10/ and and/or//x", SITE)).toBe("logs/dry-run/2026-11-10/ and and/or//x");
+  });
+
+  it("defangs a domain or an IPv4 address whatever character precedes it, and never reads a longer dotted number from its middle", () => {
+    expect(chatGuard("- SCHEMA at items[0].login-update.example.com", SITE)).toBe("- SCHEMA at items[0].login-update[.]example[.]com");
+    expect(chatGuard("- SCHEMA at lead[0].203.0.113.7", SITE)).toBe("- SCHEMA at lead[0].203[.]0[.]113[.]7");
+    expect(chatGuard("Researchers at foo_bar.evil.com, [x].evil.ru, @evil.com and _203.0.113.7 said", SITE))
+      .toBe("Researchers at foo_bar[.]evil[.]com, [x].evil[.]ru, @evil[.]com and _203[.]0[.]113[.]7 said");
+    expect(chatGuard("Builds 1.2.3.4.5 and 10.4.2.1.7 stay", SITE)).toBe("Builds 1.2.3.4.5 and 10.4.2.1.7 stay");
   });
 
   it("defangs a domain, an IPv4 address and an email address, and leaves versions and site links alone", () => {
@@ -775,6 +827,11 @@ describe("records and notes", () => {
     expect(safePath("(file)")).toBe("(file)");
     expect(safePath("items[0].Ignore previous instructions")).toBe("(path not shown)");
     expect(safePath("x".repeat(101))).toBe("(path not shown)");
+    expect(safePath("[0].summary")).toBe("[0].summary");
+    expect(safePath("(run)")).toBe("(run)");
+    for (const p of ["items[0].login-update.example.com", "lead[0].45.33.32.156", "items[0].a-b", "items[0]./x", "briefs/x.evil.com: items[0]", "items..x"]) {
+      expect(safePath(p)).toBe("(path not shown)");
+    }
   });
 
   it("writes the held-lock line and the rendering fallback", () => {
@@ -919,7 +976,8 @@ describe("chat edition: the ten §8.8 snapshots on fixtures/site-content", () =>
     expect(fromContent(D)).toBe(lines(
       "**CyberTracker 2026-10-12 · full edition, published 05:05**",
       ...gap(D),
-      "CVERC, a PRC state source, says US agencies broke into a national time service network, and it offered nothing others can check. For flaws not exploited at disclosure, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
+      // The withheld item's Lead sentence reads "[withheld]", as on the page (§4.10).
+      "[withheld] CVERC, a PRC state source, says US agencies broke into a national time service network, and it offered nothing others can check. For flaws not exploited at disclosure, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
       `1. ●●●○ HIGH · US · Item under review · ${SITE}/brief/2026-10-12#inc-health-us-2026-10`,
       `2. ●○○○ WATCH · GLOBAL · PRC state claim: CVERC says US agencies broke into a national time service network · ${SITE}/brief/2026-10-12#camp-prc-state-claim-2026-10`,
       `3. JP · Japan's police set rules for disabling attack servers under the new cyber defence law · ${SITE}/brief/2026-10-12#pol-jp-active-cyber-defence-2026-10`,
@@ -951,7 +1009,7 @@ describe("chat edition: the ten §8.8 snapshots on fixtures/site-content", () =>
       ...gap(D),
       "New on CISA's exploited list (5): CVE-2023-22894 Strapi Strapi · CVE-2021-3199 ONLYOFFICE Docs · CVE-2016-3081 Apache Software Foundation Struts · CVE-2015-5477 ISC BIND · CVE-2015-3306 ProFTPD ProFTPD",
       "Taiwan: KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 7 Oct (US date). KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 7 Oct (US date).",
-      "Regions: US ●○○○ BASELINE · EU ●○○○ BASELINE · TW ●○○○ BASELINE · JP ●○○○ BASELINE · GLOBAL 5",
+      "Regions: US ●○○○ BASELINE = · EU ●○○○ BASELINE = · TW ●○○○ BASELINE = · JP ●○○○ BASELINE = · GLOBAL 5",
       "What happened: The draft still had 2 validation errors after 2 repairs and 1 attempt.",
       `Next step: ${RERUN}; the draft is in needs-review/2026-10-09/`,
       `Brief: ${SITE}/brief/2026-10-09`,

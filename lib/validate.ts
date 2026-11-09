@@ -28,6 +28,7 @@ import {
 } from "./rules/types";
 import { contentDir, isSampleData } from "./site";
 import { normalizeUrl } from "./urls";
+import { WITHHELD_MARK } from "./vocab";
 
 export type { CveLookup, CveRecordInfo, RegionsBase, Rule, RuleInput, ValidationIssue } from "./rules/types";
 export { SAFETY_CODES } from "./rules/safety";
@@ -55,6 +56,13 @@ export const ENGINE_CODES = [
 export const ARCHIVE_WARNING_CODES: readonly string[] = ["NO_LIVE_IOC", "NO_EXPLOIT_LINK", "SOURCE_URL"];
 
 const BEST_EFFORT_HINT = "Found while the file also had schema errors; re-check after fixing those.";
+
+/**
+ * Codes a best-effort run keeps even where a schema error overlaps their path: they read raw strings and
+ * stay true whatever the shape, and CANARY is the injection signal that must always reach the repair
+ * prompt and the run record.
+ */
+const ALWAYS_REPORTED: ReadonlySet<string> = new Set(["CANARY", "NO_LIVE_IOC", "NO_EXPLOIT_LINK", "SECRET_LIKE"]);
 
 // ── Schema issues ────────────────────────────────────────────────────────────────────────────────
 
@@ -143,7 +151,7 @@ export function inScope(rule: Pick<Rule, "scope">, input: Pick<RuleInput, "mode"
  * edition is not data-only or the rule is † (`dataOnly`), and when it has the metrics it needs; the rules
  * skipped for missing metrics give one METRICS_MISSING warning. With schema errors the run is best effort:
  * a rule that throws gives nothing, and an issue overlapping a schema error's path (other than an unknown
- * key) is dropped.
+ * key) is dropped, except CANARY and the safety codes (ALWAYS_REPORTED).
  */
 export function runRules(input: Omit<RuleInput, "derived">, schemaErrors: readonly ValidationIssue[] = [], rules: readonly Rule[] = RULES): ValidationIssue[] {
   const bestEffort = schemaErrors.length > 0;
@@ -170,7 +178,7 @@ export function runRules(input: Omit<RuleInput, "derived">, schemaErrors: readon
       continue;
     }
     for (const issue of guard(() => rule.check(full), [] as ValidationIssue[])) {
-      if (bestEffort && blocking.some((p) => overlaps(issue.path, p))) continue;
+      if (bestEffort && !ALWAYS_REPORTED.has(issue.code) && blocking.some((p) => overlaps(issue.path, p))) continue;
       out.push(bestEffort ? { ...issue, hint: issue.hint ?? BEST_EFFORT_HINT } : issue);
     }
   }
@@ -600,14 +608,14 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
   for (const file of listFiles(root)) {
     add(file);
     if (file === "README.md") continue;
-    if (file in TOP_FILES) {
+    if (Object.hasOwn(TOP_FILES, file)) {
       const kind = TOP_FILES[file as keyof typeof TOP_FILES];
       if (kind === "scoreboard") scoreboard = parse(file, ScoreboardFile);
       else if (kind === "corrections") corrections = parse(file, CorrectionsFile);
       else archive = parse(file, ArchiveIndex);
       continue;
     }
-    if (file.startsWith("state/") && file.slice(6) in STATE_SCHEMAS) {
+    if (file.startsWith("state/") && Object.hasOwn(STATE_SCHEMAS, file.slice(6))) {
       parse(file, STATE_SCHEMAS[file.slice(6)]!);
       continue;
     }
@@ -769,6 +777,13 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
         if (kind === "attribution" && (it.attribution.length > 0 || it.actor_nexus !== null)) {
           problems.push("attribution is not [] or actor_nexus is not null after an attribution dispute");
         }
+        // A region reason embeds the item's headline (§5.11): every row and raise that lists it reads "[withheld]".
+        target.data.regions.rows.forEach((r, k) => {
+          if (r.item_ids.includes(c.item_id) && r.reason !== WITHHELD_MARK) problems.push(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
+          if (r.raised?.item_ids.includes(c.item_id) && r.raised.reason !== WITHHELD_MARK) {
+            problems.push(`regions.rows[${k}].raised.reason is not "${WITHHELD_MARK}"`);
+          }
+        });
         if (problems.length) {
           add(file, error("XREF_CORRECTION", p, `${c.id} removes a name but ${where} is not rewritten: ${problems.join("; ")}.`,
             "A name_removed correction rewrites the archived item as SPEC §4.10 says."));

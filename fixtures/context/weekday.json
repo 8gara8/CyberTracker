@@ -898,8 +898,8 @@
       "headline": "Example Health Group says an intruder copied patient records",
       "severity": "high",
       "source_urls": [
-        "https://www.sec.gov/ct-sample/example-health-group-form-8-k",
-        "https://therecord.media/ct-sample/example-health-group-breach"
+        "https://www.sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
+        "https://therecord.media/ct-sample/us-hospital-operator-breach"
       ]
     },
     {
@@ -963,6 +963,7 @@
         "cve.mitre.org",
         "nvd.nist.gov",
         "cisa.gov/known-exploited-vulnerabilities-catalog",
+        "github.com",
         "osv.dev",
         "first.org/epss",
         "api.first.org",
@@ -1091,6 +1092,7 @@
         "404media.co",
         "risky.biz",
         "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews",
         "scworld.com",
         "infosecurity-magazine.com",
         "helpnetsecurity.com",
@@ -1114,6 +1116,7 @@
         "spiegel.de",
         "cna.com.tw",
         "focustaiwan.tw",
+        "feeds.feedburner.com/rsscna",
         "taipeitimes.com",
         "ithome.com.tw",
         "udn.com",
@@ -1138,7 +1141,8 @@
         "scmp.com"
       ],
       "not_sole_newsroom": [
-        "thehackernews.com"
+        "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews"
       ],
       "state_labelled": [
         "cverc.org.cn",

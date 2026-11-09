@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-08 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-09 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -42,6 +42,9 @@ faster?
   CyberTracker on Kobol the EuropeTracker way (design v0.3). SPEC v2.0 replaces v1.0 at about half
   its length. The two cloud tasks were deleted; the content repo and the `cybertracker-run` cloud
   environment are retired and unused.
+- **2026-11-09:** JL merged the Foundation PR #2 at 07:37 Taipei (23:37 UTC on 2026-11-08). P1 is
+  built on `p1-contract`, PR #3, with the seed configs in `config/`, the validator and its rules, the
+  fixtures and the chat edition. The spec changes it needed are §0.4 rows 7 to 30.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -59,8 +62,8 @@ faster?
 | Phase | Branch | PR | State |
 |---|---|---|---|
 | Spec v1.0 | `spec` | #1 | Merged 2026-11-08 |
-| Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Open |
-| P1 Data contract, validator, chat renderer | `p1-contract` | | Not started |
+| Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
+| P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Open |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | | Not started |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | | Not started |
 | P4 Site | `p4-site` | | Not started |
@@ -139,7 +142,10 @@ faster?
 | Daily brief | The scheduled task "CyberTracker morning" (04:30, starting about 04:37; prompt `routine/TASK.md`) runs `scripts/daily.sh`, which runs `scripts/daily.ts`, then replies with `logs/DATE.summary.md` (from P5) |
 | Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning; add `--dry-run` to test (from P3) |
 | Checks before a push | `npm run check` (exactly what CI runs) |
-| Validate | `npm run validate -- drafts/D.json` (from P1) |
+| Validate | `npm run validate -- drafts/D.json` (a draft needs its run inputs; the flags are in SPEC §8.6); `npm run validate:all` checks `content/`, `npm run validate:sample` the sample in `fixtures/site-content/` (from P1) |
+| Rebuild fixtures | `npm run fixtures:gen` writes every fixture from `fixtures/src/` and validates them; `npm run fixtures:check` compares without writing (from P1) |
+| Draft JSON Schema | `npm run schema:gen` writes `routine/schema/draft-brief.schema.json`; `npm run schema:check` compares it (from P1) |
+| Chat edition for a date | `npm run chat -- --date D` prints D's chat edition from `content/` alone; prefix `CT_CONTENT_DIR=fixtures/site-content` for the sample (from P1) |
 | Check feeds | `npm run sources:check` (from P2) |
 | Agent sandbox | `npm run agent:check` (P3, with the keychain token) |
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |

@@ -228,7 +228,7 @@
       "title_en": null,
       "language": "en",
       "outlet": "US SEC",
-      "url": "https://www.sec.gov/ct-sample/example-health-group-form-8-k",
+      "url": "https://www.sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
       "source_type": "regulator_filing",
       "published_at": "2026-10-10"
     },
@@ -238,7 +238,7 @@
       "title_en": null,
       "language": "en",
       "outlet": "The Record",
-      "url": "https://therecord.media/ct-sample/example-health-group-breach",
+      "url": "https://therecord.media/ct-sample/us-hospital-operator-breach",
       "source_type": "press",
       "published_at": "2026-10-11T06:20:00+08:00"
     },

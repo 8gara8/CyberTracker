@@ -2,6 +2,9 @@
 // small but complete content/ tree that validate:sample, the T cases in tests/validate.test.ts, the chat
 // snapshots in tests/chat.test.ts and the P4 previews read; fixtures/empty-content/ holds only its README.md.
 //
+//   2026-10-06 Mon  data-only from --data-only (a manual run): CISA's one addition of 4 October
+//   2026-10-07 Tue  data-only from --data-only: nothing new on KEV
+//   2026-10-08 Wed  data-only from --data-only: nothing new on KEV
 //   2026-10-09 Fri  data-only after E_VALIDATION: five new KEV items (old flaws CISA listed on 8 Oct)
 //   2026-10-10 Sat  data-only: the run started after the 05:30 hard stop; nothing new on KEV
 //   2026-10-11 Sun  full, no items (valid-quiet's draft)
@@ -78,6 +81,8 @@ type SiteTimes = Omit<EditionTimes, "name">;
 type Kev = EditionTimes["kev"];
 
 const KEV_1008 = { version: EDITIONS.quiet.kev.version, count: EDITIONS.quiet.kev.count, released: EDITIONS.quiet.kev.released };
+/** The catalog of 4 October, before the five additions of 8 October (1,739 − 5). */
+const KEV_1004 = { version: "2026.10.04", count: 1734, released: "2026-10-04T16:58:21Z" };
 /** The catalog after the four additions of 14 October (1,741 + 4). */
 const KEV_1014 = { version: "2026.10.14", count: 1745, released: "2026-10-14T17:03:27Z" };
 
@@ -283,6 +288,21 @@ function partialDraft(t: SiteTimes): DraftBrief {
   });
 }
 
+/** A data-only morning from `--data-only` (a manual run started at 04:42): no draft, validate or publish stage. */
+function requestedDataOnly(date: string, kev: Kev): Day {
+  return {
+    t: siteTimes(date, "04:51:12", kev, "04:46:02", "04:46:09"), edition: "data_only", draft: null, evidence: null,
+    run: {
+      trigger: "manual", start: "04:42:10",
+      stages: [ok("04:42:14"), ok("04:46:02"), ok("04:46:09"), ok("04:51:27"), ...[0, 1, 2].map(() => skip(STAGE_NOTES.dataOnlyRequested)),
+        ok("04:53:05"), ok("04:53:44"), ok("04:54:20")],
+      outcome: "published_data_only", edition: "data_only", error_code: null, dataOnlyAt: "04:51:27", fullAt: null,
+      repairs: 0, agentSeconds: 0, fetches: 0, searches: 0, validation: null, candidates: null, soft: null,
+      shows: { date, edition: "data_only" }, checks: true,
+    },
+  };
+}
+
 function buildDays(): Day[] {
   const t09 = siteTimes("2026-10-09", "04:48:05", { ...KEV_1008, since: "2026.10.04", newIds: newKev("2026-10-04", "2026-10-08") });
   const t10 = siteTimes("2026-10-10", "05:51:18", { ...KEV_1008, since: "2026.10.08", newIds: [] }, "05:44:58", "05:45:06");
@@ -290,6 +310,9 @@ function buildDays(): Day[] {
   const t15 = siteTimes("2026-10-15", "04:51:12", { ...KEV_1014, since: "2026.10.13", newIds: newKev("2026-10-13", "2026-10-14") }, "04:46:02", "04:46:09");
   const shown = (date: string, edition: Edition) => ({ date, edition });
   return [
+    requestedDataOnly("2026-10-06", { ...KEV_1004, since: "2026.10.02", newIds: newKev("2026-10-02", "2026-10-04") }),
+    requestedDataOnly("2026-10-07", { ...KEV_1004, since: "2026.10.04", newIds: [] }),
+    requestedDataOnly("2026-10-08", { ...KEV_1004, since: "2026.10.04", newIds: [] }),
     {
       t: t09, edition: "data_only", draft: null, evidence: null,
       run: {
@@ -805,6 +828,7 @@ const DISPUTES: readonly Dispute[] = [{
 /**
  * §4.10's one exception: a victim dispute withholds the item at once. The archived brief's item text and
  * victim go, `withheld` is set, Lead, Angle and Lens text citing the item becomes "[withheld]", and so do
+ * the region row reasons and raise reasons that list it (a reason embeds the item's headline, §5.11) and
  * the titles of sources only that item cites; computed is recounted.
  */
 function withhold(b: Brief, itemId: string, correctionId: string, since: string, m: Metrics): Brief {
@@ -820,7 +844,11 @@ function withhold(b: Brief, itemId: string, correctionId: string, since: string,
   if (lens.item_ids.includes(itemId)) lens.analysis = WITHHELD_MARK;
   for (const r of lens.rows) if (r.item_ids.includes(itemId)) r.text = WITHHELD_MARK;
   if (lens.japan.item_ids.includes(itemId)) lens.japan.text = WITHHELD_MARK;
-  const others = out.items.filter((x) => x.id !== itemId).flatMap((x) => [...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? [])]);
+  for (const r of out.regions.rows) {
+    if (r.item_ids.includes(itemId)) r.reason = WITHHELD_MARK;
+    if (r.raised?.item_ids.includes(itemId)) r.raised.reason = WITHHELD_MARK;
+  }
+  const others =out.items.filter((x) => x.id !== itemId).flatMap((x) => [...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? [])]);
   const elsewhere = [
     ...out.elsewhere.map((e) => e.source_id), ...(out.angle?.source_id ? [out.angle.source_id] : []), ...(out.angle?.counterpoint_source_ids ?? []),
     ...(out.week_in_review?.strongest_against.source_ids ?? []), ...lens.source_ids, ...lens.rows.flatMap((r) => r.source_ids), ...lens.japan.source_ids,
@@ -926,7 +954,13 @@ function buildSite(): SiteContent {
     const run = day.run;
     const publishedAt = ts(t.date, (day.edition === "data_only" ? run.dataOnlyAt : run.fullAt)!);
     const dataOnlyAt = ts(t.date, run.dataOnlyAt!);
-    if (t.date === WITHHOLD_DATE) allCorrections = corrections(briefs.find((b) => b.date === "2026-10-12")!);
+    if (t.date === WITHHOLD_DATE) {
+      // 13 October: dispute intake withholds the Monday breach item in its archived brief before this
+      // morning's edition is built, so this edition and later ones read the rewritten history (§8.2 stage 5).
+      const mi = briefs.findIndex((b) => b.date === "2026-10-12");
+      allCorrections = corrections(briefs[mi]!);
+      briefs[mi] = withhold(briefs[mi]!, MONDAY_ITEMS.confirmedBreach, "C-0001", WITHHOLD_DATE, metricsByDate.get("2026-10-12")!);
+    }
     const todays = allCorrections.filter((c) => c.date === t.date);
     const last = entries.at(-1) ?? null;
     const claimText = (id: string) => cfg().claims.claims.find((c) => c.id === id)!.text;
@@ -945,9 +979,6 @@ function buildSite(): SiteContent {
     files.set(`status/${t.date}.json`, contentText({ schema_version: 1, date: t.date, runs: [runRecord(t, run)] }, StatusFile));
   });
 
-  // 13 October: the victim dispute withholds the Monday breach item in its archived brief.
-  const mi = briefs.findIndex((b) => b.date === "2026-10-12");
-  briefs[mi] = withhold(briefs[mi]!, MONDAY_ITEMS.confirmedBreach, "C-0001", WITHHOLD_DATE, metricsByDate.get("2026-10-12")!);
   for (const b of briefs) files.set(`briefs/${b.date}.json`, contentText(b, Brief));
 
   const failed = failedMorning();
@@ -977,7 +1008,7 @@ function buildSite(): SiteContent {
 
 const SITE_README = `# SAMPLE content
 
-Invented SAMPLE editions from 9 to 15 October 2026, with the status file of a failed morning on 16 October,
+Invented SAMPLE editions from 6 to 15 October 2026, with the status file of a failed morning on 16 October,
 for the site previews (\`npm run dev:sample\`), \`npm run validate:sample\` and the tests. Built by
 \`npm run fixtures:gen\` from \`fixtures/src/site.ts\`; do not edit by hand. The claims they cite, SB-01 and
 SB-02, are the SAMPLE claims in \`fixtures/config/claims.json\`.
@@ -997,6 +1028,7 @@ export function siteContent(): SiteContent {
 
 /** The sample edition of each date, oldest first. */
 export const SITE_EDITIONS: Readonly<Record<string, Edition>> = {
+  "2026-10-06": "data_only", "2026-10-07": "data_only", "2026-10-08": "data_only",
   "2026-10-09": "data_only", "2026-10-10": "data_only", "2026-10-11": "full", "2026-10-12": "full",
   "2026-10-13": "partial", "2026-10-14": "full", "2026-10-15": "data_only",
 };

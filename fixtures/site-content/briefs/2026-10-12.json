@@ -47,7 +47,7 @@
         "previous_level": "baseline",
         "change": "up",
         "rule_id": "high-breach",
-        "reason": "Confirmed breach in United States: Example Health Group says an intruder copied patient records",
+        "reason": "[withheld]",
         "item_ids": [
           "inc-health-us-2026-10"
         ],
@@ -352,7 +352,7 @@
     "entries": [],
     "last": {
       "entry_id": "SE-0001",
-      "date": "2026-10-09",
+      "date": "2026-10-06",
       "claim_id": "SB-01",
       "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
     }
@@ -398,7 +398,7 @@
       "title_en": null,
       "language": "en",
       "outlet": "US SEC",
-      "url": "https://www.sec.gov/ct-sample/example-health-group-form-8-k",
+      "url": "https://www.sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
       "source_type": "regulator_filing",
       "published_at": "2026-10-10",
       "publisher": "sec",
@@ -413,7 +413,7 @@
       "title_en": null,
       "language": "en",
       "outlet": "The Record",
-      "url": "https://therecord.media/ct-sample/example-health-group-breach",
+      "url": "https://therecord.media/ct-sample/us-hospital-operator-breach",
       "source_type": "press",
       "published_at": "2026-10-11T06:20:00+08:00",
       "publisher": "the-record",
@@ -499,7 +499,7 @@
     }
   ],
   "computed": {
-    "word_count": 621,
+    "word_count": 608,
     "reading_minutes": 3,
     "item_count": 3,
     "ai_linked": {

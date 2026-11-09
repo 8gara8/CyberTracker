@@ -377,9 +377,16 @@ export function sourcesOfItem(item: Pick<AnyItem, "source_ids">, d: Pick<Derived
 
 // ── Seen text ────────────────────────────────────────────────────────────────────────────────────
 
-/** The seen text of a URL (§4.12): `evidence.texts[normalizeUrl(url)]`, or "" (also with no evidence). */
+/**
+ * The seen text of a URL (§4.12): `evidence.texts[normalizeUrl(url)]`, or "" (also with no evidence). An own
+ * string property only, so a source url such as "constructor" never reads Object.prototype.
+ */
 export function seenText(input: Pick<RuleInput, "evidence">, url: string): string {
-  return input.evidence?.texts[normalizeUrl(url)] ?? "";
+  const texts = input.evidence?.texts;
+  const key = normalizeUrl(url);
+  if (!texts || !Object.hasOwn(texts, key)) return "";
+  const text: unknown = texts[key];
+  return typeof text === "string" ? text : "";
 }
 
 /** The seen text of a cited source, by id; "" when the id is unknown or nothing was seen. */

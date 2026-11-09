@@ -15,7 +15,7 @@ import type { Brief, Computed, FeedStale, GapRef, RegionRow, TaiwanLens } from "
 import type { CveBlock, Item, ReleaseBlock } from "./schema/item";
 import type { FixSide, Metrics } from "./schema/metrics";
 import {
-  AI_CREDIT_CAPTION, AI_ROLE_INFO, CLAIMED_CHIP, EDITION_INFO, EXPLOITATION_BASIS_INFO, FIX_SIDE_CAPTION, KIND_INFO,
+  AI_CREDIT_CAPTION, AI_ROLE_INFO, CLAIMED_CHIP, EDITION_INFO, EXPLOITATION_BASIS_INFO, FIX_SIDE_CAPTION, KIND_INFO, MIN_N,
   REGION_CHANGE, REGION_LEVEL_INFO, SEVERITY_INFO, WINDOW_LABEL,
 } from "./vocab";
 
@@ -272,14 +272,15 @@ export function chartCaptions(metrics: Pick<Metrics, "date" | "flood" | "window"
     : unavailable(CHART_NAMES.window);
   const a = metrics.ai_credited;
   if (!a) return { flood, window, ai: [unavailable(CHART_NAMES.ai)], aiInKev: null };
-  const inKev = inKevLine(a, [], metrics.date);
+  const inKev = inKevLine(a, metrics.date);
   return { flood, window, ai: [AI_KEY, AI_CREDIT_CAPTION], aiInKev: [inKev.head, ...inKev.entries] };
 }
 
 /**
  * The fix-side strip (§5.6), text only, each figure dated: the Anthropic dashboard line when
  * `anthropic_cvd` is set (" Not updated since <date>." when stale; a figure the dashboard did not give is
- * left out), the GitHub line when `ghsa_unfixed` is set, and FIX_SIDE_CAPTION always.
+ * left out), the GitHub line when `ghsa_unfixed` is set with `n_total` at least MIN_N, and FIX_SIDE_CAPTION
+ * always.
  */
 export function fixSideLines(fixSide: FixSide, editionDate: string): string[] {
   const d = (date: string) => fmtDate(date, editionDate);
@@ -297,7 +298,8 @@ export function fixSideLines(fixSide: FixSide, editionDate: string): string[] {
     out.push(line);
   }
   const g = fixSide.ghsa_unfixed;
-  if (g && g.n_total >= 1) {
+  // No share from fewer than MIN_N cases (§5, §5.6): below it the line is left out.
+  if (g && g.n_total >= MIN_N) {
     out.push(`${pct(g.n_unfixed, g.n_total)}% of GitHub-reviewed advisories published 30 to 120 days ago still list no fixed version `
       + `(${fmtInt(g.n_unfixed)} of ${fmtInt(g.n_total)}, ${d(g.as_of)}).`);
   }

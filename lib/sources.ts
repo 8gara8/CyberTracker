@@ -60,10 +60,12 @@ function splitDomain(domain: string): { host: string; path: string } {
 /**
  * Compiles the `github.tier1_paths` regexes. They compare matchPath() forms, which are lower-cased
  * (§4.2), while the seed patterns are written with capitals (`^/CVEProject/`, `GHSA-`), so they compile
- * with flags "iu", not §4.11's default "u".
+ * with flags "iu", not §4.11's default "u". lib/config.ts's CONFIG_REGEX check compiles with the same flags.
  */
+export const TIER1_PATH_FLAGS = "iu";
+
 export function compileTier1Paths(sourceTiers: Pick<SourceTiersFile, "github">): RegExp[] {
-  return sourceTiers.github.tier1_paths.map((p) => new RegExp(p, "iu"));
+  return sourceTiers.github.tier1_paths.map((p) => new RegExp(p, TIER1_PATH_FLAGS));
 }
 
 function tier1For(sourceTiers: Pick<SourceTiersFile, "github">): RegExp[] {

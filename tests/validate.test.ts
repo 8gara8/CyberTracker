@@ -20,7 +20,7 @@ import type { ScoreboardFile } from "@/lib/schema/scoreboard";
 import type { StatusFile } from "@/lib/schema/status";
 import { publisherFor } from "@/lib/sources";
 import { validateAll, validateDraft, validatePublished, type AllResult, type ValidationResult } from "@/lib/validate";
-import { WITHHELD_HEADLINE } from "@/lib/vocab";
+import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { WEEKDAY_ITEMS, editionDraft } from "@/fixtures/src/drafts";
 import { CLAIMS_FILE, draftInputs, fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR, SITE_EDITIONS, SITE_FAILED_DATE } from "@/fixtures/src/site";
@@ -100,13 +100,14 @@ describe("fixtures/site-content", () => {
 
   it("holds what the sample needs (SPEC §6): consecutive dates, a Monday, data-only, partial and no-items editions, a withheld, a corrected and a repeated item", () => {
     const briefs = DATES.map((d) => sample(SITE, d));
-    expect(briefs.map((b) => b.date)).toEqual(["2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]);
+    // At least ten consecutive dates (§6).
+    expect(briefs.map((b) => b.date)).toEqual(Array.from({ length: 10 }, (_, i) => `2026-10-${String(6 + i).padStart(2, "0")}`));
     expect(briefs.map((b) => b.edition)).toEqual(DATES.map((d) => SITE_EDITIONS[d]));
     const by = (d: string) => briefs.find((b) => b.date === d)!;
 
     expect(by("2026-10-12").week_in_review?.strongest_against.claim_id).toBe("SB-01");
     expect(briefs.filter((b) => b.date !== "2026-10-12").every((b) => b.week_in_review === null)).toBe(true);
-    for (const d of ["2026-10-09", "2026-10-15"]) {
+    for (const d of ["2026-10-06", "2026-10-09", "2026-10-15"]) {
       const b = by(d);
       expect(b.items.length).toBeGreaterThan(0);
       expect(b.items.every((it) => it.kind === "exploited_flaw" && it.ai_role === "unassessed" && it.cves[0]?.kev !== null)).toBe(true);
@@ -114,11 +115,20 @@ describe("fixtures/site-content", () => {
       expect(b.angle).toBeNull();
     }
     expect(by("2026-10-13").feeds_stale.map((f) => f.id)).toEqual(["ithome-security"]);
-    expect(briefs.filter((b) => b.items.length === 0).map((b) => b.date)).toEqual(["2026-10-10", "2026-10-11"]);
+    expect(briefs.filter((b) => b.items.length === 0).map((b) => b.date)).toEqual(["2026-10-07", "2026-10-08", "2026-10-10", "2026-10-11"]);
 
     const withheld = by("2026-10-12").items.find((it) => it.withheld !== null)!;
     expect(withheld).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: "2026-10-13" } });
     expect(withheld.incident?.victim).toBeNull();
+    expect(by("2026-10-12").regions.rows.filter((r) => r.item_ids.includes(withheld.id)).map((r) => r.reason)).toEqual([WITHHELD_MARK]);
+    // No stored file names the victim or carries the item's original headline (SPEC §4.10, §7 Withholding):
+    // not the archived brief's region reason, nor an edition built after the withhold from that history.
+    const original = editionDraft("monday").items.find((it) => it.id === withheld.id)!;
+    for (const f of [...DATES.map((d) => `briefs/${d}.json`), "archive-index.json", "corrections.json"]) {
+      const text = fs.readFileSync(path.join(SITE, f), "utf8");
+      expect(text, f).not.toContain(original.headline);
+      expect(text, f).not.toContain(original.incident!.victim!);
+    }
     expect(by("2026-10-13").corrections.map((c) => [c.id, c.type, c.item_id])).toEqual([
       ["C-0001", "name_removed", withheld.id], ["C-0002", "clarification", "pol-jp-active-cyber-defence-2026-10"],
     ]);
@@ -235,6 +245,19 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
     expect(paths(r, "XREF_CORRECTION")).toEqual(["corrections.json: corrections[0]"]);
     expect(r.errors[0]!.message).toContain("incident.victim is not null after a victim dispute");
+  });
+
+  it("XREF_CORRECTION: a withheld item's archived region reason still holds its rule's text (the item's headline)", () => {
+    const dir = copy();
+    let k = -1;
+    editBrief(dir, "2026-10-12", (b) => {
+      k = b.regions.rows.findIndex((r) => r.item_ids.includes(b.items[0]!.id));
+      b.regions.rows[k]!.reason = "Confirmed breach in United States: SAMPLE named company says an intruder copied patient records";
+    });
+    const r = all(dir);
+    expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
+    expect(paths(r, "XREF_CORRECTION")).toEqual(["corrections.json: corrections[0]"]);
+    expect(r.errors[0]!.message).toContain(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
   });
 
   it("XREF_CORRECTION: correction ids repeated or with a gap", () => {
@@ -429,10 +452,22 @@ describe("Archived briefs (SPEC §4.12)", () => {
     const vendors = structuredClone(base.vendors);
     vendors.vendors.find((v) => v.id === "ivanti")!.cna = [];
     const actors = structuredClone(base.actors);
-    actors.actors[0]!.aliases.push({ name: "Paper Kestrel", by: "SAMPLE", source_url: "https://example.org/sample/paper-kestrel" });
+    // An alias that is a word of the 14 October Lead's first sentence ("... already using, ...") and of none
+    // of the items it cites, so it is a known name LEAD_GROUNDED would fail in draft mode.
+    actors.actors[0]!.aliases.push({ name: "using", by: "SAMPLE", source_url: "https://example.org/sample/paper-kestrel" });
     const claims = JSON.parse(fs.readFileSync(CLAIMS_FILE, "utf8")) as { claims: { id: string; resolution: unknown }[] };
     claims.claims.find((c) => c.id === "SB-01")!.resolution = { status: "void", date: "2026-10-15", note: "SAMPLE void", source_url: null };
     const changed = loadConfig({ root: REPO_ROOT, overrides: { sourceTiers: tiers, vendors, actors, claims } });
+
+    // Control: each change bites in draft mode (the cna list only when publishing, below), so the archive passing
+    // below shows published mode ignores it, not that the change was inert.
+    const draft = validateDraft(editionDraft("weekday"), { ...draftInputs("weekday"), config: changed });
+    expect(draft.errors.map((e) => `${e.code} ${e.path}`).sort()).toEqual([
+      "LEAD_GROUNDED lead[0].text", "SCOREBOARD_REF angle.claim_id", `SOURCE_TIER sources[${editionDraft("weekday").sources.findIndex((s) => s.url.includes("bleepingcomputer.com"))}].source_type`,
+    ]);
+    const banned = editionDraft("weekday");
+    banned.items[0]!.summary = banned.items[0]!.summary.replace("Ivanti says", "Ivanti says, in an unprecedented step,");
+    expect(codes(validateDraft(banned, draftInputs("weekday")).errors)).toEqual(["BANNED_WORDS"]);
 
     const dir = copy();
     // Banned words live in lib/vocab.ts, not config/: a word added to the list after publish is planted here instead.

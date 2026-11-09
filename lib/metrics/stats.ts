@@ -225,6 +225,17 @@ export function fmt1(x: number): string {
   return `${sign}${Math.trunc(tenths / 10)}.${tenths % 10}`;
 }
 
+/**
+ * A value to two decimals, always both shown, rounded once with roundTo() from the value as stored (EPSS
+ * scores and 7-day moves, which carry 5 decimals): 0.145 → "0.15", 1.005 → "1.01", 1 → "1.00". The chat
+ * edition's EPSS line and the site's EPSS movers both use it (§8.8).
+ */
+export function fmt2(x: number): string {
+  const r = roundTo(x, 2);
+  const [int = "0", frac = ""] = plainDecimal(Math.abs(r)).split(".");
+  return `${r < 0 ? "-" : ""}${int}.${frac.padEnd(2, "0").slice(0, 2)}`;
+}
+
 /** A median in days: the integer, or one decimal when it ends in .5 ("17", "20.5"). */
 export function fmtDays(m: number): string {
   if (!Number.isFinite(m)) throw new RangeError(`fmtDays needs a finite number, got ${m}`);

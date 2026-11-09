@@ -684,6 +684,7 @@
         "cve.mitre.org",
         "nvd.nist.gov",
         "cisa.gov/known-exploited-vulnerabilities-catalog",
+        "github.com",
         "osv.dev",
         "first.org/epss",
         "api.first.org",
@@ -812,6 +813,7 @@
         "404media.co",
         "risky.biz",
         "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews",
         "scworld.com",
         "infosecurity-magazine.com",
         "helpnetsecurity.com",
@@ -835,6 +837,7 @@
         "spiegel.de",
         "cna.com.tw",
         "focustaiwan.tw",
+        "feeds.feedburner.com/rsscna",
         "taipeitimes.com",
         "ithome.com.tw",
         "udn.com",
@@ -859,7 +862,8 @@
         "scmp.com"
       ],
       "not_sole_newsroom": [
-        "thehackernews.com"
+        "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews"
       ],
       "state_labelled": [
         "cverc.org.cn",

@@ -174,6 +174,8 @@ export const STAGE_STATUS = ["ok", "degraded", "failed", "skipped"] as const;
 export type StageStatus = (typeof STAGE_STATUS)[number];
 export const FEED_STATUS = ["ok", "stale", "failed", "skipped"] as const;
 export type FeedStatus = (typeof FEED_STATUS)[number];
+/** The structured feeds whose staleness makes an edition partial: `feeds_stale` names only these, never an RSS feed (§8.3). */
+export const PARTIAL_FEED_IDS = ["kev", "cvelist", "epss", "ghsa", "anthropic-cvd"] as const;
 export const BLOCK_STATUS = ["ok", "stale", "failed"] as const;    // metrics blocks
 export type BlockStatus = (typeof BLOCK_STATUS)[number];
 export const RUN_OUTCOMES = ["published_full", "published_partial", "published_data_only", "failed", "skipped", "dry_run"] as const;
@@ -278,11 +280,12 @@ export const BLOCKED_HOSTS: readonly BlockedHost[] = [
   ...entries("paste", [
     "pastebin.com", "paste.ee", "pastes.io", "hastebin.com", "justpaste.it", "privatebin.net", "controlc.com", "rentry.co",
     "gist.github.com", "gist.githubusercontent.com", "raw.githubusercontent.com", "objects.githubusercontent.com", "codeload.github.com",
+    "api.github.com",
   ]),
   ...entries("messaging", ["t.me", "telegram.me", "telegram.org", "discord.gg"]),
   ...entries("shortener", ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at", "rb.gy", "tiny.cc", "s.id", "lnkd.in"]),
   ...entries("redirect", ["news.google.com", "google.com/url", "l.facebook.com", "out.reddit.com", "href.li"]),
-  ...entries("archive", ["archive.org", "archive.ph", "archive.today", "archive.is", "ghostarchive.org"]),
+  ...entries("archive", ["archive.org", "archive.ph", "archive.today", "archive.is", "archive.li", "archive.md", "archive.vn", "archive.fo", "ghostarchive.org"]),
   ...entries("leak_site", ["ransomware.live", "ransomlook.io", ".onion", ".i2p"]),
   ...entries("scan_query", ["shodan.io/search", "search.censys.io", "fofa.info", "zoomeye.org"]),
 ];

@@ -96,7 +96,8 @@ const LINK_RE = /\[([^\]\n]+)\]\([^)\n]*\)/g;
 const REF_LINK_RE = /\[([^\]\n]+)\]\[[^\]\n]*\]/g;
 const REF_DEFINITION_RE = /^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*\S+.*$/gm;
 const AUTOLINK_RE = /<(?:https?|ftp|wss?):[^>\s]*>/gi;
-const HEADING_RE = /^[ \t]{0,3}#{1,6}(?=[ \t]|$)/gm;
+/** Heading marks, a run of them at once ("# # a"), so nesting them costs no extra clean() pass. */
+const HEADING_RE = /^[ \t]{0,3}#{1,6}(?=[ \t]|$)(?:[ \t]+#{1,6}(?=[ \t]|$))*/gm;
 const STRONG_RE = /(?<![\p{L}\p{N}_*])(\*\*|__)(?=\S)([^\n]*?\S)\1(?![\p{L}\p{N}_*])/gu;
 const EM_STAR_RE = /(?<![\p{L}\p{N}*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\p{L}\p{N}*])/gu;
 const EM_UNDERSCORE_RE = /(?<![\p{L}\p{N}_])_(?=[^\s_])([^_\n]*?[^\s_])_(?![\p{L}\p{N}_])/gu;
@@ -178,10 +179,10 @@ export function sanitizeChars(text: string): string {
   return nfkc(text.replace(INVISIBLE_G, "")).replace(INVISIBLE_G, "");
 }
 
-/** Steps 1 to 6: everything but the cut. */
-function clean(text: string): string {
+/** One pass of steps 1 to 6. */
+function cleanOnce(text: string): string {
   // Steps 1 to 3 repeat until nothing changes, so double-encoded markup (`&amp;lt;b&amp;gt;`) and a tag
-  // split by a zero-width character are caught, and a second sanitize() changes nothing.
+  // split by a zero-width character are caught.
   let s = text;
   let markup = false;
   for (let round = 0; round < 8; round += 1) {
@@ -196,17 +197,50 @@ function clean(text: string): string {
   return s.replace(/\s+/gu, " ").trim();
 }
 
+/** The most passes clean() makes; real text settles in one or two. */
+const CLEAN_PASSES = 32;
+
+/**
+ * Steps 1 to 6: everything but the cut, repeated until a pass changes nothing, so a second sanitize()
+ * changes nothing. One pass is not enough: flattening Markdown can expose an entity (`&*lt*;` becomes
+ * `&lt;`, which the next pass decodes and neutralises), a second heading mark or an outer link, and
+ * collapsing whitespace can join emphasis split over two lines.
+ */
+function clean(text: string): string {
+  let s = cleanOnce(text);
+  for (let pass = 1; pass < CLEAN_PASSES; pass += 1) {
+    const next = cleanOnce(s);
+    if (next === s) break;
+    s = next;
+  }
+  return s;
+}
+
+/** Step 7 on clean()'s output; a cut that exposes Markdown (a closing mark just before "…") is settled. */
+function cutClean(full: string, max: number): string {
+  let out = cutText(full, max);
+  if (out === full) return out;
+  for (let pass = 0; pass < CLEAN_PASSES; pass += 1) {
+    const next = cutText(clean(out), max);
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
 /**
  * sanitize(text, { max }) (§4.14): (1) strip HTML tags and comments and decode entities; (2) remove the
  * INVISIBLE code points; (3) NFKC; (4) replace fenced and indented code with "[code removed]", flatten
  * Markdown and replace every bare URL with "[link]"; (5) `<` and `>` to `‹` and `›`; (6) collapse
  * whitespace to single spaces; (7) cut to `max` (at most 1,000, the default), surrogate-safe, ending with
- * "…". Step 8, the flag, is injectionLike() (or sanitizeFlagged(), which does both). Idempotent: step 3
- * leaves "…" as it is (NFKC would make it "..."), so the cut's mark survives a second pass.
+ * "…". Step 8, the flag, is injectionLike() (or sanitizeFlagged(), which does both). Idempotent: steps 1
+ * to 6 repeat until a pass changes nothing (up to CLEAN_PASSES, which only text nested deeper than real
+ * markup ever reaches), a cut that exposes Markdown is settled, and step 3 leaves "…" as it is (NFKC
+ * would make it "..."), so the cut's mark survives a second pass.
  */
 export function sanitize(text: string, opts: { max?: number } = {}): string {
   const max = Math.min(opts.max ?? SANITIZE_MAX, SANITIZE_MAX);
-  return cutText(clean(text), max);
+  return cutClean(clean(text), max);
 }
 
 /**
@@ -224,7 +258,7 @@ export function injectionLike(text: string): boolean {
 export function sanitizeFlagged(text: string, opts: { max?: number } = {}): { text: string; flags: "injection_like"[] } {
   const full = clean(text);
   const max = Math.min(opts.max ?? SANITIZE_MAX, SANITIZE_MAX);
-  return { text: cutText(full, max), flags: injectionLike(full) ? ["injection_like"] : [] };
+  return { text: cutClean(full, max), flags: injectionLike(full) ? ["injection_like"] : [] };
 }
 
 /**

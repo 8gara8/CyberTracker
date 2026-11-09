@@ -40,7 +40,7 @@
         "previous_level": "high",
         "change": "same",
         "rule_id": "high-breach",
-        "reason": "Confirmed breach in United States: Example Health Group says an intruder copied patient records",
+        "reason": "Confirmed breach in United States: Item under review",
         "item_ids": [
           "inc-health-us-2026-10"
         ],
@@ -266,7 +266,7 @@
     "entries": [],
     "last": {
       "entry_id": "SE-0001",
-      "date": "2026-10-09",
+      "date": "2026-10-06",
       "claim_id": "SB-01",
       "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
     }
@@ -331,7 +331,7 @@
     }
   ],
   "computed": {
-    "word_count": 538,
+    "word_count": 532,
     "reading_minutes": 3,
     "item_count": 1,
     "ai_linked": {

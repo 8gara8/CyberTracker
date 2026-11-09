@@ -76,9 +76,9 @@ const snapshotGates = defineRule({
   severity: "warning",
   scope: "draft",
   check: (input) => {
-    const { draft, derived, metrics, config } = input;
+    const { draft, derived, metrics } = input;
     const out: ValidationIssue[] = [];
-    const metricNums = metrics ? metricPool(metrics, config) : [];
+    const metricNums = metrics ? metricPool(metrics) : [];
     const names = knownNamesFor(input);
     const seen = (id: string) => seenTextOfSource(input, id);
     const items = (draft.items ?? []) as AnyItem[];

@@ -1,8 +1,8 @@
 // Writes every generated validator fixture (SPEC §4.12 "Fixtures and tests"), as the fork base's builder
 // does: the valid drafts with their contexts, evidence, metrics, packs and regions inputs, and the real CVE
 // records they cite. Each part of the fixtures adds its generator to GENERATORS.
-//   tsx fixtures/src/build.ts           write every file, then validate the valid drafts
-//   tsx fixtures/src/build.ts --check   write nothing; exit 1 listing stale or missing files (fixtures:check)
+//   tsx fixtures/src/build.ts           write every file, remove any other file in FIXTURE_DIRS, then validate
+//   tsx fixtures/src/build.ts --check   write nothing; exit 1 listing stale, missing or added files (fixtures:check)
 // Both exit 1 when a valid draft fails validateDraft() with any error or warning.
 
 import fs from "node:fs";
@@ -88,8 +88,6 @@ export interface InvalidCase {
   edition?: EditionName;
   /** Changes the fresh draft in place, or returns a replacement (a value past the schema is written as is). */
   mutate: (draft: DraftBrief) => unknown;
-  /** Warning codes the spec allows beside the error; any other warning is a problem. */
-  warnings?: readonly string[];
 }
 
 /** Every invalid case, one spread per file in fixtures/src/invalid/. */
@@ -122,9 +120,9 @@ export function invalidDraftProblems(): string[] {
   for (const c of INVALID_CASES) {
     const r = validateDraft(invalidDraft(c), draftInputs(c.edition ?? "weekday"));
     const others = r.errors.filter((i) => i.code !== c.code);
-    const warns = r.warnings.filter((i) => !(c.warnings ?? []).includes(i.code));
     if (!r.errors.some((i) => i.code === c.code)) out.push(`${c.file}: no ${c.code} error`);
-    for (const i of [...others, ...warns]) out.push(`${c.file}: unexpected ${i.severity.toUpperCase()} ${i.code} ${i.path}: ${i.message}`);
+    // Exactly that code and no other (§4.12 F): any warning is a problem too.
+    for (const i of [...others, ...r.warnings]) out.push(`${c.file}: unexpected ${i.severity.toUpperCase()} ${i.code} ${i.path}: ${i.message}`);
   }
   return out;
 }
@@ -142,24 +140,58 @@ export function allOutputs(): Output[] {
   return out;
 }
 
-/** The outputs whose file is missing, and those whose text differs from what the builder would write. */
-export function compareOutputs(outputs: readonly Output[]): { missing: string[]; stale: string[] } {
+/**
+ * The folders the builder owns (SPEC §8.1): every file in them is one a generator writes, so any other file
+ * there is "added" (fixtures:check fails; fixtures:gen removes it). Hand-made fixtures (fixtures/agent/,
+ * config/, injection/, feeds/, src/) live outside them.
+ */
+export const FIXTURE_DIRS: readonly string[] = [
+  "fixtures/drafts", "fixtures/context", "fixtures/evidence", "fixtures/metrics", "fixtures/packs", "fixtures/regions-input",
+  "fixtures/cvelist/records", "fixtures/site-content", "fixtures/empty-content",
+];
+
+/** Every file under the owned folders of `root`, as repo-relative paths with "/". */
+function ownedFiles(root: string): string[] {
+  const out: string[] = [];
+  const walk = (rel: string) => {
+    const abs = path.join(root, rel);
+    if (!fs.existsSync(abs)) return;
+    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+      const p = `${rel}/${e.name}`;
+      if (e.isDirectory()) walk(p);
+      else out.push(p);
+    }
+  };
+  for (const d of FIXTURE_DIRS) walk(d);
+  return out.sort();
+}
+
+/**
+ * The outputs whose file is missing, those whose text differs from what the builder would write, and the
+ * files in the owned folders that no generator writes (added).
+ */
+export function compareOutputs(outputs: readonly Output[], root: string = REPO_ROOT): { missing: string[]; stale: string[]; added: string[] } {
   const missing: string[] = [];
   const stale: string[] = [];
   for (const o of outputs) {
-    const abs = path.join(REPO_ROOT, o.path);
+    const abs = path.join(root, o.path);
     if (!fs.existsSync(abs)) missing.push(o.path);
     else if (fs.readFileSync(abs, "utf8") !== o.text) stale.push(o.path);
   }
-  return { missing, stale };
+  const written = new Set(outputs.map((o) => o.path));
+  return { missing, stale, added: ownedFiles(root).filter((p) => !written.has(p)) };
 }
 
-export function writeOutputs(outputs: readonly Output[]): void {
+/** Writes every output under `root`, then removes the files in the owned folders no generator writes; returns those. */
+export function writeOutputs(outputs: readonly Output[], root: string = REPO_ROOT): string[] {
   for (const o of outputs) {
-    const abs = path.join(REPO_ROOT, o.path);
+    const abs = path.join(root, o.path);
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     fs.writeFileSync(abs, o.text);
   }
+  const { added } = compareOutputs(outputs, root);
+  for (const p of added) fs.rmSync(path.join(root, p));
+  return added;
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────────────────────────
@@ -177,7 +209,7 @@ export function validDraftProblems(): string[] {
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────
 
-export function main(argv: string[] = process.argv.slice(2), log: (s: string) => void = (s) => console.log(s)): number {
+export function main(argv: string[] = process.argv.slice(2), log: (s: string) => void = (s) => console.log(s), root: string = REPO_ROOT): number {
   const unknown = argv.filter((a) => a !== "--check");
   if (unknown.length) {
     log(`Unknown argument: ${unknown.join(" ")}. Usage: tsx fixtures/src/build.ts [--check]`);
@@ -187,16 +219,18 @@ export function main(argv: string[] = process.argv.slice(2), log: (s: string) =>
   const outputs = allOutputs();
   let code = 0;
   if (check) {
-    const { missing, stale } = compareOutputs(outputs);
+    const { missing, stale, added } = compareOutputs(outputs, root);
     for (const p of missing) log(`missing: ${p}`);
     for (const p of stale) log(`stale: ${p}`);
-    if (missing.length || stale.length) {
-      log(`${missing.length + stale.length} of ${outputs.length} fixture files are out of date. Run npm run fixtures:gen.`);
+    for (const p of added) log(`added: ${p} (no generator writes it)`);
+    if (missing.length || stale.length || added.length) {
+      log(`Fixture files differ from what the builder writes: ${missing.length} missing, ${stale.length} stale, ${added.length} added. Run npm run fixtures:gen.`);
       return 1;
     }
     log(`All ${outputs.length} fixture files are up to date.`);
   } else {
-    writeOutputs(outputs);
+    const removed = writeOutputs(outputs, root);
+    for (const p of removed) log(`removed: ${p} (no generator writes it)`);
     log(`Wrote ${outputs.length} fixture files.`);
   }
   const problems = validDraftProblems();

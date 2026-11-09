@@ -658,7 +658,7 @@ describe("F fixtures (fixtures/src/invalid/meta-items.ts)", () => {
     const r = validateDraft(invalidDraft(c), draftInputs(c.edition ?? "weekday"));
     expect(r.errors.length).toBeGreaterThan(0);
     expect([...new Set(r.errors.map((e) => e.code))]).toEqual([c.code]);
-    expect(r.warnings.filter((w) => !(c.warnings ?? []).includes(w.code))).toEqual([]);
+    expect(r.warnings).toEqual([]);
   });
 
   it("the written files match the builder", () => {

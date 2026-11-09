@@ -27,7 +27,7 @@
   "entries": [
     {
       "id": "SE-0001",
-      "date": "2026-10-09",
+      "date": "2026-10-06",
       "claim_id": "SB-01",
       "origin": "metric",
       "direction": "neutral",
@@ -38,7 +38,7 @@
       "claim_type": null,
       "source_url": null,
       "metrics_ref": {
-        "file": "metrics/2026-10-09.json",
+        "file": "metrics/2026-10-06.json",
         "path": "base_rate.ratio"
       }
     },

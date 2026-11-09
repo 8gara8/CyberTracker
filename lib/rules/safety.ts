@@ -67,15 +67,22 @@ const blank = (s: string) => " ".repeat(s.length);
  * The live indicators in a text (§4.12 NO_LIVE_IOC), in this order: URLs of any scheme (not hxxp:// or
  * hxxps://), email addresses, .onion and .i2p names, IPv4 addresses (every octet 255 or less, not within
  * two words after "version", "v", "build", "firmware" or "release"), then lower-case domains on IOC_TLDS
- * whose host is not on `listedHosts` (the host itself or a parent). A match is blanked before the next
+ * whose host is not on `listedHosts` (the host itself or a parent; a listed host followed by a path is a
+ * schemeless URL and is reported as one). A match is blanked before the next
  * kind is read, so a domain inside a URL is reported once, as the URL. Defanged forms ([.], (.), [@], [:])
- * never match.
+ * never match; an hxxp:// or hxxps:// scheme defangs only the scheme, so its host is read like any text.
  */
 export function liveIndicators(text: string, listedHosts: readonly string[] = []): Indicator[] {
   const out: Indicator[] = [];
   let s = text;
   s = s.replace(URL_RE, (m: string, scheme: string) => {
-    if (DEFANGED_SCHEMES.has(scheme.toLowerCase())) return blank(m);
+    if (DEFANGED_SCHEMES.has(scheme.toLowerCase())) {
+      // Only the scheme is defanged: the host (with any user info and port) stays for the checks below,
+      // so hxxps://evil[.]example[.]org passes and hxxps://evil.example.org fails on its domain.
+      const head = scheme.length + 3;
+      const host = /^[^/?#]*/u.exec(m.slice(head))![0];
+      return blank(m.slice(0, head)) + host + blank(m.slice(head + host.length));
+    }
     out.push({ kind: "url", text: m.replace(/[.,;:!?)\]}]+$/u, "") });
     return blank(m);
   });
@@ -94,7 +101,11 @@ export function liveIndicators(text: string, listedHosts: readonly string[] = []
     return blank(m);
   });
   for (const m of s.matchAll(DOMAIN_RE)) {
+    // A listed domain followed by a path is a URL without its scheme (drive.google.com/uc?...), and a URL
+    // fails on any host; the listing lets through only the name.
+    const path = /^\/[^\s<>"'`]+/u.exec(s.slice(m.index + m[0].length))?.[0].replace(/[.,;:!?)\]}]+$/u, "") ?? "";
     if (!isListedHost(m[0], listedHosts)) out.push({ kind: "domain", text: m[0] });
+    else if (path.length > 1) out.push({ kind: "url", text: m[0] + path });
   }
   return out;
 }
@@ -169,9 +180,12 @@ const REASON_TEXT: Record<BlockReason, string> = {
 /**
  * Why a cited URL is an exploit link (§4.12 NO_EXPLOIT_LINK), or null: on a BLOCKED_HOSTS entry other than
  * the `redirect` and `archive` ones (SOURCE_URL's); a github.com path matching no `github.tier1_paths`
- * regex; or, when `tier` is 3, a path segment poc, exploit, exploits, payload or 0day (on matchPath()).
+ * regex; or, when `tier` is 3 or `publisher` is unlisted (`host:`, so also an unlisted victim site that
+ * publisherFor() makes tier 1), a path segment that is, or holds as a `-`, `_` or `.` separated word, poc,
+ * exploit, exploits, payload or 0day (on matchPath(): `/poc/`, `/cve-2026-1234-poc`, `/exploit.py`).
  */
-export function exploitLinkProblem(url: string, tier: Tier | null | undefined, sourceTiers: Pick<SourceTiersFile, "github">): string | null {
+export function exploitLinkProblem(url: string, tier: Tier | null | undefined, sourceTiers: Pick<SourceTiersFile, "github">,
+  publisher?: string | null): string | null {
   const reason = blockedReason(url, sourceTiers);
   if (reason === "redirect" || reason === "archive") return null;
   if (reason !== null) {
@@ -179,15 +193,16 @@ export function exploitLinkProblem(url: string, tier: Tier | null | undefined, s
     if (!blockedEntry(url)) return `is a github.com path outside the advisory paths (${shown(host)}): code repositories are never cited`;
     return `is on ${REASON_TEXT[reason]} (${shown(host)})`;
   }
-  if (tier !== 3) return null;
+  const unlistedHost = typeof publisher === "string" && publisher.startsWith("host:");
+  if (tier !== 3 && !unlistedHost) return null;
   let path: string;
   try {
     path = matchPath(new URL(url).pathname);
   } catch {
     return null;
   }
-  const seg = path.split("/").find((x) => EXPLOIT_PATH_SEGMENTS.includes(x));
-  return seg ? `is a tier 3 page whose path holds "${seg}"` : null;
+  const word = path.split("/").flatMap((seg) => seg.split(/[-_.]+/u)).find((x) => EXPLOIT_PATH_SEGMENTS.includes(x));
+  return word ? `is ${tier === 3 ? "a tier 3" : "an unlisted"} page whose path holds "${word}"` : null;
 }
 
 /** The names of the PAYLOAD_PATTERNS a text matches (the name, never the match). */
@@ -196,10 +211,18 @@ export function payloadsIn(text: string): string[] {
 }
 
 const SCANNER_RE = /(?<![\p{L}\p{N}])(?:shodan|censys|fofa|zoomeye)(?![\p{L}\p{N}])/iu;
-/** `field:value` search syntax: `port:502`, `http.title:"..."`, `product:"X"`; a URL scheme (value starting "/") is not one. */
-const FIELD_VALUE_RE = /(?<![\p{L}\p{N}_/:.-])[A-Za-z][A-Za-z0-9_.]*:(?:"[^"]*"|[^\s"/][^\s"]*)/u;
+/**
+ * Search syntax: Shodan's `field:value` (`port:502`, `http.title:"..."`; a URL scheme, value starting "/",
+ * is not one), FOFA's and ZoomEye's `field="value"` or `field=="value"` (spaces allowed around `=`, straight
+ * or curly quotes), and Censys's `field=value` with no spaces (`services.port=502`).
+ */
+const FIELD_VALUE_RE = new RegExp([
+  String.raw`(?<![\p{L}\p{N}_/:.-])[A-Za-z][A-Za-z0-9_.]*:(?:"[^"]*"|[^\s"/][^\s"]*)`,
+  String.raw`(?<![\p{L}\p{N}_/:.-])[A-Za-z][A-Za-z0-9_.]*\s*={1,2}\s*["“][^"”]*["”]`,
+  String.raw`(?<![\p{L}\p{N}_/:.-])[A-Za-z][A-Za-z0-9_.]*={1,2}[^\s"“=]+`,
+].join("|"), "u");
 
-/** True when one sentence of `text` names Shodan, Censys, FOFA or ZoomEye and uses `field:value` syntax (a scanner query). */
+/** True when one sentence of `text` names Shodan, Censys, FOFA or ZoomEye and uses search syntax (a scanner query). */
 export function hasScannerQuery(text: string): boolean {
   return splitSentences(text).some((s) => SCANNER_RE.test(s) && FIELD_VALUE_RE.test(s));
 }
@@ -239,7 +262,7 @@ const noExploitLink = defineRule({
     const fix = "Cite the vendor advisory, the CVE record or a newsroom report instead; items say whether a public exploit is reported (exploit_reported_in_sources), never link one.";
     (draft.sources ?? []).forEach((s, i) => {
       if (!s || typeof s.url !== "string") return;
-      const problem = exploitLinkProblem(s.url, derived.tierBySourceId.get(s.id), config.sourceTiers);
+      const problem = exploitLinkProblem(s.url, derived.tierBySourceId.get(s.id), config.sourceTiers, derived.publisherBySourceId.get(s.id)?.publisher);
       if (problem) out.push(error("NO_EXPLOIT_LINK", `sources[${i}].url`, `${s.id}'s URL ${problem}. Remove ${s.id} and every citation of it, then renumber the ids.`, fix));
     });
     for (const { path, url } of briefUrlFields(draft)) {
@@ -255,7 +278,7 @@ const noExploitLink = defineRule({
       }
       if (hasScannerQuery(f.text)) {
         out.push(error("NO_EXPLOIT_LINK", f.path,
-          `${f.path} holds a scanner query (Shodan, Censys, FOFA or ZoomEye with field:value search syntax in one sentence). Give the exposure figure and who reported it, never the query.`));
+          `${f.path} holds a scanner query (Shodan, Censys, FOFA or ZoomEye with field:value or field="value" search syntax in one sentence). Give the exposure figure and who reported it, never the query.`));
       }
     }
     return out;
@@ -266,12 +289,16 @@ const noExploitLink = defineRule({
 
 /** SECRET_LIKE's patterns (§4.12), each with the name a message gives instead of the match. */
 export const SECRET_PATTERNS: readonly { name: string; re: RegExp }[] = [
-  { name: "an AWS access key id", re: /AKIA[0-9A-Z]{16}/u },
+  { name: "an AWS access key id", re: /(?:AKIA|ASIA)[0-9A-Z]{16}/u },
   { name: "a GitHub token", re: /gh[pousr]_[A-Za-z0-9]{36,}/u },
   { name: "a GitHub fine-grained token", re: /github_pat_[A-Za-z0-9_]{20,}/u },
   { name: "a Slack token", re: /xox[abprs]-[A-Za-z0-9-]{10,}/u },
   { name: "a Google API key", re: /AIza[0-9A-Za-z_-]{35}/u },
   { name: "an sk- secret key", re: /(?<![A-Za-z0-9])sk-[A-Za-z0-9]{20,}/u },
+  // Prefixed keys (sk-ant-api03-..., sk-proj-...) hold - and _, which the plain sk- pattern stops at. The
+  // prefix is required, so a slug such as "sk-telecom-breach-2026" still passes.
+  { name: "a prefixed sk- secret key", re: /(?<![A-Za-z0-9])sk-(?:ant|proj|svcacct|admin)-[A-Za-z0-9_-]{20,}/u },
+  { name: "a Stripe live key", re: /(?<![A-Za-z0-9])[rs]k_live_[A-Za-z0-9]{20,}/u },
   { name: "a private key block", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/u },
 ];
 

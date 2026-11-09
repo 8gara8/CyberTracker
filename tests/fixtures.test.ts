@@ -128,6 +128,14 @@ const T_FILES: Record<string, string> = {
   CONFIG_REGEX: "tests/config.test.ts", ANTHROPIC_DISCLOSURE_LINE: "tests/rules-cves-grounding-ai.test.ts",
 };
 
+/**
+ * True when a describe(), it() or test() title in `text` (`.each(...)` and the like allowed) names `code`: a code
+ * in a comment, an assertion or a table row doesn't count as a named case.
+ */
+function titled(text: string, code: string): boolean {
+  return new RegExp(`\\b(?:describe|it|test)(?:\\.\\w+(?:\\([^()]*\\))?)*\\(\\s*(["'\`])(?:(?!\\1).)*\\b${code}\\b`, "u").test(text);
+}
+
 describe("§4.12 coverage", () => {
   const registered = [...new Set([...ruleCodes(), ...ENGINE_CODES, ...CONFIG_CODES, ...SNAP_CODES])].sort();
 
@@ -149,12 +157,21 @@ describe("§4.12 coverage", () => {
     expect([...fixtured].filter((c) => !s.includes(c))).toEqual([]);
   });
 
+  it("counts a T code only in a test title", () => {
+    expect(titled(`it("GAP_MATCH: a Gap line that differs", () => {});`, "GAP_MATCH")).toBe(true);
+    expect(titled(`describe("broken copies (CONFIG_SCHEMA, CONFIG_DUP)", () => {});`, "CONFIG_DUP")).toBe(true);
+    expect(titled(`it.each(DATES)("SOURCE_ORPHAN on %s", (d) => {});`, "SOURCE_ORPHAN")).toBe(true);
+    expect(titled(`// GAP_MATCH (T) runs on a stored brief\nit("another case", () => {});`, "GAP_MATCH")).toBe(false);
+    expect(titled(`it("another case", () => { expect(codes(r)).toEqual(["GAP_MATCH"]); });`, "GAP_MATCH")).toBe(false);
+    expect(titled(`it("XREF_STATUS_OLD case", () => {});`, "XREF_STATUS")).toBe(false);
+  });
+
   it("gives every T code a named case in its test file", () => {
     const text = new Map<string, string>();
     const missing = Object.keys(CASE_TYPES).filter((c) => CASE_TYPES[c]!.includes("T")).filter((c) => {
       const file = T_FILES[c] ?? "tests/validate.test.ts";
       if (!text.has(file)) text.set(file, fs.readFileSync(path.join(REPO_ROOT, file), "utf8"));
-      return !new RegExp(`\\b${c}\\b`).test(text.get(file)!);
+      return !titled(text.get(file)!, c);
     });
     expect(missing).toEqual([]);
   });

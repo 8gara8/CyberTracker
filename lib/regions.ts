@@ -4,7 +4,7 @@
 // items, history, signals, KEV lags and config all come in as parameters, and nothing here reads the
 // clock, the machine's time zone, the network or a random source.
 
-import { matchVendor } from "./config";
+import { ALERT_PATTERN_FLAGS, matchVendor } from "./config";
 import { addDays, daysBetween, isValidDate, taipeiDateOf } from "./dates";
 import { severityAtLeast } from "./items";
 import { sanitize } from "./sanitize";
@@ -175,11 +175,11 @@ export function kevSignalUrl(cveId: string): string {
 
 const alertCache = new WeakMap<RegionsFile, Map<LevelledRegion, RegExp[]>>();
 
-/** regions.json `alert_patterns`, compiled once per parsed file with flags "iu" (§4.11). */
+/** regions.json `alert_patterns`, compiled once per parsed file with flags "iu" (§4.11; the CONFIG_REGEX check's flags). */
 function alertPatterns(regions: RegionsFile): Map<LevelledRegion, RegExp[]> {
   let m = alertCache.get(regions);
   if (!m) {
-    m = new Map(regions.regions.map((r) => [r.code, r.alert_patterns.map((p) => new RegExp(p, "iu"))]));
+    m = new Map(regions.regions.map((r) => [r.code, r.alert_patterns.map((p) => new RegExp(p, ALERT_PATTERN_FLAGS))]));
     alertCache.set(regions, m);
   }
   return m;

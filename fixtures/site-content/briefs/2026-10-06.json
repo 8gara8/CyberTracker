@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "edition": "data_only",
+  "generated_at": "2026-10-06T04:51:12+08:00",
+  "published_at": "2026-10-06T04:51:27+08:00",
+  "data_only_published_at": "2026-10-06T04:51:27+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-10-04",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 1
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-10-06.json",
+    "metrics_sha256": "83be49476e7f2381c440b5215dabd4a219fa314447e2e96096986d5e19fe90d5",
+    "as_of": "2026-10-04"
+  },
+  "items": [
+    {
+      "id": "cve-2026-88779",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-88779 in Citrix NetScaler as exploited",
+      "summary": "CISA added CVE-2026-88779, a flaw in Citrix NetScaler, to its list of exploited flaws on 4 Oct 2026 (US date). The CVE record was published on 4 Oct 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-88779"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-10-06",
+      "vendor": {
+        "id": "citrix",
+        "name": "Citrix",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-88779",
+          "date_published": "2026-10-04",
+          "date_updated": "2026-10-04",
+          "assigner": "NetScaler",
+          "vendor": {
+            "id": "citrix",
+            "name": "Citrix",
+            "country": "US"
+          },
+          "product": "NetScaler",
+          "title": "Citrix NetScaler vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-04",
+            "due_date": "2026-10-25",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.04"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-04",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-88779"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-10-06T04:51:27+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 4 Oct (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 4 Oct (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": []
+  },
+  "scoreboard": {
+    "entries": [
+      {
+        "id": "SE-0001",
+        "date": "2026-10-06",
+        "claim_id": "SB-01",
+        "origin": "metric",
+        "direction": "neutral",
+        "summary": "SAMPLE. First reading: the base-rate ratio has no value yet, because no AI-credited flaw since 2025 has reached CISA's list.",
+        "value": null,
+        "reported_value": null,
+        "quote": null,
+        "claim_type": null,
+        "source_url": null,
+        "metrics_ref": {
+          "file": "metrics/2026-10-06.json",
+          "path": "base_rate.ratio"
+        }
+      }
+    ],
+    "last": null
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [],
+  "feeds_stale": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE-2026-88779",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-88779",
+      "source_type": "cve_record",
+      "published_at": "2026-10-04",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 407,
+    "reading_minutes": 2,
+    "item_count": 1,
+    "ai_linked": {
+      "linked": 0,
+      "total": 1
+    },
+    "source_count": 1,
+    "publisher_count": 1
+  }
+}

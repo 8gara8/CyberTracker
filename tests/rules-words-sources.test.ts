@@ -21,6 +21,7 @@ import {
   bannedWordsIn, draftView, modelWords, pageWordCount, pageWords, quotedSpans, wordFields, wordRules,
 } from "../lib/rules/words";
 import { countWords } from "../lib/text";
+import { normalizeUrl } from "../lib/urls";
 import { scriptText } from "../lib/page-text";
 import type { Brief } from "../lib/schema/brief";
 import type { DraftBrief } from "../lib/schema/draft-brief";
@@ -511,6 +512,23 @@ describe("SOURCE_URL", () => {
     expect(sourceUrlProblem("https://web.archive.org/web/2026/https://example.org/sample/page")).toMatch(/archive copy \(web\.archive\.org\)/);
     expect(sourceUrlProblem("https://archive.ph/")).toMatch(/archive copy/);
     expect(sourceUrlProblem("https://ghostarchive.org/")).toMatch(/archive copy/);
+    for (const mirror of ["archive.li", "archive.md", "archive.vn", "archive.fo"]) {
+      expect(sourceUrlProblem(`https://${mirror}/`)).toMatch(/archive copy/); // archive.today's other mirrors
+    }
+  });
+
+  it("a URL with a user name or password before the host", () => {
+    expect(sourceUrlProblem("https://ctsample:none@www.bleepingcomputer.com/ct-sample/x")).toMatch(/user name or password/);
+    expect(sourceUrlProblem("https://www.bleepingcomputer.com@example.org/ct-sample/x")).toMatch(/user name or password/);
+  });
+
+  it("never throws on a url named after an Object.prototype member", () => {
+    for (const url of ["constructor", "toString", "__proto__"]) {
+      const d = weekdayDraft();
+      d.sources[18]!.url = url;
+      expect(codesOf(check(d, ["SOURCE_URL"]))).toEqual(["SOURCE_URL sources[18].url"]);
+      expect(() => validateDraft(d, draftInputs("weekday"))).not.toThrow();
+    }
   });
 
   it("leaves the other blocked hosts to NO_EXPLOIT_LINK", () => {
@@ -566,7 +584,22 @@ describe("SOURCE_UNSEEN", () => {
     expect(exploitLinkUrl("https://github.com/advisories/GHSA-aaaa-bbbb-cccc", 1, tiers)).toBe(false);
     expect(exploitLinkUrl("https://example.org/sample/Exploits/x", 3, tiers)).toBe(true);
     expect(exploitLinkUrl("https://example.org/sample/exploitation-report", 3, tiers)).toBe(false);
-    expect(exploitLinkUrl("https://www.bleepingcomputer.com/poc/x", 2, tiers)).toBe(false); // tier 3 only
+    expect(exploitLinkUrl("https://www.bleepingcomputer.com/poc/x", 2, tiers)).toBe(false); // tier 3 or unlisted only
+    expect(exploitLinkUrl("https://example.org/sample/cve-2026-1234-poc", 3, tiers)).toBe(true);
+    expect(exploitLinkUrl("https://ct-sample-victim.example/poc/x", 1, tiers, "host:ct-sample-victim.example")).toBe(true);
+  });
+
+  it("leaves a source cited by flaw_evidence to FLAW_EVIDENCE (Close relatives)", () => {
+    const d = weekdayDraft();
+    const it = d.items[at(d, I.criticalExploited)]!;
+    const sid = it.flaw_evidence[0]!.source_id;
+    const url = normalizeUrl(d.sources.find((x) => x.id === sid)!.url);
+    const evidence = draftInputs("weekday").evidence!;
+    const unseen = { ...evidence, urls: evidence.urls.filter((u) => normalizeUrl(u) !== url) };
+    expect(check(d, U, { inputs: { evidence: unseen } })).toEqual([]);
+    const k = at(d, I.criticalExploited);
+    expect(codesOf(check(d, ["SOURCE_UNSEEN", "FLAW_EVIDENCE"], { inputs: { evidence: unseen } })))
+      .toEqual([`FLAW_EVIDENCE items[${k}].flaw_evidence[0].source_id`, `FLAW_EVIDENCE items[${k}].flaw_evidence[1].source_id`]);
   });
 });
 
@@ -593,6 +626,16 @@ describe("SOURCE_TIER", () => {
     const id = addSource(d, { url: "https://www.msn.com/ct-sample/copy", source_type: "other" });
     d.items[0]!.source_ids.push(id);
     expect(check(d, T)).toEqual([]);
+  });
+
+  it("an unlisted URL that SOURCE_URL or NO_EXPLOIT_LINK fails doesn't also warn as unlisted", () => {
+    const d = weekdayDraft();
+    for (const url of ["https://www.exploit-db.com/", "https://example.org/sample/poc", "http://example.org/sample/notes"]) {
+      d.items[0]!.source_ids.push(addSource(d, { url, source_type: "other" }));
+    }
+    expect(codesOf(check(d, T))).toEqual([]);
+    d.items[0]!.source_ids.push(addSource(d, { url: "https://example.org/sample/notes", source_type: "other" }));
+    expect(codesOf(check(d, T))).toEqual(["W SOURCE_TIER sources[22].url"]);
   });
 
   it("the Angle's source and an Elsewhere link need tier 1 or 2; a metric Angle has none", () => {

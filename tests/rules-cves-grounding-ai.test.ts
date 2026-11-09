@@ -195,7 +195,11 @@ describe("CVE_PUBLISHED", () => {
     const d = weekdayDraft();
     d.scoreboard_entries[0]!.summary = "SAMPLE. The NCSC's review mentions CVE-2026-9999999 and reports no confirmed AI-powered malware.";
     expect(only(check(d), "CVE_PUBLISHED").map((e) => e.path)).toEqual(["scoreboard_entries[0].summary"]);
-    expect(only(check(d, "weekday", (i) => { i.cveList = null; }), "CVE_PUBLISHED")).toEqual([]);
+    const skipped = check(d, "weekday", (i) => { i.cveList = null; });
+    expect(only(skipped, "CVE_PUBLISHED")).toEqual([]);
+    // ...and says so once, as SOURCE_UNSEEN does without evidence, so a caller that forgot the List is told.
+    expect(warns(skipped, "CVE_PUBLISHED").map((w) => w.path)).toEqual(["(cveList)"]);
+    expect(warns(check(d), "CVE_PUBLISHED")).toEqual([]);
   });
 
   it("in published mode reads the stored CVE blocks, and runs on a data-only edition (†)", () => {
@@ -798,7 +802,7 @@ describe("F fixtures (fixtures/src/invalid/cves-grounding-ai.ts)", () => {
     const r = validateDraft(invalidDraft(c), draftInputs(c.edition ?? "weekday"));
     expect(r.errors.length).toBeGreaterThan(0);
     expect([...new Set(r.errors.map((e) => e.code))]).toEqual([c.code]);
-    expect(r.warnings.filter((w) => !(c.warnings ?? []).includes(w.code))).toEqual([]);
+    expect(r.warnings).toEqual([]);
   });
 
   it.each(cvesGroundingAiCases.map((c) => [c.file] as const))("%s is written and up to date", (file) => {

@@ -3,6 +3,7 @@
 // each draft validates cleanly against its own inputs, and `fixtures/src/build.ts --check` passes.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { matchVendor } from "@/lib/config";
@@ -17,7 +18,7 @@ import { publisherFor } from "@/lib/sources";
 import { numbersIn } from "@/lib/text";
 import { normalizeUrl } from "@/lib/urls";
 import { RegionsInputFile, cveLookupFromDir, validateDraft } from "@/lib/validate";
-import { allOutputs, compareOutputs, inputPath, jsonText, validDraftPath } from "@/fixtures/src/build";
+import { FIXTURE_DIRS, allOutputs, compareOutputs, inputPath, jsonText, main, validDraftPath, writeOutputs } from "@/fixtures/src/build";
 import { WEEKDAY_ITEMS, editionDraft, mondayDraft, quietDraft, weekdayDraft } from "@/fixtures/src/drafts";
 import {
   CVE_RECORDS_DIR, draftInputs, editionContext, editionEvidence, editionMetrics, editionPack, editionRegionsInput, fixtureConfig,
@@ -202,9 +203,35 @@ describe("each draft against its own inputs", () => {
 });
 
 describe("fixtures/src/build.ts --check", () => {
-  it("finds no stale or missing file", () => {
-    expect(compareOutputs(allOutputs())).toEqual({ missing: [], stale: [] });
+  it("finds no stale, missing or added file", () => {
+    expect(compareOutputs(allOutputs())).toEqual({ missing: [], stale: [], added: [] });
   });
+
+  it("writes only inside the folders it owns, so an added file anywhere it writes is found", () => {
+    expect(allOutputs().filter((o) => !FIXTURE_DIRS.some((d) => o.path.startsWith(`${d}/`))).map((o) => o.path)).toEqual([]);
+  });
+
+  it("fails --check on a file no generator writes, and fixtures:gen removes it (SPEC §8.1: any added file)", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ct-fixtures-"));
+    try {
+      const outputs = allOutputs();
+      expect(writeOutputs(outputs, tmp)).toEqual([]);
+      const strays = ["fixtures/drafts/invalid--RETIRED_CODE.json", "fixtures/site-content/status/2026-10-17.json"];
+      for (const p of strays) {
+        fs.mkdirSync(path.dirname(path.join(tmp, p)), { recursive: true });
+        fs.writeFileSync(path.join(tmp, p), "{}\n");
+      }
+      fs.rmSync(path.join(tmp, outputs[0]!.path));
+      expect(compareOutputs(outputs, tmp)).toEqual({ missing: [outputs[0]!.path], stale: [], added: strays });
+      const log: string[] = [];
+      expect(main(["--check"], (s) => log.push(s), tmp)).toBe(1);
+      expect(log.filter((l) => l.startsWith("added: "))).toEqual(strays.map((p) => `added: ${p} (no generator writes it)`));
+      expect(writeOutputs(outputs, tmp)).toEqual(strays);
+      expect(compareOutputs(outputs, tmp)).toEqual({ missing: [], stale: [], added: [] });
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 120_000);
 
   it("exits 0 from the command line", () => {
     const tsx = path.join(root, "node_modules", ".bin", "tsx");

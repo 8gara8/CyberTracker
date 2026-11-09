@@ -18,7 +18,7 @@
         "previous_level": "critical",
         "change": "down",
         "rule_id": "high-breach",
-        "reason": "Confirmed breach in United States: Example Health Group says an intruder copied patient records",
+        "reason": "Confirmed breach in United States: Item under review",
         "item_ids": [
           "inc-health-us-2026-10"
         ],
@@ -581,7 +581,7 @@
     }
   ],
   "computed": {
-    "word_count": 610,
+    "word_count": 604,
     "reading_minutes": 3,
     "item_count": 4,
     "ai_linked": {

@@ -7,15 +7,18 @@
 
 import run from "../config/run.json";
 import { dayMonth, taipeiTime } from "./format";
+import { fmt2 } from "./metrics/stats";
 import type { Brief, RegionRow } from "./schema/brief";
 import type { Edition } from "./schema/common";
 import type { Item } from "./schema/item";
+import type { Metrics } from "./schema/metrics";
 import type { RunRecord, RunStage } from "./schema/status";
 import { SITE_NAME, siteUrl as configuredSiteUrl } from "./site";
 import { splitSentences } from "./text";
 import { defang } from "./urls";
 import {
-  AI_ROLE_INFO, CANARY_TOKEN, IOC_TLDS, REGION_CHANGE, REGION_LEVEL_INFO, SEVERITY_INFO, TAIWAN_NO_NEWS, WITHHELD_HEADLINE, WITHHELD_MARK,
+  AI_ROLE_INFO, CANARY_TOKEN, IOC_TLDS, PARTIAL_FEED_IDS, REGION_CHANGE, REGION_LEVEL_INFO, SEVERITY_INFO, TAIWAN_NO_NEWS,
+  WITHHELD_HEADLINE,
 } from "./vocab";
 
 export const CHAT_MAX_LINES = 15;
@@ -213,7 +216,9 @@ function windowWord(window: string): string {
 export type ChatInput =
   | { kind: "published"; brief: Brief; runs: RunRecord[]; notes: string[]; dryRun: boolean }
   | { kind: "data_only"; brief: Brief; runs: RunRecord[]; code: string | null; what: string;
-      nextStep: string | null; notes: string[]; dryRun: boolean }
+      nextStep: string | null; notes: string[]; dryRun: boolean;
+      /** KEV entries new since the last edition (the brief holds at most 10, §4.5); null: the item count. */
+      kevNew?: number | null }
   | { kind: "failed"; date: string; code: string; what: string; errors: { code: string; path: string }[];
       siteShows: { date: string; edition: Edition } | null; nextStep: string; runs: RunRecord[];
       needsReview: boolean; notes: string[]; dryRun: boolean }
@@ -233,6 +238,11 @@ export interface ChatSource {
   issues?: readonly { code: string; path: string; severity?: "error" | "warning"; message?: string }[] | null;
   /** The newest brief on GitHub's main, for the failed format's "Site shows" line. */
   siteShows?: { date: string; edition: Edition } | null;
+  /**
+   * metrics/D.json, for the data-only KEV count: the brief holds at most 10 new-KEV items (§4.5), so the
+   * count is `kev.new_since_last_edition.cve_ids`'s length. Ignored when its date is not D or `kev` is null.
+   */
+  metrics?: Pick<Metrics, "date" | "kev"> | null;
   /** Default: a failed run that is not a dry run (finish copies its files to needs-review/D/). */
   needsReview?: boolean;
   /** The code of a failure that left no record (preflight steps 1 to 5). */
@@ -244,6 +254,7 @@ export interface ChatSource {
 }
 
 const RUN_STARTS: ReadonlySet<string> = new Set(["schedule", "manual", "dry_run"]);
+const PARTIAL_FEEDS: ReadonlySet<string> = new Set(PARTIAL_FEED_IDS);
 
 /**
  * The last run's records in a status file (§8.8): the last `schedule`, `manual` or `dry_run` record and
@@ -292,9 +303,11 @@ function rebuiltNotes(date: string, brief: Brief | null, runs: readonly RunRecor
   const dropped = runs.reduce((n, r) => n + (r.soft_gates?.dropped ?? 0), 0);
   if (dropped > 0) out.push(CHAT_NOTES.dropped(dropped));
 
+  // Without a brief, the first record's feeds (the attempt that collected; a retry reuses its pack),
+  // limited as feeds_stale is to the five structured feeds: RSS failures stay in the status file (§8.3).
   const stale = brief && kind !== "failed"
     ? brief.feeds_stale.map((f) => f.id)
-    : (runs[0]?.feeds ?? []).filter((f) => f.status === "stale" || f.status === "failed").map((f) => f.id);
+    : (runs[0]?.feeds ?? []).filter((f) => PARTIAL_FEEDS.has(f.id) && (f.status === "stale" || f.status === "failed")).map((f) => f.id);
   if (stale.length) out.push(CHAT_NOTES.feedsStale(stale));
 
   const flood = NOTE_RES.floodStops.exec(notes);
@@ -322,13 +335,19 @@ function rebuiltNotes(date: string, brief: Brief | null, runs: readonly RunRecor
   return out;
 }
 
-const SAFE_PATH_RE = /^[A-Za-z0-9_.()[\]/-]+(?:: [A-Za-z0-9_.()[\]/-]+)?$/;
+// formatPath()'s forms: "(root)", "(file)", "(run)", or keys (`[A-Za-z_][A-Za-z0-9_]*`, never a dot or a
+// hyphen inside one) and `[n]` indices joined by dots; at most one "<file>.json: " prefix.
+const PATH_KEY = "[A-Za-z_][A-Za-z0-9_]*(?:\\[\\d+\\])*";
+const SAFE_PATH_RE = new RegExp(
+  `^(?:[a-z0-9_-]+(?:/[a-z0-9_-]+)*\\.json: )?(?:\\((?:root|file|run)\\)|(?:${PATH_KEY}|(?:\\[\\d+\\])+)(?:\\.${PATH_KEY})*)$`);
 const SAFE_CODE_RE = /^[A-Z][A-Z0-9_]*$/;
 
 /**
- * An issue path as the chat edition may show it: a path of keys and indices (with at most one
- * "<file>: " prefix), at most 100 characters and free of the canary; anything else, such as an unknown
- * key the draft invented, becomes "(path not shown)".
+ * An issue path as the chat edition may show it: schema keys and `[n]` indices joined by dots (with at
+ * most one "<file>.json: " prefix), at most 100 characters and free of the canary; anything else, such
+ * as an unknown key the draft invented with a dot, hyphen or space in it (`login-update.example.com`,
+ * `45.33.32.156`), becomes "(path not shown)". The last step still defangs a path of plain keys that
+ * reads as a domain (`items[0].evil.com`).
  */
 export function safePath(path: string): string {
   const p = path.trim();
@@ -393,9 +412,11 @@ export function chatInputFor(src: ChatSource): ChatInput {
       what = noted?.[0]
         ?? (last && taipeiTime(last.started_at) > schedule.hard_stop ? STAGE_NOTES.startedAfterHardStop(schedule.hard_stop) : STAGE_NOTES.dataOnlyRequested);
     }
+    const kev = src.metrics?.date === date ? src.metrics.kev : null;
     return {
       kind: "data_only", brief, runs, code, what, nextStep: code ? nextStepFor(code, date) : null,
       notes: orderNotes([...rebuiltNotes(date, brief, runs, "data_only", dryRun), ...(src.notes ?? [])]), dryRun,
+      kevNew: kev ? kev.new_since_last_edition.cve_ids.length : null,
     };
   }
 
@@ -491,8 +512,8 @@ function publishedLines(input: Extract<ChatInput, { kind: "published" }>, site: 
   const first = input.dryRun
     ? `**${SITE_NAME} ${D} · dry run (${edition} edition)**`
     : `**${SITE_NAME} ${D} · ${edition} edition, published ${taipeiTime(b.published_at)}${b.late ? " (late)" : ""}**`;
-  // A withheld Lead sentence reads WITHHELD_MARK on the page (§4.10); the chat drops it.
-  const lead = oneLine(b.lead.filter((l) => l.text.trim() !== WITHHELD_MARK).map((l) => l.text).join(" "));
+  // As on the page, a withheld Lead sentence reads WITHHELD_MARK (§4.10).
+  const lead = oneLine(b.lead.map((l) => l.text).join(" "));
   const top = b.items.slice(0, 3).map((item, i) =>
     `${i + 1}. ${kicker(item)} · ${item.withheld ? WITHHELD_HEADLINE : oneLine(item.headline)} · ${site}/brief/${D}#${item.id}`);
   const more = b.items.length - 3;
@@ -523,7 +544,8 @@ function kevEntry(item: Item): string {
   return [id, oneLine(vendor), oneLine(cve?.product ?? "")].filter(Boolean).join(" ");
 }
 
-const fixed2 = (x: number) => x.toFixed(2);
+/** A signed EPSS move at 2 decimals ("+0.15", "-0.08"), through fmt2() like every number in the chat (§5.2). */
+const signed2 = (x: number) => (fmt2(x).startsWith("-") ? fmt2(x) : `+${fmt2(x)}`);
 
 function dataOnlyLines(input: Extract<ChatInput, { kind: "data_only" }>, site: string): (string | null)[] {
   const b = input.brief;
@@ -532,15 +554,18 @@ function dataOnlyLines(input: Extract<ChatInput, { kind: "data_only" }>, site: s
   const first = input.dryRun
     ? `**${SITE_NAME} ${D} · dry run (data-only edition)**${code}`
     : `**${SITE_NAME} ${D} · data-only edition, published ${taipeiTime(b.published_at)}**${code}`;
-  const kev = b.items.length
-    ? `New on CISA's exploited list (${b.items.length}): ${[
-      ...b.items.slice(0, 5).map(kevEntry),
-      ...(b.items.length > 5 ? [`and ${b.items.length - 5} more`] : []),
+  // The count is every KEV entry new since the last edition, not only the (at most 10) the brief holds.
+  const newKev = b.items.length ? Math.max(b.items.length, input.kevNew ?? 0) : 0;
+  const shown = b.items.slice(0, 5);
+  const kev = newKev
+    ? `New on CISA's exploited list (${newKev}): ${[
+      ...shown.map(kevEntry),
+      ...(newKev > shown.length ? [`and ${newKev - shown.length} more`] : []),
     ].join(" · ")}`
     : "New on CISA's exploited list: none since the last edition.";
   const epss = b.epss_movers.length
     ? `EPSS movers (7 days): ${b.epss_movers.slice(0, 3).map((m) =>
-      `${m.cve_id} ${m.delta_7d >= 0 ? "+" : "-"}${fixed2(Math.abs(m.delta_7d))} to ${fixed2(m.score)}`).join(" · ")}`
+      `${m.cve_id} ${signed2(m.delta_7d)} to ${fmt2(m.score)}`).join(" · ")}`
     : null;
   const tl = b.taiwan_lens.kev_lines;
   return [
@@ -586,28 +611,44 @@ function skippedLines(input: Extract<ChatInput, { kind: "skipped" }>): (string |
 
 const URL_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s<>"'`]+/gi;
 const DEFANGED_SCHEME_RE = /^hxxps?:\/\//i;
+/** A Markdown link or image destination, "](dest" (`<dest>` too), whatever the link text holds. */
+const MD_DEST_RE = /\]\(\s*(<[^>]*>|[^\s)]*)/g;
+/** A CommonMark autolink, `<scheme:...>`: `<https:evil.example>` links without the slashes. */
+const AUTOLINK_RE = /<([a-z][a-z0-9+.-]{1,31}:[^\s<>]*)>/gi;
+/** A protocol-relative URL, "//host...", which resolves to https on that host. */
+const PROTOCOL_RELATIVE_RE = /(?<![\p{L}\p{N}_:/\\])\/\/(?=[\p{L}\p{N}])[^\s<>"'`]*/gu;
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
-const IPV4_RE = /(?<![\p{L}\p{N}.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\p{L}\p{N}]|\.\p{N})/gu;
+// The lookbehinds refuse only a letter or digit (and, for IPv4, "<digit>." so a longer dotted number is
+// not read from its middle): an indicator after ".", "_", "@", "-" or "]" (an issue path such as
+// `items[0].evil.com`, prose such as `foo_bar.evil.com`) is defanged too.
+const IPV4_RE = /(?<![\p{L}\p{N}]|\p{N}\.)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\p{L}\p{N}]|\.\p{N})/gu;
 const VERSION_CONTEXT_RE = /(?:^|[^\p{L}\p{N}])(?:version|v|build|firmware|release)\s+(?:\S+\s+)?$/iu;
+/** A "www." host, which GFM auto-links whatever its TLD. */
+const WWW_RE = /(?<![\p{L}\p{N}])www\.[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*/giu;
 const TLDS = [...IOC_TLDS, "onion", "i2p"].sort((a, b) => b.length - a.length).join("|");
 const DOMAIN_RE = new RegExp(
-  `(?<![\\p{L}\\p{N}_@.-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:${TLDS})(?![\\p{L}\\p{N}_-]|\\.[\\p{L}\\p{N}])`, "giu");
+  `(?<![\\p{L}\\p{N}])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:${TLDS})(?![\\p{L}\\p{N}_-]|\\.[\\p{L}\\p{N}])`, "giu");
 const PICTOGRAPHIC_RE = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u{FE0F}\u{200D}\u{20E3}]/gu;
 const PRIVATE_USE_RE = /[\uE000-\uF8FF]/g;
-const BLOCK_START_RE = /^(?:[|#>=]|```|~~~)/;
+/** A line that would open a table, heading, quote or code block, or define a link reference ("[x]: dest"). */
+const BLOCK_START_RE = /^(?:[|#>=]|```|~~~|\[[^\]]*\]:)/;
 
 /**
- * The last step of every format (§8.8), on one line: each URL that does not start with `siteUrl` becomes
- * "[link removed]" (any scheme but the defanged hxxp(s), so nothing the Claude app auto-links points at a
- * source); NO_LIVE_IOC's email, IPv4 and domain matches are defanged with defang() (domains on IOC_TLDS
- * plus .onion and .i2p, in any case, with no config exceptions); emoji and the canary go; and a line
- * that would open a table, heading, quote or code block is escaped with a backslash.
+ * The last step of every format (§8.8), on one line, so nothing the Claude app's Markdown links points
+ * off-site: a Markdown link or image destination, a `<scheme:...>` autolink, a URL of any scheme (but
+ * the defanged hxxp(s)) and a protocol-relative "//host" that do not start with `siteUrl` become
+ * "[link removed]"; NO_LIVE_IOC's email, IPv4 and domain matches are defanged with defang() (domains on
+ * IOC_TLDS plus .onion and .i2p, in any case, with no config exceptions, whatever character precedes
+ * them), and so is any "www." host; emoji and the canary go; and a line that would open a table,
+ * heading, quote or code block, or define a link reference, is escaped with a backslash.
  */
 export function chatGuard(line: string, siteUrl: string): string {
   const site = siteUrl.replace(/\/+$/, "");
   const isSite = (u: string) => u === site || [`${site}/`, `${site}#`, `${site}?`].some((p) => u.startsWith(p));
   const kept: string[] = [];
   let s = line.replace(PRIVATE_USE_RE, "").replaceAll(CANARY_TOKEN, "[removed]");
+  s = s.replace(MD_DEST_RE, (m: string, dest: string) => (isSite(dest.replace(/^<|>$/g, "")) ? m : "]([link removed]"));
+  s = s.replace(AUTOLINK_RE, (m: string, url: string) => (isSite(url) ? m : "[link removed]"));
   s = s.replace(URL_RE, (match: string) => {
     const url = match.replace(/[.,;:!?)\]}]+$/, "");
     const tail = match.slice(url.length);
@@ -618,12 +659,14 @@ export function chatGuard(line: string, siteUrl: string): string {
     }
     return `[link removed]${tail}`;
   });
+  s = s.replace(PROTOCOL_RELATIVE_RE, (match: string) => `[link removed]${match.slice(match.replace(/[.,;:!?)\]}]+$/, "").length)}`);
   s = s.replace(EMAIL_RE, (m) => defang(m));
   s = s.replace(IPV4_RE, (m: string, a: string, b: string, c: string, d: string, offset: number, whole: string) => {
     if ([a, b, c, d].some((o) => Number(o) > 255)) return m;
     if (VERSION_CONTEXT_RE.test(whole.slice(0, offset))) return m;
     return defang(m);
   });
+  s = s.replace(WWW_RE, (m) => m.replace(/\./g, "[.]"));
   s = s.replace(DOMAIN_RE, (m) => defang(m));
   s = s.replace(PICTOGRAPHIC_RE, "").replace(/ {2,}/g, " ").trimEnd();
   s = s.replace(/\uE000(\d+)\uE001/g, (_m, i: string) => kept[Number(i)]!);

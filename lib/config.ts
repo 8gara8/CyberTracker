@@ -17,11 +17,9 @@ import {
 import { SourcesFile } from "./schema/registry";
 import type { ValidationIssue } from "./rules/types";
 import { contentDir, isSampleData } from "./site";
+import { TIER1_PATH_FLAGS } from "./sources";
 import { countWords } from "./text";
-import {
-  CLAIM_METRIC_PATHS, LEVELLED_REGIONS, TAIWAN_LENS_ROWS, type FinderFamily, type FinderKind, type LevelledRegion,
-  type RegionRuleType,
-} from "./vocab";
+import type { FinderFamily, FinderKind, RegionRuleType } from "./vocab";
 
 // ── Files ────────────────────────────────────────────────────────────────────────────────────────
 
@@ -122,18 +120,21 @@ export type CompiledAiFinders = Omit<z.output<typeof AiFindersFile>, "finders"> 
   labContextRe: RegExp;
   finders: CompiledFinder[];
 };
+/**
+ * The compiled ai-finders.json. regions.json alert_patterns and github.tier1_paths are compiled here only for
+ * the CONFIG_REGEX check; lib/regions.ts and lib/sources.ts compile their own copies with the same flags.
+ */
 export interface CompiledConfig {
   aiFinders: CompiledAiFinders;
-  /** regions.json alert_patterns, flags "iu", on the normalised URL (§5.11). */
-  alertPatterns: Record<LevelledRegion, RegExp[]>;
-  /** source-tiers.json github.tier1_paths, flags "iu", on the matchPath() of the github.com URL path (§4.11). */
-  githubTier1Paths: RegExp[];
 }
+
+/** regions.json alert_patterns flags (§4.11), on the normalised URL (§5.11); lib/regions.ts compiles with these. */
+export const ALERT_PATTERN_FLAGS = "iu";
 
 // Every pattern is compiled with the u flag plus the flags §4.11 states.
 const FLAGS = {
-  prefilter: "iu", strip: "gu", labContext: "u", patterns: "iu", patternsCaseSensitive: "u", labNames: "iu", alertPatterns: "iu",
-  tier1Paths: "iu",
+  prefilter: "iu", strip: "gu", labContext: "u", patterns: "iu", patternsCaseSensitive: "u", labNames: "iu",
+  alertPatterns: ALERT_PATTERN_FLAGS, tier1Paths: TIER1_PATH_FLAGS,
 } as const;
 
 function compiler(issues: ConfigIssue[]) {
@@ -166,13 +167,11 @@ export function compileConfig(files: Pick<ConfigFiles, "aiFinders" | "regions" |
       labNameRes: x.lab_names.map((s, j) => re(s, FLAGS.labNames, at(f, `finders[${i}].lab_names[${j}]`))),
     })),
   };
-  const alertPatterns = Object.fromEntries(LEVELLED_REGIONS.map((c) => [c, [] as RegExp[]])) as Record<LevelledRegion, RegExp[]>;
   files.regions.regions.forEach((r, i) => {
-    alertPatterns[r.code] = r.alert_patterns.map((s, j) => re(s, FLAGS.alertPatterns, at("config/regions.json", `regions[${i}].alert_patterns[${j}]`)));
+    r.alert_patterns.forEach((s, j) => re(s, FLAGS.alertPatterns, at("config/regions.json", `regions[${i}].alert_patterns[${j}]`)));
   });
-  const githubTier1Paths = files.sourceTiers.github.tier1_paths.map((s, i) =>
-    re(s, FLAGS.tier1Paths, at("config/source-tiers.json", `github.tier1_paths[${i}]`)));
-  return { compiled: { aiFinders, alertPatterns, githubTier1Paths }, issues };
+  files.sourceTiers.github.tier1_paths.forEach((s, i) => re(s, FLAGS.tier1Paths, at("config/source-tiers.json", `github.tier1_paths[${i}]`)));
+  return { compiled: { aiFinders }, issues };
 }
 
 /** One credit string's match (§5.5 AiCreditHit without `field`). `matched` is the matched substring only, never the credit line. */
@@ -448,24 +447,16 @@ function refIssues(c: ConfigFiles, p: Record<ConfigKey, string>): ConfigIssue[] 
     if (!actors.has(id)) out.push(issue("CONFIG_REF", at(p.standingStories, `stories[${i}].actors[${j}]`), `"${id}" is not an actor id in ${p.actors}.`));
   }));
 
-  const lensRows: readonly string[] = TAIWAN_LENS_ROWS;
-  c.watchWindows.windows.forEach((w, i) => {
-    if (w.lens_row !== null && !lensRows.includes(w.lens_row)) {
-      out.push(issue("CONFIG_REF", at(p.watchWindows, `windows[${i}].lens_row`), `"${w.lens_row}" is not a Taiwan Lens row (${TAIWAN_LENS_ROWS.join(", ")}).`));
-    }
-  });
+  // A watch window's lens_row and a claim's metric_path are schema enums (TaiwanLensRowId, ClaimMetricPath,
+  // §4.11's interfaces), so an unknown one fails CONFIG_SCHEMA at load, before these checks run.
 
   const vendors = new Set(c.vendors.vendors.map((v) => v.id));
   c.run.releases.forEach((r, i) => {
     if (!vendors.has(r.vendor_id)) out.push(issue("CONFIG_REF", at(p.run, `releases[${i}].vendor_id`), `"${r.vendor_id}" is not a vendor id in ${p.vendors}.`));
   });
 
-  const metricPaths: readonly string[] = CLAIM_METRIC_PATHS;
   c.claims.claims.forEach((cl, i) => {
     const w = (s: string) => at(p.claims, `claims[${i}].${s}`);
-    if (cl.metric_path !== null && !metricPaths.includes(cl.metric_path)) {
-      out.push(issue("CONFIG_REF", w("metric_path"), `"${cl.metric_path}" is not a claim metric path (CLAIM_METRIC_PATHS, §4.2).`));
-    }
     for (const side of ["support", "challenge"] as const) {
       const t = cl[side];
       if (cl.judged_by === "script" && t.kind !== "value") {

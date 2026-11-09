@@ -7,7 +7,8 @@
 import type { SourceTiersFile } from "../schema/config";
 import type { SourceType, Tier } from "../schema/common";
 import { blockedReason, GITHUB_ADVISORIES } from "../sources";
-import { blockedEntry, hostOf, isHttpsUrl, matchPath, normalizeUrl } from "../urls";
+import { blockedEntry, hostOf, isHttpsUrl, normalizeUrl } from "../urls";
+import { exploitLinkProblem } from "./safety";
 import { entriesOf, isBrief, sourceIdFields } from "./shared";
 import {
   defineRule, error, list, plural, warning, type AnyItem, type AnySource, type PublisherView, type Rule, type RuleInput, type ValidationIssue,
@@ -82,14 +83,26 @@ const sourceDup = defineRule({
 
 // ── SOURCE_URL ───────────────────────────────────────────────────────────────────────────────────
 
+/** True when a URL parses with a user name or password (`https://name:pass@host/`), which can hide the real host. */
+function hasUserInfo(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.username !== "" || u.password !== "";
+  } catch {
+    return false;
+  }
+}
+
 /**
- * SOURCE_URL's finding for a URL, or null: not https, malformed, or on a BLOCKED_HOSTS entry with reason
- * `redirect` or `archive` (read on the URL as written: normalizeUrl() would strip a Wayback prefix).
+ * SOURCE_URL's finding for a URL, or null: not https, malformed, carrying user info (`name:pass@`), or on a
+ * BLOCKED_HOSTS entry with reason `redirect` or `archive` (read on the URL as written: normalizeUrl() would
+ * strip a Wayback prefix).
  */
 export function sourceUrlProblem(url: string): string | null {
   const entry = blockedEntry(url);
   if (entry?.reason === "redirect") return `is a redirect link (${entry.pattern}); open the original page and cite its own URL`;
   if (entry?.reason === "archive") return `is an archive copy (${hostOf(url) ?? entry.pattern}); cite the original page`;
+  if (hasUserInfo(url)) return "carries a user name or password before the host (user:password@); cite the plain https address of the page";
   if (isHttpsUrl(url)) return null;
   if (/^http:\/\//i.test(url) && isHttpsUrl(url.replace(/^http:/i, "https:"))) return "uses http; cite the https address of the same page";
   return "is not a valid absolute https URL; copy the page's full address";
@@ -109,20 +122,30 @@ const sourceUrl = defineRule({
 
 // ── SOURCE_UNSEEN ────────────────────────────────────────────────────────────────────────────────
 
-/** NO_EXPLOIT_LINK's URL checks (§4.12): a blocked host (any reason) or github.com path, or a tier 3 URL with an exploit-like path segment. */
-const EXPLOIT_SEGMENTS = new Set(["poc", "exploit", "exploits", "payload", "0day"]);
-
-export function exploitLinkUrl(url: string, tier: Tier | undefined, sourceTiers: Pick<SourceTiersFile, "github">): boolean {
-  if (blockedReason(url, sourceTiers) !== null) return true;
-  if (tier !== 3) return false;
-  try {
-    return matchPath(new URL(url).pathname).split("/").some((seg) => EXPLOIT_SEGMENTS.has(seg));
-  } catch {
-    return false;
-  }
+/**
+ * NO_EXPLOIT_LINK's URL checks (§4.12), read through safety.ts's exploitLinkProblem() so the two never
+ * drift, plus the redirect and archive entries (SOURCE_URL's): true for any blocked host or github.com
+ * path outside the advisory paths, or an exploit-like path on a tier 3 or unlisted publisher.
+ */
+export function exploitLinkUrl(url: string, tier: Tier | undefined, sourceTiers: Pick<SourceTiersFile, "github">, publisher?: string | null): boolean {
+  return blockedReason(url, sourceTiers) !== null || exploitLinkProblem(url, tier, sourceTiers, publisher) !== null;
 }
 
-/** SOURCE_UNSEEN (draft; a warning when there is no evidence file): a normalised source URL isn't in `evidence.urls`. */
+/** The ids of sources a flaw_evidence entry cites from its own item: FLAW_EVIDENCE owns them when unseen (§4.12 Close relatives). */
+function flawEvidenceSourceIds(items: readonly AnyItem[]): Set<string> {
+  const out = new Set<string>();
+  for (const it of items) {
+    for (const f of it?.flaw_evidence ?? []) {
+      if (f && (it.source_ids ?? []).includes(f.source_id)) out.add(f.source_id);
+    }
+  }
+  return out;
+}
+
+/**
+ * SOURCE_UNSEEN (draft; a warning when there is no evidence file): a normalised source URL isn't in
+ * `evidence.urls`. A source a flaw_evidence entry cites is left to FLAW_EVIDENCE (§4.12 Close relatives).
+ */
 const sourceUnseen = defineRule({
   code: "SOURCE_UNSEEN",
   scope: "draft",
@@ -132,10 +155,12 @@ const sourceUnseen = defineRule({
         "Pass the run's evidence (logs/D.evidence.json, or --evidence) to check them.")];
     }
     const seen = new Set(evidence.urls.map((u) => normalizeUrl(u)));
+    const flawOwned = flawEvidenceSourceIds((draft.items ?? []) as AnyItem[]);
     const out: ValidationIssue[] = [];
     (draft.sources ?? []).forEach((s, i) => {
-      if (!s || typeof s.url !== "string") return;
-      if (sourceUrlProblem(s.url) !== null || exploitLinkUrl(s.url, derived.tierBySourceId.get(s.id), config.sourceTiers)) return;
+      if (!s || typeof s.url !== "string" || flawOwned.has(s.id)) return;
+      if (sourceUrlProblem(s.url) !== null
+        || exploitLinkUrl(s.url, derived.tierBySourceId.get(s.id), config.sourceTiers, derived.publisherBySourceId.get(s.id)?.publisher)) return;
       if (!seen.has(normalizeUrl(s.url))) {
         out.push(error("SOURCE_UNSEEN", `sources[${i}].url`,
           `${s.id}'s URL ${s.url} is not in the source pack, a page you fetched or a search result you saw. Cite only URLs you actually saw, or remove ${s.id}.`,
@@ -198,7 +223,8 @@ function tiered(input: Pick<RuleInput, "derived">, id: string): string {
 
 /**
  * SOURCE_TIER: an item, the Angle (when it cites a source) or an Elsewhere link without a tier 1 or 2
- * source, error; a source on an unlisted domain, warning; draft mode: a `source_type` that doesn't fit its
+ * source, error; a source on an unlisted domain, warning (not when SOURCE_URL or NO_EXPLOIT_LINK already
+ * fails its URL); draft mode: a `source_type` that doesn't fit its
  * publisher. Unknown ids are SOURCE_REF's and are left out; a scoreboard entry's quote source is
  * SCOREBOARD_REF's (it names that field's tier).
  */
@@ -229,7 +255,10 @@ const sourceTier = defineRule({
     (draft.sources ?? []).forEach((s, i) => {
       const v = s ? derived.publisherBySourceId.get(s.id) : undefined;
       if (!s || !v || derived.sourcesById.get(s.id) !== s) return;
-      if (v.tier === 3 && unlisted(v)) {
+      // A URL SOURCE_URL or NO_EXPLOIT_LINK already fails is theirs (one code per problem, as SOURCE_UNSEEN).
+      const urlFails = () => typeof s.url !== "string" || sourceUrlProblem(s.url) !== null
+        || exploitLinkUrl(s.url, v.tier, input.config.sourceTiers, v.publisher);
+      if (v.tier === 3 && unlisted(v) && !urlFails()) {
         out.push(warning("SOURCE_TIER", `sources[${i}].url`,
           `${s.id} is on ${v.publisher.slice("host:".length)}, which source-tiers.json and vendors.json don't list, so it counts as tier 3: cite it only beside a tier 1 or 2 source.`,
           "If this publisher does its own reporting, propose adding it to config/source-tiers.json in a PR."));

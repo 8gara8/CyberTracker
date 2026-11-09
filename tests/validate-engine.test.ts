@@ -440,6 +440,13 @@ describe("validateAll", () => {
     expect(r.files[0]!.errors[0]!.path).toBe("(file)");
   });
 
+  it("reports files named after Object.prototype members as stray, never as known files", () => {
+    const dir = freshDir({ "constructor": {}, "toString": {}, "state/toString": {}, "state/constructor": {}, "state/__proto__": {} });
+    const r = validateAll(dir, { config, perFile: true });
+    expect(r.errors.map((i) => i.path)).toEqual(["constructor: (file)", "state/__proto__: (file)", "state/constructor: (file)", "state/toString: (file)", "toString: (file)"]);
+    expect(new Set(codes(r.errors))).toEqual(new Set(["FILE_UNEXPECTED"]));
+  });
+
   it("checks dated names (FILE_NAME), file dates (DATE_MISMATCH) and unparsable files (SCHEMA)", () => {
     const dir = freshDir({ "briefs/latest.json": {}, "metrics/2026-02-30.json": {}, "status/2026-11-08.json": statusFile(D2, null), "metrics/inputs/2026-11-08.json": "{ nope" });
     const r = validateAll(dir, { config });

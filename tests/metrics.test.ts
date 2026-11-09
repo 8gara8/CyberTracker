@@ -14,7 +14,7 @@ import {
   referenceWindowStats,
 } from "@/lib/metrics/reference";
 import {
-  fmt1, fmtDate, fmtDays, fmtInt, fmtPct, mannWhitneyZ, median, medianCi80, newcombe80, pct, plainDecimal, poissonCi80, round1,
+  fmt1, fmt2, fmtDate, fmtDays, fmtInt, fmtPct, mannWhitneyZ, median, medianCi80, newcombe80, pct, plainDecimal, poissonCi80, round1,
   round2, round4, roundTo, wilson80, Z80,
 } from "@/lib/metrics/stats";
 import { shareDirection } from "@/lib/metrics/window";
@@ -163,6 +163,18 @@ describe("stats: display helpers", () => {
     expect(fmtDays(20.5)).toBe("20.5");
   });
 
+  it("fmt2 rounds once with roundTo, never toFixed, and always shows two decimals", () => {
+    expect(fmt2(0.145)).toBe("0.15"); // (0.145).toFixed(2) is "0.14"
+    expect(fmt2(1.005)).toBe("1.01"); // (1.005).toFixed(2) is "1.00"
+    expect(fmt2(0.14496)).toBe("0.14");
+    expect(fmt2(0.94512)).toBe("0.95");
+    expect(fmt2(1)).toBe("1.00");
+    expect(fmt2(0.1)).toBe("0.10");
+    expect(fmt2(0)).toBe("0.00");
+    expect(fmt2(-0.145)).toBe("-0.15");
+    expect(fmt2(-0.001)).toBe("0.00");
+  });
+
   it("fmtDate shows the year only when it is not the edition's", () => {
     expect(fmtDate("2026-11-06", "2026-11-08")).toBe("6 Nov");
     expect(fmtDate("2025-12-30", "2026-01-01")).toBe("30 Dec 2025");
@@ -290,8 +302,6 @@ const D3_QUOTED = [
   ["flood.n", "44,944"], ["constant", "13"], ["flood.vs_reference_ratio", "5.2"], ["flood.vs_reference_ex_kernel_ratio", "5.0"],
   ["ai_credited.w13.total", "386"], ["constant", "13"], ["ai_credited.w13.ex_anthropic", "173"],
 ].map(([path, display]) => ({ path, display }));
-
-const FINDERS = [{ id: "openai-codex", name: "OpenAI Codex Security" }, { id: "anthropic-claude", name: "Anthropic Claude" }];
 
 const W26: WindowStats = {
   from: "2026-05-09", to: "2026-11-06", kev_added_n: 179, unjoined_n: 0, cohort_n: 157, old_listed_n: 22, at_disclosure_n: 58,
@@ -494,13 +504,14 @@ describe("footerLine and inKevLine (§5.8, §5.5)", () => {
     expect(footerLine(variant((x) => { x.ai_credited = null; x.provenance.config_versions.ai_finders = 2; }))).toMatch(/AI-finder list v2$/);
   });
 
-  it("renders the in-KEV line with the finder's name (D.7)", () => {
+  it("renders the in-KEV line with the finder's id, as the metrics file freezes it (D.7)", () => {
     const m = d3Metrics();
-    expect(inKevLine(m.ai_credited!, FINDERS, m.date)).toEqual({
+    expect(inKevLine(m.ai_credited!, m.date)).toEqual({
       head: "AI-credited and now on CISA's list: 1 since 1 Jan 2025",
-      entries: ["CVE-2026-111497: Codex Security (OpenAI Codex Security), listed 27 Oct (US date)"],
+      entries: ["CVE-2026-111497: Codex Security (openai-codex), listed 27 Oct (US date)"],
     });
-    expect(inKevLine(m.ai_credited!, [], m.date).entries[0]).toContain("(openai-codex)");
+    // The page's caption and the validator's display strings are the same line.
+    expect(metricDisplays(m)).toContain("CVE-2026-111497: Codex Security (openai-codex), listed 27 Oct (US date)");
   });
 });
 
@@ -521,10 +532,10 @@ describe("metricDisplays and metricNumbers (§4.12, §5.8)", () => {
 
   it("holds the quoted displays, the table, the in-KEV line and the Lens KEV lines", () => {
     const m = d3Metrics();
-    const all = metricDisplays(m, FINDERS);
+    const all = metricDisplays(m);
     for (const s of ["37%", "157", "1.9", "44,944", "5.2", "5.0", "386", "173", "AI-credited and now on CISA's list: 1 since 1 Jan 2025",
       "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 6 Nov (US date)."]) expect(all).toContain(s);
-    const values = metricNumbers(m, FINDERS).map((n) => `${n.value}${n.percent ? "%" : ""}`);
+    const values = metricNumbers(m).map((n) => `${n.value}${n.percent ? "%" : ""}`);
     for (const v of ["37%", "157", "1.9", "44944", "20.5", "23", "30", "90", "1"]) expect(values).toContain(v);
     expect(values).not.toContain("2023");
     expect(values).not.toContain("111497");

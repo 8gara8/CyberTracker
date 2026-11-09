@@ -280,8 +280,9 @@ const attributionNamed = defineRule({
 // ── ATTRIBUTION_CONFIDENCE ───────────────────────────────────────────────────────────────────────
 
 /**
- * ATTRIBUTION_CONFIDENCE (brief): a low-confidence entry (`confidence_level` low, or a LOW_CONFIDENCE_MARKERS
- * entry in `confidence_text`) with a sponsor or a nexus other than unknown; a nexus other than unknown with
+ * ATTRIBUTION_CONFIDENCE (brief): an entry that doesn't qualify under §4.6 (`confidence_level` low, a
+ * LOW_CONFIDENCE_MARKERS entry in `confidence_text`, or `unstated` with a basis other than `government`)
+ * with a sponsor or a nexus other than unknown; a nexus other than unknown with
  * a null `sponsor_claimed`; a `confidence_level` other than unstated with a null `confidence_text`.
  */
 const attributionConfidence = defineRule({
@@ -294,8 +295,12 @@ const attributionConfidence = defineRule({
         if (!a) return;
         const p = `items[${i}].attribution[${j}]`;
         const marker = typeof a.confidence_text === "string" && hasLowConfidenceMarker(a.confidence_text);
-        const low = a.confidence_level === "low" || marker;
-        const why = a.confidence_level === "low" ? 'confidence_level is "low"' : `confidence_text "${a.confidence_text}" marks it low confidence`;
+        // §4.6's qualifying entry: an unstated confidence names a sponsor only when a government states it.
+        const unstatedNonGov = a.confidence_level === "unstated" && a.basis !== "government";
+        const low = a.confidence_level === "low" || marker || unstatedNonGov;
+        const why = a.confidence_level === "low" ? 'confidence_level is "low"'
+          : marker ? `confidence_text "${a.confidence_text}" marks it low confidence`
+          : `confidence_level is "unstated" and basis is "${a.basis}" (only a government may name a sponsor without a stated confidence)`;
         if (low) {
           if (a.sponsor_claimed !== null) {
             out.push(error("ATTRIBUTION_CONFIDENCE", `${p}.sponsor_claimed`,

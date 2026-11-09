@@ -406,15 +406,15 @@ const SOURCE_TABLE = {
     pack: { feed_id: "nhk", snippet: "（SAMPLE）総務省は全国の自治体に対し、ランサムウェア被害に備えてバックアップ体制を点検するよう要請した。" },
   },
 
-  // Monday, 2026-10-12
+  // Monday, 2026-10-12. The breach item is withheld on 13 Oct; §4.10 keeps its source URLs, so they name no one.
   "sec-8k": {
-    url: "https://www.sec.gov/ct-sample/example-health-group-form-8-k",
+    url: "https://www.sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
     title: "SAMPLE: Example Health Group, Form 8-K, Item 1.05 Material Cybersecurity Incidents", title_en: null, language: "en",
     outlet: "US SEC", source_type: "regulator_filing", published_at: "2026-10-10",
     page: "SAMPLE filing. Example Health Group detected unauthorized access to its billing systems in early October 2026. An unauthorized third party copied files containing patient records. Hospital services were not disrupted. The company is notifying affected individuals and regulators.",
   },
   "tr-health": {
-    url: "https://therecord.media/ct-sample/example-health-group-breach",
+    url: "https://therecord.media/ct-sample/us-hospital-operator-breach",
     title: "SAMPLE: Example Health Group says hackers copied patient records", title_en: null, language: "en", outlet: "The Record",
     source_type: "press", published_at: "2026-10-11T06:20:00+08:00",
     pack: { feed_id: "therecord", snippet: "SAMPLE text. Example Health Group, a US hospital operator, told the SEC an intruder copied patient records from its billing systems. It is notifying about 410,000 people. Services were not disrupted." },

@@ -227,6 +227,14 @@ describe("schema-level constraints", () => {
   it("dates are real calendar dates and timestamps carry an offset", () => {
     fails(S.IsoDate, "2026-02-30");
     fails(S.IsoTimestamp, "2026-11-08T04:50:12");
+    // Impossible instants that Date.parse rolls over rather than rejects.
+    for (const bad of ["2026-02-30T04:00:00+08:00", "2026-11-08T24:00:00+08:00", "2026-11-08T04:50:12+15:00", "2026-11-08T04:50:12-14:30"]) {
+      fails(S.IsoTimestamp, bad);
+      fails(S.PublishedAt, bad);
+    }
+    for (const ok of ["2026-11-08T04:50:12+08:00", "2026-11-08T04:50Z", "2026-11-08T23:59:59.999Z", "2024-02-29T00:00:00-12:00", "2026-11-08T04:50:12+14:00"]) {
+      expect(problems(S.IsoTimestamp, ok), ok).toEqual([]);
+    }
     expect(problems(S.PublishedAt, "2026-11-08")).toEqual([]);
     expect(problems(S.PublishedAt, null)).toEqual([]);
   });

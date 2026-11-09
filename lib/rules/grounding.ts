@@ -3,8 +3,7 @@
 // panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a source's
 // seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a percentage.
 
-import { gapTableDisplays, kevLines, metricNumbers, type FinderName } from "../metrics/headline";
-import type { LoadedConfig } from "../config";
+import { gapTableDisplays, kevLines, metricNumbers } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
 import { numberMatches, numbersIn, splitSentences, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
@@ -20,14 +19,9 @@ export interface PoolNumber {
   percent: boolean;
 }
 
-/** The finders' ids and display names, for metricNumbers()' in-KEV line. */
-export function finderNamesOf(config: Pick<LoadedConfig, "aiFinders">): FinderName[] {
-  return config.aiFinders.finders.map((f) => ({ id: f.id, name: f.name }));
-}
-
-/** §4.12's metricNumbers(metrics): every number the Gap panel shows. */
-export function metricPool(metrics: Metrics, config: Pick<LoadedConfig, "aiFinders">): PoolNumber[] {
-  return metricNumbers(metrics, finderNamesOf(config)).map((n) => ({ value: n.value, percent: n.percent }));
+/** §4.12's metricNumbers(metrics): every number the Gap panel shows (from the metrics file alone). */
+export function metricPool(metrics: Metrics): PoolNumber[] {
+  return metricNumbers(metrics).map((n) => ({ value: n.value, percent: n.percent }));
 }
 
 /** The numbers in the metrics' `headline.quoted` displays: what a Gap sentence (`gap: true`) may quote. */
@@ -154,10 +148,10 @@ const leadGrounded = defineRule({
   scope: "brief",
   needsMetrics: true,
   check: (input) => {
-    const { draft, derived, config } = input;
+    const { draft, derived } = input;
     const metrics = input.metrics!;
     const out: ValidationIssue[] = [];
-    const metricNums = metricPool(metrics, config);
+    const metricNums = metricPool(metrics);
     const quoted = quotedPool(metrics);
     const known = knownNamesFor(input);
     const gapText = `${metrics.headline.text}\n${metrics.headline.second_line}`;
@@ -347,7 +341,7 @@ const metricsOnlyNumbers = defineRule({
   scope: "brief",
   needsMetrics: true,
   check: (input) => {
-    const metricNums = metricPool(input.metrics!, input.config);
+    const metricNums = metricPool(input.metrics!);
     const out: ValidationIssue[] = [];
     for (const { field, items } of metricFields(input)) {
       const blocks = items.flatMap((it) => blockNumbers(input, it));
