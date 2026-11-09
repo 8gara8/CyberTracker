@@ -193,12 +193,13 @@ function isAlertUrl(config: RegionsConfig, code: LevelledRegion, url: string): b
 }
 
 /**
- * The regions whose agencies include `publisher` and whose alert_patterns match `url` (§5.11): what
- * collect's PackItem.alert and JPCERT records' facts.alert are built from (ruling R36). P2 WP2 fills this
- * stub (S0 contract).
+ * The regions whose agencies include `publisher` and whose alert_patterns match `url`'s normalised form
+ * (§5.11), in regions.json order: what collect's PackItem.alert and JPCERT records' facts.alert are built
+ * from, and what collectSignals() reads for items and records alike (ruling R36). A newsroom quoting an
+ * alert page is not an agency, so its items never count.
  */
 export function alertRegions(url: string, publisher: string, config: RegionsConfig): RegionCode[] {
-  throw new Error("not implemented: alertRegions");
+  return config.regions.regions.filter((r) => r.agencies.includes(publisher) && isAlertUrl(config, r.code, url)).map((r) => r.code);
 }
 
 /** A source or signal date as a Taipei calendar date: a timestamp converted, a bare date as written. */
@@ -228,9 +229,10 @@ export function compareSignalIds(a: string, b: string): number {
 
 /**
  * Today's region signals (§5.11), dated in [date − N_max, date]:
- * - `agency_alert`: every pack item whose publisher (publisherFor(), stamped by collect) is in a region's
- *   `agencies` and whose normalised URL matches one of that region's `alert_patterns`; Taipei date of
- *   `published_at`.
+ * - `agency_alert`: every pack item or record whose publisher (an item's as collect stamped it, a
+ *   record's from publisherFor() on its URL) is in a region's `agencies` and whose normalised URL matches
+ *   one of that region's `alert_patterns` (alertRegions(), ruling R36: JPCERT /at/ notes are records);
+ *   Taipei date of the item's `published_at` or the record's `date`.
  * - `home_vendor_kev`: every KEV entry with `dateAdded` in the span whose matchVendor() country is a
  *   region's `home_vendor_country`, all lags (the rule filters by lag); `dateAdded` (US date). Read from
  *   the catalog, or from kev-index.json when the catalog is null.
@@ -254,9 +256,10 @@ export function collectSignals(
   for (const it of pack?.items ?? []) {
     const d = taipeiDay(it.published_at);
     if (!inSpan(d)) continue;
+    const alerts = alertRegions(it.url, it.publisher, config);
     for (const r of config.regions.regions) {
       const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
-      if (r.agencies.includes(it.publisher) && isAlertUrl(config, r.code, it.url)) byType.agency_alert.push({ type: "agency_alert", ...base });
+      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
       if (r.certs.includes(it.publisher) && CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`))) {
         byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
       }
@@ -266,13 +269,12 @@ export function collectSignals(
     const d = taipeiDay(rec.date);
     if (!inSpan(d)) continue;
     const publisher = publisherFor(rec.url, "government", pubCfg).publisher;
-    if (!CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`))) continue;
+    const alerts = alertRegions(rec.url, publisher, config);
+    const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
     for (const r of config.regions.regions) {
-      if (!r.certs.includes(publisher)) continue;
-      byType.cert_exploitation.push({
-        type: "cert_exploitation", region: r.code, date: d, publisher, url: normalizeUrl(rec.url),
-        title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids],
-      });
+      const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
+      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
+      if (exploited && r.certs.includes(publisher)) byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
     }
   }
 

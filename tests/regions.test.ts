@@ -8,7 +8,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
+  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
   publisherCount, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
   type RegionsConfig,
 } from "@/lib/regions";
@@ -17,6 +17,7 @@ import {
   type KevIndexRow, type Pack, type RegionSignal, type Regions, type Source,
 } from "@/lib/schema";
 import { LEVELLED_REGIONS, REGION_RULE_TYPES, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import { D6_JP, D6_TW } from "./helpers/d6";
 
 const DATE = "2026-11-08";
 const SEED_REGIONS = RegionsFile.parse(JSON.parse(fs.readFileSync(path.join(__dirname, "../config/regions.json"), "utf8")));
@@ -484,6 +485,40 @@ describe("collectSignals", () => {
     expect(collectSignals(null, long, null, CONFIG, DATE)[0]!.title.length).toBeLessThanOrEqual(200);
   });
 
+  it("alertRegions() needs both an agency publisher and an alert-pattern URL (ruling R36)", () => {
+    expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "jpcert", CONFIG)).toEqual(["JP"]);
+    expect(alertRegions("https://WWW.JPCERT.OR.JP/at/2026/at260031.html?utm_source=rss", "jpcert", CONFIG)).toEqual(["JP"]);
+    expect(alertRegions("https://www.jpcert.or.jp/wr/2026/wr264101.html", "jpcert", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "bleepingcomputer", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-012/", "anssi", CONFIG)).toEqual(["EU"]);
+    expect(alertRegions("https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-0812/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://cisa.gov/news-events/directives/ed-26-03", "cisa", CONFIG)).toEqual(["US"]);
+  });
+
+  it("gives a JP agency_alert for a JPCERT /at/ record, and none for a newsroom item quoting the alert URL", () => {
+    const alertUrl = "https://www.jpcert.or.jp/at/2026/at260031.html";
+    const pack: Pick<Pack, "items" | "records"> = {
+      items: [{
+        id: "p0001", feed_id: "bleepingcomputer", outlet: "BleepingComputer", publisher: "bleepingcomputer", tier: 2, language: "en", region: "GLOBAL",
+        coverage: ["exploits"], title: "JPCERT warns of VPN attacks", snippet: `The alert is at ${alertUrl} for readers.`,
+        url: "https://www.bleepingcomputer.com/news/security/ct-sample-jpcert-warns/", published_at: "2026-11-07T02:00:00Z", cve_ids: [], alert: false,
+        flags: [], score: 30,
+      }],
+      records: [{
+        id: "r0001", source: "jpcert", record_id: "at260031", url: alertUrl, advisory_urls: [], title: "VPN 製品の脆弱性に関する注意喚起",
+        text: "注意喚起", date: "2026-11-07", vendor: null, product: null, cve_ids: ["CVE-2026-60010"], facts: { alert: true }, flags: [],
+      }],
+    };
+    const s = collectSignals(pack, null, null, CONFIG, DATE);
+    expect(s.map((x) => [x.id, x.type, x.region, x.date, x.publisher, x.url])).toEqual([
+      ["sig-20261108-1", "agency_alert", "JP", "2026-11-07", "jpcert", "https://jpcert.or.jp/at/2026/at260031.html"],
+    ]);
+    const r = previewRegions({ date: DATE, history: [], signals: s, kevIndex: { entries: [] }, config: CONFIG });
+    expect(row(r, "JP")).toMatchObject({ level: "high", rule_id: "agency-alert" });
+    // Without the record, the newsroom item alone raises nothing.
+    expect(collectSignals({ items: pack.items, records: [] }, null, null, CONFIG, DATE)).toEqual([]);
+  });
+
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {
     for (const t of ["exploited in the wild", "Actively Exploited", "is being exploited", "exploitation has been observed", "悪用", "攻撃が確認", "遭利用", "已被利用", "攻擊活動"]) {
       expect(CERT_EXPLOITATION_RE.test(t), t).toBe(true);
@@ -511,21 +546,14 @@ describe("previewRegions", () => {
 // ── Appendix D.6: the home-vendor rule alone, replayed ───────────────────────────────────────────
 
 describe("Appendix D.6 replay", () => {
-  // KEV additions for Taiwanese and Japanese vendors, 2025-01-01 to 2026-11-06: date, vendor, lags in days.
-  const TW: [string, string, number[]][] = [
-    ["2025-02-11", "Zyxel", [7, 7]], ["2025-03-19", "Edimax", [15]], ["2025-05-07", "GeoVision", [173, 324]], ["2025-05-15", "DrayTek", [139]],
-    ["2025-06-02", "ASUS", [1488, 630]], ["2025-06-25", "D-Link", [521]], ["2025-08-05", "D-Link", [1798, 1798, 980]], ["2025-12-08", "D-Link", [1198]],
-    ["2025-12-17", "ASUS", [0]], ["2025-12-22", "Digiever", [322]], ["2026-02-17", "TeamT5", [554]], ["2026-04-24", "D-Link", [395]],
-    ["2026-09-21", "Zyxel", [97]],
-  ];
-  const JP: [string, string, number[]][] = [
-    ["2025-03-03", "Hitachi Vantara", [700, 700]], ["2025-08-18", "Trend Micro", [13]], ["2025-10-14", "SKYSEA", [3049]], ["2025-10-22", "Motex", [2]],
-    ["2026-02-24", "Soliton Systems", [11]], ["2026-05-21", "Trend Micro", [0]],
-  ];
+  // KEV additions for Taiwanese and Japanese vendors, 2025-01-01 to 2026-11-06: date, vendor, lags in days
+  // (tests/helpers/d6.ts, shared with the Appendix D check).
+  const TW = D6_TW;
+  const JP = D6_JP;
   const catalog: KevCatalogEntry[] = [];
   const index: KevIndexRow[] = [];
   let n = 0;
-  for (const [date, vendorProject, lags] of [...TW, ...JP, ["2025-06-02", "Microsoft", [3]] as [string, string, number[]]]) {
+  for (const [date, vendorProject, lags] of [...TW, ...JP, ["2025-06-02", "Microsoft", [3]] as const]) {
     for (const lag of lags) {
       n += 1;
       const cve = `CVE-${date.slice(0, 4)}-${90000 + n}`;
