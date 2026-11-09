@@ -136,7 +136,7 @@ function provenanceOf(i: MetricsInputs, index: KevIndexFile, log: string[]): Omi
     cve_list_commit: pick("cve_list_commit", f.inputs.commits.cvelist, prev?.cve_list_commit, UNKNOWN_SHA),
     kev_data_commit: catalog && !kevFallback ? f.inputs.commits.kev_data : catalog ? null : prev?.kev_data_commit ?? null,
     epss_model_version: pick("epss_model_version", f.epss.e?.model_version ?? f.inputs.epss?.model_version, prev?.epss_model_version, UNKNOWN),
-    epss_date: pick("epss_date", f.epss.e?.score_date, prev?.epss_date, dataCutoffFor(i.date)),
+    epss_date: pick("epss_date", f.epss.e ? utcDateOf(f.epss.e.score_date) : null, prev?.epss_date, dataCutoffFor(i.date)),
     ghsa_source: GHSA_CREDIT_SOURCE,
     ghsa_commit: f.inputs.commits.ghsa ?? f.inputs.ghsa?.commit ?? null,
     config_versions: configVersions(i.config),
@@ -399,7 +399,7 @@ function epssEntry(feeds: MetricsFeeds): StatusEntry {
   const { read, e, e7 } = feeds.epss;
   if (e && e7 && read.status === "ok") return { name: "epss", status: "ok", asOf: null };
   if (!e && (read.status === "failed" || read.status === "skipped")) return { name: "epss", status: "failed", asOf: null };
-  const asOf = e?.score_date ?? (read.as_of ? utcDateOf(read.as_of) : null);
+  const asOf = e ? utcDateOf(e.score_date) : read.as_of ? utcDateOf(read.as_of) : null;
   return { name: "epss", status: "stale", asOf };
 }
 
