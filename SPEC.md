@@ -46,8 +46,8 @@ holds code and `content/`, and Vercel deploys every push to `main`. v1.0's cloud
 
    | Phase | Branch |
    |---|---|
-   | Foundation: SPEC v2.0, scaffolding, cloud-only scripts removed | `p0-setup` (PR #2, open) |
-   | P1 Data contract, seed configs, validator, chat renderer | `p1-contract` |
+   | Foundation: SPEC v2.0, scaffolding, cloud-only scripts removed | `p0-setup` (PR #2, merged 2026-11-09 Taipei) |
+   | P1 Data contract, seed configs, validator, chat renderer | `p1-contract` (PR #3) |
    | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` |
    | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` |
    | P4 Site | `p4-site` |
@@ -192,6 +192,30 @@ rows are what review and building found.
 | 4 | #2 | §8.2 | In v1.0 and Europe, `E_CLI` and `E_AUTH` in preflight stop the run. Now the run goes on as data-only and ends `published_data_only` with that code | An expired token still leaves a dated edition |
 | 5 | #2 | §0.2, §3, §8.4, §8.7 | The plan let only the morning pipeline push to `main`. After go-live, a state rebuild (`npm run backfill -- --catch-up --push` or `-- --credits --push`) also pushes, as `state:` commits through `publishState()` under the run lock; before go-live, backfill output goes through a phase PR | A PR touching `content/state/` would conflict with the daily commits |
 | 6 | #2 | §4.2 | Path rules compare `matchPath()`: unreserved percent-escapes decoded, repeated slashes collapsed, lower case | Codex round 3: an encoded `/%73earch` slipped past a blocked path prefix |
+| 7 | #3 | App. B, B.2, D.7 | `config/ai-finders.json`'s third `strip` rule is `\bClaude (?!Mythos\b\|Code\b\|Security\b\|Agents?\b)[A-Z][\w'’-]+\b(?! \d)`; the seed has `(?!Mythos\b\|Code\b)` | The seed rule stripped the "Claude Security", "Claude Security Scans" and "Claude Agents" credits as a person's name (65 records, D.7) |
+| 8 | #3 | App. B.3, B.4, B.5 | Three seed strings shortened to their schema limits: the `moda-acs` name is "MODA and its Administration for Cyber Security (資安署)" (seed 75 characters, limit 60); the `home-vendor-kev` label is "KEV addition for a home vendor's flaw under a year old" (61, limit 60); the `us-kev-three-day-deadline` detail says "worst" for "most severe" (126, limit 120) | The schemas reject the seed text as written |
+| 9 | #3 | §4.11, §4.2 | `github.tier1_paths` compile with flags "iu" (`TIER1_PATH_FLAGS` in `lib/sources.ts`), like `alert_patterns` (`ALERT_PATTERN_FLAGS`) | `matchPath()` lower-cases the path, so `^/CVEProject/` and `^/cisagov/` never matched |
+| 10 | #3 | §4.12 VICTIM_CLAIMED_UNNAMED | A claimed-only incident fails above `watch` (was `elevated`) and with a null `claimed_by`; the `UNNAMED_CLAIM` wording is checked in parts, not as the exact template | `INCIDENT_STATUS_INFO.claimed` and STYLE.md hold an attacker's claim at Watch |
+| 11 | #3 | §4.13, App. B.2, B.3, B.6 | The `anthropic-claude` e-mail example is `security@anthropic.example`; the 29 tier 3 publishers get plain names and `country` null; aliases with no named source have `by` "MITRE ATT&CK"; `the-hacker-news` and `cna` list `feeds.feedburner.com/thehackersnews` and `feeds.feedburner.com/rsscna` | No real e-mail address in the repo, the schemas need every field, and both RSS feeds must resolve to tier 1 or 2 |
+| 12 | #3 | §4.2, App. B.3 | `BLOCKED_HOSTS` adds api.github.com (paste) and archive.li, archive.md, archive.vn and archive.fo; dispute intake reads api.github.com by script only. `docs/SEED-CONFIG.md` stays frozen as the seed record; `lib/vocab.ts` governs. New exports `WITHHELD_MARK` and `PARTIAL_FEED_IDS`; `IOC_TLDS` holds 29 more TLDs than §4.12 lists; `ABBREVIATIONS` adds "Sept." and never "May." | Review found these hosts open, and the other modules needed the shared constants |
+| 13 | #3 | §4.3 to §4.7 | `IsoTimestamp` names a real instant; a stored Lead sentence may read exactly `WITHHELD_MARK`; a Brief has no `region_raises` key and a data-only one no raises; `GapWindow` and `TimeWindow` are separate; the state files' keys are stated | The schemas needed these limits written down |
+| 14 | #3 | §4.11, §8.6 | `CONFIG_SCHEMA` covers a missing file, the `lens_row` and `metric_path` enums, rule params and the 40-word and 25-word limits; `CONFIG_REF` covers agencies, certs, story actors, release vendors and claim thresholds; `CONFIG_REGEX` states how `examples` run; a single file under `fixtures/` loads the sample claims | The checks the loader runs were not all named |
+| 15 | #3 | §4.12 framework, Archived briefs, Word budgets | `RuleInput.crossFile` (`publishing`, `inputs`, `briefs`), set only by `validateAll`; `runRules` keeps CANARY and the safety codes past schema overlaps; on archived briefs NO_LIVE_IOC, NO_EXPLOIT_LINK and SOURCE_URL warn (`ARCHIVE_WARNING_CODES`), SECRET_LIKE stays an error; the page total runs only on the brief being published, against the metrics file its Gap shows; withheld text keeps maximums only; `draftView()` reads `context.pack.failed_feeds` | The cross-file rules and an archive edit needed these limits |
+| 16 | #3 | §4.12 shared definitions, §4.6 | `publisherFor()`: other github.com paths are tier 3 `host:github.com` and subdomains take the normal lookup; within a host the longest path prefix wins before the host-only entry; `packDatesOf()` reads item dates, then record dates; `finderNames()` splits the finders' display names; `orderItems()` sorts every item, so the top stories are the three highest | The lookups had cases the text did not settle |
+| 17 | #3 | §4.12 safety rules | NO_LIVE_IOC: lower-case domains only, listed hosts plus a path fail as URLs, `hxxp` defangs only the scheme, version-context IPv4 exempt; NO_EXPLOIT_LINK: unlisted publishers get the path check, words split on `-`, `_` and `.`, copied URL fields checked, four scanner syntaxes; SECRET_LIKE adds the AWS `ASIA`, Anthropic and OpenAI key and Stripe patterns | Fixtures showed false passes and false alarms |
+| 18 | #3 | §4.12 source rules | SOURCE_URL rejects `user:pass@`; SOURCE_UNSEEN skips FLAW_EVIDENCE's sources; SOURCE_TIER covers Elsewhere and an Angle with `source_id`, names `jvn` and `twcert`, and does not warn twice; a non-sole newsroom never counts for SOURCE_CRITICAL_TWO; SOURCE_STATE_LABEL takes the label's first word | Each rule had a case two rules both claimed or none did |
+| 19 | #3 | §4.12 CVE and grounding rules | CVE_PUBLISHED warns without a CVE List, scopes the Angle and Lens, and in published mode holds the CVE blocks to `cve_ids`' order with no extras; CVE_IN_SOURCE ignores record pages; VENDOR_CONFIRMED judges the first CVE; EXPLOITED_BASIS takes any CVE on KEV; LEAD_GROUNDED grounds names the headline uses and checks the Angle's path; GAP_MATCH lists the fields compared; METRICS_ONLY_NUMBERS states term casing; SELF_REPORTED_WORDING and ANTHROPIC_DISCLOSURE_LINE skip withheld items | Draft inputs carry no CVE blocks, and each rule needed its scope |
+| 20 | #3 | §4.12 naming rules, §4.6 | VICTIM_STATUS: a word starting "ransom" plus a currency amount, and "say" attributes; ATTRIBUTION_NAMED: which entries each field may name, and how cues and terms match; ATTRIBUTION_CONFIDENCE uses §4.6's qualifying test | The table, §4.6 and the vocabulary comments disagreed |
+| 21 | #3 | §4.12 item and id rules | ID_FORMAT checks a patch batch id against its `release_id`; ITEM_CAP's 10 and 6 are fixed; TOP3_WHY exempts withheld items; TAIWAN_LENS_REQUIRED fixes the no-news forms; REGION_RAISE's one-step test fails only on critical; STANDING_STORY_NEW_FACT defines "dated after an edition"; SCOREBOARD_REF checks `strongest_against` | Fixtures needed one exact failing condition each |
+| 22 | #3 | §4.12 snapshot gates, COMPUTED_MISMATCH | SNAP_MISSING stands in for the other snapshot codes; the soft pass drops the Angle on any SNAP_* and removes Scoreboard entries with SNAP_QUOTE; COMPUTED_MISMATCH checks `word_count` only when the Gap shows the same-date file, `first_seen` alone only for a future date, and publisher agreement | Keeps one warning per cause and no false mismatch |
+| 23 | #3 | §4.10, §4.12 validateAll | A withheld item's region reasons and raises read "[withheld]" (XREF_CORRECTION checks it); correction ids run from C-0001; XREF_STATUS compares the last run with an edition; a metrics file without its manifest is MANIFEST_MISMATCH; a brief with no same-date metrics fails GAP_MATCH at `gap`; `.DS_Store` ignored, `README.md` allowed | A reason can name the victim, and the folder checks needed exact forms |
+| 24 | #3 | §4.12 Fixtures and tests, §7 Site tests, §8.1, §9.2 | F cases live in `fixtures/src/invalid/<group>.ts` (`INVALID_CASES`); each valid draft has its own inputs; CVE records are trimmed real ones; `fixtures/src/kev-rows.json` holds 108 real KEV rows; the T config case changes a tier, a `cna` list, an actor alias and a claim's status; `fixtures:check` compares in memory against `FIXTURE_DIRS`; §8.1 lists P1's scripts | Rule 10 bars exploit links, and each draft needs inputs of its own |
+| 25 | #3 | §5.2, §5.3, §5.5, §5.7, §5.8 | Adds `fmt2()`; `fmtDate(d, editionDate)`; the in-KEV line names the finder id and reads no config; `kev_lines` read "not available today" when `home_vendors` is null; directions come from `metrics.headline`; `quoted` holds the number as printed; the footer falls back to the run's finder version; the old-flaw pace is `oldListedPace()`; tests in `tests/metrics.test.ts` | Each text needed one helper and a fallback |
+| 26 | #3 | §5.11, §4.15 | `RegionsInput.items` come from `regionItems()`; signals merge by type, region and URL (CVE id for KEV); a KEV signal links the cve.org record and falls back to the KEV index; only the first raise counts, none on critical; `{vendor}` falls back; preview `basis` is null at baseline | Two regions' signals from one URL must stay apart, and `computeRegions()` must be total |
+| 27 | #3 | §7 | `gapHeadlineLine(brief, gapOk)`, `regionSummary()` returns `{ head, reason }`, `cveTimeline`, `releaseLine` and `fixSideLines` take `editionDate`; the card shows the release line, else the first CVE timeline; a data-only notice names stale feeds; `gapNotices()` names Flood, Window, AI-credited and Fix-side; the footer's second line only when `live_from` is after the first week | Dates need the edition year, and §7 named no block or casing |
+| 28 | #3 | §8.3 | The Partial rung names `PARTIAL_FEED_IDS`; the sanitiser strips HTML tags and comments only, drops script, style, template and noscript with their content, turns `<pre>` into `[code removed]`, decodes semicolon entities only, repeats steps 1 to 6 until stable (`CLEAN_PASSES` 32) and keeps "…" | `<untrusted>` must stay visible, and the output must be idempotent |
+| 29 | #3 | §8.2, §8.6 | `NEXT_STEP`'s "10:00" is `publish_until` minus one hour and "11:00" `publish_until`; `logs/D.regions-input.json` holds `date`, `history`, `signals`, `kevIndex`; `--all [DIR] [--json]`; " Hint:" on the issue line; plural summary; an unparsable draft is SCHEMA at `(file)`, exit 1; `--all` prefixes paths `<file>: ` | The agent's repair reads one line per issue |
+| 30 | #3 | §8.8 | `ChatInput` adds `notes` to failed and `kevNew` to data-only; E_TIMEOUT has an agent-ran text; counts plural; the usage note names its window; `chatGuard()` also removes Markdown destinations, autolinks and `//host` URLs; `safePath()` hides odd paths; `<A>` counts records whose draft stage ran; `npm run chat` reads `dry_run` records and limits stale feeds to `PARTIAL_FEED_IDS`; the data-only KEV count reads the metrics, also when the brief holds no items (`New on CISA's exploited list (<n>).`); EPSS through `fmt2()` | The chat must match the site and never link off-site |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -696,6 +720,7 @@ export const EDITOR_RAISED = "Editor raised: {reason}"; export const NO_NEWS_ROW
 export const TAIWAN_NO_NEWS = "No fresh Taiwan-relevant development today; the rows below still apply.";
 export const NONE_FOUND = "none found"; export const SCOREBOARD_NO_ENTRY = "No new Scoreboard entry; last: {date}, {claim}";
 export const WITHHELD_HEADLINE = "Item under review"; export const WITHHELD_TEXT = "Details withheld from {date} while a dispute about a named party is reviewed.";
+export const WITHHELD_MARK = "[withheld]"; // replaces Lead, Angle, Lens and region-reason text that lists a withheld item (§4.10)
 export const STALE_BANNER = "Not updated today. Last edition: {date}, {time}"; export const BRIEF_END = "That's today's brief.";
 // Safety lists (committed in Foundation)
 export const BLOCK_REASONS = ["exploit_code", "paste", "messaging", "shortener", "redirect", "archive", "leak_site", "scan_query"] as const;
@@ -710,10 +735,14 @@ with a non-actionable path, or a reserved example domain; never a usable exploit
 query or a paste link. Every path rule (a `BLOCKED_HOSTS` path prefix, `github.tier1_paths`,
 NO_EXPLOIT_LINK's tier 3 path segments) compares `matchPath()` (`lib/urls.ts`): the URL's path with
 percent-escapes of unreserved characters decoded (RFC 3986 §6.2.2.2), runs of slashes collapsed and
-letters lower-cased, so `/%73earch` and `//search` match `/search`. `lib/vocab.ts` also exports, defined where used: `BANNED_WORDS`, `IOC_TLDS`,
+letters lower-cased, so `/%73earch` and `//search` match `/search`. P1 added `api.github.com` (reason
+`paste`: it serves repository files and archives) and the archive mirrors archive.li, archive.md,
+archive.vn and archive.fo, with both deny forms in `routine/agent-settings.json`. Dispute intake reads
+the correction issues from `api.github.com` by script only (§8.9), as collect reads
+`raw.githubusercontent.com` (§4.13). `lib/vocab.ts` also exports, defined where used: `BANNED_WORDS`, `IOC_TLDS`,
 `PAYLOAD_PATTERNS`, `NEXUS_TERMS`, `ATTRIBUTION_CUES`, `METRIC_TERMS`, `ABBREVIATIONS` (§4.12);
 `COUNTRY_CODES` (ISO 3166-1 alpha-2 with English names); `INJECTION_PATTERNS` (§4.14);
-`DISPUTE_FORM_OPTIONS` (§8.9).
+`PARTIAL_FEED_IDS` (§8.3); `DISPUTE_FORM_OPTIONS` (§8.9).
 
 ### 4.3 Shared types
 
@@ -721,7 +750,8 @@ letters lower-cased, so `/%73earch` and `//search` match `/search`. `lib/vocab.t
 
 ```ts
 type IsoDate = string;            // YYYY-MM-DD, a real calendar date
-type IsoTimestamp = string;       // ISO 8601 with offset, e.g. 2026-11-08T04:50:12+08:00
+type IsoTimestamp = string;       // ISO 8601 with offset, e.g. 2026-11-08T04:50:12+08:00, naming a real instant: a real
+                                  // calendar date, hour ≤ 23, minute and second ≤ 59, offset within ±14:00
 type PublishedAt = IsoTimestamp | IsoDate | null;
 type CountryCode = string;        // ISO 3166-1 alpha-2, upper case, in COUNTRY_CODES
 type Language = string;           // ^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?$, e.g. "en", "zh-Hant", "ja"
@@ -810,7 +840,7 @@ interface DraftBrief {
   sources: DraftSource[];         // every URL the draft cites
 }
 interface LeadSentence {
-  text: string;                   // one sentence ending in . ? or !; no URL
+  text: string;                   // one sentence ending in . ? or !, or exactly WITHHELD_MARK in a stored brief (§4.10); no URL
   item_ids: string[];             // ≥ 1 unless gap is true
   gap: boolean;                   // it quotes Gap numbers; each must match metrics headline.quoted (§4.12)
 }
@@ -974,7 +1004,8 @@ Elsewhere, the Scoreboard, the Week in review and corrections are not counted. C
 `config/run.json` (§4.11, §4.12).
 
 **Data-only brief.** Composed by `lib/data-only.ts` with no model. `lead` `[]`, `angle` `null`,
-`region_raises` `[]`, regions from the rules engine, `gap` as usual, `epss_movers` filled. One
+regions from the rules engine with no raises (a Brief has no `region_raises` key: a draft's raises live
+on as `regions.rows[].raised`), `gap` as usual, `epss_movers` filled. One
 `exploited_flaw` item per CVE in `kev.new_since_last_edition` (newest first, at most 10): `ai_role`
 `"unassessed"`, `severity` `null`, `claim_type` `"government"` (CISA's listing), `landmark` false,
 headline and summary from templates in `lib/data-only.ts`, `regions` the matched vendor's home region
@@ -992,7 +1023,8 @@ through `validatePublished`; the sample content's data-only edition carries new-
 **Also today** rows under their kind's head. **Order:** top stories by severity rank (a `landmark` item
 ranks as Elevated), then kind `rank`, so exploited flaws precede breaches at equal severity. Also-today
 rows are grouped by head in `HEADS` order and sorted the same way inside each head. The agent writes the
-order; the validator checks it (§4.12).
+order; the validator checks it (§4.12). `orderItems()` sorts every item this way (stable), so the top
+stories are always the three highest-ranked items and only the rest are grouped by head.
 
 ```ts
 interface Item {
@@ -1178,7 +1210,7 @@ interface WindowStats {           // one window of KEV additions joined to their
   after_disclosure_median_days: number | null; after_disclosure_median_ci80: Interval | null; // null when after_disclosure_n < MIN_N
   k7_n: number; p7: number | null; p7_ci80: Interval | null; // R with lag ≤ 7; p7 = k7_n / cohort_n
 }
-interface Window {
+interface Window {                // GapWindow in code (Window would shadow the DOM type); { start, end } is TimeWindow
   w26: WindowStats;               // 182 days ending data_cutoff_utc
   w13: WindowStats;               // the 13-week window
   reference: WindowStats;         // 2023-01-01 to 2024-12-31, fixed
@@ -1282,8 +1314,12 @@ their staging folders and committed by publish (after go-live, `backfill --push`
 | `series.json` | The weekly series (`Series` fields) from 2023-01-02 | Extended by the first run after a week completes; rebuilt by `npm run backfill` |
 
 Each `state/` file has `schema_version: 1` and `updated_at`: the `data_cutoff_utc` it was written for,
-never the clock, so two runs at the same commit and cutoff write the same bytes. P2 checks the size of
-`credit-candidates.json` after the backfill; past 5 MB, split it by year.
+never the clock, so two runs at the same commit and cutoff write the same bytes. The rows sit under
+`entries` (`kev-index.json`), `days`, `matches` (`ai-credits.json`) and `candidates`
+(`credit-candidates.json`); `anthropic-cvd.json` holds `revision`, `as_of`, `fetched_at`, `source_url`,
+`found_n`, `disclosed_n`, `patched_n` and `ledger_ids`, null or empty until a revision is read
+(`lib/schema/metrics.ts`). P2 checks the size of `credit-candidates.json` after the backfill; past 5 MB,
+split it by year.
 
 ### 4.8 Status
 
@@ -1445,7 +1481,9 @@ interface ArchiveIndex {
   `headline` becomes `WITHHELD_HEADLINE`, `summary` `WITHHELD_TEXT`, `why_it_matters` `null`, and
   `incident.victim` `null` (victim dispute) or `attribution` `[]` and `actor_nexus` `null` (attribution
   dispute); `withheld` is set. Any Lead sentence, Angle or Taiwan Lens text that lists the item id
-  becomes "[withheld]", and so does the title of any source cited only by that item. The id never names
+  becomes "[withheld]" (`WITHHELD_MARK`), and so does the title of any source cited only by that item. So do the `reason`
+  of any region row whose `item_ids` list it and the `raised.reason` of any raise that does (a reason
+  embeds the item's headline, §5.11), in that brief and in any later stored brief. The id never names
   a victim, so links keep working. Git history still holds the old text; only JL can purge it (§9.2).
 - If the dispute is rejected, a later `update` correction may restore the text, citing the evidence.
 
@@ -1467,10 +1505,10 @@ preflight runs them every morning (§8.2).
 
 | Code (§4.12) | Fails when |
 |---|---|
-| `CONFIG_SCHEMA` | A file does not parse against its schema |
+| `CONFIG_SCHEMA` | A file is missing or does not parse against its schema (a watch window's `lens_row` and a claim's `metric_path` are enums, so an unknown one fails here); also, at load, a region rule's `params` other than those its type reads (§5.11), a standing story's `summary` over 40 words, a claim's `restates.quote` over 25 words |
 | `CONFIG_DUP` | Two entries share an id, a normalised vendor name or alias, a CNA short name, a domain, or an actor alias |
-| `CONFIG_REF` | An id points at nothing: a region agency that is not a publisher, an actor id in a standing story, a lens row, a claim metric path |
-| `CONFIG_REGEX` | A pattern does not compile with its flags, or an `examples` entry does not behave as stated |
+| `CONFIG_REF` | An id points at nothing: a region agency or cert that is not a publisher, an actor id in a standing story, a `run.json` `releases[].vendor_id` that is not a vendor. Or a claim's thresholds don't fit it: a script-judged claim without value thresholds, a report-judged one without event thresholds, a `ci80_*` bound on a path with no 80% interval |
+| `CONFIG_REGEX` | A pattern does not compile with its flags, or an `examples` entry does not behave as stated (each `match` makes that finder the first match; each `no_match` matches no finder) |
 
 **Sample claims.** The sample editions cite SB-01 and SB-02 from `fixtures/config/claims.json` (marked
 SAMPLE), while `config/claims.json` holds no claims until P5. So `loadConfig()` reads
@@ -1484,8 +1522,9 @@ that cites them. Production, the morning run, dry runs (`logs/dry-run/tree` incl
 builds and `validate:all` on `content/` always use `config/claims.json`.
 `loadConfig({ overrides: { claims } })` replaces one file's parsed contents explicitly: callers that
 need the sample's claims without a content folder under `fixtures/`, namely the tests (including those
-on temporary copies of `fixtures/site-content/`) and the fixtures builder (`fixtures/src/`, which
-`fixtures:check` runs in a temporary folder), pass `fixtures/config/claims.json` this way (§4.12).
+on temporary copies of `fixtures/site-content/`) and the fixtures builder (`fixtures/src/`), pass
+`fixtures/config/claims.json` this way (§4.12). `scripts/validate.ts` given one file under `fixtures/` (a
+draft, as in the P1 milestone) loads them too, so it needs no `CT_CONTENT_DIR`.
 
 **Shared rules.** Ids match `^[a-z0-9][a-z0-9-]*$`. Domains are lower-case hosts, optionally with a path
 prefix (`microsoft.com/en-us/security/blog`), no scheme, no `www.`; a host entry also matches its
@@ -1561,7 +1600,7 @@ and count only in `ledger_only_anthropic` (§5.5). List changes: §4.7.
 interface SourceTiersFile {       // source-tiers.json
   schema_version: 1; version: number; updated: IsoDate;
   publishers: Publisher[];
-  github: { tier1_paths: string[] }; // regexes on the github.com URL path
+  github: { tier1_paths: string[] }; // regexes, flags "iu", on the matchPath() of the github.com URL path (§4.2)
 }
 interface Publisher {
   id: string; name: string;       // name ≤ 60 chars
@@ -1574,7 +1613,10 @@ interface Publisher {
 `publisherFor(url, source_type)` (`lib/sources.ts`, §4.12 gives the full order) takes the longest
 matching domain across `publishers` and the implicit vendor publishers; an unlisted host is tier 3,
 `host:<host>`, or tier 1 for a `victim` source. `github.com` paths matching a `tier1_paths` regex belong
-to `github-advisories` (tier 1); every other `github.com` path is blocked as `exploit_code`. Blocked URLs
+to `github-advisories` (tier 1); every other `github.com` path is tier 3, `host:github.com`, whatever its
+source type, and blocked as `exploit_code`. `publisherFor()` never matches a `github.com` entry in
+`domains` (`github-advisories` lists one, so NO_LIVE_IOC lets the bare name through); a subdomain such as
+docs.github.com takes the normal lookup. Blocked URLs
 (`BLOCKED_HOSTS` plus those paths) never appear in any draft or brief field (`NO_EXPLOIT_LINK`,
 `SOURCE_URL`) and collect drops them from the pack (§4.14). Syndicated copies count once (§4.12).
 
@@ -1708,7 +1750,8 @@ Wilson z) stay in `lib/metrics/` (§5): changing one needs a spec change, not a 
 `lib/rules/` holds each rule as a pure function returning `ValidationIssue[]`, one file per group (named
 in the table). The framework is Europe's, copied: `lib/rules/types.ts` (`ValidationIssue`, `Rule`,
 `RuleInput`, `error()`, `warning()`), the engine `lib/validate.ts` (`formatPath`, `schemaIssues`, a
-best-effort `runRules` that skips paths overlapping a schema error) and the CLI `scripts/validate.ts` (§8.6).
+best-effort `runRules` that skips paths overlapping a schema error, except for CANARY and the safety codes,
+which read raw strings and are always kept) and the CLI `scripts/validate.ts` (§8.6).
 
 ```ts
 interface ValidationIssue { code: string; severity: "error" | "warning"; path: string; message: string; hint: string | null }
@@ -1724,7 +1767,10 @@ interface RuleInput {
   evidence: Evidence | null;
   cveList: CveLookup | null;    // the CVE List as collect fetched it this morning
   regionsBase: Omit<RegionsInput, "items" | "raises"> | null; // signals, history, kevIndex, config (§5.11)
-  packDates: Record<string, IsoTimestamp> | null;             // normalised pack URL → published_at
+  packDates: Record<string, IsoTimestamp> | null;             // normalised pack URL → published_at (packDatesOf():
+                                                              //   pack items' published_at, else records' date)
+  // validateAll only, null elsewhere: the inputs manifest and the other briefs (GAP_MATCH, COMPUTED_MISMATCH, "all" scope)
+  crossFile: { publishing: boolean; inputs: InputsManifest | null; briefs: Brief[] } | null;
 }
 interface Evidence {            // logs/D.evidence.json; fixtures/evidence/<name>.json (§8.12); never committed
   urls: string[];               // normalised: pack item, record and advisory URLs ∪ WebFetch inputs ∪
@@ -1761,7 +1807,9 @@ words; the limit is 90. Cut at least 7.").
   (published mode requires only that each claim id exists in `config/claims.json`); SOURCE_CRITICAL_TWO's
   `sole_newsroom_for_critical` test; FLAW_EVIDENCE's source fit; VICTIM_STATUS's newsroom kind (published
   mode takes a stored tier 2 source as the newsroom); and the config names in `knownNames()` (published
-  mode uses only each item's own names, for LEAD_GROUNDED and ATTRIBUTION_NAMED). COMPUTED_MISMATCH
+  mode uses only each item's own names, for LEAD_GROUNDED and ATTRIBUTION_NAMED); and the page total
+  against `budgets.words_max` (WORDS_OVER at `(root)`), which published mode checks only on the brief
+  `publishing` names (the per-field budgets, the spec's own, apply to every brief). COMPUTED_MISMATCH
   compares the config-derived fields with the current config only on the brief publish is writing
   (`validateAll(dir, { publishing: D, config })`, §8.7 step 6), which `lib/apply.ts` froze moments earlier
   from that same config; only the edition publish calls pass the option, with the config the run loaded,
@@ -1769,10 +1817,12 @@ words; the limit is 90. Cut at least 7.").
   (`word_count`, the counts, `ai_linked`, `actor_nexus`, `public_exploit`, `first_seen`, the manifest's
   CVE fields) is checked on every brief. The safety codes (`SAFETY_CODES`, §6) keep reading the current
   lists in both modes (`BLOCKED_HOSTS`, NO_LIVE_IOC's listed domains, NO_EXPLOIT_LINK's
-  `github.tier1_paths`), since the site must never show what is unsafe today. A hit from one of these
-  lists on any brief except the one `publishing` names is a warning, not an error: the site still skips
-  that brief (§6 item 2) and the build log names it, but a list change never turns a PR red or makes
-  publish refuse later editions. Any other new rule, or list change, meant to apply to archives must be
+  `github.tier1_paths`), since the site must never show what is unsafe today. On any brief except the one
+  `publishing` names, every NO_LIVE_IOC, NO_EXPLOIT_LINK and SOURCE_URL error (SOURCE_URL reads the
+  `BLOCKED_HOSTS` redirect and archive entries) is a warning, not an error (`ARCHIVE_WARNING_CODES`,
+  `lib/validate.ts`); SECRET_LIKE stays an error, since a secret is never acceptable. The site still skips
+  a brief with a safety-code hit (§6 item 2) and the build log names it, but a list change never turns a
+  PR red or makes publish refuse later editions. Any other new rule, or list change, meant to apply to archives must be
   one they can pass (§6 item 4).
 - **Editions.** Full and partial editions run every rule. A data-only edition (§4.5) is composed by
   `lib/data-only.ts`, never by the agent, and runs only the rules marked †.
@@ -1788,7 +1838,10 @@ words; the limit is 90. Cut at least 7.").
   `sources[].title_en`, `elsewhere[].title`.
 - **Tier lookup:** `publisherFor(url, source_type)` (`lib/sources.ts`) applies `normalizeUrl()` (§4.1);
   the first hit wins: (1) a `github.com` path matching a `source-tiers.json` `github.tier1_paths` regex:
-  publisher `github-advisories`, tier 1; (2) the longest matching domain (host, then each parent) across
+  publisher `github-advisories`, tier 1, and any other `github.com` path: tier 3, kind `other`,
+  `host:github.com` (a `github.com` entry in `domains` never matches); (2) the longest matching domain
+  (host, then each parent; within a host the longest path prefix, on segment boundaries, before the
+  host-only entry) across
   `publishers` and the implicit vendor publishers from `vendors.json` `domains` (tier 1, kind `vendor`,
   `vendor:<id>`; an explicit entry wins); (3) a `source_type: victim` source on an unlisted host: tier 1,
   kind `other`, `host:<host>`; (4) anything else: tier 3, kind `other`, `host:<host>`. It returns `{ tier,
@@ -1809,16 +1862,21 @@ words; the limit is 90. Cut at least 7.").
   number **matches** a value that, rounded to our number's decimal places, equals it; after "about",
   "around", "nearly", "almost", "roughly", "more than", "over" or "~", rounded at our number's last
   non-zero digit ("about 1,400" matches 1,393). Against the metrics, matching is exact equality with
-  `metricNumbers(metrics)`: the Gap panel's display strings (§5), parsed the same way.
+  `metricNumbers(metrics)` (`lib/metrics/headline.ts`): the Gap panel's display strings (§5), parsed the
+  same way.
 - **Known names:** `knownNames(config, items)`: actor names and aliases, vendor names and aliases, finder
-  names (`actors.json`, `vendors.json`, `ai-finders.json`), and each item's `incident.victim`,
+  names (`actors.json`, `vendors.json`, `ai-finders.json`; `finderNames()` splits a display name such as
+  "Org: A, B" or "X (a, b)" into its names, drops " systems" and " used by a researcher", and gives none
+  for the "Other ..." catch-all), and each item's `incident.victim`,
   `incident.claimed_by`, `attribution[].attributed_by` and `.actor_name_as_used`. Case-sensitive on word
   boundaries; an actor matches through any alias.
 - **Sentences:** `splitSentences(text)` (`lib/text.ts`) splits after `.`, `!` or `?` plus whitespace,
-  except after `ABBREVIATIONS` (U.S., U.K., e.g., i.e., Inc., Co., Ltd., Corp., No., vs., St., Jan. to Dec.).
+  except after `ABBREVIATIONS` (U.S., U.K., e.g., i.e., Inc., Co., Ltd., Corp., No., vs., St., Jan. to Dec.
+  and Sept., compared case-sensitively; never "May.", so a sentence may end "in May.").
 - **Display order:** `orderItems()` (`lib/items.ts`) implements §4.6: `SEVERITY_INFO` rank (critical 4
   to watch 1; a severity-less `landmark` item `LANDMARK_RANK` 2; other severity-less items 0), then
-  `KIND_INFO[kind].rank` (§4.2); the agent's order breaks ties. Rows group by head in `HEADS` order.
+  `KIND_INFO[kind].rank` (§4.2); the agent's order breaks ties. It sorts every item, the first three are
+  the top stories, and the rest group by head in `HEADS` order.
 
 #### Rule table
 
@@ -1836,19 +1894,19 @@ Fixtures and tests). † also runs on data-only editions.
 | METRICS_MISSING | W | brief | `metrics` is null, so the rules that need it are skipped | T |
 | CONFIG_SCHEMA, CONFIG_DUP, CONFIG_REF, CONFIG_REGEX | E | config | §4.11 | T: a broken copy of each config file (`tests/config.test.ts`) |
 | **Ids** (`ids.ts`) | | | | |
-| ID_FORMAT † | E | brief; reuse check draft | An item id breaks the format (§4.3): `cve-` only on a flaw kind, and then `cve_ids[0]` lower-cased; otherwise the kind's `KIND_INFO.slug` prefix (`vuln` for a flaw item without a CVE id, `pt`, `sc`, `inc`, `camp`, `ai`, `eco`, `pol`) plus a slug `[a-z0-9]+(-[a-z0-9]+)*`, at most 64 characters; a `patch_batch` id is its release candidate's `pt-<vendor id>-YYYY-MM`, or `pt-<vendor id>-YYYY-MM-DD` when §5.12 appends the UTC day. Draft mode: an id used in the last 14 days (`context.recent_items`) for a different kind | F |
+| ID_FORMAT † | E | brief; reuse check draft | An item id breaks the format (§4.3): `cve-` only on a flaw kind, and then `cve_ids[0]` lower-cased; otherwise the kind's `KIND_INFO.slug` prefix (`vuln` for a flaw item without a CVE id, `pt`, `sc`, `inc`, `camp`, `ai`, `eco`, `pol`) plus a slug `[a-z0-9]+(-[a-z0-9]+)*`, at most 64 characters; a `patch_batch` id is its release candidate's `pt-<vendor id>-YYYY-MM`, or `pt-<vendor id>-YYYY-MM-DD` when §5.12 appends the UTC day, checked against the item's own `release_id` (`pt-` plus what follows `rel-`; a null or malformed `release_id` fails). Draft mode: an id used in the last 14 days (`context.recent_items`) for a different kind | F |
 | ID_SEQUENCE † | E | brief | `sources[i].id` isn't `s${i + 1}` (s1, s2, s3 in array order, no gaps or repeats). The agent writes no correction ids: publish assigns `C-NNNN` and `validateAll` checks them (§4.10) | F |
 | ID_DUPLICATE † | E | brief | Two items share an id (item ids are CVE ids or slugs: format and uniqueness only) | F |
 | **Items and sections** (`items.ts`) | | | | |
-| ITEM_CAP † | E | brief | More than 10 items (0 is allowed), or more than 6 `elsewhere` rows | F |
+| ITEM_CAP † | E | brief | More than 10 items (0 is allowed), or more than 6 `elsewhere` rows (fixed limits, never read from `run.json`) | F |
 | ITEM_ORDER | E | brief | `items` not in display order; the message names the first item out of place and where it belongs | F |
-| TOP3_WHY | E | brief | Full or partial edition: one of the first three items (all, when fewer) has a null or blank `why_it_matters`, or one that isn't exactly one sentence | F |
+| TOP3_WHY | E | brief | Full or partial edition: one of the first three items (all, when fewer) has a null or blank `why_it_matters`, or one that isn't exactly one sentence. A withheld item (§4.10) is exempt | F |
 | SEVERITY_NULL_FOR_NONTHREAT | E | brief | An item of a kind with `KIND_INFO.severity: "none"` (`ai_capability`, `ecosystem`, `policy`) has a severity; another kind has none; `landmark: true` on a kind that requires a severity | F |
 | SEVERITY_KIND | E | brief | An `exploited_flaw` item below `high`, or a `critical_flaw` item above `elevated` (an unexploited flaw is Elevated at most) | F |
-| TAIWAN_LENS_REQUIRED | E | brief | `taiwan_lens.analysis` blank after trimming; `rows` not exactly the six `TAIWAN_LENS_ROWS` in order; a non-null row or Japan `text` with no item or source id; an id in `taiwan_lens.item_ids`, `rows[].item_ids` or `japan.item_ids` that isn't an item in this brief. A day with nothing new uses exactly `TAIWAN_NO_NEWS`; a null row or Japan text renders `NO_NEWS_ROW` | F |
-| REGION_RAISE | E | draft | A `region_raises` entry isn't exactly one step above the level `computeRegions()` (§5.11) gives that region from the draft's items and `regionsBase`; a region raised twice; a raise with no `item_ids`, or citing an item whose `regions` lacks that region | F |
-| STANDING_STORY_NEW_FACT | E | draft | (a) An item whose headline contains a standing story's `match_terms` has `standing_story: null`; (b) an unknown story id; (c) the item cites no tier 1 or 2 source dated after the story's `last_development` (`packDates` when the URL is in the pack, else the source's `published_at`); with `last_development` null, (c) passes on any tier 1 or 2 source. An item whose id appeared in an edition in the last 14 days needs a tier 1 or 2 source dated after that edition and not cited for it then | F, T |
-| SCOREBOARD_REF | E | brief; open-claim and `judged_by` tests draft | `angle.claim_id` isn't an open claim in `config/claims.json`; a `scoreboard_entries[].claim_id` isn't a `judged_by: "report"` claim; an entry's `quote_source_id` isn't tier 1 or 2; an entry whose quote source is a `finder_writeup` (an AI lab on its own system) has a `claim_type` other than `self_reported` (publish enters those as `neutral`, §4.9) | F |
+| TAIWAN_LENS_REQUIRED | E | brief | `taiwan_lens.analysis` blank after trimming; `rows` not exactly the six `TAIWAN_LENS_ROWS` in order; a non-null row or Japan `text` with no item or source id; an id in `taiwan_lens.item_ids`, `rows[].item_ids` or `japan.item_ids` that isn't an item in this brief. A day with nothing new uses exactly `TAIWAN_NO_NEWS`: a non-blank analysis citing no item or source id must be exactly that. A null row or Japan text renders `NO_NEWS_ROW`; a text written as `NO_NEWS_ROW` fails (write null) | F |
+| REGION_RAISE | E | draft | A `region_raises` entry isn't exactly one step above the level `computeRegions()` (§5.11) gives that region from the draft's items and `regionsBase`; a region raised twice; a raise with no `item_ids`, or citing an item whose `regions` lacks that region. A draft item's `first_seen` is the earliest of `context.recent_items` and `regionsBase.history` for its id, else the edition date; the draft names no target level, so the one-step test fails only when the computed level is already `critical` | F |
+| STANDING_STORY_NEW_FACT | E | draft | (a) An item whose headline contains a standing story's `match_terms` has `standing_story: null`; (b) an unknown story id; (c) the item cites no tier 1 or 2 source dated after the story's `last_development` (`packDates` when the URL is in the pack, else the source's `published_at`); with `last_development` null, (c) passes on any tier 1 or 2 source. An item whose id appeared in an edition in the last 14 days needs a tier 1 or 2 source dated after that edition and not cited for it then. "Dated after an edition": a timestamp after that edition's news window closed (`pack.window_end` on its date), or a bare date after its date. `match_terms` match in any case on word boundaries; known story ids are the context's and config's | F, T |
+| SCOREBOARD_REF | E | brief; open-claim and `judged_by` tests draft | `angle.claim_id` isn't an open claim in `config/claims.json`; a `scoreboard_entries[].claim_id` isn't a `judged_by: "report"` claim; an entry's `quote_source_id` isn't tier 1 or 2; an entry whose quote source is a `finder_writeup` (an AI lab on its own system) has a `claim_type` other than `self_reported` (publish enters those as `neutral`, §4.9); a `week_in_review.strongest_against.claim_id` not in `config/claims.json` (both modes). "Open" means `resolution` null and the date on or before `deadline` | F |
 | **Words and limits** (`words.ts`) | | | | |
 | WORDS_OVER, WORDS_UNDER | E | brief | A field breaks its budget (below), or the page total exceeds `budgets.words_max` (1,300); the message gives the count, the limit and how many words to cut or add | F |
 | QUOTE_MAX_25 | E | brief | A quoted field over 25 words or blank (`attribution[].confidence_text` may be null); a quoted span in a prose field (between “ and ”, or straight double quotes) over 25 words | F |
@@ -1856,45 +1914,46 @@ Fixtures and tests). † also runs on data-only editions.
 | **Sources** (`sources.ts`) | | | | |
 | SOURCE_REF † | E | brief | A cited source id doesn't exist. Source-id fields: `items[].source_ids`, `ai_evidence[].source_id`, `attribution[].source_id`, `incident.status_source_ids`, `flaw_evidence[].source_id`, `exposure.source_id`; `angle.source_id`, `angle.counterpoint_source_ids`; `taiwan_lens.source_ids`, `rows[].source_ids`, `japan.source_ids`; `scoreboard_entries[].quote_source_id`; `week_in_review.strongest_against.source_ids`; `corrections[].source_id`; `elsewhere[].source_id`. Also an `ai_evidence`, `attribution`, `incident` or `flaw_evidence` source missing from its item's `source_ids`, and an item with no source ids | F |
 | SOURCE_DUP | E | brief | Two sources share a normalised URL | F |
-| SOURCE_URL † | E | brief | A source URL isn't https, is malformed, or is on a `BLOCKED_HOSTS` entry with reason `redirect` or `archive` (news.google.com, google.com/url, l.facebook.com, out.reddit.com, href.li; archive.org including web.archive.org, archive.today and mirrors such as archive.ph, ghostarchive.org). Cite the original page | F |
-| SOURCE_UNSEEN | E (W without evidence) | draft | A normalised source URL isn't in `evidence.urls`. URLs already failing SOURCE_URL or NO_EXPLOIT_LINK are skipped; with no evidence file the rule only warns that it was skipped | F |
-| SOURCE_TIER | E (W for unlisted domains) | brief; `source_type` fit draft | An item, the Angle or a scoreboard entry has no tier 1 or 2 source. An unlisted domain is tier 3 and warns; tier 3 is never cited for facts, only beside a tier 1 or 2 source. A `source_type` that doesn't fit its publisher: `cve_record` needs a record publisher (`cve-org`, `nvd`, `github-advisories`, JVN or TVN); `vendor_advisory` kind `vendor`; `government` kind `government`, `cert` or `regulator`; `regulator_filing` kind `regulator`; `press` a tier 2 newsroom; `victim`, `finder_writeup`, `research` tier 1 or 2; `other` tier 3 only | F |
-| SOURCE_CRITICAL_TWO | E | brief; fetched and sole-newsroom checks draft | A Critical item has fewer than two publishers, or none of tier 1. If its only tier 2 publisher has `sole_newsroom_for_critical: false` (The Hacker News), it needs two publishers without it. Draft mode: at least one of its sources must be in `evidence.fetched` | F |
+| SOURCE_URL † | E | brief | A source URL isn't https, is malformed, or is on a `BLOCKED_HOSTS` entry with reason `redirect` or `archive` (news.google.com, google.com/url, l.facebook.com, out.reddit.com, href.li; archive.org including web.archive.org, archive.today and mirrors such as archive.ph, ghostarchive.org); or carries a user name or password before the host (`user:pass@`, which can hide the real host). Cite the original page | F |
+| SOURCE_UNSEEN | E (W without evidence) | draft | A normalised source URL isn't in `evidence.urls`. URLs already failing SOURCE_URL or NO_EXPLOIT_LINK are skipped, and so are sources a `flaw_evidence` entry cites from its own item (FLAW_EVIDENCE's); with no evidence file the rule only warns that it was skipped | F |
+| SOURCE_TIER | E (W for unlisted domains) | brief; `source_type` fit draft | An item, an Elsewhere link, or an Angle whose `source_id` is set has no tier 1 or 2 source (a metric Angle is grounded by LEAD_GROUNDED; a scoreboard entry's quote source is SCOREBOARD_REF's). An unlisted domain (a tier 3 `host:` publisher, read from the frozen fields in published mode) is tier 3 and warns (not for a URL SOURCE_URL or NO_EXPLOIT_LINK already fails); tier 3 is never cited for facts, only beside a tier 1 or 2 source. A `source_type` that doesn't fit its publisher: `cve_record` needs a record publisher (`cve-org`, `nvd`, `github-advisories`, `jvn` or `twcert` for TVN); `vendor_advisory` kind `vendor`; `government` kind `government`, `cert` or `regulator`; `regulator_filing` kind `regulator`; `press` a tier 2 newsroom; `victim`, `finder_writeup`, `research` tier 1 or 2; `other` tier 3 only | F |
+| SOURCE_CRITICAL_TWO | E | brief; fetched and sole-newsroom checks draft | A Critical item has fewer than two publishers, or none of tier 1. A publisher with `sole_newsroom_for_critical: false` (The Hacker News) never counts toward the two. Draft mode: at least one of its sources must be in `evidence.fetched` | F |
 | SOURCE_SYNDICATED | E | brief | A Critical item reaches two publishers only by counting syndicated copies separately (fires instead of SOURCE_CRITICAL_TWO when the bar is met before folding and missed after) | F |
-| SOURCE_STATE_LABEL | E | draft | An item cites a source whose publisher has a `state_label` (PRC state sources such as CVERC and the PRC ministries, tier 1; PRC state media such as Xinhua, Global Times, CGTN, tier 3; Russian state media) and neither headline nor summary contains that label or "<country> state claim" ("PRC state claim"), or its `claim_type` isn't `government` | F |
+| SOURCE_STATE_LABEL | E | draft | An item cites a source whose publisher has a `state_label` (PRC state sources such as CVERC and the PRC ministries, tier 1; PRC state media such as Xinhua, Global Times, CGTN, tier 3; Russian state media) and neither headline nor summary contains that label or "<country> state claim" ("PRC state claim"; `<country>` is the label's first word, matched in any case), or its `claim_type` isn't `government` | F |
 | SOURCE_ORPHAN | W | brief | A source no source-id field references | T |
 | **CVEs and flaws** (`cves.ts`) | | | | |
-| CVE_PUBLISHED † | E | brief | A CVE id (`CVE-\d{4}-\d{4,}`, any case) in a prose field, quoted field or `cve_ids` isn't `PUBLISHED` in the CVE List as collect fetched it that morning (draft: `cveList`; published: the item's stored CVE block); REJECTED, RESERVED and unknown ids fail. Also a CVE id in an item's text that isn't in its `cve_ids`, and one in the Lead, Angle or Taiwan Lens that isn't in the `cve_ids` of an item it cites | F |
-| CVE_IN_SOURCE | E (W when nothing can be checked) | draft | A CVE id in an item's text is neither in a cited URL nor in the seen text of any of the item's sources other than CVE record pages (cve.org, nvd.nist.gov, github.com/CVEProject). When none of those sources has seen text, the item gets SNAP_MISSING instead | F |
-| VENDOR_CONFIRMED | E | brief; confirmation-source check draft | A `critical_flaw` item without vendor confirmation has a severity other than `watch`. Confirmation is the CVE block's `vendor_confirmed_by` (§4.6): the assigner is in the matched vendor's `cna` list, a GitHub-reviewed GHSA, or a checked `flaw_evidence` entry on one of the vendor's `domains` (draft mode computes it the same way). The page labels such an item `NOT_VENDOR_CONFIRMED`; it never feeds the Gap | F |
-| EXPLOITED_BASIS | E | brief | An `exploited_flaw` item whose CVE isn't on KEV has no `flaw_evidence` entry of kind `exploited` with basis `vendor_confirmed` or `cert_confirmed` | F |
-| FLAW_EVIDENCE | E | brief; evidence-set and source-fit checks draft | A `flaw_evidence` entry fails publish's check (§4.6): `cve_id` not in the item's `cve_ids`; basis doesn't fit the kind (`patched` takes only `vendor_advisory`; `exploited` takes `vendor_confirmed`, `cert_confirmed` or `news_reported`); source doesn't fit the basis (`vendor_confirmed`, `vendor_advisory`: on the matched vendor's own `domains`; `cert_confirmed`: a publisher of kind `cert`; `news_reported`: a tier 2 newsroom). Draft mode: the source URL isn't in `evidence.urls` | F |
+| CVE_PUBLISHED † | E (W without a CVE List) | brief | A CVE id (`CVE-\d{4}-\d{4,}`, any case) in a prose field, quoted field or `cve_ids` isn't `PUBLISHED` in the CVE List as collect fetched it that morning (draft: `cveList`; published: the item's stored CVE block); REJECTED, RESERVED and unknown ids fail. Also a CVE id in an item's text that isn't in its `cve_ids`, and one in the Lead, Angle or Taiwan Lens that isn't in the `cve_ids` of an item it cites (the Angle cites the items sharing one of its sources; each Lens block, the analysis, a row or Japan, its own `item_ids`). Published mode: each `cve_ids` entry needs its CVE block at the same index, with no extra blocks (§4.6), and ids outside items, Lead, Angle and Lens are checked in draft mode only. Draft mode with no CVE List: one warning at `(cveList)` that the test was skipped | F |
+| CVE_IN_SOURCE | E (W when nothing can be checked) | draft | A CVE id in an item's text is neither in a cited URL nor in the seen text of any of the item's sources other than CVE record pages (cve.org, nvd.nist.gov, github.com/CVEProject), which count for neither test. When none of those sources has seen text, a warning at the field; with no evidence file, one warning at `(evidence)` | F |
+| VENDOR_CONFIRMED | E | brief; confirmation-source check draft | A `critical_flaw` item without vendor confirmation has a severity other than `watch`. Confirmation is the CVE block's `vendor_confirmed_by` (§4.6): the assigner is in the matched vendor's `cna` list, a GitHub-reviewed GHSA, or a checked `flaw_evidence` entry on one of the vendor's `domains` (draft mode computes it the same way: `vendor_advisory` needs the entry's source in `source_ids` and `evidence.urls`, and `ghsa_reviewed` a cited github.com/advisories/GHSA- page). It is judged on the first CVE, as the page's chip is; an item with no CVE id is unconfirmed. The page labels such an item `NOT_VENDOR_CONFIRMED`; it never feeds the Gap | F |
+| EXPLOITED_BASIS | E | brief | An `exploited_flaw` item none of whose CVEs is on KEV (draft: a `kev-index.json` row, the record's ADP KEV marker or the candidate's `kev`; published: a block with `kev`) has no `flaw_evidence` entry of kind `exploited` with basis `vendor_confirmed` or `cert_confirmed` | F |
+| FLAW_EVIDENCE | E | brief; evidence-set and source-fit checks draft | A `flaw_evidence` entry fails publish's check (§4.6; a source missing from `source_ids` is SOURCE_REF's): `cve_id` not in the item's `cve_ids`; basis doesn't fit the kind (`patched` takes only `vendor_advisory`; `exploited` takes `vendor_confirmed`, `cert_confirmed` or `news_reported`); source doesn't fit the basis (`vendor_confirmed`, `vendor_advisory`: on the matched vendor's own `domains`; `cert_confirmed`: a publisher of kind `cert`; `news_reported`: a tier 2 newsroom). Draft mode: the source URL isn't in `evidence.urls`; the matched vendor is `matchVendor()` on the KEV `vendorProject`, then the record's vendors, the candidate's vendor, a patch batch's release vendor, and an unmatched CVE fails a `vendor_*` basis | F |
 | **Grounding and numbers** (`grounding.ts`) | | | | |
-| LEAD_GROUNDED | E | brief; the Angle's source text draft | A Lead sentence cites an id that isn't an item; has empty `item_ids` and `gap: false`; has `gap: true` and a number not in the metrics' `headline.quoted`; has empty `item_ids` and a known name, or a number not in `metricNumbers(metrics)`; holds a number matching neither the text and CVE blocks of the items it cites nor the metrics; holds a known name absent from the text, incident and attribution fields of the items it cites. The Angle likewise: its one number against `metric_path` in the metrics, or its source's seen text | F |
-| GAP_MATCH † | E | brief, all | The script-copied Gap block (`gap`, §4.5) or `taiwan_lens.kev_lines` differ from the same-date `metrics/D.json`; in `validateAll`, a brief whose metrics file is missing. The model never writes these fields | T |
-| METRICS_ONLY_NUMBERS | E | brief | A sentence in an item field, the Taiwan Lens, the Japan block or `week_in_review` that uses a `METRIC_TERMS` term (KEV additions, added to KEV, on CISA's list, exploited list, CVE records, AI-credited, at disclosure, n-day, median lag, the Flood, the Window, the Gap) holds a number not in `metricNumbers(metrics)` or that item's CVE block. The Lead and Angle are LEAD_GROUNDED's | F |
+| LEAD_GROUNDED | E | brief; the Angle's source text draft | A Lead sentence cites an id that isn't an item; has empty `item_ids` and `gap: false`; has `gap: true` and a number not in the metrics' `headline.quoted`; has empty `item_ids` and a known name, or a number not in `metricNumbers(metrics)`; holds a number matching neither the text and CVE blocks of the items it cites nor the metrics; holds a known name absent from the text, incident and attribution fields of the items it cites (a name the metrics' `headline.text` or `second_line` uses counts as grounded: "173 excluding Anthropic"). `gap: true` sentences are checked only against `headline.quoted`; in draft mode the CVE-block numbers come from the context candidates. The Angle likewise: with `metric_path`, its one number must equal a display string for that path (`headline.quoted` or the data table), or the raw value under the rounding rule when the path has none, and a path that names no number fails at `angle.metric_path`; with `source_id`, it must match its source's seen text | F |
+| GAP_MATCH † | E | brief, all | The script-copied Gap block (`gap`, §4.5) or `taiwan_lens.kev_lines` differ from the same-date `metrics/D.json`: `gap` must read status `ok` with that `metrics_file`, and its `headline`, `second_line`, `as_of` and `kev_lines` must match (`metrics_sha256`, which no rule can recompute, and `kev_note`, a vocabulary string, are not compared). In `validateAll`, a brief with no valid same-date metrics file fails at `gap`. The model never writes these fields | T |
+| METRICS_ONLY_NUMBERS | E | brief | A sentence in an item field, the Taiwan Lens, the Japan block or `week_in_review` that uses a `METRIC_TERMS` term (KEV additions, added to KEV, on CISA's list, exploited list, CVE records, AI-credited, at disclosure, n-day, median lag, the Flood, the Window, the Gap) holds a number not in `metricNumbers(metrics)` or that item's CVE block (Lens blocks: the CVE blocks of the items they cite; `week_in_review`: the metrics only). Terms match in any case, straight or curly apostrophes alike, except "the Flood", "the Window" and "the Gap", which need the capital; quoted fields are exempt. The Lead and Angle are LEAD_GROUNDED's | F |
 | **AI role** (`ai.ts`) | | | | |
 | AI_EVIDENCE_REQUIRED | E | brief | An `ai_role` in `AI_LINKED_ROLES` with no `ai_evidence` or a null `ai_confidence`; `none` with evidence, a confidence, an `ai_claimant` or a secondary role; `ai_role_secondary` equal to `ai_role` or not in `AI_LINKED_ROLES`; `claimed` without `ai_claimant`; more than 3 evidence entries | F |
 | AI_CONFIRMED_NONPRESS | E | brief | `ai_confidence: "confirmed"` without an `ai_evidence` entry whose `from_claimant` is false and whose source has `source_type` `cve_record`, `vendor_advisory`, `government` or `victim` | F |
-| SELF_REPORTED_WORDING | E | brief | `claim_type: "self_reported"` but neither headline nor summary attributes the claim (says, said, claims, claimed, reports, reported, according to); or `self_reported` with `ai_confidence: "confirmed"` | F |
-| ANTHROPIC_DISCLOSURE_LINE | E | brief | `anthropic_disclosure` differs from `mentionsAnthropic(item)`: Anthropic, Claude, Mythos or Glasswing as whole words (any case) in any prose or quoted field of the item or its `ai_claimant`, `incident` or `attribution` fields; a cited source whose publisher is `anthropic`; or a CVE block whose `ai_credit.family` is `anthropic`. `lib/apply.ts` sets it at publish and the card shows `ANTHROPIC_LINE` | T |
+| SELF_REPORTED_WORDING | E | brief | `claim_type: "self_reported"` but neither headline nor summary attributes the claim (says, said, claims, claimed, reports, reported, according to); or `self_reported` with `ai_confidence: "confirmed"`. A withheld item is exempt | F |
+| ANTHROPIC_DISCLOSURE_LINE | E | brief | `anthropic_disclosure` differs from `mentionsAnthropic(item)`: Anthropic, Claude, Mythos or Glasswing as whole words (any case) in any prose or quoted field of the item or its `ai_claimant`, `incident` or `attribution` fields; a cited source whose publisher is `anthropic`; or a CVE block whose `ai_credit.family` is `anthropic`. `lib/apply.ts` sets it at publish and the card shows `ANTHROPIC_LINE`. A withheld item is exempt | T |
 | **Victims and attribution** (`naming.ts`) | | | | |
-| VICTIM_STATUS | E | brief | A `breach` item with a null `incident`; `status: "confirmed"` with no tier 1 source among `incident.status_source_ids` of `source_type` `victim`, `regulator_filing` (an SEC 8-K, a MOPS notice, a TDnet disclosure) or `government` (CERTs included); `status: "reported"` with no tier 2 newsroom among them; a sentence with "ransom" and a currency amount that doesn't attribute it (says, said, according to) | F |
-| VICTIM_CLAIMED_UNNAMED | E | brief | A `claimed` incident with a non-null `incident.victim`; a claimed-only incident in the top three or above `elevated`; a summary without the `UNNAMED_CLAIM` wording ("claimed by", the `incident.claimed_by` group, "unverified") | F |
-| ATTRIBUTION_NAMED | E | brief | A prose sentence holds a `NEXUS_TERMS` word (China, Chinese, PRC, Beijing, Russia, Russian, Kremlin, North Korea, North Korean, DPRK, Pyongyang, Iran, Iranian, Tehran, state-sponsored, state-backed, nation-state, and their -nexus, -linked and -backed forms) and an `ATTRIBUTION_CUES` cue (hacker, group, actor, APT, campaign, operation, espionage, intrusion, attack, behind, linked, nexus, sponsored, backed, attributed, responsible, or a known actor name) but doesn't name, in that sentence, the `attributed_by` of an attribution entry with that `nexus` (on the item, or for Lead and Taiwan Lens sentences on an item they cite). An entry with basis `government` must read "<government> attributes" or "<government> says" | F |
-| ATTRIBUTION_CONFIDENCE | E | brief | An entry whose `confidence_level` is `low`, or whose `confidence_text` holds a `LOW_CONFIDENCE_MARKERS` entry (§4.2), has a non-null `sponsor_claimed` or a `nexus` other than `unknown`; a `nexus` other than `unknown` with a null `sponsor_claimed`; a `confidence_level` other than `unstated` with a null `confidence_text` | F |
+| VICTIM_STATUS | E | brief | A `breach` item with a null `incident`; `status: "confirmed"` with no tier 1 source among `incident.status_source_ids` of `source_type` `victim`, `regulator_filing` (an SEC 8-K, a MOPS notice, a TDnet disclosure) or `government` (CERTs included); `status: "reported"` with no tier 2 newsroom among them; a sentence with a word starting "ransom" (so "ransomware" counts) and a currency amount (a symbol or code before a number, or a number before a currency word or code) that doesn't attribute it (say, says, said, according to) | F |
+| VICTIM_CLAIMED_UNNAMED | E | brief | A `claimed` incident with a non-null `incident.victim` or a null `claimed_by`; a claimed-only incident in the top three or above `watch` (`INCIDENT_STATUS_INFO.claimed`: at most Watch); a summary without the `UNNAMED_CLAIM` wording, checked in parts ("claimed by", the `incident.claimed_by` group, "unverified") rather than as the exact template | F |
+| ATTRIBUTION_NAMED | E | brief | A prose sentence holds a `NEXUS_TERMS` word (China, Chinese, PRC, Beijing, Russia, Russian, Kremlin, North Korea, North Korean, DPRK, Pyongyang, Iran, Iranian, Tehran, state-sponsored, state-backed, nation-state, and their -nexus, -linked and -backed forms) and an `ATTRIBUTION_CUES` cue (hacker, group, actor, APT, campaign, operation, espionage, intrusion, attack, behind, linked, nexus, sponsored, backed, attributed, responsible, or a known actor name) but doesn't name, in that sentence, the `attributed_by` of an attribution entry with that `nexus`: an item field's own item's entries; for a Lead sentence, the Lens analysis, rows and Japan block and a raise reason, those of the items in its `item_ids`; for any other field, any entry in the brief. Cues match with s, es, ed, er, ers or ing endings, "APT" case-sensitively; nexus terms match in any case, hyphen and space alike; the generic state words match any state nexus. An entry with basis `government` must read "<government> attributes" or "<government> says" | F |
+| ATTRIBUTION_CONFIDENCE | E | brief | An entry that doesn't qualify (§4.6: `confidence_level` `low`, a `LOW_CONFIDENCE_MARKERS` entry in `confidence_text`, or `unstated` with a `basis` other than `government`) has a non-null `sponsor_claimed` or a `nexus` other than `unknown`; a `nexus` other than `unknown` with a null `sponsor_claimed`; a `confidence_level` other than `unstated` with a null `confidence_text` | F |
 | **Dangerous material** (`safety.ts`) | | | | |
-| NO_LIVE_IOC † | E | brief | In a prose field, quoted field or title: a URL of any scheme; a lower-case domain whose last label is in `IOC_TLDS` (com, net, org, info, biz, io, co, me, xyz, top, site, online, club, shop, app, dev, cloud, ru, su, cn, hk, tw, jp, kr, kp, ir, uk, de, fr, nl, eu, us, cc, tk, ml, ga, cf, gq, pw, ws, to, ly, in, br, vn, ua, by, kz, and more) unless listed in `source-tiers.json` or `vendors.json`; an IPv4 address (every octet 255 or less, not within two words after "version", "v", "build", "firmware" or "release"); an email address; any `.onion` or `.i2p` name. Defanged forms pass (`hxxp://`, `hxxps://`, `[.]`, `(.)`, `[@]`, `[:]`); the site renders them as plain `<code>`, never as links | F |
-| NO_EXPLOIT_LINK † | E | brief | A source URL on a `BLOCKED_HOSTS` entry (§4.2: exploit archives, paste and raw-file hosts, messaging, link shorteners, leak sites, scanner searches, the code hosts gitlab.com, bitbucket.org, codeberg.org, sourceforge.net and huggingface.co, any `.onion` or `.i2p` host) other than the `redirect` and `archive` entries (SOURCE_URL's); a `github.com` URL whose path matches no `github.tier1_paths` regex; a tier 3 URL with a path segment poc, exploit, exploits, payload or 0day. In prose: a scanner query (shodan, censys, fofa or zoomeye with `field:value` syntax in the same sentence) or a `PAYLOAD_PATTERNS` match (code fences, `${jndi:`, `<script`, `/bin/sh`, `cmd.exe /c`, `powershell -enc`, `curl` or `wget` piped into a shell, `' OR 1=1`, `../../`) | F |
-| SECRET_LIKE † | E | brief | In any string: `AKIA[0-9A-Z]{16}`, `gh[pousr]_[A-Za-z0-9]{36,}`, `github_pat_[A-Za-z0-9_]{20,}`, `xox[abprs]-[A-Za-z0-9-]{10,}`, `AIza[0-9A-Za-z_-]{35}`, `(?<![A-Za-z0-9])sk-[A-Za-z0-9]{20,}` (so a slug such as `risk-…` passes), `-----BEGIN [A-Z ]*PRIVATE KEY-----` (the repo is public, and GitHub push protection would reject the push, losing the full edition). The message gives the path and the pattern's name, never the match | F |
+| NO_LIVE_IOC † | E | brief | In a prose field, quoted field or title: a URL of any scheme; a lower-case domain whose last label is in `IOC_TLDS` (com, net, org, info, biz, io, co, me, xyz, top, site, online, club, shop, app, dev, cloud, ru, su, cn, hk, tw, jp, kr, kp, ir, uk, de, fr, nl, eu, us, cc, tk, ml, ga, cf, gq, pw, ws, to, ly, in, br, vn, ua, by, kz, and 29 more in `lib/vocab.ts`) unless it is, or is a subdomain of, a host `source-tiers.json` or `vendors.json` lists (path prefixes stripped; a listed host followed by a path is a URL without its scheme and fails); a capitalised "Booking.com" is a name and passes; an IPv4 address (every octet 255 or less, not within two words after "version", "v", "build", "firmware" or "release"); an email address; any `.onion` or `.i2p` name. Defanged forms pass (`[.]`, `(.)`, `[@]`, `[:]`); `hxxp://` and `hxxps://` defang only the scheme, so the host after them is checked like any text. The site renders them as plain `<code>`, never as links | F |
+| NO_EXPLOIT_LINK † | E | brief | A source URL on a `BLOCKED_HOSTS` entry (§4.2: exploit archives, paste and raw-file hosts, messaging, link shorteners, leak sites, scanner searches, the code hosts gitlab.com, bitbucket.org, codeberg.org, sourceforge.net and huggingface.co, any `.onion` or `.i2p` host) other than the `redirect` and `archive` entries (SOURCE_URL's); a `github.com` URL whose path matches no `github.tier1_paths` regex; a URL that is tier 3 or whose publisher is unlisted (`host:`, an unlisted victim site at tier 1 included) with a path segment that is, or holds as a word split on `-`, `_` or `.`, poc, exploit, exploits, payload or 0day (`/cve-2026-1234-poc`, `/exploit.py`; `exploitation-report` passes). A Brief's copies of source URLs (patch, exploitation evidence, release, Scoreboard, corrections, region signals) get the host and `github.com` checks. In any text field (prose, quoted, titles): a scanner query (shodan, censys, fofa or zoomeye in the same sentence as search syntax: `field:value`, `field="value"` or `field=="value"`, or `field=value` with no spaces) or a `PAYLOAD_PATTERNS` match (code fences, `${jndi:`, `<script`, `/bin/sh`, `cmd.exe /c`, `powershell -enc`, `curl` or `wget` piped into a shell, `' OR 1=1`, `../../`) | F |
+| SECRET_LIKE † | E | brief | In any string: `(?:AKIA\|ASIA)[0-9A-Z]{16}`, `gh[pousr]_[A-Za-z0-9]{36,}`, `github_pat_[A-Za-z0-9_]{20,}`, `xox[abprs]-[A-Za-z0-9-]{10,}`, `AIza[0-9A-Za-z_-]{35}`, `(?<![A-Za-z0-9])sk-[A-Za-z0-9]{20,}`, `(?<![A-Za-z0-9])sk-(?:ant\|proj\|svcacct\|admin)-[A-Za-z0-9_-]{20,}` (so slugs such as `risk-…` and `sk-telecom-…` pass), `(?<![A-Za-z0-9])[rs]k_live_[A-Za-z0-9]{20,}`, `-----BEGIN [A-Z ]*PRIVATE KEY-----` (the repo is public, and GitHub push protection would reject the push, losing the full edition). The message gives the path and the pattern's name, never the match | F |
 | **Script-set fields** (`computed.ts`) | | | | |
-| COMPUTED_MISMATCH † | E | brief, all; config-derived fields only on the brief being published | A script-only field differs from what code computes: `computed.word_count` (`pageWords`), `.item_count`, `.source_count`, `.publisher_count`, `.ai_linked` (`linked`: items whose `ai_role` or `ai_role_secondary` is in `AI_LINKED_ROLES`; `total`: items), `late` (`published_at` after `stale_after`, 08:00 Taipei, on `date`); each item's `actor_nexus` (§4.6: the nexus every qualifying attribution entry agrees on, else `unknown`; never from `actors.json`, the product or past campaigns), `public_exploit` and `first_seen`; each CVE block's `vendor_confirmed_by`; each source's `tier`, `publisher`, `publisher_name`, `state_label`; each CVE block field the inputs manifest (§4.7) also lists for that CVE | T |
+| COMPUTED_MISMATCH † | E | brief, all; config-derived fields only on the brief being published | A script-only field differs from what code computes: `computed.word_count` (`pageWords`, checked only when the Gap shows the same-date metrics file), `.reading_minutes`, `.item_count`, `.source_count`, `.publisher_count`, `.ai_linked` (`linked`: items whose `ai_role` or `ai_role_secondary` is in `AI_LINKED_ROLES`; `total`: items), `late` (`published_at` after `stale_after`, 08:00 Taipei, on `date`); each item's `actor_nexus` (§4.6: the nexus every qualifying attribution entry agrees on, else `unknown`; never from `actors.json`, the product or past campaigns), `public_exploit` and `first_seen` (alone, only a date after `date`: XREF_FIRST_SEEN owns the cross-brief test); each CVE block's `vendor_confirmed_by` (a stored `ghsa_reviewed` passes when `ghsa_ids` is not empty); each source's `tier`, `publisher`, `publisher_name`, `state_label`; each CVE block field the inputs manifest (§4.7) also lists for that CVE (its window, `home_vendors` and `ai_credited` rows); sources sharing a `publisher` that disagree on its name, tier or label | T |
 
 Items never link an exploit: they show `PUBLIC_EXPLOIT_LABEL` (§4.6). **Close relatives:** one code
 covers related checks, so each invalid fixture fails with exactly one code. SOURCE_REF covers every
 source-id field and sources missing from `source_ids`; ID_FORMAT an id reused for another kind;
 TAIWAN_LENS_REQUIRED unknown ids in the Lens; CVE_PUBLISHED CVE ids missing from `cve_ids`; SOURCE_TIER a
-`source_type` against its publisher; FLAW_EVIDENCE a source outside the evidence set;
+`source_type` against its publisher; FLAW_EVIDENCE a source outside the evidence set (SOURCE_UNSEEN skips
+it); WORDS_OVER and WORDS_UNDER the Angle's count of numbers;
 STANDING_STORY_NEW_FACT repeats of recent items; VICTIM_STATUS unattributed ransom amounts;
 ATTRIBUTION_NAMED the wording of government attributions; WEEKLY_FLAG the "Strongest evidence against" box.
 
@@ -1902,12 +1961,14 @@ ATTRIBUTION_NAMED the wording of government attributions; WEEKLY_FLAG the "Stron
 
 `wordFields(brief)` (`lib/rules/words.ts`) holds every budget in one table, as Europe's does. The total
 is `pageWords(brief, metrics)` (§4.5: cap `budgets.words_max`, 1,300; target `budgets.words_target`,
-about 1,100, prompt only; no minimum), stored as `computed.word_count`. Counting is `countWords()` (§4.1).
+about 1,100, prompt only; no minimum), stored as `computed.word_count`, where `metrics` is the file the
+Gap shows (`gap.metrics_file`, an earlier one when stale). Counting is `countWords()` (§4.1). A withheld
+item's fields and any `WITHHELD_MARK` text keep their maximums but lose their minimums (§4.10).
 
 | Field | Budget | In the total |
 |---|---|---|
 | `lead[].text`, summed over sentences | 15 to 90 words | yes |
-| `angle.text`; `angle.counterpoint` | at most 30 words, holding exactly one number; at most 30 words | yes |
+| `angle.text`; `angle.counterpoint` | at most 30 words, holding exactly one number (`numbersIn()`: none is WORDS_UNDER, two or more WORDS_OVER); at most 30 words | yes |
 | `items[i].headline` | at most 90 characters (schema) | yes |
 | Top stories (`items[0..2]`): `summary`; `summary` + `why_it_matters` | at most 55; 15 to 70, with `why_it_matters` one sentence of at most 25 | yes |
 | Rows (`items[3..]`): `summary`; `why_it_matters` (optional, under "details") | at most 25 each | yes |
@@ -1919,8 +1980,12 @@ about 1,100, prompt only; no minimum), stored as `computed.word_count`. Counting
 | `week_in_review.text`; `strongest_against.text` | at most 150; at most 50 | no |
 | `scoreboard_entries[].summary`; `corrections[].reason` | at most 40 each | no |
 
-`scriptText(brief, metrics)` is exactly what the page shows: every counted script string comes from
-`lib/page-text.ts` (§7); draft mode takes the region rows from `computeRegions()` on the draft. Verify in
+`scriptText(brief, metrics, opts)` is exactly what the page shows: every counted script string comes from
+`lib/page-text.ts` (§7). Draft mode counts `draftView()` (`lib/rules/words.ts`): region rows from
+`computeRegions()` on the draft (`first_seen` from `context.recent_items`, else today); each card's
+vendor, first CVE timeline and release line rebuilt from the CVE List, the KEV rows, the context's
+candidates and `flaw_evidence`; partial when `context.metrics.stale` or `context.pack.failed_feeds` is
+not empty; `late` false. That count is provisional, and publish recounts it (COMPUTED_MISMATCH). Verify in
 P4: the `countWords()` sum of the strings components mark `data-words` equals `computed.word_count` on
 every dry-run edition.
 
@@ -1940,16 +2005,16 @@ COMPUTED_MISMATCH's config-derived checks, Archived briefs above), then (each wi
 | Code | Fails when |
 |---|---|
 | FILE_NAME | A file under `briefs/`, `metrics/`, `metrics/inputs/` or `status/` isn't named `YYYY-MM-DD.json` with a real date, or its `date` differs from its name (DATE_MISMATCH) |
-| FILE_UNEXPECTED | A file outside `content/`'s fixed layout (§3): `briefs/`, `metrics/`, `metrics/inputs/`, `status/`, the `state/` files of §4.7, `scoreboard.json`, `corrections.json`, `archive-index.json`, and an optional top-level `README.md` (so `fixtures/empty-content/`, which holds only one, passes). Publish runs it before every commit and stages nothing else; it never stages a `README.md` |
+| FILE_UNEXPECTED | A file outside `content/`'s fixed layout (§3): `briefs/`, `metrics/`, `metrics/inputs/`, `status/`, the `state/` files of §4.7, `scoreboard.json`, `corrections.json`, `archive-index.json`, and an optional top-level `README.md` (so `fixtures/empty-content/`, which holds only one, passes); `.DS_Store` is ignored. Publish runs it before every commit and stages nothing else; it never stages a `README.md` |
 | XREF_UNRESOLVED | A brief without a same-date `metrics/` and `status/` file; a correction whose target brief date or item id doesn't exist; a `claim_id` (brief or `scoreboard.json`) not in `config/claims.json` |
 | XREF_FIRST_SEEN | An item's `first_seen` isn't the earliest brief date containing its id |
 | XREF_KIND | One item id carries different kinds in different briefs |
-| XREF_STATUS | A status file's final edition or publish time differs from the brief's `edition` or `published_at` |
-| XREF_CORRECTION | A `name_removed` correction whose target item isn't rewritten as §4.10 says (`withheld` set; `incident.victim` null after a victim dispute; `attribution` `[]` and `actor_nexus` null after an attribution dispute); correction ids not unique and consecutive (`C-NNNN`) |
+| XREF_STATUS | The status file's last run with a non-null `edition`, or that run's matching `*_published_at`, differs from the brief's `edition` or `published_at`; a status that records a publish for a date with no brief |
+| XREF_CORRECTION | A `name_removed` correction whose target item isn't rewritten as §4.10 says (`withheld` set; `incident.victim` null after a victim dispute; `attribution` `[]` and `actor_nexus` null after an attribution dispute; "[withheld]" as the reason of every region row and raise of that brief that lists the item); correction ids not unique and consecutive from `C-0001` |
 | XREF_ARCHIVE | `archive-index.json` doesn't list exactly the brief files, with matching `edition` and `published_at` |
-| MANIFEST_MISMATCH | A count in `metrics/D.json` differs from the number of ids its inputs manifest lists for it (§4.7) |
+| MANIFEST_MISMATCH | A count in `metrics/D.json` differs from the number of ids its inputs manifest lists for it (§4.7); a metrics file without `metrics/inputs/D.json`, or whose `provenance.inputs_file` names another file |
 | FILE_ORDER | `corrections.json` not sorted by date then id; `archive-index.json` not newest first; `scoreboard.json` not sorted by claim id |
-| GAP_MATCH, COMPUTED_MISMATCH | As above, for every stored brief |
+| GAP_MATCH, COMPUTED_MISMATCH | As above, for every stored brief; a brief with no valid same-date metrics file fails GAP_MATCH at `gap` |
 
 `npm run check` runs it on `fixtures/site-content/` (`validate:sample`) and on the repo's `content/`
 (`validate:all`; an empty or missing `content/` passes), so every PR's check validates `content/` with the
@@ -1983,12 +2048,18 @@ sink an edition.
 | SNAP_QUOTE | A quoted field isn't in the seen text of its URL, after folding case, whitespace and quotation marks |
 | SNAP_MISSING | None of an item's sources (or the Angle's source) has seen text, so nothing could be checked |
 
+SNAP_MISSING on an item stands in for its other gates. The Angle's numbers, in `text` and `counterpoint`,
+are checked against all its tier 1 and 2 sources, or exactly against the metrics. A quote whose own source
+has no seen text gives SNAP_QUOTE, and folding also removes apostrophes. Item block numbers include the
+release counts.
+
 3. **The soft pass.** If the first validation has errors or any `SNAP_*` warning and a repair round is
    left (`budgets.repair_rounds`, 2 per run, §8.2), round 1 sends both; `routine/REPAIR.md` says to fix
    each by correcting the text, citing a supporting source, or removing the claim. After round 1 (or at
    once when no round is left), `dropUnverified()` (`lib/apply.ts`) removes every item still carrying
    SNAP_NUMBER, SNAP_NAME or SNAP_QUOTE and every Critical item with SNAP_MISSING (never a non-critical
-   one), sets `angle` to null if the Angle still fails (§4.5), and deletes dropped ids from every
+   one), sets `angle` to null if the Angle still carries any `SNAP_*` code (SNAP_MISSING included, §4.5),
+   removes every scoreboard entry whose quote carries SNAP_QUOTE, and deletes dropped ids from every
    `item_ids` list (`lead`, `taiwan_lens` and its rows and Japan block, `region_raises`). The hard rules
    run again; what the drop broke goes to round 2. After round 2 the gates drop again; if the hard rules
    still fail, the full edition fails and the data-only edition stays up (§8.2).
@@ -2014,11 +2085,14 @@ has its F, S or T case.
 - **Valid drafts:** `fixtures/drafts/valid-weekday.json` (eight items: a Critical exploited flaw with two
   publishers, a Taiwanese-vendor flaw, a confirmed AI-found item, a Glasswing item, a claimed victim
   shown unnamed in a row, a China-axis item with a named attributor, a policy Landmark, a patch batch),
-  `valid-monday.json` (with `week_in_review`) and `valid-quiet.json` (no items), each with its context,
-  evidence (with `texts`) and metrics in `fixtures/context/`, `evidence/`, `metrics/`. The builder also
-  writes `fixtures/cvelist/records/<id>.json` (the real records cited), `fixtures/regions-input/weekday.json`
-  and `fixtures/packs/weekday.json`, and loads `fixtures/config/claims.json` through `loadConfig({
-  overrides })`. Sample text is invented and labelled SAMPLE. It cites the canonical record URLs of real
+  `valid-monday.json` (with `week_in_review`) and `valid-quiet.json` (no items; a Sunday), dated
+  2026-10-14, 2026-10-12 and 2026-10-11. Each edition has its own context, evidence (with `texts`),
+  metrics, pack and regions input in `fixtures/context/`, `evidence/`, `metrics/`, `packs/` and
+  `regions-input/` (an empty history). The metrics reuse the Appendix D.3 and D.7 numbers re-dated to
+  October 2026, with `home_vendors` computed from `fixtures/src/kev-rows.json` (108 real KEV rows,
+  2026-07-13 to 2026-10-14). The builder also writes `fixtures/cvelist/records/<id>.json` (trimmed copies
+  of the real records cited: no references, `dateUpdated` no later than the edition), and loads
+  `fixtures/config/claims.json` through `loadConfig({ overrides })`. Sample text is invented and labelled SAMPLE. It cites the canonical record URLs of real
   CVEs; for a listed publisher, a host listed in `source-tiers.json` or `vendors.json` with an invented
   path that is never fetched (the fixture evidence carries its seen text), such as
   `https://www.bleepingcomputer.com/ct-sample/<slug>` or `https://www.sec.gov/ct-sample/<slug>`, so the
@@ -2028,7 +2102,9 @@ has its F, S or T case.
   for an unlisted host (tier 3). No fixture cites a `BLOCKED_HOSTS` host except the block-list cases
   below, and none cites a usable exploit, paste or scanner URL (§0.2).
 - **F:** `fixtures/drafts/invalid--<CODE>.json`, one mutation of the weekday draft per hard code a draft
-  can trigger (`fixtures/src/invalid.ts`), failing with exactly that code and no other (the builder and
+  can trigger (`fixtures/src/invalid/<group>.ts`, listed in `INVALID_CASES` in `fixtures/src/build.ts`;
+  SCHEMA has the two files of §4.4, `invalid--SCHEMA.json` and `invalid--SCHEMA--item-cves.json`), failing
+  with exactly that code and no other, warnings included (the builder and
   `tests/fixtures.test.ts` check it; the WORDS_UNDER case cuts the Lead to one 10-word sentence with no
   number, so LEAD_GROUNDED can't fire). Blocked-URL cases use a bare blocked host
   (`https://www.exploit-db.com/`), a blocked host with a path that leads to nothing actionable (no query)
@@ -2037,9 +2113,13 @@ has its F, S or T case.
   evidence: no errors and exactly that warning; a test applies `dropUnverified()` and checks which goes.
 - **T:** named cases in `tests/validate.test.ts` for codes the agent can't trigger (script-set fields,
   cross-file rules, warnings), on temporary copies of `fixtures/site-content/` (one data-only edition).
-  One T case changes a publisher's tier, a vendor's `cna` list, an actor alias, a banned word and a
-  claim's status in a config copy (`loadConfig({ overrides })`) and checks that `validateAll` still
-  passes the copy's briefs (Archived briefs, above).
+  One T case changes a publisher's tier, a vendor's `cna` list, an actor alias and a claim's status in a
+  config copy (`loadConfig({ overrides })`) and plants a banned word in an archived brief (`BANNED_WORDS`
+  is in `lib/vocab.ts`, not `config/`). The tier, alias, claim and banned-word changes each fail the
+  weekday draft in draft mode; `validateAll` still passes the copy's briefs (Archived briefs, above); and
+  the brief being published fails COMPUTED_MISMATCH on the tier and the `cna` list. The CONFIG_* T cases are in `tests/config.test.ts` and ANTHROPIC_DISCLOSURE_LINE's
+  in `tests/rules-cves-grounding-ai.test.ts`. `tests/fixtures.test.ts` lists every code with its case
+  types and counts a T code only when a `describe`, `it` or `test` title names it.
 
 ### 4.13 Source registry
 
@@ -2117,7 +2197,9 @@ Reuters, AP, Nikkei and agencies without a feed are `search` entries.
 
 - 35 to 60 entries; ids unique. Every coverage value has at least 3 entries; `taiwan` at least 5 (two in
   `zh-Hant-TW`); `japan` at least 4 (two in `ja`).
-- Every `rss` URL resolves through `publisherFor()` to tier 1 or 2. `kev` and `cvelist` read
+- Every `rss` URL resolves through `publisherFor()` to tier 1 or 2. The two feedburner feeds do so through
+  path-prefixed domains: `feeds.feedburner.com/thehackersnews` on `the-hacker-news` and
+  `feeds.feedburner.com/rsscna` on `cna` (any other feedburner path stays tier 3). `kev` and `cvelist` read
   `raw.githubusercontent.com` by script only; their records are cited by canonical record URLs (cve.org,
   cisa.gov).
 - No `rss` or `search` entry on a `BLOCKED_HOSTS` host; no Telegram, no Google News, no aggregator.
@@ -2464,13 +2546,16 @@ displayed share always uses `pct(k, n)` from the two counts, never `fmtPct` of t
 | `fmtPct(x)` | a fraction (interval bound) | `bp = Math.round(round4(x) * 1e4)`, then `Math.floor((bp + 50) / 100)` + `%` | `0.3217` → `32%`; `0.285` → `29%`; `0.145` → `15%` |
 | `fmtInt(n)` | a count | `Intl.NumberFormat("en-US")` | `44944` → `44,944` |
 | `fmt1(x)` | a ratio | `bp` as above, then `Math.floor((bp + 500) / 1000) / 10`, always with the decimal | `5.2498` → `5.2`; `5.0004` → `5.0`; `1.25` → `1.3` |
+| `fmt2(x)` | an EPSS score or move | `roundTo(x, 2)`, both decimals always shown | `0.145` → `0.15`; `0.1` → `0.10` |
 | `fmtDays(m)` | a median in days | the integer, or one decimal when it ends in .5 | `17` → `17`; `20.5` → `20.5` |
-| `fmtDate(d)` | an ISO date | day without zero, short month, the year when not the edition's year | `2026-11-06` → `6 Nov`; in the footer always `6 Nov 2026` (`lib/format.ts`'s `shortDate()` is this form with the year always shown) |
+| `fmtDate(d, editionDate)` | an ISO date | day without zero, short month, the year when not the edition's year | `2026-11-06` → `6 Nov`; in the footer always `6 Nov 2026` (`lib/format.ts`'s `shortDate()` is this form with the year always shown) |
 
-`tests/stats.test.ts`: `fmtPct(0.285)` is `29%`, `fmtPct(0.145)` is `15%`; `roundTo(-2.55, 1)` is `-2.6`;
+`tests/metrics.test.ts`: `fmtPct(0.285)` is `29%`, `fmtPct(0.145)` is `15%`; `roundTo(-2.55, 1)` is `-2.6`;
 `round4(2.23605)` is `2.2361`; `roundTo(1.2344999996, 3)` is `1.234`; `roundTo(0.000049999999, 4)` is
 `0`; `roundTo(1.5e21, 0)` is `1.5e21`; `newcombe80(58, 157, 104, 282)` is −0.0601 to 0.0626 at 4 dp;
-`mannWhitneyZ` of the 99 w26 after-lags against `REFERENCE.after_lags` is −1.2028 at 4 dp (Appendix D.3).
+`mannWhitneyZ` of the 99 w26 after-lags against `REFERENCE.after_lags` is −1.2028 at 4 dp (Appendix D.3; in
+P2's `tests/reference.test.ts`, which reads the lags from `fixtures/reference/kev-cve-join.json`; P1 checks
+`mannWhitneyZ` against the pair-count definition of U).
 
 ### 5.3 The Window
 
@@ -2572,7 +2657,8 @@ function pacePhrase(n: number): string {          // n = w26.cohort_n
 ```
 
 - **Old flaws newly listed.** `old_listed_n` per window, shown in the data table with the 2023 to 2024
-  pace for the same length (`old_listed_n × days / 731`), e.g. "22 in 26 weeks (2023–24 pace: 23)".
+  pace for the same length (`oldListedPace(days)`, `old_listed_n × days / 731`, shown as
+  `fmtInt(roundTo(pace, 0))`), e.g. "22 in 26 weeks (2023–24 pace: 23)".
   Never in cohort R or the headline.
 - **KEV additions since the last edition.** `kev.new_since_last_edition.cve_ids`: catalog entries whose
   CVE id is not in `content/state/kev-index.json` as committed with the newest earlier brief (any
@@ -2705,8 +2791,10 @@ function matchRecord(rec: CveRecord, ghsa: GhsaAdvisory | null, cfg: AiFindersFi
   merges the PR, and `publishState()` commits it (§8.7).
 - **On CISA's list.** `ai_credited.in_kev.entries`: every KEV entry with `date_added` from 2025-01-01 to
   the cutoff whose CVE record now has a credit match, sorted by `kev_date_added`, then CVE id.
-  `inKevLine()` renders under chart C "AI-credited and now on CISA's list: {n} since 1 Jan 2025", then
-  per entry "{CVE id}: {matched} ({finder name}), listed {fmtDate(kev_date_added)} (US date)".
+  `inKevLine(ai, editionDate)` renders under chart C "AI-credited and now on CISA's list: {n} since 1 Jan
+  2025", then per entry "{CVE id}: {matched} ({finder id}), listed {fmtDate(kev_date_added)} (US date)",
+  as §7 and Appendix D.7 show it. It reads no config: the id is frozen in the metrics file, so a rename
+  in `config/ai-finders.json` never changes an archived page, its word count or `metricNumbers()`.
 
 **Base rate** (for the rival Scoreboard claim, §4.9): like with like, month by month, with the same
 90-day follow-up for every record.
@@ -2754,7 +2842,8 @@ for Taiwanese vendors: {d30_n} in 30 days, {d90_n} in 90, to {fmtDate(to)} (US d
 for Japanese vendors: {d30_n} in 30 days, {d90_n} in 90, to {fmtDate(to)} (US date).", then
 `KEV_ABSENCE_NOTE` (§4.2). Numbers are digits, including 0. The lines stop at the cutoff while the
 `home_vendor_kev` signal reads KEV up to the edition date (§5.11), so TW can read Elevated while its line
-still reads 0.
+still reads 0. With `metrics.home_vendors` null, `kevLineUnavailable()` gives "KEV additions for
+Taiwanese vendors: not available today." (Japanese likewise), with both counts 0.
 
 ### 5.8 The Gap headline
 
@@ -2776,13 +2865,15 @@ opening line and chat line 3 `headline.second_line` (§7, §8.8).
 | H3 | always | `{fmtInt(cohort_n)} such flaws were listed in 26 weeks, {pacePhrase(cohort_n)} the 2023–24 pace (all CISA listings: {fmt1(kev_pace_ratio)} times).` |
 
 - `{S}` is `higher`, `lower` or `no clear change` (`shareDirection()`); `{V}` is `faster`, `slower` or
-  `no clear change` (`speedDirection()`). The reference figures (37% and 21) are rendered from
-  `REFERENCE`, not typed.
+  `no clear change` (`speedDirection()`). `computeMetrics()` sets both directions in step 4 (§5.10), and
+  the headline reads them from `metrics.headline`; a stale Window keeps the newest earlier file's
+  directions, since the lags behind `speedDirection()` are not in the file. The reference figures (37%
+  and 21) are rendered from `REFERENCE`, not typed.
 - Window `stale`: the newest earlier metrics' values, ending " (Data to {fmtDate(as_of)} UTC; CISA's list
   was not read today.)". `failed` with no earlier value: the whole headline is "The Window is not
   available today because CISA's list could not be read."
 - Never an arrow, a year-on-year comparison or a daily count. At most 70 words; the longest variant
-  (stale, "more than three times", a four-digit cohort) is 68. `tests/headline.test.ts` renders every
+  (stale, "more than three times", a four-digit cohort) is 68. `tests/metrics.test.ts` renders every
   variant and checks it with `countWords()`. The 2026-11-08 text is in Appendix D.3.
 
 **Second line**, two clauses with their own fallbacks, at most 40 words (the longest is 40):
@@ -2803,10 +2894,12 @@ The year-ago comparison stays in chart A and the data table (`yoy_pct`, `yoy_ex_
 CVE List {provenance.cve_list_release} · AI-finder list v{ai_credited.finders_version}", e.g. "data to 6
 Nov 2026 UTC · KEV catalog 2026.11.06 · CVE List {release tag} · AI-finder list v1". CVE List tags are
 `cve_YYYY-MM-DD_HHMMZ` (hourly) and `cve_YYYY-MM-DD_at_end_of_day`; the footer shows the hourly tag.
+When `ai_credited` is null the AI-finder version is `provenance.config_versions.ai_finders`.
 
 **`headline.quoted`**: one `{ path, display }` per number printed in `text` and `second_line`, in order.
 `path` is the metrics path, or `"constant"` for the window lengths 26 and 13; `display` is the exact
-string. A pace percentage ("12% above") has path `window.volume_ratio`; "n=…" has the count's path. For
+string as printed. A pace percentage ("12% above") has path `window.volume_ratio` and display `12%`;
+"n=…" has the count's path and the count as display. For
 2026-11-08 (Appendix D.3; P1's AI-finder strip fix turns `386` into `451`, Appendix D.7, and P2
 recomputes these figures from the backfill): `37%` `window.w26.at_disclosure_share`, `37%`
 `window.reference.at_disclosure_share`, `17` `window.w26.after_disclosure_median_days`, `21`
@@ -2945,18 +3038,22 @@ nothing unless a national CERT reports it exploited at home. Both home rules sto
   sources until a pattern is added.
 - Each signal has `id` `sig-YYYYMMDD-N` (edition date, then a counter in table order, then by date and
   URL), `publisher` (`cisa-kev` for KEV signals), `url`, `title` (sanitised, at most 200 characters) and
-  `cve_ids`. The brief stores every signal dated in `[addDays(date, −N_max), date]` (§4.5), since the
+  `cve_ids`. Within one collection a type keeps one signal per region and URL. A KEV signal's `url` is
+  the CVE record page (`kevSignalUrl()`, `https://www.cve.org/CVERecord?id={CVE id}`, as data-only items
+  cite it) and its `title` the catalog's `vulnerabilityName`; with no catalog it reads the KEV index
+  rows, titled "{vendorProject} {product}". The brief stores every signal dated in `[addDays(date, −N_max), date]` (§4.5), since the
   pack is not kept; earlier signals keep their ids. A morning with no brief loses only that day's agency
   and CERT signals; KEV signals are always recomputed from the catalog.
 
 **Evaluation.** `computeRegions(input): Regions`. `RegionsInput` is `date`; `items` (today's items with
-`first_seen` set: the draft's for the validator, the brief's for publish, `[]` for the preview);
+`first_seen` set, resolved against their sources by `regionItems()`: the draft's for the validator, the
+brief's for publish, `[]` for the preview);
 `history` (the briefs dated `date − N_max` to `date − 1` that exist, any edition); `signals`
 (`collectSignals()` for today); `kevIndex` (lags for `home_vendor_kev`); `config` (`regions`, `vendors`,
 `tiers`); `raises` (the draft's `region_raises`; `[]` for data-only editions and the preview).
 
-1. Signals: today's plus every history brief's `regions.signals`, deduplicated by `type` plus normalised
-   URL (`type` plus CVE id for KEV), earliest id kept, then filtered to `[addDays(date, −N_max), date]`.
+1. Signals: today's plus every history brief's `regions.signals`, deduplicated by `type`, `region` and
+   normalised URL (`type`, `region` and CVE id for KEV), earliest id kept, then filtered to `[addDays(date, −N_max), date]`.
 2. Items: one copy per item id over history then today (`newestCopyById`: today's if present, else the
    newest earlier edition's).
 3. For each code in `LEVELLED_REGIONS`, each rule in file order whose `regions` include it: the items
@@ -2964,7 +3061,8 @@ nothing unless a national CERT reports it exploited at home. Both home rules sto
    (`item_ids`, `signal_ids`), and the rule fires when there is at least one.
 4. Sort fired rules by level rank (`REGION_LEVEL_INFO`, §4.2) descending, then file order.
    `computed_level` is the top rule's level, else `baseline`. `level` is `stepUp(computed_level)` when
-   `raises` has one for the region (REGION_RAISE, §4.12, enforces one step), else `computed_level`.
+   `raises` has one for the region (the first; REGION_RAISE, §4.12, enforces one step), else
+   `computed_level`. A raise on a region already at critical is ignored (`raised` null).
 5. `previous_level` is the shown level in the brief dated `date − 1` (any edition), else null; `change`
    is `new` when null, else `up`, `down` or `same` by level rank.
 6. Row: `code`, `level`, `computed_level`, `previous_level`, `change`, `rule_id` (top rule or null),
@@ -2980,7 +3078,7 @@ nothing unless a national CERT reports it exploited at home. Both home rules sto
   (item headline) and `{title}` (signal or source title), each cut at a word boundary to 80 characters
   with "…"; `{publisher}` the display name from `config/source-tiers.json`; `{country}` the English short
   name of `incident.country`; `{sector}` the SECTORS id as written (§4.2); `{vendor}` the matched
-  vendor's `name`; `{cve}` the CVE id. At most 160 characters, cutting `{headline}` or `{title}` further.
+  vendor's `name` (else the KEV `vendorProject`, else "Taiwanese vendor" or "Japanese vendor"); `{cve}` the CVE id. At most 160 characters, cutting `{headline}` or `{title}` further.
   A baseline row's reason is "No rule fired." with tooltip `BASELINE_TOOLTIP` (§4.2). The rendered reason
   is stored in the brief, so a later config change never rewrites an archived page.
 - **Editor raise.** At most `editor_raise.max_per_region` (1) raise per region in `region_raises` (§4.4),
@@ -2990,7 +3088,7 @@ nothing unless a national CERT reports it exploited at home. Both home rules sto
   computed level. "Change since yesterday" compares shown levels.
 - **Preview.** `previewRegions()` is `computeRegions()` with `items: []` and `raises: []`; the context
   carries it as `regions_preview` (§4.15): `region` = `code`, `level`, `fired_rule` = `rule_id`,
-  `basis` = `reason`.
+  `basis` = `reason` (null at baseline).
 - **Callers.** The validator in draft mode (REGION_RAISE, §4.12), publish on the final items
   (`brief.regions`), the data-only composer with no items. `tests/regions.test.ts` covers each rule type
   with a firing and a non-firing fixture, an unjoined (lag null) `home_vendor_kev` signal that fires,
@@ -3386,7 +3484,8 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
   AI-linked: 4 of 7 items", data-only "Published 04:48 Taipei · 2 min read · AI roles unassessed", with
   "(late)" after the time when `late`. Then `gap.headline` through `gapHeadlineLine()` (Newsreader 19px,
   max 72ch) unless `gapOk` is false or status is `missing`; shown here only. Then `editionNotice()` (`role="note"`), partial: "Some
-  feeds are stale: <name> (since <date>), …; their figures are shown with their own dates."
+  feeds are stale: <name> (since <date>), …; their figures are shown with their own dates." A data-only
+  edition shows the same sentence when feeds are stale, else nothing.
 - **Lead:** one paragraph, ink drop cap; each sentence a `<span>` plus a mono "↓" link to its first item
   (`aria-label "Read: <headline>"`), or `#gap` for `gap: true` with no items. **AngleLine** (Europe's
   Aside): "ANGLE →", text, refs or "Gap metrics, data to <as_of> UTC", "(<shortDate(as_of)>)",
@@ -3398,8 +3497,8 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
   alone: <WORD>". Then "GLOBAL · <regions.global.item_count> items" (no level) linking `#also-today`.
 - **ItemCard** `<article id={item.id}>`: `CorrectionBanner` when corrected; `cardKicker()` (pips, `AIChip`,
   region codes, vendor as text "QNAP (TW)", never a flag); "Impact: <incident.impact>" for incidents; `h3`
-  headline; summary with `SourceRefs`; "WHY IT MATTERS →" `why_it_matters`; `cveTimeline()` or
-  `releaseLine()`; chips `SELF_REPORTED_CHIP` (self_reported), `NOT_VENDOR_CONFIRMED` (a `critical_flaw`
+  headline; summary with `SourceRefs`; "WHY IT MATTERS →" `why_it_matters`; `releaseLine()` for a patch
+  batch, else `cveTimeline()` of the first CVE block, else neither; chips `SELF_REPORTED_CHIP` (self_reported), `NOT_VENDOR_CONFIRMED` (a `critical_flaw`
   whose first CVE block has `vendor_confirmed` false), `PUBLIC_EXPLOIT_LABEL` when set; `ANTHROPIC_LINE`
   when `anthropic_disclosure`; footer "sources [1][3] ·", a "details" `<details>` with `ItemDetails`,
   "Timeline →" (`/items/<id>`) when `hasPage`, "Report an error" (`issueFormUrl(item)`). Withheld items
@@ -3454,15 +3553,16 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
 The Gap is the only dark surface on a paper page: `<section id="gap" className="night ...">` scopes the
 night tokens (Appendix A); edge to edge below 640px (`-mx-4 px-4`), `px-6` from 640px. Props: `GapPanel {
 gap; metrics; gapOk; annotations }`, `FloodChart { series; flood; markers }`, `WindowChart { series;
-window; markers }`, `AiCreditedChart { series; ai; markers }`, `FixSideStrip { fixSide }`.
+window; markers }`, `AiCreditedChart { series; ai; markers }`, `FixSideStrip { fixSide; editionDate }`.
 
 GapPanel, top to bottom: "§03 THE GAP", right "DATA TO <shortDate(data_cutoff_utc)> UTC";
 `gap.second_line`; `gapNotices()` (`role="note"`: "Gap figures are from <as_of>; today's could not be
-computed." when stale; "<block> data from <as_of>: <note>" per stale block); the three charts; the
+computed." when stale; "<block> data from <as_of>: <note>" per stale block of the metrics shown,
+named Flood, Window, AI-credited and Fix-side); the three charts; the
 **FixSideStrip** (text, each figure dated: the Anthropic dashboard line as §5.6 renders it, with its link,
 when `anthropic_cvd` is set; the GitHub line when `ghsa_unfixed` is set; `FIX_SIDE_CAPTION` always);
-`gapFooter()`: `footerLine()` (§5.8) and "Weeks before <shortDate(series.live_from)>: reconstructed from
-current records." With `metrics` null, status `missing` or `gapOk` false: the header and "The Gap is not
+`gapFooter()`: `footerLine()` (§5.8), then "Weeks before <shortDate(series.live_from)>: reconstructed
+from current records." when `series.live_from` is after the chart's first week. With `metrics` null, status `missing` or `gapOk` false: the header and "The Gap is not
 available for this edition." only. A null block: "<Chart name> is not available today." (its
 `chartCaptions()` entry).
 
@@ -3511,18 +3611,20 @@ listed." C "AI-credited records, a lower bound: <total> in 13 weeks, <ex_anthrop
 ### Script-written page text (`lib/page-text.ts`, P1)
 
 Every counted script-written string from the masthead to the end of the Taiwan Lens is built here and
-nowhere else. `scriptText(brief, metrics)` (§4.12) counts exactly the outputs of the exports below that
+nowhere else. `scriptText(brief, metrics, opts)` (§4.12; `opts.gapOk`, default true, false when the
+brief failed GAP_MATCH) counts exactly the outputs of the exports below that
 the page shows in that range, joined in page order, so the validator counts what the page shows.
 Components render those outputs, never their own copies, and mark each with `data-words`, as they mark
-the counted model fields. Exports: `mastheadLine(brief)`, `gapHeadlineLine(brief)` (`gap.headline` as
-stored; null when EditionMasthead hides it) and `editionNotice(brief)` (null for full; all three as
-EditionMasthead shows them); `briefDescription(brief)` (page metadata and the feed only, so never in the
-count); `regionSummary(row)` ("TW ●●○○ ELEVATED ↑", then the reason); `cardKicker(item)` ("●●●○ HIGH ·
-AI-FOUND · US · TW · QNAP (TW)"); `cveTimeline(cve)` (below); `releaseLine(release)` ("Released 10 Nov ·
-63 fixes · 2 exploited · 5 critical"); `gapSecondLine(brief)` (as stored); `gapNotices(brief, metrics)`;
+the counted model fields. Exports: `mastheadLine(brief)`, `gapHeadlineLine(brief, gapOk)` (`gap.headline`
+as stored; null when EditionMasthead hides it) and `editionNotice(brief)` (null for full, and for
+data-only with no stale feed; all three as EditionMasthead shows them); `briefDescription(brief)` (page metadata and the feed only, so never in the
+count); `regionSummary(row)` (`{ head, reason }`: "TW ●●○○ ELEVATED ↑", then the stored reason);
+`cardKicker(item)` ("●●●○ HIGH · AI-FOUND · US · TW · QNAP (TW)": the level, the role chip upper
+case, every region code, the vendor); `cveTimeline(cve, editionDate)` (below);
+`releaseLine(release, editionDate)` ("Released 10 Nov · 63 fixes · 2 exploited · 5 critical"); `gapSecondLine(brief)` (as stored); `gapNotices(brief, metrics)`;
 `chartCaptions(metrics)` (`{ flood, window, ai, aiInKev }`: the chart table's caption column, with chart
 C's key in `ai`; a null block's entry is "<Chart name> is not available today.", and `aiInKev` is then
-null); `fixSideLines(fixSide)`; `gapFooter(metrics)`; `lensKevLines(lens)` (`kev_lines.tw.text`,
+null); `fixSideLines(fixSide, editionDate)`; `gapFooter(metrics)`; `lensKevLines(lens)` (`kev_lines.tw.text`,
 `kev_lines.jp.text`, `kev_note`); `EMPTY_LINES` (`no_items`, `no_rows`, `no_actors`, `no_elsewhere`,
 `not_data_only`, `gap_missing`; `no_elsewhere` and §09's `not_data_only` sit after the Lens, so they are
 not counted).
@@ -3538,11 +3640,12 @@ Dates and times here and on every page come from `lib/format.ts` (P1, §10): `lo
 2026"), `shortDate()` ("7 Nov 2026": §5.2's `fmtDate()` with the year always shown), `dayMonth()` ("3 Nov")
 and `taipeiTime()` ("05:12", Taipei time).
 
-`cveTimeline` joins with " → ", then " · patch: <dayMonth(patch.date)>" or " · patch: none cited": "CVE
+`cveTimeline` joins with " → ", then " · patch: <fmtDate(patch.date)>" or " · patch: none cited": "CVE
 published <date>"; on KEV, "on CISA's list +<N> days" (N = `kev.date_added` − `date_published`; "+0 days"
 same day; "before publication" if negative) and "US deadline <due_date>", else "not on CISA's list"; the
 earliest non-KEV evidence, "exploited (<basis word>) <date>". Example: "CVE published 2 Nov → on CISA's
-list +1 day → US deadline 5 Nov · patch: 3 Nov".
+list +1 day → US deadline 5 Nov · patch: 3 Nov". Every date here is `fmtDate(d, editionDate)`, with the
+year when it is not the edition's.
 
 ### Accessibility
 
@@ -3580,8 +3683,8 @@ On top of the rules above ("Text first", `ExternalLink`, the banners' roles, cha
   in a summary, `login-update.example.com` in a summary, a source URL set to the bare shortener
   `https://bit.ly/`, and an AWS-key-shaped string built at run time (`"AKIA" + "ABCDEFGHIJKLMNOP"`, so the
   test file holds none) skip that brief with `CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` or `SECRET_LIKE`;
-  the log names file and code, never the text. A `BANNED_WORDS` swap (word count unchanged) leaves the
-  brief shown with one warning. `SITE_BLOCKING_CODES` holds every `SAFETY_CODES` code, and every entry but
+  the log names file and code, never the text. A Gap sentence's number changed in the Lead (`LEAD_GROUNDED`,
+  word count unchanged) leaves the brief shown with one warning. `SITE_BLOCKING_CODES` holds every `SAFETY_CODES` code, and every entry but
   `FILE_NAME` is a † rule (§4.12).
 - **Withholding.** The withheld item shows `WITHHELD_HEADLINE` on its brief and item page; no edition's
   original headline appears in either page.
@@ -3659,11 +3762,14 @@ through `normalizeUrl()` (§4.1).
 `check` is exactly what CI runs (§9.2) and grows by phase, each phase updating this block and §9.2's
 table: Foundation `npm run typecheck && npm test`; P1 adds `schema:check`, `fixtures:check`,
 `validate:sample`, `validate:all` (an empty or missing `content/` passes); P4 adds `color:check`,
-`build:sample`, `build:empty`. Content-only pushes to `main` skip CI (§9.2): publish runs `validateAll`
+`build:sample`, `build:empty`. After P1 the file holds `typecheck`, `test`, `check` (ending at
+`validate:all`), `validate`, `validate:all`, `validate:sample`, `schema:gen`, `schema:check`,
+`fixtures:gen`, `fixtures:check`, `chat` and `agent:check`, each as above; the rest arrive with
+their phases. Content-only pushes to `main` skip CI (§9.2): publish runs `validateAll`
 before every commit (§8.7), and every PR's `validate:all` checks `content/` with the PR's code. No test
 touches the network (feed tests read `fixtures/feeds/`, agent tests use `fixtures/agent/fake-claude.mjs`).
-`fixtures:check` builds into a temp folder and compares only the paths the builder writes (listed in
-`fixtures/src/build.ts`), exit 1 on any added, missing or changed file. `schema:gen` uses Europe's
+`fixtures:check` compares what the builder writes with the folders it owns (`FIXTURE_DIRS` in
+`fixtures/src/build.ts`), exit 1 on any added, missing or changed file; `fixtures:gen` removes an added one. `schema:gen` uses Europe's
 compact printer. `postinstall` (P3) writes the SHA-256 of `package-lock.json` to
 `node_modules/.ct-lock-sha` for preflight (§8.2). Verify in P3: `/opt/homebrew/bin/npm ci` on Kobol runs
 the root `postinstall` and writes `node_modules/.ct-lock-sha` (npm 11 leaves some dependency install
@@ -3858,7 +3964,8 @@ or `E_AUTH`).
    too little time left for an editorial pass before 05:30."); attempt 2 is not started.
 2. Delete `drafts/D.json`. Build the context in memory (`buildContext()`, §8.5, `deadline = now + timeout
    − 5 min`); write the agent's copy to `drafts/context.json`, an audit copy to `logs/D.context.json`, and
-   the validator's `regionsBase` to `logs/D.regions-input.json`. Validation uses only the in-memory copy.
+   the validator's `regionsBase` to `logs/D.regions-input.json` (`regionsInputFile()`: `date`,
+   `history`, `signals`, `kevIndex`; the config is not written). Validation uses only the in-memory copy.
 3. Render `routine/PROMPT.md` (§8.5). `runAgent(prompt, cfg, { timeoutMs: timeout, transcriptFile:
    logs/D.agent-N.jsonl, onEvent })` with argv, settings and environment exactly as §9.4 and §9.5 set
    them, the token as `CLAUDE_CODE_OAUTH_TOKEN`. **Sandbox guard:** if the first `system`/`init` event
@@ -3928,8 +4035,10 @@ exception is `E_INTERNAL`, its stack in the run log only.
 #### Error codes and next steps
 
 `NEXT_STEP` (in `lib/chat.ts`, written in P1 from this table, §8.8) holds one line per code, every `D`
-replaced; unknown codes use `E_INTERNAL`'s. Below, `<rerun>` stands for `rerun before 10:00: zsh
-/Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`, written out in full.
+replaced (`nextStepFor(code, date)`); unknown codes use `E_INTERNAL`'s. Below, `<rerun>` stands for
+`rerun before 10:00: zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`, written out
+in full. The times come from `config/run.json`: "10:00" is `RERUN_BEFORE`, `schedule.publish_until`
+minus one hour, and "11:00" is `publish_until`; `E_CLOCK`'s "08:00" is fixed by the time base (§5.1).
 
 | Code | Stage | Meaning | Retried | Next step |
 |---|---|---|---|---|
@@ -4108,12 +4217,17 @@ written, degraded or not (an empty pack is a quiet morning); 1 when it could not
 | Rung | When | Shows |
 |---|---|---|
 | Full | A valid draft, every structured feed fresh | `edition: "full"` |
-| Partial | A valid draft; `kev`, `cvelist`, `epss`, `ghsa` or `anthropic-cvd` stale or failed (never an RSS feed: `lib/apply.ts` builds `feeds_stale` from these five only; RSS failures show in the status file and on Methodology) | `partial`, `feeds_stale` naming exactly those; stale blocks show earlier values with their dates (§4.7) |
+| Partial | A valid draft; `kev`, `cvelist`, `epss`, `ghsa` or `anthropic-cvd` stale or failed (never an RSS feed: `lib/apply.ts` builds `feeds_stale` from these five only, `PARTIAL_FEED_IDS` in
+`lib/vocab.ts`; RSS failures show in the status file and on Methodology) | `partial`, `feeds_stale` naming exactly those; stale blocks show earlier values with their dates (§4.7) |
 | Data-only | No valid draft by the hard stop, `--data-only`, or a start after 05:30 | The data-only edition (without `kev`: no new-KEV items, Gap figures with earlier dates); the masthead is still dated today |
 | Nothing new | `E_METRICS`, or every publish failed | Yesterday's brief; after 08:00 the StaleBanner (§7) |
 
-**Sanitiser** (`lib/sanitize.ts`): §4.14's eight steps; `INVISIBLE` is one exported `u`-flag regular
-expression; `wrapUntrusted(sourceId, text)` gives `<untrusted source="<id>">…</untrusted>`, `sourceId`
+**Sanitiser** (`lib/sanitize.ts`): §4.14's eight steps. Step 1 strips HTML (and common SVG) element tags
+and comments only, so any other `<name>`, `<untrusted>` included, stays text for step 5; `script`,
+`style`, `template` and `noscript` go with their content, `<pre>` becomes `[code removed]`, and only
+semicolon-terminated entities are decoded. Steps 1 to 6 repeat until a pass changes nothing (at most
+`CLEAN_PASSES`, 32), step 3 leaves "…" as it is, and a cut that exposes Markdown is settled, so the
+output is idempotent. `INVISIBLE` is one exported `u`-flag regular expression; `wrapUntrusted(sourceId, text)` gives `<untrusted source="<id>">…</untrusted>`, `sourceId`
 matching `^[a-z0-9][a-z0-9-]*$`. Tests: every listed code point removed; `</untrusted>` becomes
 `‹/untrusted›`; a 1,001-character string ending in an emoji pair cut to 1,000 with no lone surrogate;
 idempotent on every feed fixture; the `fixtures/injection/` page and item sanitised, wrapped and flagged.
@@ -4236,17 +4350,21 @@ Paths are absolute. `tests/prompts.test.ts`: each file uses exactly the variable
 ```
 tsx scripts/validate.ts <file> [--context F] [--evidence F] [--metrics F] [--cve-cache DIR]
                         [--regions-input F] [--pack F] [--published] [--json]
-tsx scripts/validate.ts --all [DIR]
+tsx scripts/validate.ts --all [DIR] [--json]
 ```
 
 A draft (default mode) needs context, evidence, metrics, CVE records, regions input and pack; defaults
 `logs/D.context.json`, `logs/D.evidence.json`, `content/metrics/D.json` (else the staged copy),
 `cache/cvelist/records`, `logs/D.regions-input.json`, `packs/D.json`. A missing input is a usage error
-naming the flag. It never reads `drafts/context.json`, which the agent can write. `--published` runs
-`validatePublished()` with the same-date metrics; `--all` runs `validateAll()` on `DIR` (default
-`contentDir()`). Output `ERROR CODE path: message` or `WARN CODE path: message`, then `drafts/D.json: E
-errors, W warnings.`; `--json` prints `{ ok, errors, warnings }`. Exit 0 clean, 1 errors, 2 usage or read
-error.
+naming the flag. It never reads `drafts/context.json`, which the agent can write. The regions-input file
+holds `date`, `history`, `signals` and `kevIndex` (`RegionsInputFile`); the CLI adds
+`regionsConfig(config)`. A single file under `fixtures/` is checked against the sample claims (§4.11).
+`--published` runs `validatePublished()` with the same-date metrics; `--all` runs `validateAll()` on
+`DIR` (default `contentDir()`), each issue's path prefixed `<file>: `. Output `ERROR CODE path: message`
+or `WARN CODE path: message`, with " Hint: <hint>" on the same line when the issue has one, then
+`drafts/D.json: E errors, W warnings.` ("1 error", "1 warning" when one); `--json` prints `{ ok,
+errors, warnings }`. A draft that is not valid JSON is one `SCHEMA` error at `(file)`, exit 1. Exit 0
+clean, 1 errors, 2 usage or read error.
 
 ### 8.7 publish.ts
 
@@ -4368,18 +4486,20 @@ export const CHAT_MAX_LINES = 15;
 export type ChatInput =
   | { kind: "published"; brief: Brief; runs: RunRecord[]; notes: string[]; dryRun: boolean }
   | { kind: "data_only"; brief: Brief; runs: RunRecord[]; code: string | null; what: string;
-      nextStep: string | null; notes: string[]; dryRun: boolean }
+      nextStep: string | null; notes: string[]; dryRun: boolean; kevNew?: number | null }
   | { kind: "failed"; date: string; code: string; what: string; errors: { code: string; path: string }[];
       siteShows: { date: string; edition: Edition } | null; nextStep: string; runs: RunRecord[];
-      needsReview: boolean; dryRun: boolean }
+      needsReview: boolean; notes: string[]; dryRun: boolean }
   | { kind: "skipped"; date: string; reason: string; briefUrl: string | null; dryRun: boolean };
 export function renderChat(input: ChatInput, siteUrl: string): string;
 ```
 
 **Texts and inputs, built in P1.** `lib/chat.ts` also holds `NEXT_STEP` (one line per code, written from
 §8.2's error-code table), `WHAT_HAPPENED` (the per-code "What happened" templates, filled from the run
-records: "The run had too little time left for an editorial pass before 05:30.", "The draft still had N
-validation errors after R repairs and A attempts.", and one for each other code) and `chatInputFor()`,
+records: "The run had too little time left for an editorial pass before 05:30.", or "The agent timed out
+after M minutes without writing a draft." when the agent ran; "The draft still had N validation errors
+after R repairs and A attempts.", with "1 error", "1 repair", "1 attempt" in the singular; and one for
+each other code) and `chatInputFor()`,
 which builds a `ChatInput` from the brief as committed, the run records, the notes and, for a failed run,
 the validator's issues, keeping only each issue's code and path. `daily.ts` re-exports `NEXT_STEP`, and
 `scripts/lib/status.ts` takes its texts from `WHAT_HAPPENED`; both `daily.ts` (at finish) and
@@ -4389,11 +4509,16 @@ before the orchestrator exists (§10 P1).
 `runs` are this run's records (and the retry's). `notes`, in order, only when they apply: `N items
 dropped (unverified)`, `feeds stale: <id>, <id>`, `Flood counts stop at YYYY-MM-DD: run npm run backfill
 -- --catch-up --push` (§8.4's stdout line without its full stop), `links: N broken, M changed`, `site not
-yet showing this edition`, `usage NN% of weekly limit` (when `budgets.usage.utilization` ≥ 0.8), `status
+yet showing this edition`, `usage NN% of <window> limit` (when `budgets.usage.utilization` ≥ 0.8; the
+window named `weekly` for a seven-day window, `5-hour` for a five-hour one), `status
 not saved`, `replaced the HH:MM edition (--force)`, `Dependencies changed since the last npm ci` (§8.2
-preflight step 5). The last step, in every format: each `http(s)` URL not starting with `siteUrl()`
-becomes `[link removed]`, and NO_LIVE_IOC's domain, IPv4 and email matches (§4.12) are defanged with
-`defang()`, the last guard before the Claude app's auto-linking Markdown.
+preflight step 5). The last step, in every format, is `chatGuard()` on each line, the last guard before
+the Claude app's auto-linking Markdown: a Markdown link or image destination, a `<scheme:...>` autolink,
+a URL of any scheme (a defanged `hxxp(s)` one excepted) and a protocol-relative `//host` that do not
+start with `siteUrl()` become `[link removed]`; NO_LIVE_IOC's domain, IPv4 and email matches (§4.12;
+domains on `IOC_TLDS` plus .onion and .i2p, in any case, with no config exceptions) and any `www.`
+host are defanged with `defang()`; emoji and the canary are removed; and a line that would open a
+table, heading, quote or code block, or define a link reference, is escaped with a backslash.
 
 **Published** (full or partial, at most 13 lines):
 
@@ -4410,7 +4535,7 @@ Regions: US <pips> <WORD><change> · EU … · TW … · JP … · GLOBAL <n>
 Also today (<n>): <siteUrl>/brief/D#also-today
 Corrections: <id> <type> to <item id> (<d Mon>); …
 Notes: <note> · <note>
-Run HH:MM–HH:MM · data-only HH:MM · <A> attempt[s][, <R> repair[s]] · <S> sources · data to <d Mon> UTC
+Run HH:MM–HH:MM · data-only HH:MM · <A> attempt[s][, <R> repair[s]] · <S> source[s] · data to <d Mon> UTC
 ```
 
 - **Gap line:** `gap.headline` when `gap.status` is `ok`; `stale`: `(Data to <d Mon> UTC; today's figures
@@ -4425,7 +4550,8 @@ Run HH:MM–HH:MM · data-only HH:MM · <A> attempt[s][, <R> repair[s]] · <S> s
 - **Also today** with more than three items, else `Full brief: <siteUrl>/brief/D`. **Corrections** only
   when there are any: at most 3, then `; and <k> more`; types `correction`, `clarification`, `update`,
   `name withheld`. **Notes** only with a note. **Run:** attempt 1's start to the last record's end;
-  `data-only HH:MM` from `data_only_published_at`, left out when null; sources `computed.source_count`.
+  `data-only HH:MM` from `data_only_published_at`, left out when null; `<A>` counts the records whose
+  draft stage ran and `<R>` sums their `repair_rounds`; sources `computed.source_count`.
 - **Dry run:** first line `**CyberTracker D · dry run (<edition> edition)**`; the Also today line (or
   `Full brief:`) becomes `Dry run: nothing was published; files in logs/dry-run/D/`. The other formats
   have dry-run forms too (Dry runs, below).
@@ -4447,9 +4573,12 @@ Notes: <note> · <note>
 Run HH:MM–HH:MM · data-only HH:MM · <A> attempt[s][, <R> repair[s]] · data to <d Mon> UTC
 ```
 
-The code is the failed attempt's (none after `--data-only` or a start after 05:30). KEV: at most 5, then
-`and <k> more`; none: `New on CISA's exploited list: none since the last edition.`; vendor and product
-from the frozen CVE block. EPSS: at most 3, 2 decimals, line left out when `epss_movers` is empty. `What
+The code is the failed attempt's (none after `--data-only` or a start after 05:30). KEV: `<n>` is the
+count of `metrics.kev.new_since_last_edition` (the brief holds at most 10 items, §4.5), never fewer
+than the items, even when the brief holds none (the line then ends `(<n>).`); at most 5 shown, then
+`and <k> more`; none: `New on CISA's exploited list: none since the last edition.`; vendor and
+product from the frozen CVE block. EPSS: at most 3, the move signed,
+both through `fmt2()` (§5.2), line left out when `epss_movers` is empty. `What
 happened`: the code's `WHAT_HAPPENED` template, `Data-only run requested (--data-only).` or `Started
 after 05:30: no editorial pass today.`; `Next step`: `NEXT_STEP[code]`, left out when none.
 
@@ -4468,7 +4597,9 @@ Run: started HH:MM, ended HH:MM · attempts <A>, repairs <R>
 ```
 
 At most 5 errors, code and path only: messages can repeat rejected content (an IOC, an exploit URL, the
-canary), so they stay in `logs/D.validation.json`. `Site shows` names the newest brief on GitHub's
+canary), so they stay in `logs/D.validation.json`. A path that is not schema keys and `[n]` indices
+(with at most one `<file>.json: ` prefix), is over 100 characters or holds the canary shows as
+`(path not shown)` (`safePath()`). `Site shows` names the newest brief on GitHub's
 `main`, or `Site shows: no edition yet.` `First errors`, `Draft and logs`, `Notes` and `Run:` appear only
 when they have content.
 
@@ -4486,18 +4617,20 @@ today or `Full brief:` line (published) and the `Brief:` line (data-only); in th
 nothing was published.` replaces the `Site shows` line. Line limits are unchanged.
 
 **`npm run chat -- --date D`** prints D's chat edition from `content/` alone: the last run's records in
-`status/D.json` (the last `schedule` or `manual` record and any `retry` after it) and the committed brief,
-every note rebuilt from them (`soft_gates.dropped`, `feeds_stale`, the Flood note, `links`,
-`deploy.shows_*`, `budgets.usage`, the `--force` and preflight notes). It equals `logs/D.summary.md`
-except `status not saved` and, for a failed run, the paths in First errors (the status file keeps codes
-only, §4.8).
+`status/D.json` (the last `schedule`, `manual` or `dry_run` record and any `retry` after it) and the
+committed brief, every note rebuilt from them (`soft_gates.dropped`, `feeds_stale`, the Flood note,
+`links`, `deploy.shows_*`, `budgets.usage`, the `--force` and preflight notes). With no brief, `feeds
+stale` comes from the first record's feeds, limited to `PARTIAL_FEED_IDS`. For the data-only KEV count
+it reads `metrics/D.json`. It equals `logs/D.summary.md` except `status not saved` and, for a failed
+run, the paths in First errors: the status file keeps codes only (§4.8), so First errors lists
+`validation.codes` without paths, and an `E_SIMULATED` failure shows `SIMULATED at (run)`.
 
 **Tests** (`tests/chat.test.ts`): ten snapshots on `fixtures/site-content/` (weekday full, partial,
 Monday, quiet day, data-only after `E_VALIDATION`, data-only from `--data-only`, `E_METRICS` failure,
 skip, dry run, dry-run data-only after `E_SIMULATED`), each asserting at most 15 lines, no line starting
 `|`, nothing matching `\p{Extended_Pictographic}`, every URL starting with `siteUrl()`, the Gap line
 rule, a full edition's Taiwan line, and the run line matching
-`^Run \d\d:\d\d–\d\d:\d\d( · data-only \d\d:\d\d)? · \d attempts?(, \d repairs?)?( · \d+ sources)? · data to \d{1,2} [A-Z][a-z]{2} UTC$`.
+`^Run \d\d:\d\d–\d\d:\d\d( · data-only \d\d:\d\d)? · \d attempts?(, \d repairs?)?( · \d+ sources?)? · data to \d{1,2} [A-Z][a-z]{2} UTC$`.
 Plus: a failed run whose issue messages hold `https://evil.example/poc`, `login-update.example.com`,
 `CANARY_TOKEN` and "Ignore previous instructions", turned into `ChatInput` by `chatInputFor()` (the
 function `daily.ts` and `scripts/chat.ts` both use), shows none of them; and the last step removes a
@@ -4754,7 +4887,7 @@ archived brief turns its PR red. CI needs no feed and no secret (metrics tests r
 | From | `check` runs, in order |
 |---|---|
 | Foundation | `typecheck`, `test` (includes `tests/no-europe-strings.test.ts`) |
-| P1 | then `schema:check`, `fixtures:check` (a temp-folder build compared with the committed fixtures, never rewriting them), `validate:sample` (`fixtures/site-content`), `validate:all` (the repo's `content/`; empty or missing passes) |
+| P1 | then `schema:check`, `fixtures:check` (an in-memory build compared with the files in `FIXTURE_DIRS`, never rewriting them), `validate:sample` (`fixtures/site-content`), `validate:all` (the repo's `content/`; empty or missing passes) |
 | P4 | then `color:check`, `build:sample`, `build:empty` |
 
 **Correction issue form.** `.github/ISSUE_TEMPLATE/correction.yml` (label `correction`): item id
@@ -5051,7 +5184,7 @@ fixed or answered).
 
 ### Foundation: SPEC v2.0 and the Kobol scaffolding
 
-**Branch:** `p0-setup`, PR #2 (open). **Goal:** this spec, the scaffolding forked from Europe, the
+**Branch:** `p0-setup`, PR #2 (merged 2026-11-09, 07:37 Taipei). **Goal:** this spec, the scaffolding forked from Europe, the
 cloud-only scripts removed (the agent harness is re-adapted in P3), and `config/run.json` with the draft
 `config/sources.yaml`.
 
@@ -5087,7 +5220,7 @@ steps) as current; JL merges.
 
 ### P1: Data contract, validator and chat renderer
 
-**Branch:** `p1-contract`. **Goal:** the seed configs are in `config/`, the data contract exists and is
+**Branch:** `p1-contract`, PR #3. **Goal:** the seed configs are in `config/`, the data contract exists and is
 enforced, the chat edition is rendered by script, and the planted-instruction fixture is in CI.
 
 1. The seed configs written into `config/` from `docs/SEED-CONFIG.md` (Appendix B, §4.11): versioned
@@ -5637,6 +5770,9 @@ P1 writes the rest into `config/` from that file, in the shapes of §4.11, versi
 (`claims.json` at 0 until P5), and validates each with `loadConfig()` and `validateConfig()`, counts
 included. From then `config/` governs and SEED-CONFIG.md is frozen as the seed record. A "Verify" fact is
 checked against the live source in the phase named; a wrong value is fixed in that PR, never carried forward.
+P1 changed some seed values as it wrote `config/`, each in a §0.4 row: the D.7 strip fix (row 7), three
+strings cut to their schema limits (row 8), and the B.2, B.3, B.6 and feed-domain changes (row 11); the B.3
+blocked-host table follows `lib/vocab.ts` (row 12).
 
 | | File | What it holds | Seed, and what is checked later |
 |---|---|---|---|

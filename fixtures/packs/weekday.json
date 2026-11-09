@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "window": {
+    "start": "2026-10-13T04:30:00+08:00",
+    "end": "2026-10-14T04:30:00+08:00"
+  },
+  "generated_at": "2026-10-14T04:41:05+08:00",
+  "data_cutoff_utc": "2026-10-12",
+  "degraded": false,
+  "feeds": [
+    {
+      "id": "kev",
+      "kind": "kev",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T17:02:11Z",
+      "items_total": 6,
+      "items_kept": 0,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "cvelist",
+      "kind": "cvelist",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T20:00:00Z",
+      "items_total": 10,
+      "items_kept": 4,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "bleepingcomputer",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T16:40:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "securityweek",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T19:40:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "focustaiwan",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T11:20:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "ithome-security",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T03:30:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "security-next",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T06:10:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "therecord",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T14:15:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "taipeitimes",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T18:00:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "ncsc-uk",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T09:00:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    },
+    {
+      "id": "nhk",
+      "kind": "rss",
+      "ok": true,
+      "stale": false,
+      "newest": "2026-10-13T12:00:00Z",
+      "items_total": 7,
+      "items_kept": 1,
+      "error": null,
+      "sha256": null
+    }
+  ],
+  "items": [
+    {
+      "id": "p0001",
+      "feed_id": "bleepingcomputer",
+      "outlet": "BleepingComputer",
+      "publisher": "bleepingcomputer",
+      "tier": 2,
+      "language": "en",
+      "region": "GLOBAL",
+      "coverage": [
+        "exploits",
+        "breaches"
+      ],
+      "title": "SAMPLE: Ivanti warns of Connect Secure flaw exploited in attacks",
+      "snippet": "SAMPLE text. Ivanti says attackers exploited CVE-2026-104935 in Connect Secure before a fix. Shadowserver counts about 9,000 unpatched instances online. CISA gave federal agencies three days to patch. No public proof-of-concept exploit is known yet.",
+      "url": "https://bleepingcomputer.com/ct-sample/ivanti-connect-secure-flaw-exploited-in-attacks",
+      "published_at": "2026-10-13T16:40:00Z",
+      "cve_ids": [
+        "CVE-2026-104935"
+      ],
+      "alert": false,
+      "flags": [],
+      "score": 90
+    },
+    {
+      "id": "p0002",
+      "feed_id": "securityweek",
+      "outlet": "SecurityWeek",
+      "publisher": "securityweek",
+      "tier": 2,
+      "language": "en",
+      "region": "GLOBAL",
+      "coverage": [
+        "exploits",
+        "breaches",
+        "ai"
+      ],
+      "title": "SAMPLE: Microsoft patches 1,384 flaws, one exploited before the fix",
+      "snippet": "SAMPLE text. Microsoft's October update fixes 1,384 vulnerabilities, 60 of them critical. CVE-2026-96951 in Windows Shell was exploited before the fix, and CISA added it to its catalog the same day.",
+      "url": "https://securityweek.com/ct-sample/microsoft-october-2026-patch-tuesday",
+      "published_at": "2026-10-13T19:40:00Z",
+      "cve_ids": [
+        "CVE-2026-96951"
+      ],
+      "alert": false,
+      "flags": [],
+      "score": 85.5
+    },
+    {
+      "id": "p0003",
+      "feed_id": "focustaiwan",
+      "outlet": "Focus Taiwan",
+      "publisher": "cna",
+      "tier": 2,
+      "language": "en",
+      "region": "TW",
+      "coverage": [
+        "taiwan",
+        "breaches",
+        "policy"
+      ],
+      "title": "SAMPLE: Taiwan chip equipment makers targeted with AI-written phishing, TeamT5 says",
+      "snippet": "SAMPLE text. TeamT5 said at least 12 equipment makers received fake supplier invoices. Its analysts believe the phishing emails were drafted with a generative AI model, the security firm said.",
+      "url": "https://focustaiwan.tw/ct-sample/chip-equipment-makers-phishing",
+      "published_at": "2026-10-13T11:20:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 81
+    },
+    {
+      "id": "p0004",
+      "feed_id": "ithome-security",
+      "outlet": "iThome",
+      "publisher": "ithome",
+      "tier": 2,
+      "language": "zh-Hant-TW",
+      "region": "TW",
+      "coverage": [
+        "taiwan",
+        "exploits",
+        "breaches"
+      ],
+      "title": "SAMPLE:Edimax BR-6208AC 路由器命令注入漏洞 CVSS 達 10 分,原廠未回應",
+      "snippet": "(SAMPLE 範例)研究人員公開 Edimax BR-6208AC 路由器命令注入漏洞細節,CVSS 評分 10 分。VulDB 表示 Edimax 未回應,該型號已停止支援,不會修補。",
+      "url": "https://ithome.com.tw/ct-sample/edimax-br-6208ac-command-injection",
+      "published_at": "2026-10-13T03:30:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 76.5
+    },
+    {
+      "id": "p0005",
+      "feed_id": "security-next",
+      "outlet": "Security NEXT",
+      "publisher": "security-next",
+      "tier": 2,
+      "language": "ja",
+      "region": "JP",
+      "coverage": [
+        "japan",
+        "breaches",
+        "exploits"
+      ],
+      "title": "SAMPLE:物流会社のデータ窃取を主張、ランサムウェアグループ「NightCrane」",
+      "snippet": "(SAMPLE)ランサムウェアグループ「NightCrane」が、国内物流会社から窃取したとするデータをリークサイトで公開すると主張した。同社は被害を確認していない。",
+      "url": "https://security-next.com/ct-sample/logistics-ransomware-claim",
+      "published_at": "2026-10-13T06:10:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 72
+    },
+    {
+      "id": "p0006",
+      "feed_id": "therecord",
+      "outlet": "The Record",
+      "publisher": "the-record",
+      "tier": 2,
+      "language": "en",
+      "region": "GLOBAL",
+      "coverage": [
+        "exploits",
+        "breaches",
+        "policy"
+      ],
+      "title": "SAMPLE: Anthropic says Glasswing partners disclosed 4,212 flaws found by its AI",
+      "snippet": "SAMPLE text. Anthropic says 497 of the flaws found through Project Glasswing are patched upstream so far. No partner has published its own count.",
+      "url": "https://therecord.media/ct-sample/anthropic-glasswing-disclosures",
+      "published_at": "2026-10-13T14:15:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 67.5
+    },
+    {
+      "id": "p0007",
+      "feed_id": "taipeitimes",
+      "outlet": "Taipei Times",
+      "publisher": "taipei-times",
+      "tier": 2,
+      "language": "en",
+      "region": "TW",
+      "coverage": [
+        "taiwan",
+        "policy"
+      ],
+      "title": "SAMPLE: Cabinet backs one-hour incident reporting rule",
+      "snippet": "SAMPLE text. The Executive Yuan approved a draft amendment requiring critical infrastructure operators to report serious incidents within one hour. The legislature must still pass it.",
+      "url": "https://taipeitimes.com/ct-sample/cabinet-backs-one-hour-incident-reporting",
+      "published_at": "2026-10-13T18:00:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 63
+    },
+    {
+      "id": "p0008",
+      "feed_id": "ncsc-uk",
+      "outlet": "NCSC",
+      "publisher": "ncsc-uk",
+      "tier": 1,
+      "language": "en",
+      "region": "EU",
+      "coverage": [
+        "policy",
+        "exploits"
+      ],
+      "title": "SAMPLE: NCSC Annual Review 2026",
+      "snippet": "SAMPLE text. Attackers used AI to speed up reconnaissance against UK organisations this year. We have not yet seen AI-powered malware used in an attack on UK critical national infrastructure.",
+      "url": "https://ncsc.gov.uk/ct-sample/annual-review-2026",
+      "published_at": "2026-10-13T09:00:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 58.5
+    },
+    {
+      "id": "p0009",
+      "feed_id": "nhk",
+      "outlet": "NHK",
+      "publisher": "nhk",
+      "tier": 2,
+      "language": "ja",
+      "region": "JP",
+      "coverage": [
+        "japan"
+      ],
+      "title": "SAMPLE:総務省 自治体にバックアップ体制の点検を要請",
+      "snippet": "(SAMPLE)総務省は全国の自治体に対し、ランサムウェア被害に備えてバックアップ体制を点検するよう要請した。",
+      "url": "https://www3.nhk.or.jp/news/ct-sample/local-government-backup-checks",
+      "published_at": "2026-10-13T12:00:00Z",
+      "cve_ids": [],
+      "alert": false,
+      "flags": [],
+      "score": 54
+    }
+  ],
+  "records": [
+    {
+      "id": "r0001",
+      "source": "cvelist",
+      "record_id": "CVE-2026-104935",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-104935",
+      "advisory_urls": [],
+      "title": "Ivanti Connect Secure: Authentication bypass by spoofing in ICS before version 25.1.3.0 allows a remote unauthenticated attacker to execute arbitrary commands",
+      "text": "Authentication bypass by spoofing in ICS before version 25.1.3.0 allows a remote unauthenticated attacker to execute arbitrary commands. This does not impact ICS version 22.7R2.14 or prior. CVSS 3.1 8.6 (cna). CISA SSVC: exploitation active, automatable yes, technical impact total. CISA KEV: added 2026-10-13.",
+      "date": "2026-10-13",
+      "vendor": "Ivanti",
+      "product": "Connect Secure",
+      "cve_ids": [
+        "CVE-2026-104935"
+      ],
+      "facts": {
+        "cvss": 8.6,
+        "cvss_version": "3.1",
+        "cvss_scorer": "cna",
+        "ssvc_exploitation": "active",
+        "kev_date_added": "2026-10-13"
+      },
+      "flags": []
+    },
+    {
+      "id": "r0002",
+      "source": "cvelist",
+      "record_id": "CVE-2026-96951",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-96951",
+      "advisory_urls": [],
+      "title": "Windows Shell Security Feature Bypass Vulnerability",
+      "text": "Improper neutralization of special elements used in a command ('command injection') in Windows Shell allows an unauthorized attacker to bypass a security feature over a network. CVSS 3.1 8.8 (cna).",
+      "date": "2026-10-13",
+      "vendor": "Microsoft",
+      "product": "Windows 11 Version 25H2",
+      "cve_ids": [
+        "CVE-2026-96951"
+      ],
+      "facts": {
+        "cvss": 8.8,
+        "cvss_version": "3.1",
+        "cvss_scorer": "cna",
+        "ssvc_exploitation": null,
+        "kev_date_added": null
+      },
+      "flags": []
+    },
+    {
+      "id": "r0003",
+      "source": "cvelist",
+      "record_id": "CVE-2026-108917",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-108917",
+      "advisory_urls": [],
+      "title": "Edimax BR-6208AC formAutoFWupgrade command injection",
+      "text": "A vulnerability was determined in Edimax BR-6208AC 1.32 that can lead to command injection. The attack may be performed from remote. The exploit has been publicly disclosed. The vendor was contacted early about this disclosure but did not respond in any way. This vulnerability only affects products that are no longer supported by the maintainer. CVSS 3.1 10.0 (cna). CISA SSVC: exploitation poc, automatable yes, technical impact total.",
+      "date": "2026-10-12",
+      "vendor": "Edimax",
+      "product": "BR-6208AC",
+      "cve_ids": [
+        "CVE-2026-108917"
+      ],
+      "facts": {
+        "cvss": 10,
+        "cvss_version": "3.1",
+        "cvss_scorer": "cna",
+        "ssvc_exploitation": "poc",
+        "kev_date_added": null
+      },
+      "flags": []
+    },
+    {
+      "id": "r0004",
+      "source": "cvelist",
+      "record_id": "CVE-2026-110036",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-110036",
+      "advisory_urls": [],
+      "title": "Device-mapper-persistent-data: device-mapper-persistent-data: denial of service via crafted block indices",
+      "text": "A flaw was found in device-mapper-persistent-data. A local attacker can cause a Denial of Service (DoS) by inducing a user or system tool to process crafted device metadata containing an excessively large block index. An arithmetic error in the synchronous block reading logic causes the application to panic and unexpectedly terminate. CVSS 3.1 3.3 (cna). Credits: This issue was discovered by Found by AISLE in partnership with Red Hat.",
+      "date": "2026-10-13",
+      "vendor": "Red Hat",
+      "product": "Red Hat Enterprise Linux 10",
+      "cve_ids": [
+        "CVE-2026-110036"
+      ],
+      "facts": {
+        "cvss": 3.3,
+        "cvss_version": "3.1",
+        "cvss_scorer": "cna",
+        "ssvc_exploitation": null,
+        "kev_date_added": null
+      },
+      "flags": []
+    }
+  ],
+  "injection_flags": 0
+}

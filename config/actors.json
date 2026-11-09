@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "version": 1,
+  "updated": "2026-11-07",
+  "actors": [
+    {
+      "id": "volt-typhoon",
+      "name": "Volt Typhoon",
+      "aliases": [
+        { "name": "BRONZE SILHOUETTE", "by": "Secureworks", "source_url": "https://attack.mitre.org/groups/G1017/" },
+        { "name": "Vanguard Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G1017/" },
+        { "name": "VOLTZITE", "by": "Dragos", "source_url": "https://attack.mitre.org/groups/G1017/" },
+        { "name": "Insidious Taurus", "by": "Palo Alto Networks", "source_url": "https://attack.mitre.org/groups/G1017/" }
+      ],
+      "mitre_id": "G1017",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "salt-typhoon",
+      "name": "Salt Typhoon",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": null,
+      "note": "Aliases only with a cited mapping"
+    },
+    {
+      "id": "flax-typhoon",
+      "name": "Flax Typhoon",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": null,
+      "note": "Named by Microsoft and the FBI for a Taiwan-focused botnet operation"
+    },
+    {
+      "id": "silk-typhoon",
+      "name": "Silk Typhoon",
+      "aliases": [
+        { "name": "HAFNIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0125/" }
+      ],
+      "mitre_id": "G0125",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "apt27",
+      "name": "APT27",
+      "aliases": [
+        { "name": "Emissary Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0027/" },
+        { "name": "BRONZE UNION", "by": "Secureworks", "source_url": "https://attack.mitre.org/groups/G0027/" },
+        { "name": "LuckyMouse", "by": "Kaspersky", "source_url": "https://attack.mitre.org/groups/G0027/" },
+        { "name": "Iron Tiger", "by": "Trend Micro", "source_url": "https://attack.mitre.org/groups/G0027/" }
+      ],
+      "mitre_id": "G0027",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "apt41",
+      "name": "APT41",
+      "aliases": [
+        { "name": "Wicked Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0096/" },
+        { "name": "BARIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0096/" },
+        { "name": "Brass Typhoon", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0096/" }
+      ],
+      "mitre_id": "G0096",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "apt40",
+      "name": "APT40",
+      "aliases": [
+        { "name": "Leviathan", "by": "Proofpoint", "source_url": "https://attack.mitre.org/groups/G0065/" },
+        { "name": "TEMP.Periscope", "by": "Mandiant", "source_url": "https://attack.mitre.org/groups/G0065/" },
+        { "name": "Kryptonite Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0065/" },
+        { "name": "Gingham Typhoon", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0065/" }
+      ],
+      "mitre_id": "G0065",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "apt10",
+      "name": "APT10",
+      "aliases": [
+        { "name": "menuPass", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0045/" },
+        { "name": "Stone Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0045/" },
+        { "name": "POTASSIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0045/" },
+        { "name": "Cicada", "by": "Symantec", "source_url": "https://attack.mitre.org/groups/G0045/" }
+      ],
+      "mitre_id": "G0045",
+      "related_tracker": null,
+      "note": "Long-running activity against Japan"
+    },
+    {
+      "id": "mustang-panda",
+      "name": "Mustang Panda",
+      "aliases": [
+        { "name": "TA416", "by": "Proofpoint", "source_url": "https://attack.mitre.org/groups/G0129/" },
+        { "name": "RedDelta", "by": "Recorded Future", "source_url": "https://attack.mitre.org/groups/G0129/" },
+        { "name": "BRONZE PRESIDENT", "by": "Secureworks", "source_url": "https://attack.mitre.org/groups/G0129/" }
+      ],
+      "mitre_id": "G0129",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "blacktech",
+      "name": "BlackTech",
+      "aliases": [
+        { "name": "Palmerworm", "by": "Symantec", "source_url": "https://attack.mitre.org/groups/G0098/" },
+        { "name": "Circuit Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0098/" }
+      ],
+      "mitre_id": "G0098",
+      "related_tracker": null,
+      "note": "Subject of a 2023 US and Japan joint advisory"
+    },
+    {
+      "id": "tropic-trooper",
+      "name": "Tropic Trooper",
+      "aliases": [
+        { "name": "Pirate Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0081/" },
+        { "name": "KeyBoy", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0081/" }
+      ],
+      "mitre_id": "G0081",
+      "related_tracker": null,
+      "note": "Long-running activity against Taiwan"
+    },
+    {
+      "id": "apt28",
+      "name": "APT28",
+      "aliases": [
+        { "name": "Fancy Bear", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0007/" },
+        { "name": "Forest Blizzard", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0007/" },
+        { "name": "STRONTIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0007/" },
+        { "name": "Sofacy", "by": "Kaspersky", "source_url": "https://attack.mitre.org/groups/G0007/" }
+      ],
+      "mitre_id": "G0007",
+      "related_tracker": "europe",
+      "note": null
+    },
+    {
+      "id": "apt29",
+      "name": "APT29",
+      "aliases": [
+        { "name": "Cozy Bear", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0016/" },
+        { "name": "Midnight Blizzard", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0016/" },
+        { "name": "NOBELIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0016/" }
+      ],
+      "mitre_id": "G0016",
+      "related_tracker": "europe",
+      "note": null
+    },
+    {
+      "id": "sandworm",
+      "name": "Sandworm",
+      "aliases": [
+        { "name": "APT44", "by": "Mandiant", "source_url": "https://attack.mitre.org/groups/G0034/" },
+        { "name": "Seashell Blizzard", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0034/" },
+        { "name": "Voodoo Bear", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0034/" }
+      ],
+      "mitre_id": "G0034",
+      "related_tracker": "europe",
+      "note": null
+    },
+    {
+      "id": "turla",
+      "name": "Turla",
+      "aliases": [
+        { "name": "Secret Blizzard", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0010/" },
+        { "name": "Venomous Bear", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0010/" },
+        { "name": "Snake", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0010/" }
+      ],
+      "mitre_id": "G0010",
+      "related_tracker": "europe",
+      "note": null
+    },
+    {
+      "id": "noname057-16",
+      "name": "NoName057(16)",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": "europe",
+      "note": "DDoS group"
+    },
+    {
+      "id": "lazarus",
+      "name": "Lazarus Group",
+      "aliases": [
+        { "name": "HIDDEN COBRA", "by": "US government", "source_url": "https://attack.mitre.org/groups/G0032/" },
+        { "name": "Diamond Sleet", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0032/" },
+        { "name": "Labyrinth Chollima", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0032/" }
+      ],
+      "mitre_id": "G0032",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "kimsuky",
+      "name": "Kimsuky",
+      "aliases": [
+        { "name": "Emerald Sleet", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0094/" },
+        { "name": "Velvet Chollima", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0094/" },
+        { "name": "THALLIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0094/" }
+      ],
+      "mitre_id": "G0094",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "dprk-it-workers",
+      "name": "North Korean IT workers",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": null,
+      "note": "Aliases only with a cited mapping"
+    },
+    {
+      "id": "apt35",
+      "name": "APT35",
+      "aliases": [
+        { "name": "Magic Hound", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0059/" },
+        { "name": "Charming Kitten", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0059/" },
+        { "name": "Mint Sandstorm", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0059/" },
+        { "name": "PHOSPHORUS", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0059/" }
+      ],
+      "mitre_id": "G0059",
+      "related_tracker": "me",
+      "note": null
+    },
+    {
+      "id": "muddywater",
+      "name": "MuddyWater",
+      "aliases": [
+        { "name": "Mango Sandstorm", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0069/" },
+        { "name": "MERCURY", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0069/" },
+        { "name": "Seedworm", "by": "Symantec", "source_url": "https://attack.mitre.org/groups/G0069/" },
+        { "name": "Static Kitten", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0069/" }
+      ],
+      "mitre_id": "G0069",
+      "related_tracker": "me",
+      "note": null
+    },
+    {
+      "id": "cyberav3ngers",
+      "name": "CyberAv3ngers",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": "me",
+      "note": "Targets internet-exposed industrial controllers"
+    },
+    {
+      "id": "scattered-spider",
+      "name": "Scattered Spider",
+      "aliases": [
+        { "name": "UNC3944", "by": "Mandiant", "source_url": "https://attack.mitre.org/groups/G1015/" },
+        { "name": "Octo Tempest", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G1015/" },
+        { "name": "0ktapus", "by": "Group-IB", "source_url": "https://attack.mitre.org/groups/G1015/" }
+      ],
+      "mitre_id": "G1015",
+      "related_tracker": null,
+      "note": null
+    },
+    {
+      "id": "lockbit",
+      "name": "LockBit",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": null,
+      "note": "Ransomware brand"
+    },
+    {
+      "id": "cl0p",
+      "name": "Cl0p",
+      "aliases": [],
+      "mitre_id": null,
+      "related_tracker": null,
+      "note": "Ransomware brand"
+    }
+  ]
+}

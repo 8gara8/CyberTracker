@@ -1,0 +1,663 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-09",
+  "edition": "data_only",
+  "generated_at": "2026-10-09T04:48:05+08:00",
+  "published_at": "2026-10-09T04:48:20+08:00",
+  "data_only_published_at": "2026-10-09T04:48:20+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-10-07",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 5
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-10-09.json",
+    "metrics_sha256": "3070e9163b3c05d63e0edc93dc9dca31472b7d358d80dc1b9b68b8c5b0497498",
+    "as_of": "2026-10-07"
+  },
+  "items": [
+    {
+      "id": "cve-2023-22894",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2023-22894 in Strapi Strapi as exploited",
+      "summary": "CISA added CVE-2023-22894, a flaw in Strapi Strapi, to its list of exploited flaws on 8 Oct 2026 (US date). The CVE record was published on 19 Apr 2023.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2023-22894"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-10-09",
+      "vendor": {
+        "id": null,
+        "name": "Strapi",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2023-22894",
+          "date_published": "2023-04-19",
+          "date_updated": "2023-04-19",
+          "assigner": "mitre",
+          "vendor": {
+            "id": null,
+            "name": "Strapi",
+            "country": null
+          },
+          "product": "Strapi",
+          "title": "Strapi Strapi vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-08",
+            "due_date": "2026-10-29",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.08"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-08",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-22894"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-09T04:48:20+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2021-3199",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2021-3199 in ONLYOFFICE Docs as exploited",
+      "summary": "CISA added CVE-2021-3199, a flaw in ONLYOFFICE Docs, to its list of exploited flaws on 8 Oct 2026 (US date). The CVE record was published on 22 Jan 2021.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2021-3199"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2"
+      ],
+      "first_seen": "2026-10-09",
+      "vendor": {
+        "id": null,
+        "name": "ONLYOFFICE",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2021-3199",
+          "date_published": "2021-01-22",
+          "date_updated": "2021-01-22",
+          "assigner": "mitre",
+          "vendor": {
+            "id": null,
+            "name": "ONLYOFFICE",
+            "country": null
+          },
+          "product": "Docs",
+          "title": "ONLYOFFICE Docs vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-08",
+            "due_date": "2026-10-29",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.08"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-08",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2021-3199"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-09T04:48:20+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2016-3081",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2016-3081 in Apache Struts as exploited",
+      "summary": "CISA added CVE-2016-3081, a flaw in Apache Struts, to its list of exploited flaws on 8 Oct 2026 (US date). The CVE record was published on 26 Apr 2016.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2016-3081"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s3"
+      ],
+      "first_seen": "2026-10-09",
+      "vendor": {
+        "id": "apache",
+        "name": "Apache Software Foundation",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2016-3081",
+          "date_published": "2016-04-26",
+          "date_updated": "2016-04-26",
+          "assigner": "redhat",
+          "vendor": {
+            "id": "apache",
+            "name": "Apache Software Foundation",
+            "country": "US"
+          },
+          "product": "Struts",
+          "title": "Apache Struts vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-08",
+            "due_date": "2026-10-29",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.08"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-08",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2016-3081"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-09T04:48:20+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2015-5477",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2015-5477 in ISC BIND as exploited",
+      "summary": "CISA added CVE-2015-5477, a flaw in ISC BIND, to its list of exploited flaws on 8 Oct 2026 (US date). The CVE record was published on 29 Jul 2015.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2015-5477"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4"
+      ],
+      "first_seen": "2026-10-09",
+      "vendor": {
+        "id": null,
+        "name": "ISC",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2015-5477",
+          "date_published": "2015-07-29",
+          "date_updated": "2015-07-29",
+          "assigner": "mitre",
+          "vendor": {
+            "id": null,
+            "name": "ISC",
+            "country": null
+          },
+          "product": "BIND",
+          "title": "ISC BIND vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-08",
+            "due_date": "2026-10-29",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.08"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-08",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2015-5477"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-09T04:48:20+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2015-3306",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2015-3306 in ProFTPD ProFTPD as exploited",
+      "summary": "CISA added CVE-2015-3306, a flaw in ProFTPD ProFTPD, to its list of exploited flaws on 8 Oct 2026 (US date). The CVE record was published on 18 May 2015.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2015-3306"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s5"
+      ],
+      "first_seen": "2026-10-09",
+      "vendor": {
+        "id": null,
+        "name": "ProFTPD",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2015-3306",
+          "date_published": "2015-05-18",
+          "date_updated": "2015-05-18",
+          "assigner": "mitre",
+          "vendor": {
+            "id": null,
+            "name": "ProFTPD",
+            "country": null
+          },
+          "product": "ProFTPD",
+          "title": "ProFTPD ProFTPD vulnerability",
+          "cvss": null,
+          "epss": null,
+          "ssvc": null,
+          "kev": {
+            "date_added": "2026-10-08",
+            "due_date": "2026-10-29",
+            "ransomware": "unknown",
+            "catalog_version": "2026.10.08"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-10-08",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2015-3306"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-09T04:48:20+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 7 Oct (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 7 Oct (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": []
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0001",
+      "date": "2026-10-06",
+      "claim_id": "SB-01",
+      "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [],
+  "feeds_stale": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE-2023-22894",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2023-22894",
+      "source_type": "cve_record",
+      "published_at": "2023-04-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "CVE-2021-3199",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2021-3199",
+      "source_type": "cve_record",
+      "published_at": "2021-01-22",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "CVE-2016-3081",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2016-3081",
+      "source_type": "cve_record",
+      "published_at": "2016-04-26",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "CVE-2015-5477",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2015-5477",
+      "source_type": "cve_record",
+      "published_at": "2015-07-29",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "CVE-2015-3306",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2015-3306",
+      "source_type": "cve_record",
+      "published_at": "2015-05-18",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 642,
+    "reading_minutes": 3,
+    "item_count": 5,
+    "ai_linked": {
+      "linked": 0,
+      "total": 5
+    },
+    "source_count": 5,
+    "publisher_count": 1
+  }
+}

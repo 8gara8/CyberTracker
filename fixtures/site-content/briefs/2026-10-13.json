@@ -1,0 +1,344 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "edition": "partial",
+  "generated_at": "2026-10-13T04:56:40+08:00",
+  "published_at": "2026-10-13T04:58:02+08:00",
+  "data_only_published_at": "2026-10-13T04:47:40+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-10-11",
+  "lead": [
+    {
+      "text": "Details of an Edimax router flaw rated 10 are public, and VulDB says Edimax never responded, so no fix is coming.",
+      "item_ids": [
+        "cve-2026-108917"
+      ],
+      "gap": false
+    },
+    {
+      "text": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, the same share as in 2023–24.",
+      "item_ids": [],
+      "gap": true
+    }
+  ],
+  "angle": {
+    "text": "New CVE records are arriving at 5.2 times the 2023–24 pace.",
+    "source_id": null,
+    "metric_path": "flood.vs_reference_ratio",
+    "as_of": "2026-10-11",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null,
+    "claim_text": null
+  },
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "high",
+        "change": "same",
+        "rule_id": "high-breach",
+        "reason": "Confirmed breach in United States: Item under review",
+        "item_ids": [
+          "inc-health-us-2026-10"
+        ],
+        "fired": [
+          {
+            "rule_id": "high-breach",
+            "level": "high",
+            "item_ids": [
+              "inc-health-us-2026-10"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-health-us-2026-10"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 1
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-10-13.json",
+    "metrics_sha256": "0d6092b665c8c5805158b0c81639a251835b040cb10afde3ac0bf1add249b10b",
+    "as_of": "2026-10-11"
+  },
+  "items": [
+    {
+      "id": "cve-2026-108917",
+      "kind": "critical_flaw",
+      "headline": "Unpatched Edimax router flaw rated 10 will get no fix",
+      "summary": "A CVE record published overnight describes a command injection flaw in the end-of-life BR-6208AC router; VulDB says Edimax never responded, so no fix is coming.",
+      "why_it_matters": "Old routers stay online for years, and a flaw with public details and no fix is an easy way in.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-108917"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-10-13",
+      "vendor": {
+        "id": "edimax",
+        "name": "Edimax",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-108917",
+          "date_published": "2026-10-12",
+          "date_updated": "2026-10-12",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "edimax",
+            "name": "Edimax",
+            "country": "TW"
+          },
+          "product": "BR-6208AC",
+          "title": "Edimax BR-6208AC formAutoFWupgrade command injection",
+          "cvss": {
+            "score": 10,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H/E:P/RL:X/RC:R",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-10-13T04:58:02+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "No Taiwanese vendor flaw was reported exploited today. An Edimax router flaw rated 10 has public details, and VulDB says no fix is coming.",
+    "item_ids": [
+      "cve-2026-108917"
+    ],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": "Details of an Edimax router flaw rated 10 are public, and no fix is coming.",
+        "item_ids": [
+          "cve-2026-108917"
+        ],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 1 in 90, to 11 Oct (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 11 Oct (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": []
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0001",
+      "date": "2026-10-06",
+      "claim_id": "SB-01",
+      "claim_text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [
+    {
+      "id": "C-0001",
+      "date": "2026-10-13",
+      "item_id": "inc-health-us-2026-10",
+      "edition_date": "2026-10-12",
+      "type": "name_removed",
+      "field": "incident.victim",
+      "before": "[name removed]",
+      "after": "withheld while a dispute about a named party is reviewed",
+      "reason": "SAMPLE. A reader disputed the naming of the company, so the item is withheld while the dispute is reviewed.",
+      "source_url": null,
+      "trigger": "reader_report",
+      "dispute_id": "D-0001"
+    },
+    {
+      "id": "C-0002",
+      "date": "2026-10-13",
+      "item_id": "pol-jp-active-cyber-defence-2026-10",
+      "edition_date": "2026-10-12",
+      "type": "clarification",
+      "field": "summary",
+      "before": "The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law that takes full effect in 2027.",
+      "after": "The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law, whose measures take effect in stages through 2027.",
+      "reason": "SAMPLE. The law's measures start in stages; the guidelines cover only police access to attack servers.",
+      "source_url": "https://www.npa.go.jp/ct-sample/active-cyber-defence-guidelines",
+      "trigger": "editor",
+      "dispute_id": null
+    }
+  ],
+  "elsewhere": [],
+  "epss_movers": [],
+  "feeds_stale": [
+    {
+      "id": "ithome-security",
+      "name": "iThome 資安 (unverified)",
+      "status": "failed",
+      "newest": "2026-10-12T16:40:00+08:00",
+      "stale_since": "2026-10-13"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE Record: CVE-2026-108917",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-108917",
+      "source_type": "cve_record",
+      "published_at": "2026-10-13T01:45:15+08:00",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 532,
+    "reading_minutes": 3,
+    "item_count": 1,
+    "ai_linked": {
+      "linked": 0,
+      "total": 1
+    },
+    "source_count": 1,
+    "publisher_count": 1
+  }
+}

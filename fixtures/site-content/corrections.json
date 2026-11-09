@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "corrections": [
+    {
+      "id": "C-0001",
+      "date": "2026-10-13",
+      "item_id": "inc-health-us-2026-10",
+      "edition_date": "2026-10-12",
+      "type": "name_removed",
+      "field": "incident.victim",
+      "before": "[name removed]",
+      "after": "withheld while a dispute about a named party is reviewed",
+      "reason": "SAMPLE. A reader disputed the naming of the company, so the item is withheld while the dispute is reviewed.",
+      "source_url": null,
+      "trigger": "reader_report",
+      "dispute_id": "D-0001"
+    },
+    {
+      "id": "C-0002",
+      "date": "2026-10-13",
+      "item_id": "pol-jp-active-cyber-defence-2026-10",
+      "edition_date": "2026-10-12",
+      "type": "clarification",
+      "field": "summary",
+      "before": "The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law that takes full effect in 2027.",
+      "after": "The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law, whose measures take effect in stages through 2027.",
+      "reason": "SAMPLE. The law's measures start in stages; the guidelines cover only police access to attack servers.",
+      "source_url": "https://www.npa.go.jp/ct-sample/active-cyber-defence-guidelines",
+      "trigger": "editor",
+      "dispute_id": null
+    }
+  ],
+  "disputes": [
+    {
+      "id": "D-0001",
+      "received": "2026-10-12T21:14:05+08:00",
+      "issue_number": 3,
+      "item_id": "inc-health-us-2026-10",
+      "edition_date": "2026-10-12",
+      "kind": "victim",
+      "evidence_url": null,
+      "status": "open",
+      "resolved_on": null,
+      "correction_id": "C-0001"
+    }
+  ]
+}

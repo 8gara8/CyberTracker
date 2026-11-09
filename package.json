@@ -6,7 +6,15 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm test",
+    "check": "npm run typecheck && npm test && npm run schema:check && npm run fixtures:check && npm run validate:sample && npm run validate:all",
+    "validate": "tsx scripts/validate.ts",
+    "validate:all": "tsx scripts/validate.ts --all",
+    "validate:sample": "CT_CONTENT_DIR=fixtures/site-content tsx scripts/validate.ts --all",
+    "schema:gen": "tsx scripts/gen-json-schema.ts",
+    "schema:check": "tsx scripts/gen-json-schema.ts --check",
+    "fixtures:gen": "tsx fixtures/src/build.ts",
+    "fixtures:check": "tsx fixtures/src/build.ts --check",
+    "chat": "tsx scripts/chat.ts",
     "agent:check": "tsx scripts/agent-check.ts"
   },
   "dependencies": {

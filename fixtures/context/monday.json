@@ -1,0 +1,1227 @@
+{
+  "date": "2026-10-12",
+  "window": {
+    "start": "2026-10-11T04:30:00+08:00",
+    "end": "2026-10-12T04:30:00+08:00"
+  },
+  "weekly": true,
+  "deadline": "2026-10-12T05:15:00+08:00",
+  "data_cutoff_utc": "2026-10-10",
+  "budgets": {
+    "max_items": 10,
+    "typical_items": [
+      5,
+      8
+    ],
+    "deep_reads": 15,
+    "page_fetches": 40,
+    "words": {
+      "target": 1100,
+      "max": 1300
+    }
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "score": 93.75,
+      "id": "inc-health-us-2026-10",
+      "kind": "breach",
+      "reasons": [
+        "newsroom report"
+      ],
+      "title": "<untrusted source=\"p0001\">SAMPLE: Example Health Group says hackers copied patient records</untrusted>",
+      "cve_ids": [],
+      "vendor": null,
+      "vendor_country": null,
+      "product": null,
+      "cvss": null,
+      "epss": null,
+      "kev": null,
+      "ssvc": null,
+      "ai_credit_match": null,
+      "exploit_reference": false,
+      "release": null,
+      "record_url": null,
+      "advisory_urls": [],
+      "pack_ids": [
+        "p0001"
+      ],
+      "deep_read": true
+    }
+  ],
+  "cut": {
+    "count": 18,
+    "by_reason": {
+      "below_score": 15,
+      "duplicate": 3
+    }
+  },
+  "metrics": {
+    "gap_headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
+    "quotable": [
+      {
+        "key": "window.w26.at_disclosure_share",
+        "label": "share already exploited at disclosure, 26 weeks",
+        "display": "37%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.at_disclosure_share",
+        "label": "share already exploited at disclosure, 2023–24",
+        "display": "37%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.after_disclosure_median_days",
+        "label": "median days to listing for the rest, 26 weeks",
+        "display": "17",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.after_disclosure_median_days",
+        "label": "median days to listing for the rest, 2023–24",
+        "display": "21",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.cohort_n",
+        "label": "recently disclosed flaws on CISA's list, 26 weeks",
+        "display": "157",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "constant",
+        "label": "weeks in the window",
+        "display": "26",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.kev_pace_ratio",
+        "label": "KEV additions, pace vs 2023–24",
+        "display": "1.9",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "flood.n",
+        "label": "new CVE records, 13 weeks",
+        "display": "44,944",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "constant",
+        "label": "weeks in the window",
+        "display": "13",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "flood.vs_reference_ratio",
+        "label": "new CVE records, pace vs 2023–24",
+        "display": "5.2",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "flood.vs_reference_ex_kernel_ratio",
+        "label": "new CVE records excluding the Linux kernel, pace vs 2023–24",
+        "display": "5.0",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "ai_credited.w13.total",
+        "label": "AI-credited records, 13 weeks",
+        "display": "451",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "ai_credited.w13.ex_anthropic",
+        "label": "AI-credited records excluding Anthropic, 13 weeks",
+        "display": "173",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.kev_added_n",
+        "label": "KEV additions, 26 weeks",
+        "display": "179",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.unjoined_n",
+        "label": "not joined to a CVE record, 26 weeks",
+        "display": "0",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.at_disclosure_n",
+        "label": "already exploited at disclosure, 26 weeks",
+        "display": "58",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.at_disclosure_ci80.0",
+        "label": "80% interval low, at disclosure, 26 weeks",
+        "display": "32%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.at_disclosure_ci80.1",
+        "label": "80% interval high, at disclosure, 26 weeks",
+        "display": "42%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.n_day_n",
+        "label": "n-day race (listed 2 to 30 days after), 26 weeks",
+        "display": "62",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.n_day_n",
+        "label": "n-day race share, 26 weeks",
+        "display": "39%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.cohort_n",
+        "label": "listed 31 to 365 days after, 26 weeks",
+        "display": "37",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.after_disclosure_median_ci80.0",
+        "label": "80% interval low, median days, 26 weeks",
+        "display": "13",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.after_disclosure_median_ci80.1",
+        "label": "80% interval high, median days, 26 weeks",
+        "display": "22",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.k7_n",
+        "label": "listed within 7 days, 26 weeks",
+        "display": "87",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.p7",
+        "label": "share listed within 7 days, 26 weeks",
+        "display": "55%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.p7_ci80.0",
+        "label": "80% interval low, listed within 7 days, 26 weeks",
+        "display": "50%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.p7_ci80.1",
+        "label": "80% interval high, listed within 7 days, 26 weeks",
+        "display": "60%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w26.old_listed_n",
+        "label": "old flaws newly listed (more than 365 days), 26 weeks",
+        "display": "22",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.old_listed_n",
+        "label": "2023–24 pace of old flaws newly listed, 26 weeks",
+        "display": "23",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.kev_added_n",
+        "label": "KEV additions, 13 weeks",
+        "display": "107",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.unjoined_n",
+        "label": "not joined to a CVE record, 13 weeks",
+        "display": "0",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.cohort_n",
+        "label": "recently disclosed flaws on CISA's list, 13 weeks",
+        "display": "94",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.at_disclosure_n",
+        "label": "already exploited at disclosure, 13 weeks",
+        "display": "36",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.at_disclosure_share",
+        "label": "share already exploited at disclosure, 13 weeks",
+        "display": "38%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.at_disclosure_ci80.0",
+        "label": "80% interval low, at disclosure, 13 weeks",
+        "display": "32%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.at_disclosure_ci80.1",
+        "label": "80% interval high, at disclosure, 13 weeks",
+        "display": "45%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.n_day_n",
+        "label": "n-day race (listed 2 to 30 days after), 13 weeks",
+        "display": "35",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.n_day_n",
+        "label": "n-day race share, 13 weeks",
+        "display": "37%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.cohort_n",
+        "label": "listed 31 to 365 days after, 13 weeks",
+        "display": "23",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.after_disclosure_median_days",
+        "label": "median days to listing for the rest, 13 weeks",
+        "display": "20.5",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.after_disclosure_median_ci80.0",
+        "label": "80% interval low, median days, 13 weeks",
+        "display": "13",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.after_disclosure_median_ci80.1",
+        "label": "80% interval high, median days, 13 weeks",
+        "display": "30",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.k7_n",
+        "label": "listed within 7 days, 13 weeks",
+        "display": "53",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.p7",
+        "label": "share listed within 7 days, 13 weeks",
+        "display": "56%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.p7_ci80.0",
+        "label": "80% interval low, listed within 7 days, 13 weeks",
+        "display": "50%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.p7_ci80.1",
+        "label": "80% interval high, listed within 7 days, 13 weeks",
+        "display": "63%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.w13.old_listed_n",
+        "label": "old flaws newly listed (more than 365 days), 13 weeks",
+        "display": "13",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.old_listed_n",
+        "label": "2023–24 pace of old flaws newly listed, 13 weeks",
+        "display": "11",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.kev_added_n",
+        "label": "KEV additions, 2023–24",
+        "display": "373",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.unjoined_n",
+        "label": "not joined to a CVE record, 2023–24",
+        "display": "0",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.cohort_n",
+        "label": "recently disclosed flaws on CISA's list, 2023–24",
+        "display": "282",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.at_disclosure_n",
+        "label": "already exploited at disclosure, 2023–24",
+        "display": "104",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.at_disclosure_ci80.0",
+        "label": "80% interval low, at disclosure, 2023–24",
+        "display": "33%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.at_disclosure_ci80.1",
+        "label": "80% interval high, at disclosure, 2023–24",
+        "display": "41%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.n_day_n",
+        "label": "n-day race (listed 2 to 30 days after), 2023–24",
+        "display": "94",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.n_day_n",
+        "label": "n-day race share, 2023–24",
+        "display": "33%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.cohort_n",
+        "label": "listed 31 to 365 days after, 2023–24",
+        "display": "84",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.after_disclosure_median_ci80.0",
+        "label": "80% interval low, median days, 2023–24",
+        "display": "15",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.after_disclosure_median_ci80.1",
+        "label": "80% interval high, median days, 2023–24",
+        "display": "36",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.k7_n",
+        "label": "listed within 7 days, 2023–24",
+        "display": "163",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.p7",
+        "label": "share listed within 7 days, 2023–24",
+        "display": "58%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.p7_ci80.0",
+        "label": "80% interval low, listed within 7 days, 2023–24",
+        "display": "54%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.p7_ci80.1",
+        "label": "80% interval high, listed within 7 days, 2023–24",
+        "display": "62%",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "window.reference.old_listed_n",
+        "label": "old flaws newly listed (more than 365 days), 2023–24",
+        "display": "91",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "home_vendors.tw.d30_n",
+        "label": "KEV additions for Taiwanese vendors, 30 days",
+        "display": "1",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "home_vendors.tw.d90_n",
+        "label": "KEV additions for Taiwanese vendors, 90 days",
+        "display": "1",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "home_vendors.jp.d30_n",
+        "label": "KEV additions for Japanese vendors, 30 days",
+        "display": "0",
+        "as_of": "2026-10-10"
+      },
+      {
+        "key": "home_vendors.jp.d90_n",
+        "label": "KEV additions for Japanese vendors, 90 days",
+        "display": "0",
+        "as_of": "2026-10-10"
+      }
+    ],
+    "home_vendor_kev": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 1
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0
+      }
+    },
+    "stale": []
+  },
+  "regions_preview": [
+    {
+      "region": "US",
+      "level": "baseline",
+      "fired_rule": null,
+      "basis": null
+    },
+    {
+      "region": "EU",
+      "level": "baseline",
+      "fired_rule": null,
+      "basis": null
+    },
+    {
+      "region": "TW",
+      "level": "baseline",
+      "fired_rule": null,
+      "basis": null
+    },
+    {
+      "region": "JP",
+      "level": "baseline",
+      "fired_rule": null,
+      "basis": null
+    }
+  ],
+  "standing_stories": [
+    {
+      "id": "salt-typhoon",
+      "title": "Salt Typhoon and the telecom intrusions",
+      "match_terms": [
+        "Salt Typhoon",
+        "telecom intrusion",
+        "lawful intercept"
+      ],
+      "last_development": null,
+      "last_item_id": null
+    },
+    {
+      "id": "volt-typhoon",
+      "title": "Volt Typhoon and pre-positioning in critical infrastructure",
+      "match_terms": [
+        "Volt Typhoon",
+        "Vanguard Panda",
+        "VOLTZITE",
+        "pre-positioning"
+      ],
+      "last_development": null,
+      "last_item_id": null
+    },
+    {
+      "id": "dprk-it-workers",
+      "title": "North Korean IT workers",
+      "match_terms": [
+        "North Korean IT workers",
+        "DPRK IT workers",
+        "Famous Chollima",
+        "Jasper Sleet",
+        "laptop farm"
+      ],
+      "last_development": null,
+      "last_item_id": null
+    },
+    {
+      "id": "taiwan-undersea-cables",
+      "title": "Damage to Taiwan's undersea cables",
+      "match_terms": [
+        "undersea cable Taiwan",
+        "海纜",
+        "海底電纜",
+        "Matsu cable",
+        "Penghu cable"
+      ],
+      "last_development": null,
+      "last_item_id": null
+    }
+  ],
+  "watch_windows": [],
+  "watch_searches": [
+    {
+      "id": "q-reuters",
+      "name": "Reuters (search)",
+      "query": "Reuters cyberattack OR hacking OR vulnerability",
+      "language": "en",
+      "region": "GLOBAL"
+    },
+    {
+      "id": "q-ap",
+      "name": "Associated Press (search)",
+      "query": "AP News cyberattack OR hackers OR vulnerability",
+      "language": "en",
+      "region": "US"
+    },
+    {
+      "id": "q-anthropic-red",
+      "name": "Anthropic frontier red team (search)",
+      "query": "site:red.anthropic.com",
+      "language": "en",
+      "region": "GLOBAL"
+    },
+    {
+      "id": "q-enisa",
+      "name": "ENISA (search)",
+      "query": "ENISA threat OR vulnerability OR incident",
+      "language": "en",
+      "region": "EU"
+    },
+    {
+      "id": "q-acs-tw",
+      "name": "Administration for Cyber Security 資安署 (search)",
+      "query": "資安署 site:moda.gov.tw",
+      "language": "zh-Hant-TW",
+      "region": "TW"
+    },
+    {
+      "id": "q-mjib-tw",
+      "name": "Investigation Bureau 調查局 (search)",
+      "query": "調查局 資安",
+      "language": "zh-Hant-TW",
+      "region": "TW"
+    },
+    {
+      "id": "q-nsb-tw",
+      "name": "National Security Bureau 國安局 (search)",
+      "query": "國安局 網路攻擊",
+      "language": "zh-Hant-TW",
+      "region": "TW"
+    },
+    {
+      "id": "q-nco-jp",
+      "name": "National Cybersecurity Office 国家サイバー統括室 (search)",
+      "query": "国家サイバー統括室",
+      "language": "ja",
+      "region": "JP"
+    },
+    {
+      "id": "q-npa-jp",
+      "name": "National Police Agency 警察庁 (search)",
+      "query": "警察庁 サイバー",
+      "language": "ja",
+      "region": "JP"
+    },
+    {
+      "id": "q-nikkei",
+      "name": "Nikkei (search)",
+      "query": "日経 サイバー攻撃",
+      "language": "ja",
+      "region": "JP"
+    },
+    {
+      "id": "q-prc-state",
+      "name": "PRC state sources, labelled (search)",
+      "query": "国家计算机病毒应急处理中心 OR 新华社 网络攻击",
+      "language": "zh-Hans-CN",
+      "region": "GLOBAL"
+    }
+  ],
+  "recent_items": [],
+  "yesterday": {
+    "date": "2026-10-11",
+    "edition": "full",
+    "lead": [
+      "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed, unchanged from 2023–24.",
+      "For the rest, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24."
+    ],
+    "item_ids": []
+  },
+  "scoreboard": [
+    {
+      "id": "SB-01",
+      "text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact.",
+      "judged_by": "script",
+      "metric_path": "base_rate.ratio",
+      "support": "80% interval high <= 1",
+      "challenge": "80% interval low >= 2",
+      "deadline": "2027-12-31",
+      "status": "open",
+      "reading": null,
+      "reading_as_of": null
+    },
+    {
+      "id": "SB-02",
+      "text": "SAMPLE. By the end of 2028, AI-powered malware is used in an attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "judged_by": "report",
+      "metric_path": null,
+      "support": "The UK government or the NCSC states that an attack on UK critical infrastructure used AI-powered malware",
+      "challenge": "The UK government or the NCSC states that a claimed AI-powered attack on UK critical infrastructure did not use AI-powered malware",
+      "deadline": "2028-12-31",
+      "status": "open",
+      "reading": null,
+      "reading_as_of": null
+    }
+  ],
+  "corrections": {
+    "flagged": [],
+    "reports": []
+  },
+  "config": {
+    "tiers": {
+      "t1": [
+        "cve.org",
+        "cve.mitre.org",
+        "nvd.nist.gov",
+        "cisa.gov/known-exploited-vulnerabilities-catalog",
+        "github.com",
+        "osv.dev",
+        "first.org/epss",
+        "api.first.org",
+        "cisa.gov",
+        "kb.cert.org",
+        "fbi.gov",
+        "ic3.gov",
+        "justice.gov",
+        "treasury.gov",
+        "state.gov",
+        "whitehouse.gov",
+        "nsa.gov",
+        "defense.gov",
+        "nist.gov",
+        "sec.gov",
+        "ftc.gov",
+        "cert.europa.eu",
+        "enisa.europa.eu",
+        "europa.eu",
+        "ncsc.gov.uk",
+        "gov.uk",
+        "ico.org.uk",
+        "bsi.bund.de",
+        "cyber.gouv.fr",
+        "ssi.gouv.fr",
+        "ncsc.nl",
+        "cnil.fr",
+        "cyber.gov.au",
+        "cyber.gc.ca",
+        "ncsc.govt.nz",
+        "twcert.org.tw",
+        "moda.gov.tw",
+        "nics.nat.gov.tw",
+        "nsb.gov.tw",
+        "mjib.gov.tw",
+        "ey.gov.tw",
+        "president.gov.tw",
+        "mnd.gov.tw",
+        "mac.gov.tw",
+        "cec.gov.tw",
+        "ncc.gov.tw",
+        "mops.twse.com.tw",
+        "twse.com.tw",
+        "tpex.org.tw",
+        "jpcert.or.jp",
+        "jvn.jp",
+        "ipa.go.jp",
+        "cyber.go.jp",
+        "nisc.go.jp",
+        "npa.go.jp",
+        "meti.go.jp",
+        "soumu.go.jp",
+        "mofa.go.jp",
+        "kantei.go.jp",
+        "mod.go.jp",
+        "release.tdnet.info",
+        "cverc.org.cn",
+        "fmprc.gov.cn",
+        "mfa.gov.cn",
+        "mps.gov.cn",
+        "cac.gov.cn",
+        "mandiant.com",
+        "cloud.google.com/blog/topics/threat-intelligence",
+        "blog.google/threat-analysis-group",
+        "googleprojectzero.blogspot.com",
+        "projectzero.google",
+        "security.googleblog.com",
+        "deepmind.google",
+        "microsoft.com/en-us/security/blog",
+        "unit42.paloaltonetworks.com",
+        "volexity.com",
+        "citizenlab.ca",
+        "welivesecurity.com",
+        "securelist.com",
+        "talosintelligence.com",
+        "recordedfuture.com",
+        "proofpoint.com",
+        "research.checkpoint.com",
+        "wiz.io",
+        "rapid7.com",
+        "horizon3.ai",
+        "labs.watchtowr.com",
+        "watchtowr.com",
+        "greynoise.io",
+        "shadowserver.org",
+        "censys.com",
+        "vulncheck.com",
+        "huntress.com",
+        "arcticwolf.com",
+        "eclecticiq.com",
+        "sekoia.io",
+        "group-ib.com",
+        "dragos.com",
+        "claroty.com",
+        "nozominetworks.com",
+        "forescout.com",
+        "zscaler.com/blogs/security-research",
+        "elastic.co/security-labs",
+        "sentinelone.com/labs",
+        "trendmicro.com/en_us/research",
+        "news.sophos.com",
+        "security.com",
+        "blog.trailofbits.com",
+        "lab52.io",
+        "teamt5.org",
+        "cycraft.com",
+        "anthropic.com",
+        "red.anthropic.com",
+        "openai.com",
+        "xbow.com",
+        "aisle.com"
+      ],
+      "t2": [
+        "therecord.media",
+        "bleepingcomputer.com",
+        "securityweek.com",
+        "krebsonsecurity.com",
+        "reuters.com",
+        "apnews.com",
+        "techcrunch.com",
+        "cyberscoop.com",
+        "darkreading.com",
+        "theregister.com",
+        "arstechnica.com",
+        "wired.com",
+        "404media.co",
+        "risky.biz",
+        "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews",
+        "scworld.com",
+        "infosecurity-magazine.com",
+        "helpnetsecurity.com",
+        "csoonline.com",
+        "zdnet.com",
+        "bloomberg.com",
+        "ft.com",
+        "wsj.com",
+        "nytimes.com",
+        "washingtonpost.com",
+        "bbc.com",
+        "bbc.co.uk",
+        "theguardian.com",
+        "politico.com",
+        "politico.eu",
+        "axios.com",
+        "cnbc.com",
+        "euractiv.com",
+        "heise.de",
+        "lemonde.fr",
+        "spiegel.de",
+        "cna.com.tw",
+        "focustaiwan.tw",
+        "feeds.feedburner.com/rsscna",
+        "taipeitimes.com",
+        "ithome.com.tw",
+        "udn.com",
+        "ltn.com.tw",
+        "rti.org.tw",
+        "pts.org.tw",
+        "twreporter.org",
+        "cw.com.tw",
+        "digitimes.com",
+        "digitimes.com.tw",
+        "nhk.or.jp",
+        "nikkei.com",
+        "japantimes.co.jp",
+        "kyodonews.net",
+        "kyodonews.jp",
+        "asahi.com",
+        "yomiuri.co.jp",
+        "mainichi.jp",
+        "jiji.com",
+        "itmedia.co.jp",
+        "security-next.com",
+        "scmp.com"
+      ],
+      "not_sole_newsroom": [
+        "thehackernews.com",
+        "feeds.feedburner.com/thehackersnews"
+      ],
+      "state_labelled": [
+        "cverc.org.cn",
+        "fmprc.gov.cn",
+        "mfa.gov.cn",
+        "mps.gov.cn",
+        "cac.gov.cn",
+        "news.cn",
+        "xinhuanet.com",
+        "globaltimes.cn",
+        "cgtn.com",
+        "tass.com",
+        "tass.ru",
+        "rt.com"
+      ]
+    },
+    "home_vendors": {
+      "tw": [
+        "Acer",
+        "Advantech",
+        "Arcadyan",
+        "ASUS",
+        "ASUSTOR",
+        "ATEN",
+        "AVTECH",
+        "D-Link",
+        "Delta Electronics",
+        "Digiever",
+        "DrayTek",
+        "Edimax",
+        "GeoVision",
+        "GIGABYTE",
+        "Insyde Software",
+        "MediaTek",
+        "Merit LILIN",
+        "Moxa",
+        "MSI",
+        "NUUO",
+        "Planet Technology",
+        "QNAP",
+        "Realtek",
+        "Synology",
+        "TeamT5",
+        "VIVOTEK",
+        "Zyxel"
+      ],
+      "jp": [
+        "Brother",
+        "Buffalo",
+        "Canon",
+        "CONTEC",
+        "Cybozu",
+        "ELECOM",
+        "Epson",
+        "Fujitsu",
+        "FXC",
+        "Hitachi",
+        "I-O DATA",
+        "Konica Minolta",
+        "Kyocera",
+        "Mitsubishi Electric",
+        "MOTEX",
+        "NEC",
+        "Omron",
+        "Panasonic",
+        "Ricoh",
+        "Sharp",
+        "Sky Co.",
+        "Soliton Systems",
+        "Sony",
+        "Toshiba",
+        "Trend Micro",
+        "Yokogawa"
+      ]
+    },
+    "actors": [
+      {
+        "name": "Volt Typhoon",
+        "aliases": [
+          "BRONZE SILHOUETTE",
+          "Vanguard Panda",
+          "VOLTZITE",
+          "Insidious Taurus"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "Salt Typhoon",
+        "aliases": [],
+        "related_tracker": null
+      },
+      {
+        "name": "Flax Typhoon",
+        "aliases": [],
+        "related_tracker": null
+      },
+      {
+        "name": "Silk Typhoon",
+        "aliases": [
+          "HAFNIUM"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "APT27",
+        "aliases": [
+          "Emissary Panda",
+          "BRONZE UNION",
+          "LuckyMouse",
+          "Iron Tiger"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "APT41",
+        "aliases": [
+          "Wicked Panda",
+          "BARIUM",
+          "Brass Typhoon"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "APT40",
+        "aliases": [
+          "Leviathan",
+          "TEMP.Periscope",
+          "Kryptonite Panda",
+          "Gingham Typhoon"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "APT10",
+        "aliases": [
+          "menuPass",
+          "Stone Panda",
+          "POTASSIUM",
+          "Cicada"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "Mustang Panda",
+        "aliases": [
+          "TA416",
+          "RedDelta",
+          "BRONZE PRESIDENT"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "BlackTech",
+        "aliases": [
+          "Palmerworm",
+          "Circuit Panda"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "Tropic Trooper",
+        "aliases": [
+          "Pirate Panda",
+          "KeyBoy"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "APT28",
+        "aliases": [
+          "Fancy Bear",
+          "Forest Blizzard",
+          "STRONTIUM",
+          "Sofacy"
+        ],
+        "related_tracker": "europe"
+      },
+      {
+        "name": "APT29",
+        "aliases": [
+          "Cozy Bear",
+          "Midnight Blizzard",
+          "NOBELIUM"
+        ],
+        "related_tracker": "europe"
+      },
+      {
+        "name": "Sandworm",
+        "aliases": [
+          "APT44",
+          "Seashell Blizzard",
+          "Voodoo Bear"
+        ],
+        "related_tracker": "europe"
+      },
+      {
+        "name": "Turla",
+        "aliases": [
+          "Secret Blizzard",
+          "Venomous Bear",
+          "Snake"
+        ],
+        "related_tracker": "europe"
+      },
+      {
+        "name": "NoName057(16)",
+        "aliases": [],
+        "related_tracker": "europe"
+      },
+      {
+        "name": "Lazarus Group",
+        "aliases": [
+          "HIDDEN COBRA",
+          "Diamond Sleet",
+          "Labyrinth Chollima"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "Kimsuky",
+        "aliases": [
+          "Emerald Sleet",
+          "Velvet Chollima",
+          "THALLIUM"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "North Korean IT workers",
+        "aliases": [],
+        "related_tracker": null
+      },
+      {
+        "name": "APT35",
+        "aliases": [
+          "Magic Hound",
+          "Charming Kitten",
+          "Mint Sandstorm",
+          "PHOSPHORUS"
+        ],
+        "related_tracker": "me"
+      },
+      {
+        "name": "MuddyWater",
+        "aliases": [
+          "Mango Sandstorm",
+          "MERCURY",
+          "Seedworm",
+          "Static Kitten"
+        ],
+        "related_tracker": "me"
+      },
+      {
+        "name": "CyberAv3ngers",
+        "aliases": [],
+        "related_tracker": "me"
+      },
+      {
+        "name": "Scattered Spider",
+        "aliases": [
+          "UNC3944",
+          "Octo Tempest",
+          "0ktapus"
+        ],
+        "related_tracker": null
+      },
+      {
+        "name": "LockBit",
+        "aliases": [],
+        "related_tracker": null
+      },
+      {
+        "name": "Cl0p",
+        "aliases": [],
+        "related_tracker": null
+      }
+    ],
+    "ai_finders": [
+      {
+        "family": "anthropic",
+        "names": [
+          "Anthropic",
+          "Claude",
+          "Claude Mythos",
+          "Project Glasswing",
+          "Claude Code"
+        ]
+      },
+      {
+        "family": "openai",
+        "names": [
+          "OpenAI",
+          "Aardvark",
+          "Codex Security",
+          "ChatGPT"
+        ]
+      },
+      {
+        "family": "google",
+        "names": [
+          "Google",
+          "Big Sleep",
+          "CodeMender",
+          "Gemini"
+        ]
+      },
+      {
+        "family": "other",
+        "names": [
+          "XBOW",
+          "AISLE",
+          "depthfirst",
+          "ZeroPath",
+          "DARPA AIxCC",
+          "Team Atlanta",
+          "Buttercup",
+          "RoboDuck",
+          "Vulnhuntr"
+        ]
+      }
+    ],
+    "banned_words": [
+      "unprecedented",
+      "game-changer",
+      "gamechanger",
+      "apocalypse",
+      "apocalyptic",
+      "bugpocalypse",
+      "armageddon",
+      "doomsday",
+      "cyber pearl harbor",
+      "cyber 9/11",
+      "catastrophic",
+      "devastating",
+      "nightmare",
+      "terrifying",
+      "chilling",
+      "unstoppable",
+      "existential threat",
+      "ticking time bomb",
+      "perfect storm",
+      "wake-up call",
+      "sea change",
+      "paradigm shift",
+      "revolutionary",
+      "groundbreaking",
+      "superhuman",
+      "mind-blowing",
+      "massive",
+      "skyrocket",
+      "skyrocketing",
+      "tsunami"
+    ]
+  },
+  "pack": {
+    "md": "packs/2026-10-12.md",
+    "json": "packs/2026-10-12.json",
+    "degraded": false,
+    "failed_feeds": []
+  }
+}

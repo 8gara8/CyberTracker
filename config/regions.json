@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "version": 1,
+  "updated": "2026-11-07",
+  "review_due": "2026-12-02",
+  "regions": [
+    {
+      "code": "US",
+      "countries": ["US"],
+      "agencies": ["cisa"],
+      "alert_patterns": ["cisa\\.gov/news-events/directives/ed-\\d"],
+      "certs": [],
+      "home_vendor_country": null
+    },
+    {
+      "code": "EU",
+      "countries": [
+        "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
+        "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO", "CH", "GB"
+      ],
+      "agencies": ["cert-eu", "ncsc-uk", "bsi", "anssi"],
+      "alert_patterns": ["cert\\.ssi\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+"],
+      "certs": [],
+      "home_vendor_country": null
+    },
+    {
+      "code": "TW",
+      "countries": ["TW"],
+      "agencies": ["moda-acs", "twcert", "nsb", "mjib"],
+      "alert_patterns": [],
+      "certs": ["twcert"],
+      "home_vendor_country": "TW"
+    },
+    {
+      "code": "JP",
+      "countries": ["JP"],
+      "agencies": ["nco-jp", "jpcert"],
+      "alert_patterns": ["jpcert\\.or\\.jp/at/\\d{4}/at\\d+"],
+      "certs": ["jpcert"],
+      "home_vendor_country": "JP"
+    }
+  ],
+  "rules": [
+    {
+      "id": "cni-disruption",
+      "type": "confirmed_disruption",
+      "level": "critical",
+      "regions": ["US", "EU", "TW", "JP"],
+      "params": {
+        "lookback_hours": 72,
+        "min_publishers": 2,
+        "sectors": ["government", "defence", "energy", "water", "transport", "telecom", "health", "finance"],
+        "statuses": ["confirmed"],
+        "min_severity": null,
+        "max_lag_days": null
+      },
+      "reason": "Confirmed disruption of {sector} in {country}: {headline}",
+      "label": "Government or critical infrastructure disrupted"
+    },
+    {
+      "id": "agency-alert",
+      "type": "agency_alert",
+      "level": "high",
+      "regions": ["US", "EU", "TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": null,
+        "min_severity": null,
+        "max_lag_days": null
+      },
+      "reason": "{publisher} emergency alert: {title}",
+      "label": "National agency emergency alert"
+    },
+    {
+      "id": "high-breach",
+      "type": "confirmed_breach",
+      "level": "high",
+      "regions": ["US", "EU", "TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": ["confirmed"],
+        "min_severity": "high",
+        "max_lag_days": null
+      },
+      "reason": "Confirmed breach in {country}: {headline}",
+      "label": "Confirmed High or Critical breach of a victim in the region"
+    },
+    {
+      "id": "serious-victim",
+      "type": "victim_in_region",
+      "level": "elevated",
+      "regions": ["US", "EU", "TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": ["confirmed", "reported"],
+        "min_severity": "high",
+        "max_lag_days": null
+      },
+      "reason": "Victim in {country}: {headline}",
+      "label": "High or Critical item whose victim is in the region"
+    },
+    {
+      "id": "campaign-target",
+      "type": "campaign_target",
+      "level": "elevated",
+      "regions": ["US", "EU", "TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": null,
+        "min_severity": null,
+        "max_lag_days": null
+      },
+      "reason": "Campaign naming the region: {headline}",
+      "label": "Campaign that names the region as a target"
+    },
+    {
+      "id": "home-vendor-kev",
+      "type": "home_vendor_kev",
+      "level": "elevated",
+      "regions": ["TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": null,
+        "min_severity": null,
+        "max_lag_days": 365
+      },
+      "reason": "CISA listed a {vendor} flaw as exploited: {cve}",
+      "label": "KEV addition for a home vendor's flaw under a year old"
+    },
+    {
+      "id": "home-cert-exploitation",
+      "type": "national_cert_exploitation",
+      "level": "elevated",
+      "regions": ["TW", "JP"],
+      "params": {
+        "lookback_hours": 168,
+        "min_publishers": null,
+        "sectors": null,
+        "statuses": null,
+        "min_severity": null,
+        "max_lag_days": null
+      },
+      "reason": "{publisher} reports exploitation at home: {title}",
+      "label": "National CERT reports exploitation at home"
+    }
+  ],
+  "editor_raise": { "max_steps": 1, "max_per_region": 1 }
+}

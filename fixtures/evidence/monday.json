@@ -1,0 +1,38 @@
+{
+  "urls": [
+    "https://therecord.media/ct-sample/us-hospital-operator-breach",
+    "https://sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
+    "https://cverc.org.cn/ct-sample/national-time-service-network-report",
+    "https://scmp.com/ct-sample/cverc-time-service-network-claim",
+    "https://npa.go.jp/ct-sample/active-cyber-defence-guidelines",
+    "https://japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers",
+    "https://cve.org/CVERecord?id=CVE-2026-107466"
+  ],
+  "fetched": [
+    "https://sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
+    "https://therecord.media/ct-sample/us-hospital-operator-breach",
+    "https://cverc.org.cn/ct-sample/national-time-service-network-report",
+    "https://scmp.com/ct-sample/cverc-time-service-network-claim",
+    "https://npa.go.jp/ct-sample/active-cyber-defence-guidelines",
+    "https://japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers",
+    "https://cve.org/CVERecord?id=CVE-2026-107466"
+  ],
+  "texts": {
+    "https://therecord.media/ct-sample/us-hospital-operator-breach": "SAMPLE: Example Health Group says hackers copied patient records\nSAMPLE text. Example Health Group, a US hospital operator, told the SEC an intruder copied patient records from its billing systems. It is notifying about 410,000 people. Services were not disrupted.",
+    "https://sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10": "SAMPLE: Example Health Group, Form 8-K, Item 1.05 Material Cybersecurity Incidents\nSAMPLE filing. Example Health Group detected unauthorized access to its billing systems in early October 2026. An unauthorized third party copied files containing patient records. Hospital services were not disrupted. The company is notifying affected individuals and regulators.",
+    "https://cverc.org.cn/ct-sample/national-time-service-network-report": "SAMPLE：关于美国情报机构入侵国家授时服务网络的调查报告\nSAMPLE: Investigation report on US intelligence agencies breaking into a national time service network\n（SAMPLE 示例内容）国家计算机病毒应急处理中心（CVERC）发布报告称，美国情报机构在 2023 年至 2025 年间多次入侵国家授时服务网络。报告未公布可供第三方验证的技术细节。",
+    "https://scmp.com/ct-sample/cverc-time-service-network-claim": "SAMPLE: State agency says US agencies broke into a national time service network\nSAMPLE article. CVERC, a state virus response centre, said US intelligence agencies broke into a national time service network between 2023 and 2025. The report included no technical details that others could verify. US officials did not respond to requests for comment.",
+    "https://npa.go.jp/ct-sample/active-cyber-defence-guidelines": "SAMPLE：アクティブ・サイバー・ディフェンスに係るアクセス・無害化措置の運用指針\nSAMPLE: Operating guidelines for access and neutralisation measures under active cyber defence\n（SAMPLE）警察庁は、重要電子計算機に対する攻撃に用いられるサーバ等へのアクセス・無害化措置の運用指針を公表した。改正法は 2027 年に全面施行される。",
+    "https://japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers": "SAMPLE: Police set rules for disabling attack servers\nSAMPLE article. The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law that takes full effect in 2027.",
+    "https://cve.org/CVERecord?id=CVE-2026-107466": "Flatpak-builder: local file exfiltration via `file\nA flaw was found in flatpak-builder. This vulnerability allows an attacker to cause information disclosure by convincing a user or continuous integration (CI) system to process a crafted build manifest. By specifying local file Uniform Resource Identifiers (URIs) within source download definitions, the builder bypasses directory confinement checks. As a result, sensitive host files accessible to the build process can be read and incorporated into the build artifacts. CVSS 3.1 6.1 (cna). CISA SSVC: exploitation none, automatable no, technical impact partial. Credits: This issue was discovered by Found by AISLE in partnership with Red Hat."
+  },
+  "seen_as": {
+    "https://therecord.media/ct-sample/us-hospital-operator-breach": "pack",
+    "https://sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10": "fetched",
+    "https://cverc.org.cn/ct-sample/national-time-service-network-report": "fetched",
+    "https://scmp.com/ct-sample/cverc-time-service-network-claim": "fetched",
+    "https://npa.go.jp/ct-sample/active-cyber-defence-guidelines": "fetched",
+    "https://japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers": "fetched",
+    "https://cve.org/CVERecord?id=CVE-2026-107466": "fetched"
+  }
+}

@@ -61,15 +61,18 @@ feeds:
     coverage: [exploits]
     priority: 1
     fresh_days: 7
+    must_match: false
   - id: cvelist
     name: CVE List V5 (CVEProject/cvelistV5)
     kind: cvelist
     url: https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/deltaLog.json
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits]
     priority: 1
     fresh_days: 1
+    must_match: false
   - id: epss
     name: FIRST EPSS daily scores
     kind: epss
@@ -80,182 +83,222 @@ feeds:
     coverage: [exploits]
     priority: 1
     fresh_days: 2
+    must_match: false
   - id: ghsa
     name: GitHub Advisory Database (reviewed advisories)
     kind: ghsa
     url: https://github.com/github/advisory-database.git
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits]
     priority: 2
     fresh_days: 2
+    must_match: false
   - id: nvd
     name: NVD CVE API 2.0 (keyless)
     kind: nvd
     url: https://services.nvd.nist.gov/rest/json/cves/2.0
+    fallback_url: null
     language: en
     region: US
     coverage: [exploits]
     priority: 3
     fresh_days: 30
+    must_match: false
   - id: myjvn
     name: MyJVN (JVN iPedia)
     kind: myjvn
     url: https://jvndb.jvn.jp/myjvn?method=getVulnOverviewList&feed=hnd&rangeDatePublic=w&maxCountItem=50&startItem=1
+    fallback_url: null
     language: ja
     region: JP
     coverage: [exploits, japan]
     priority: 2
     fresh_days: 7
+    must_match: false
   - id: anthropic-cvd
     name: Anthropic coordinated disclosure dashboard
     kind: anthropic-cvd
     url: https://red.anthropic.com/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [ai]
     priority: 2
     fresh_days: 30
+    must_match: false
   - id: exchange-tw
     name: TWSE material information (open data)
     kind: exchange
     url: https://openapi.twse.com.tw/v1/opendata/t187ap04_L
+    fallback_url: null
     language: zh-Hant-TW
     region: TW
     coverage: [breaches, taiwan]
     priority: 2
     fresh_days: 3
+    must_match: false
   # ── Global and US newsrooms and research ──────────────────────────────────────────────────────────
   - id: therecord
     name: The Record
     kind: rss
     url: https://therecord.media/feed
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, breaches, policy]
     priority: 1
     fresh_days: 2
+    must_match: false
   - id: bleepingcomputer
     name: BleepingComputer
     kind: rss
     url: https://www.bleepingcomputer.com/feed/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, breaches]
     priority: 1
     fresh_days: 2
+    must_match: false
   - id: securityweek
     name: SecurityWeek
     kind: rss
     url: https://www.securityweek.com/feed/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, breaches, ai]
     priority: 1
     fresh_days: 2
+    must_match: false
   - id: krebs
     name: Krebs on Security
     kind: rss
     url: https://krebsonsecurity.com/feed/
+    fallback_url: null
     language: en
     region: US
     coverage: [breaches]
     priority: 2
     fresh_days: 30
+    must_match: false
   - id: thehackernews
     name: The Hacker News
     kind: rss
     url: https://feeds.feedburner.com/TheHackersNews
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, breaches]
     priority: 2
     fresh_days: 2
+    must_match: false
   - id: techcrunch-security
     name: TechCrunch Security
     kind: rss
     url: https://techcrunch.com/category/security/feed/
+    fallback_url: null
     language: en
     region: US
     coverage: [breaches, ai]
     priority: 2
     fresh_days: 3
+    must_match: false
   - id: cisa-advisories
     name: CISA cybersecurity advisories
     kind: rss
     url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    fallback_url: null
     language: en
     region: US
     coverage: [exploits, policy]
     priority: 1
     fresh_days: 7
+    must_match: false
   - id: gtig
     name: Google Threat Intelligence blog (unverified)
     kind: rss
     url: https://cloud.google.com/blog/topics/threat-intelligence/rss/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, policy, ai]
     priority: 2
     fresh_days: 30
+    must_match: false
   - id: msft-security
     name: Microsoft Security blog
     kind: rss
     url: https://www.microsoft.com/en-us/security/blog/feed/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, policy, ai]
     priority: 2
     fresh_days: 14
+    must_match: false
   - id: msrc
     name: Microsoft Security Response Center blog
     kind: rss
     url: https://msrc.microsoft.com/blog/feed
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits]
     priority: 2
     fresh_days: 30
+    must_match: false
   - id: unit42
     name: Palo Alto Networks Unit 42
     kind: rss
     url: https://unit42.paloaltonetworks.com/feed/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, policy]
     priority: 2
     fresh_days: 14
+    must_match: false
   - id: volexity
     name: Volexity
     kind: rss
     url: https://www.volexity.com/feed/
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits]
     priority: 3
     fresh_days: 60
+    must_match: false
   - id: project-zero
     name: Google Project Zero
     kind: rss
     url: https://googleprojectzero.blogspot.com/feeds/posts/default
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [exploits, ai]
     priority: 3
     fresh_days: 90
+    must_match: false
   - id: google-security
     name: Google Online Security Blog
     kind: rss
     url: https://security.googleblog.com/feeds/posts/default
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [ai, policy]
     priority: 3
     fresh_days: 30
+    must_match: false
   - id: openai-news
     name: OpenAI news
     kind: rss
     url: https://openai.com/news/rss.xml
+    fallback_url: null
     language: en
     region: GLOBAL
     coverage: [ai]
@@ -267,52 +310,63 @@ feeds:
     name: NCSC UK
     kind: rss
     url: https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml
+    fallback_url: null
     language: en
     region: EU
     coverage: [policy, exploits]
     priority: 1
     fresh_days: 14
+    must_match: false
   - id: cert-eu
     name: CERT-EU security advisories (unverified)
     kind: rss
     url: https://cert.europa.eu/publications/security-advisories-rss
+    fallback_url: null
     language: en
     region: EU
     coverage: [exploits, policy]
     priority: 2
     fresh_days: 14
+    must_match: false
   - id: bsi
     name: BSI news
     kind: rss
     url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml
+    fallback_url: null
     language: de
     region: EU
     coverage: [policy, exploits]
     priority: 2
     fresh_days: 14
+    must_match: false
   - id: cert-fr
     name: CERT-FR
     kind: rss
     url: https://www.cert.ssi.gouv.fr/feed/
+    fallback_url: null
     language: fr
     region: EU
     coverage: [exploits, policy]
     priority: 2
     fresh_days: 7
+    must_match: false
   # ── Taiwan ────────────────────────────────────────────────────────────────────────────────────────
   - id: twcert-tvn
     name: TWCERT/CC vulnerability notes (TVN)
     kind: rss
     url: https://www.twcert.org.tw/tw/rss-132-1.xml
+    fallback_url: null
     language: zh-Hant-TW
     region: TW
     coverage: [exploits, taiwan]
     priority: 1
     fresh_days: 14
+    must_match: false
   - id: focustaiwan
     name: Focus Taiwan (CNA English) (unverified)
     kind: rss
     url: https://focustaiwan.tw/rss/aall.xml
+    fallback_url: null
     language: en
     region: TW
     coverage: [taiwan, breaches, policy]
@@ -323,6 +377,7 @@ feeds:
     name: Taipei Times
     kind: rss
     url: https://www.taipeitimes.com/xml/index.rss
+    fallback_url: null
     language: en
     region: TW
     coverage: [taiwan, policy]
@@ -333,6 +388,7 @@ feeds:
     name: Central News Agency 中央社 (unverified)
     kind: rss
     url: https://feeds.feedburner.com/rsscna/technology
+    fallback_url: null
     language: zh-Hant-TW
     region: TW
     coverage: [taiwan, breaches]
@@ -343,43 +399,52 @@ feeds:
     name: iThome 資安 (unverified)
     kind: rss
     url: https://www.ithome.com.tw/rss
+    fallback_url: null
     language: zh-Hant-TW
     region: TW
     coverage: [taiwan, exploits, breaches]
     priority: 1
     fresh_days: 2
+    must_match: false
   # ── Japan ─────────────────────────────────────────────────────────────────────────────────────────
   - id: jpcert
     name: JPCERT/CC
     kind: rss
     url: https://www.jpcert.or.jp/rss/jpcert.rdf
+    fallback_url: null
     language: ja
     region: JP
     coverage: [exploits, japan]
     priority: 1
     fresh_days: 14                                # 注意喚起 pages under /at/ are alerts through regions.json alert_patterns (§5.11)
+    must_match: false
   - id: ipa
     name: IPA security alerts (unverified)
     kind: rss
     url: https://www.ipa.go.jp/security/alert-rss.rdf
+    fallback_url: null
     language: ja
     region: JP
     coverage: [exploits, japan]
     priority: 2
     fresh_days: 30
+    must_match: false
   - id: security-next
     name: Security NEXT
     kind: rss
     url: https://www.security-next.com/feed
+    fallback_url: null
     language: ja
     region: JP
     coverage: [japan, breaches, exploits]
     priority: 2
     fresh_days: 2
+    must_match: false
   - id: nhk
     name: NHK News
     kind: rss
     url: https://www3.nhk.or.jp/rss/news/cat0.xml
+    fallback_url: null
     language: ja
     region: JP
     coverage: [japan]

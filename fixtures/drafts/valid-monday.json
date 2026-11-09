@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "generated_at": "2026-10-12T05:04:30+08:00",
+  "lead": [
+    {
+      "text": "Example Health Group told US regulators that an intruder copied patient records from its billing systems.",
+      "item_ids": [
+        "inc-health-us-2026-10"
+      ],
+      "gap": false
+    },
+    {
+      "text": "CVERC, a PRC state source, says US agencies broke into a national time service network, and it offered nothing others can check.",
+      "item_ids": [
+        "camp-prc-state-claim-2026-10"
+      ],
+      "gap": false
+    },
+    {
+      "text": "For flaws not exploited at disclosure, CISA confirmed exploitation after a median 17 days, against 21 in 2023–24.",
+      "item_ids": [],
+      "gap": true
+    }
+  ],
+  "angle": {
+    "text": "Flaws not exploited at disclosure reached CISA's list a median 17 days after it.",
+    "source_id": null,
+    "metric_path": "window.w26.after_disclosure_median_days",
+    "as_of": "2026-10-10",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null
+  },
+  "region_raises": [],
+  "items": [
+    {
+      "id": "inc-health-us-2026-10",
+      "kind": "breach",
+      "headline": "Example Health Group says an intruder copied patient records",
+      "summary": "In an SEC filing, Example Health Group says an intruder copied patient records from its billing systems in early October; hospital services kept running. The Record reports the company is notifying about 410,000 people.",
+      "why_it_matters": "A regulator filing gives a firmer record than any leak-site claim, and stolen health records usually feed fraud for years.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US"
+      ],
+      "topics": [],
+      "attribution": [],
+      "incident": {
+        "victim": "Example Health Group",
+        "description": "a US hospital operator",
+        "sector": "health",
+        "country": "US",
+        "impact": "Patient records copied; hospital services not disrupted",
+        "disruption": false,
+        "status": "confirmed",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s1"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2"
+      ]
+    },
+    {
+      "id": "camp-prc-state-claim-2026-10",
+      "kind": "campaign",
+      "headline": "PRC state claim: CVERC says US agencies broke into a national time service network",
+      "summary": "CVERC, a PRC state source, says US agencies broke into a national time service network between 2023 and 2025. It released no technical detail that others can verify, and US officials have not responded.",
+      "why_it_matters": "State sources now answer Western naming with counter-claims, so this stays at Watch until independent evidence appears.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [
+        {
+          "attributed_by": "CVERC",
+          "basis": "government",
+          "actor_name_as_used": "US intelligence agencies",
+          "sponsor_claimed": "United States",
+          "nexus": "other_state",
+          "confidence_text": null,
+          "confidence_level": "unstated",
+          "date": "2026-10-11",
+          "source_id": "s3"
+        }
+      ],
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s3",
+        "s4"
+      ]
+    },
+    {
+      "id": "pol-jp-active-cyber-defence-2026-10",
+      "kind": "policy",
+      "headline": "Japan's police set rules for disabling attack servers under the new cyber defence law",
+      "summary": "The National Police Agency published guidelines on when officers may access and disable servers used in attacks on Japan, under the active cyber defence law that takes full effect in 2027.",
+      "why_it_matters": "It moves Japan from watching attackers towards disrupting their infrastructure, a shift its allies and Taiwan will study closely.",
+      "severity": null,
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "JP"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s5",
+        "s6"
+      ]
+    }
+  ],
+  "taiwan_lens": {
+    "analysis": "Nothing today targets Taiwan directly. CVERC's claim against US agencies is today's China-axis item: a PRC state source, with no evidence others can check.",
+    "item_ids": [
+      "camp-prc-state-claim-2026-10"
+    ],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": "CVERC, a PRC state source, says US agencies broke into a national time service network.",
+        "item_ids": [
+          "camp-prc-state-claim-2026-10"
+        ],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": "Police published guidelines for disabling attack servers under the active cyber defence law.",
+      "item_ids": [
+        "pol-jp-active-cyber-defence-2026-10"
+      ],
+      "source_ids": []
+    }
+  },
+  "scoreboard_entries": [],
+  "week_in_review": {
+    "text": "The week to Sunday was heavy on old flaws and light on new exploitation. On Thursday CISA listed five long-known flaws as exploited, including Apache Struts and ISC BIND bugs disclosed years ago, a reminder that old exposure lingers. Red Hat kept crediting AISLE's AI system with Linux flaws, mostly rated moderate or low. No Taiwanese or Japanese vendor flaw was reported exploited.",
+    "strongest_against": {
+      "text": "The AISLE credits so far are modest: the flatpak-builder flaw Red Hat published on 8 October scores 6.1 and needs a user to process a crafted manifest.",
+      "claim_id": "SB-01",
+      "source_ids": [
+        "s7"
+      ]
+    }
+  },
+  "corrections": [],
+  "elsewhere": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "SAMPLE: Example Health Group, Form 8-K, Item 1.05 Material Cybersecurity Incidents",
+      "title_en": null,
+      "language": "en",
+      "outlet": "US SEC",
+      "url": "https://www.sec.gov/ct-sample/form-8-k-item-1-05-2026-10-10",
+      "source_type": "regulator_filing",
+      "published_at": "2026-10-10"
+    },
+    {
+      "id": "s2",
+      "title": "SAMPLE: Example Health Group says hackers copied patient records",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/ct-sample/us-hospital-operator-breach",
+      "source_type": "press",
+      "published_at": "2026-10-11T06:20:00+08:00"
+    },
+    {
+      "id": "s3",
+      "title": "SAMPLE：关于美国情报机构入侵国家授时服务网络的调查报告",
+      "title_en": "SAMPLE: Investigation report on US intelligence agencies breaking into a national time service network",
+      "language": "zh-Hans",
+      "outlet": "国家计算机病毒应急处理中心 (CVERC)",
+      "url": "https://www.cverc.org.cn/ct-sample/national-time-service-network-report",
+      "source_type": "government",
+      "published_at": "2026-10-11T10:00:00+08:00"
+    },
+    {
+      "id": "s4",
+      "title": "SAMPLE: State agency says US agencies broke into a national time service network",
+      "title_en": null,
+      "language": "en",
+      "outlet": "South China Morning Post",
+      "url": "https://www.scmp.com/ct-sample/cverc-time-service-network-claim",
+      "source_type": "press",
+      "published_at": "2026-10-11T15:30:00+08:00"
+    },
+    {
+      "id": "s5",
+      "title": "SAMPLE：アクティブ・サイバー・ディフェンスに係るアクセス・無害化措置の運用指針",
+      "title_en": "SAMPLE: Operating guidelines for access and neutralisation measures under active cyber defence",
+      "language": "ja",
+      "outlet": "警察庁",
+      "url": "https://www.npa.go.jp/ct-sample/active-cyber-defence-guidelines",
+      "source_type": "government",
+      "published_at": "2026-10-11"
+    },
+    {
+      "id": "s6",
+      "title": "SAMPLE: Police set rules for disabling attack servers",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Japan Times",
+      "url": "https://www.japantimes.co.jp/ct-sample/police-rules-for-disabling-attack-servers",
+      "source_type": "press",
+      "published_at": "2026-10-11T19:00:00+08:00"
+    },
+    {
+      "id": "s7",
+      "title": "CVE Record: CVE-2026-107466",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-107466",
+      "source_type": "cve_record",
+      "published_at": "2026-10-08T15:54:03+08:00"
+    }
+  ]
+}

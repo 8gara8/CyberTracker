@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "annotations": [
+    {
+      "id": "nvd-scoring-stop",
+      "date": "2026-04-15",
+      "end_date": null,
+      "label": "NVD stops scoring most CVEs",
+      "detail": "NIST's NVD stops adding its own scores to most new CVE records; the CNA's and CISA's scores are used instead.",
+      "panels": ["flood", "window"],
+      "kind": "data_change",
+      "source_url": "https://nvd.nist.gov/general/news"
+    },
+    {
+      "id": "us-kev-three-day-deadline",
+      "date": "2026-06-10",
+      "end_date": null,
+      "label": "US 3-day deadline for worst KEV flaws",
+      "detail": "US federal agencies must fix the worst newly listed KEV flaws within three days. A policy marker, not a defender series.",
+      "panels": ["window"],
+      "kind": "policy",
+      "source_url": "https://www.cisa.gov/news-events/directives"
+    },
+    {
+      "id": "kernel-batch-2026-07",
+      "date": "2026-07-19",
+      "end_date": "2026-07-20",
+      "label": "Linux kernel batch",
+      "detail": "The Linux kernel CNA published a batch of about 430 CVE records over two days.",
+      "panels": ["flood", "window"],
+      "kind": "data_change",
+      "source_url": null
+    }
+  ]
+}
