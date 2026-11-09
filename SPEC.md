@@ -2298,7 +2298,7 @@ interface PackItem {
 interface PackRecord {
   id: string;                         // "r0001"…
   source: "kev" | "cvelist" | "epss" | "ghsa" | "nvd" | "twcert-tvn" | "jpcert" | "myjvn" | "anthropic-cvd"
-        | "exchange-tw";
+        | "exchange-tw";              // both exchange entries (exchange-tw, exchange-tpex) write "exchange-tw"
   record_id: string;                  // CVE, GHSA, JVNDB or TVN id, or a notice number
   url: string;                        // canonical record page, e.g. https://www.cve.org/CVERecord?id=CVE-…
   advisory_urls: string[];            // KEV notes and CVE references tagged vendor-advisory, patch or
@@ -2315,10 +2315,16 @@ interface PackRecord {
 UTC the day before), the scheduled start, so no item is in two editions' windows; a retry uses the same
 window. News items are kept when `published_at` is in the window or up to `pack.lookback_hours` (12)
 before its start (the US working day). Records are kept by their own rules: every KEV entry not in
-`state/kev-index.json`; CVE records new or updated in the window that meet a candidate test (§5.12), name
-a `vendors.json` vendor with country TW or JP, or carry an AI-finder match; EPSS movers; reviewed GHSA
-advisories published in the window; every TVN, JPCERT, MyJVN and exchange entry in the window; the
-dashboard figures when its revision changed.
+`state/kev-index.json`; CVE records new or updated in the record window that meet a candidate test
+(§5.12), name a `vendors.json` vendor with country TW or JP, or carry an AI-finder match, plus the record of
+every new KEV id and every member of a release bundle (so a bundle's `pack_ids` resolve; `recordKeepIds()`
+in `lib/rank.ts`); EPSS records for the five 7-day movers and every day-over-day jump, one per CVE; reviewed
+GHSA advisories published in the window; every TVN, JPCERT, MyJVN and exchange entry in the window (a
+JPCERT note whose URL matches Japan's `alert_patterns` carries `facts.alert: true`, §5.11); the dashboard
+figures when its revision changed. The **record window** (`recordWindow()` in `lib/collect.ts`) is the
+pack window with both ends floored to the hour, as "Z" instants, because the CVE List's hourly zips end on
+the hour: a record published in the half hour before 04:30 Taipei belongs to the next edition, never to
+neither (§8.3, §0.4 row 36).
 
 **Sanitisation.** `sanitize(text, { max })` (`lib/sanitize.ts`) runs on every string from outside the
 project before it is stored, ranked or shown to the agent: (1) decode HTML entities, strip tags and
@@ -2342,7 +2348,9 @@ id>">…</untrusted>`. Each item appears in full once, under its first coverage 
 `- [p0042] see Exploits: <title cut to 90 characters>`; flagged items are marked ⚠. A record is a header
 line (id, source, date, ids, vendor, product, wrapped title, record URL), an indented line with the
 wrapped text cut to 800 characters, and one indented `advisory:` line per advisory URL (URLs over 500
-characters dropped). `tests/collect.test.ts` asserts no line of `packs/D.md` exceeds 1,000 characters.
+characters dropped). Every line is fitted within 1,000 UTF-16 code units (`MD_LINE_MAX`) by cutting the
+text inside the `<untrusted>` tags, never the tags, the id or the URL, whatever the script or the bracket
+neutralising does to its length; `tests/collect.test.ts` asserts no line of `packs/D.md` exceeds it.
 Original-language titles stay as they are; a cited source keeps the original `title` with the agent's
 `title_en` (§4.3).
 
@@ -2356,8 +2364,11 @@ Window: 2026-11-07 04:30 to 2026-11-08 04:30 Taipei (items up to 12 hours earlie
 ```
 
 **Caps.** At most 30 items per feed, 60 per coverage section, 200 in total; at most 400 records; JSON at
-most 2 MB, Markdown at most 150 KB. Over a cap the lowest-scoring items go first; KEV records are never
-cut. Every cut is counted in the collect log and in `feeds[]`.
+most 2 MB, Markdown at most 150 KB. Over a cap the lowest-scoring items go first. Records are kept in this
+order (`capRecords()`): KEV records, which are never cut, then records a kept candidate references, then
+the rest by date descending, source and record id. Rank reads provisional record ids; after the cap the
+kept records are renumbered `r0001`… in display order (source, date descending, record id) and the
+candidates' `pack_ids` rewritten to match. Every cut is counted in the collect log and in `feeds[]`.
 
 **Degraded.** A collector crash or timeout still leaves a schema-valid empty pack with `degraded: true`
 and a one-line `.md` saying so, and the run continues. The data-only edition needs only KEV and the CVE
@@ -2365,7 +2376,7 @@ List; if either fails, the degradation ladder applies (§8.3).
 
 **The planted page.** `fixtures/injection/` holds a page and an RSS item telling AI agents to write
 `CANARY_TOKEN` into the brief and to fetch a `CANARY_URL_PREFIX` URL; CI checks that collect sanitises,
-wraps and flags both (from P2; P1 tests the sanitiser functions directly). The canary, live from P3 on,
+wraps and flags both (`tests/collect.test.ts` from P2; P1 tests the sanitiser functions directly). The canary, live from P3 on,
 is in §9.5 and §8.12.
 
 **Evidence.** The pack's URLs (`seen_as: "pack"`; record URLs also count as fetched) and texts join the
@@ -2518,9 +2529,11 @@ a conflict fixes both. Date helpers (`dataCutoffFor`, `addDays`, `daysBetween`, 
   on every run. AI-credit matches update when a record's credits change, so the newest four weeks are
   provisional (§5.5).
 - **Retries and reruns.** Metrics for an edition date are computed once; a retry or rerun reuses them.
-  `--recompute` (§8.4) re-fetches the inputs the manifest names and must reproduce the committed file
-  byte for byte except `generated_at` and `code_commit`; when an input has changed, the manifest's feed
-  hashes show which. No run replaces a committed metrics file, `--force` included: `--force` (§8.2) lets
+  `--recompute` (§8.4) starts from the state at the parent of the commit that added `metrics/D.json`
+  (that commit's own state when a backfill build added both), reads D's feeds from `cache/`, offline, and
+  takes `generated_at`, `code_commit` and `reconstructed` from the committed file, so it must reproduce
+  that file byte for byte; when an input has changed, the manifest's feed hashes show which. Re-fetching
+  the inputs by the manifest's versions waits for P3's by-version fetchers (§0.4 row 35). No run replaces a committed metrics file, `--force` included: `--force` (§8.2) lets
   a full rerun replace only the brief, noted in the status file (§4.8). `--recompute` shows the
   difference, and a wrong definition is fixed by a code PR (§8.4).
 - **Reconstructed values.** A metrics file written by the backfill (§5.9) or for a past date by a
@@ -2629,7 +2642,9 @@ vendor_project (as written), date_published (UTC date, or null), lag_days (or nu
   (§8.3; a 404 leaves the row unjoined, never a feed failure) the record of every new catalog entry and
   of every index row from 2023-01-01 with `date_published` null, so a row listed before its record was
   published is re-joined on the first run after the record appears.
-- The backfill and tests read `fixtures/reference/kev-cve-join.json`. `tests/window.test.ts` holds
+- The backfill joins the catalog to its own clone (§5.9 step 3); the tests and `--check-reference` read
+  `fixtures/reference/kev-cve-join.json`, whose SHA-256 is `REFERENCE_JOIN_SHA256` in
+  `lib/metrics/reference.ts` (the manifest's `reference_sha256`, §4.7). `tests/window.test.ts` holds
   CVE-2026-118527 (KEV `dateAdded` 2026-10-30, record published 2026-11-03T14:53Z): unjoined in an
   earlier index, joined with lag −4 by the first run whose by-id fetch finds it, and in that run's w26
   at-disclosure count.
@@ -2776,16 +2791,20 @@ an AI finder. A lower bound, always captioned with `AI_CREDIT_CAPTION` (§4.2).
 an AI product that is the subject of a flaw never counts. Fields in `config/ai-finders.json` `fields`
 order (seed `cna.credits`, `adp.credits`, `ghsa.credits`): `containers.cna.credits[].value` in array
 order, then each `containers.adp[]` entry's `credits[].value`, then the GitHub advisory's credits. Each
-string is sanitised (§4.14) first; the first string that matches decides the record.
+string is sanitised (§4.14) first, `prefilter` included, and `credit-candidates.json` stores that
+sanitised text, so a rematch from candidates equals a match from records (§0.4 row 31); the first string
+that matches decides the record. Credits come from every PUBLISHED record with `date_published` on or
+before the cutoff, with no lower bound, in the backfill and the morning alike.
 
-**GitHub credits.** On 2026-11-07 none of 4,474 reviewed advisories in the `github/advisory-database`
-git export (July to November 2026) had a `credits` key, so AI credits are counted from CVE records:
-`ghsa.credits` is skipped while `provenance.ghsa_source` is `git`, and GHSA credits are read only after
-P2 switches `ghsa_source` to `rest`. An advisory with a CVE alias counts once, under its CVE; one without
-counts as its own record only when its credits were read from REST. P2 re-checks the git export for a
-`credits` key (noted in the P2 PR; credits are never read from the git export) and checks the REST
-`/advisories` API from Kobol: if it returns credits without a token, P2 switches `ghsa_source` to
-`rest`, counts GHSA credits and adds a §0.4 row.
+**GitHub credits.** The `github/advisory-database` git export has no `credits` key: none of 4,474
+reviewed advisories (July to November 2026) on 2026-11-07, and none of 37,571 at HEAD `42bbb0e`
+(2026-11-09 09:38 UTC) when P2 re-checked. The REST `/advisories` API without a token does return credits
+(81 of the 100 newest on Kobol, 2026-11-09; limit 60 requests an hour), but as GitHub logins: the 2,160
+credited advisories published in `w13` carry 3,343 credits from 1,419 logins, and none matches an AI
+finder. So `ghsa_source` stays `git` (§0.4 row 40; JL can override in the P2 PR), AI credits are counted
+from CVE records, and `ghsa.credits` is skipped while `provenance.ghsa_source` is `git`. If a later PR
+switches it to `rest`, an advisory with a CVE alias counts once, under its CVE, and one without counts as
+its own record only when its credits were read from REST; credits are never read from the git export.
 
 **Matching** (schema §4.11, seed Appendix B.2). Regexes are compiled once, at config load.
 
@@ -2820,11 +2839,14 @@ function matchRecord(rec: CveRecord, ghsa: GhsaAdvisory | null, cfg: AiFindersFi
 - A bare lab name never counts: "OpenAI" or "Anthropic" alone is not a match; "OpenAI Codex Security",
   "Claude", "Big Sleep" or "Anthropic OSS program" is. Anthropic disclosure ids in a credit
   (`ANT-2026-…`) match the `anthropic-claude` finder's case-sensitive pattern.
-- `tests/ai-credit.test.ts` runs every finder's `examples` and the Appendix D.7 cases, and checks that
-  `prefilter` accepts every `examples.match` string.
+- `tests/ai-credit.test.ts` runs every finder's `examples` and the Appendix D.7 cases, checks that
+  `prefilter` accepts every `examples.match` string, and checks that every example gives the same
+  `matchCredit` result raw and after `sanitize()` (so no example is a URL, §0.4 row 32).
 - **Anthropic's disclosure ledger.** CVE ids in the dashboard payload (`content/state/anthropic-cvd.json`)
-  with no credit match count as `ledger_only_anthropic` (rule `cvd_ledger`) and in
-  `series.ai_ledger_only_weekly`, never in `total`, a family or `in_kev`. Chart C does not draw them; its
+  with no credit match count as `ledger_only_anthropic` and in `series.ai_ledger_only_weekly`, never in
+  `total`, a family or `in_kev`. Each is an `ai-credits.json` row with `rule` and `field` both
+  `cvd_ledger`, which holds its publication date; a credit match that later replaces one keeps its
+  `first_matched`. GHSA ids in the ledger stay in `anthropic-cvd.json` and are not counted. Chart C does not draw them; its
   data table shows "Anthropic ledger only, not in the total" (§7).
 - **Counting.** A record counts once, on the UTC date of its `datePublished`, in its match's family.
   `ai_credited.w13.total` is the matched records published in `w13`; `by_family` splits it;
@@ -2833,19 +2855,21 @@ function matchRecord(rec: CveRecord, ghsa: GhsaAdvisory | null, cfg: AiFindersFi
   masthead's "AI-linked: x of y" is the only edition-based AI figure and is never trended.
 - **Provisional weeks.** `provisional_from = addDays(newestCompleteWeek(cutoff), −21)`, the Monday of the
   fourth-newest complete week (2026-10-05 for 2026-11-08). Chart C hatches it and every later week.
+  `aiWeekly()` rewrites every AI week of `series.json` on every run, provisional or not, so the series
+  never disagrees with `ai-credits.json` (§0.4 row 34).
 - **Keeping matches current.** Each run re-reads the credits of every record in the CVE List delta zips
   (§8.3): a string passing `prefilter` is upserted into `content/state/credit-candidates.json`, one no
   longer present is removed, and the record is rematched into `content/state/ai-credits.json`, keeping
   its `first_matched` date.
 - **List changes.** `ai-credits.json` stores `finders_version` and `finders_sha256` (SHA-256 of
   `config/ai-finders.json` as committed). When either differs from the run's config, `recomputeCredits()`
-  rematches every string in `credit-candidates.json`, rewrites `ai-credits.json` and every AI series week
-  back to 2023, and sets the block note "AI-finder list changed to v{version}; history recomputed." No
+  rematches every string in `credit-candidates.json`, rewrites `ai-credits.json` (keeping the
+  `first_matched` of ids that had a row, then re-applying the ledger) and sets the block note "AI-finder list changed to v{version}; history recomputed." No
   chart mixes two lists. A PR that changes the list says so in its description; after go-live it
   carries no `content/` change, and a `version` bump alone is recomputed by the next morning. If
   `prefilter` changed (`credit-candidates.json` stores `prefilter_sha256`), the AI block stays `stale` at
-  the old list until `npm run backfill -- --credits` (§8.4) rebuilds both credit files from a fresh
-  clone (§5.9 step 1, which replaces the kept clone); after go-live Claude runs it with `--push` once JL
+  the old list until `npm run backfill -- --credits` (§8.4) rebuilds both credit files from the clone,
+  updated in place to the newest commit (§5.9 step 1); after go-live Claude runs it with `--push` once JL
   merges the PR, and `publishState()` commits it (§8.7).
 - **On CISA's list.** `ai_credited.in_kev.entries`: every KEV entry with `date_added` from 2025-01-01 to
   the cutoff whose CVE record now has a credit match, sorted by `kev_date_added`, then CVE id.
@@ -2863,9 +2887,10 @@ function matchRecord(rec: CveRecord, ghsa: GhsaAdvisory | null, cfg: AiFindersFi
   `days.json`), `all_listed_n(m)` (of those, listed, from `kev-index.json`'s `date_published`). Sums give
   `ai_credited_n`, `all_n`, `ai_credited_in_kev_n`, `all_in_kev_n`; `ai_rate` and `all_rate` are the plain
   rates for the data table.
-- `expected = Σ_m ai_n(m) × all_listed_n(m) / all_n(m)`; `ratio = ai_credited_in_kev_n / expected`;
-  `ratio_ci80 = poissonCi80(ai_credited_in_kev_n) / expected` (both bounds). Both null when
-  `ai_credited_n < MIN_N` or `expected < 5` (the expected count, not the observed one).
+- `expected = Σ_m ai_n(m) × all_listed_n(m) / all_n(m)`, stored 4 dp; `ratio = ai_credited_in_kev_n /
+  expected`; `ratio_ci80 = poissonCi80(ai_credited_in_kev_n) / expected` (both bounds), each divided by
+  the unrounded `expected`. Both null when `ai_credited_n < MIN_N` or the stored `expected < 5` (the
+  expected count, not the observed one).
 
 ### 5.6 Fix-side strip
 
@@ -2877,22 +2902,36 @@ charted.
    data_cutoff_utc) > 14`; `failed` when no revision was ever read. Rendered: "Anthropic disclosure
    dashboard (one lab, open source only, self-reported), revision {revision}, {fmtDate(as_of)}:
    {fmtInt(found_n)} confirmed findings, {fmtInt(disclosed_n)} disclosed, {fmtInt(patched_n)} patched
-   upstream." When stale, add " Not updated since {fmtDate(as_of)}." Verify in P2: the figure names and
-   which maps to `found_n` (design v0.2 quotes 37,966 candidate findings, 6,009 confirmed, 5,087
-   disclosed and 629 patched at revision 40); fix the template and §4.7 together.
+   upstream." When stale, add " Not updated since {fmtDate(as_of)}." The figure mapping (§0.4 row 42,
+   provisional until (Kobol, P2 session 1) captures the payload into the fixtures): `found_n` is the
+   payload's `total_verified` (6,009 at revision 40, as of 2026-11-02 19:30 UTC), `disclosed_n`
+   `total_disclosed` (5,087), `patched_n` `total_fixed_in_response` (629); `ledger_ids` are the ledger's
+   CVE ids, withdrawn rows dropped and corrected ids used. The page calls 6,009 "Reviewed by external
+   security firms" (94.2% "Confirmed valid"), so session 1 may rename "confirmed findings" in this
+   template and in §4.7 together.
 2. **GitHub advisories without a fix.** GitHub-reviewed advisories (git export,
    `advisories/github-reviewed/`, not withdrawn) with `published` UTC date in the GHSA unfixed window
    (§5.1). **Unfixed**: no `affected[].ranges[].events[]` entry has a `fixed` key. `share = n_unfixed /
    n_total`, null when `n_total < MIN_N`. Rendered: "{pct}% of GitHub-reviewed advisories published 30 to
    120 days ago still list no fixed version ({fmtInt(n_unfixed)} of {fmtInt(n_total)},
-   {fmtDate(as_of)})." P2 decides on 52 weekly values: keep the line only if `n_total ≥ 300` every week
-   and the share reaches 5% in at least one; otherwise `fix_side.ghsa_unfixed` is always null, the line
-   is not shown, and §0.4 says why (a check on 2026-11-07 found 19 of 1,229, 1.5%).
-3. **Fixed caption,** always: `FIX_SIDE_CAPTION` (§4.2).
+   {fmtDate(as_of)})." `as_of` is the UTC date of the GHSA HEAD commit read. **P2 kept the line**
+   (`GHSA_UNFIXED_KEPT`, §0.4 row 33) on 52 weekly as-of values, 2025-11-15 to 2026-11-07, each read at
+   that week's run start and never rebuilt from today's HEAD: `n_total` 961 to 4,616 (at least 300 every
+   week) and a share of 2.6% to 15.7%, at 5% or more in 46 weeks. The share fell from 13.7% in mid-July
+   2026 to 2.6% while `n_total` rose about fourfold from March to July, which the P2 PR shows JL. The
+   2026-11-07 check that found "19 of 1,229" counted advisories 0 to 38 days old, not this window. The
+   walker that read the 52 weeks is a scratch tool, not committed. The part counts as read today only
+   when the `ghsa` feed is `ok` with a HEAD date.
+3. **Block status** (`blocks.fix_side`): `failed` when neither part has a value; `stale` when a shown
+   part is an earlier value, with `as_of` the oldest such and each such part's note; else `ok`.
+   `fetched_at` comes from collect's `cache/feeds/index.json`, never the clock.
+4. **Fixed caption,** always: `FIX_SIDE_CAPTION` (§4.2).
 
 ### 5.7 Taiwan Lens KEV lines
 
-`lib/metrics/home-vendors.ts` (`homeVendorKev`), using `matchVendor()` (`lib/config.ts`, §4.11). For each
+`lib/metrics/home-vendors.ts` (`homeVendorKev`), matching KEV `vendorProject` only with `matchVendor()`
+(`lib/config.ts`, §4.11): `kev-index.json` has no affected-vendor column, and `--check-reference`
+confirms on the clone that the CVE record's affected vendor would add nothing (D.6, §0.4 row 33). For each
 of `tw` and `jp`: `d30_n` and `d90_n` are KEV entries with `date_added` in `d30` and `d90` whose matched
 vendor's `country` is `TW` (or `JP`), any lag (an old flaw counts here, not for region levels, §5.11);
 `cve_ids_90` lists the `d90` entries with their `vendor_id`. `kevLine()` renders, exactly: "KEV additions
@@ -2950,7 +2989,7 @@ The year-ago comparison stays in chart A and the data table (`yoy_pct`, `yoy_ex_
 **Footer** (`footerLine()`, rendered through `gapFooter()` in `lib/page-text.ts`, §7; not stored):
 "data to {fmtDate(data_cutoff_utc), with the year} UTC · KEV catalog {provenance.kev_catalog_version} ·
 CVE List {provenance.cve_list_release} · AI-finder list v{ai_credited.finders_version}", e.g. "data to 6
-Nov 2026 UTC · KEV catalog 2026.11.06 · CVE List {release tag} · AI-finder list v1". CVE List tags are
+Nov 2026 UTC · KEV catalog 2026.11.06 · CVE List {release tag} · AI-finder list v2". CVE List tags are
 `cve_YYYY-MM-DD_HHMMZ` (hourly) and `cve_YYYY-MM-DD_at_end_of_day`; the footer shows the hourly tag.
 When `ai_credited` is null the AI-finder version is `provenance.config_versions.ai_finders`.
 
@@ -2958,12 +2997,13 @@ When `ai_credited` is null the AI-finder version is `provenance.config_versions.
 `path` is the metrics path, or `"constant"` for the window lengths 26 and 13; `display` is the exact
 string as printed. A pace percentage ("12% above") has path `window.volume_ratio` and display `12%`;
 "n=…" has the count's path and the count as display. For
-2026-11-08 (Appendix D.3; P1's AI-finder strip fix turns `386` into `451`, Appendix D.7, and P2
-recomputes these figures from the backfill): `37%` `window.w26.at_disclosure_share`, `37%`
+2026-11-08 (Appendix D.3, at AI-finder list v2 with sanitised matching; P1's strip fix and list v2
+turned the seed's `386` and `173` into `502` and `224`, Appendix D.7, and the Kobol backfill recomputes
+these figures): `37%` `window.w26.at_disclosure_share`, `37%`
 `window.reference.at_disclosure_share`, `17` `window.w26.after_disclosure_median_days`, `21`
 `window.reference.after_disclosure_median_days`, `157` `window.w26.cohort_n`, `26` `constant`, `1.9`
 `window.kev_pace_ratio`, `44,944` `flood.n`, `13` `constant`, `5.2` `flood.vs_reference_ratio`, `5.0`
-`flood.vs_reference_ex_kernel_ratio`, `386` `ai_credited.w13.total`, `13` `constant`, `173`
+`flood.vs_reference_ex_kernel_ratio`, `502` `ai_credited.w13.total`, `13` `constant`, `224`
 `ai_credited.w13.ex_anthropic`.
 
 Years and ranges such as "2023–24" are not numbers (`numbersIn`, §4.12). `metricNumbers(metrics)`
@@ -2987,43 +3027,65 @@ weeks ending with `newestCompleteWeek(cutoff)`, oldest first; `weeks[i]` is a Mo
 
 `content/state/series.json` holds the same fields for every ISO week from 2023-01-02. A point whose
 window starts before 2023-01-01 is null: Window fields before the week of 2023-06-26, Flood fields before
-the week of 2023-03-27. `extendSeries()` appends each newly complete week on the first run after its
-Sunday. Only the Flood fields are frozen once written. Every run recomputes the Window fields of every
-week from `kev-index.json` (a re-joined row changes past weeks, §5.3). The AI fields are rewritten after
-a full recompute (§5.5) and for the provisional weeks on every run.
+the week of 2023-03-27, so in `SeriesFile` `flood_n13`, `flood_n13_kernel` and `window_cohort_n` are
+nullable too (`Series` in a metrics file stays non-null, and `seriesSlice()` throws on a null). The series
+stops at the last week whose days are all present in `days.json` (the Flood block is stale that day
+anyway). `extendSeries()` appends each newly complete week on the first run after its Sunday. Only the
+Flood fields are frozen once written. Every run recomputes the Window fields of every week from
+`kev-index.json` (a re-joined row changes past weeks, §5.3) and rewrites every AI week (`aiWeekly()`,
+§5.5). `live_from` is `liveFromAfter(cutoff)` = `addDays(isoWeekStart(cutoff), 7)`, the Monday after the
+cutoff's ISO week, written by a build and by a catch-up while no brief exists; after go-live a catch-up
+leaves it alone.
 
 **Backfill** (`scripts/backfill.ts`, `npm run backfill`; flags in §8.4, acceptance in §10). Runs on
 Kobol in P2, never in the morning run; later only to catch up (`--catch-up`) or after a `prefilter`
 change (`--credits`). It builds the state files from 2023-01-01 to the cutoff under its `--out` folder
 (default `cache/staged/backfill/`, §8.4):
 
-1. Shallow-clone CVE List V5 into `cache/cvelistV5` (`git clone --depth 1 --no-tags
-   https://github.com/CVEProject/cvelistV5.git`; with `--commit <sha>`: `git init`, `git fetch --depth 1
-   origin <sha>`, checkout), with at least 10 GB free. P2 records clone and read times and disk use in
-   Appendix C (2026-11-07: 4.6 GB, 420,941 record files, a few minutes to clone, about three to read
-   with four workers).
-2. Read every `cves/**/CVE-*.json` once (state, `datePublished`, assigner, CNA or CISA ADP score, credit
-   strings). Write `days.json` with `countDay()` for every UTC day to the cutoff, and
-   `credit-candidates.json` and `ai-credits.json` with `matchRecord()`.
+1. Bring the shallow CVE List V5 clone in `cache/cvelistV5` (`scripts/lib/cvelist-clone.ts`) to one
+   commit, in place: `git init` once, `git fetch --depth 1 --no-tags origin <sha>`, `git checkout --force
+   --detach FETCH_HEAD`, `git clean -fdx`; a clone already at that commit with a clean tree is reused, in
+   every mode. A commit whose committer time is before the cutoff day ended (`cutoff + 1` 00:00 UTC) is
+   refused, and at least 10 GiB must be free (`statfs`). Appendix C has the clone and read times and disk
+   use (container, 2026-11-09: 4.9 GB on disk, 420,941 record files, 02:17 to clone, 00:07 to read with
+   four workers on warm files; Kobol's in session 2).
+2. Read every `cves/**/CVE-*.json` once, in worker threads (state, `datePublished`, assigner, CNA or CISA
+   ADP score, credit strings). Write `days.json` with `countDay()` for every UTC day to the cutoff, and
+   `credit-candidates.json` and `ai-credits.json` with `matchRecord()` from every PUBLISHED record with
+   `date_published` on or before the cutoff, with no lower bound; each match's `first_matched` is the
+   cutoff, and the dashboard's ledger is applied (§5.5).
 3. Join the KEV catalog (`joinKev`) and write `kev-index.json`.
-4. Compute `series.json` from 2023-01-02 to the newest complete week.
-5. `--fixtures` (P2 only): write `fixtures/reference/kev-cve-join.json` (§3), `flood-days.json` (one row
-   per UTC day 2023-01-01 to 2026-11-06: date, n, kernel_n, unscored_n) and `ai-credits.json` (one row per
-   match: CVE id, UTC publication date, finder id, family, rule, field, matched substring only), from KEV
-   catalog 2026.11.06 and CVE List commit `67c39b1`. Ids, dates, counts and tool names only.
-6. `--check-reference`: recompute every Appendix D figure from the fixtures (offline) and, when the
-   clone is at `67c39b1`, from the clone; print the table, exit 1 on any difference.
+4. Compute `series.json` from 2023-01-02 to the newest complete week, with `live_from`, and write
+   `anthropic-cvd.json` from E's dashboard read in collect's cache (E = cutoff + 2), else the empty seed
+   (nulls and []). `--catch-up` and `--credits` keep the existing `anthropic-cvd.json`.
+5. `--fixtures` (P2 only): write `fixtures/reference/kev-cve-join.json` (903 rows, §3), `flood-days.json`
+   (1,406 rows, one per UTC day 2023-01-01 to 2026-11-06: date, n, kernel_n, unscored_n) and
+   `ai-credits.json` (791 rows, one per match: CVE id, UTC publication date, finder id, family, rule,
+   field, matched substring only). It takes only `--commit 67c39b124fe4a56018212b4e6f62bd078058e76c`, a
+   `--kev-commit` (catalog 2026.11.06, `e5b3a9b`) and `--cutoff 2026-11-06`, and writes no metrics. Ids,
+   dates, counts and tool names only.
+6. `--check-reference`: recompute every Appendix D figure from the fixtures (offline) and, with `--commit
+   67c39b1…` and `--kev-commit`, from the clone too, with a byte comparison of the three fixture files;
+   print the table (`Figure · expected · fixtures · clone · ok`), exit 1 on any difference. Without the
+   reference commit it reads nothing from the network.
 
-**P2 output.** The P2 session runs `npm run collect -- --date D` for the cutoff's edition date D (the
-cutoff plus 2 days), so `cache/` holds D's feeds, then the backfill on Kobol at the default cutoff with
-`--out content`, which ends with `computeMetrics()` for D (`reconstructed: true`), also into `content/`.
+Except with `--fixtures` or `--check-reference` alone, a build ends with `runMetrics({ frozenState: true
+})` for E (§5.10), which reads the state just built and changes none of it.
+
+**P2 output.** In a worktree on Kobol (§0.1 item 3), the P2 session runs `npm run collect -- --date D`
+for the cutoff's edition date D (the cutoff plus 2 days), so `cache/` holds D's feeds, then the backfill
+at the default cutoff with `--out content`, which takes the CVE List commit and KEV catalog collect read
+for D and ends with `runMetrics({ frozenState: true })` for D (`reconstructed: true`), also into
+`content/`. A build refuses before cloning when collect's cache for D is missing and `metrics/D.json`
+does not exist.
 `content/state/`, `content/metrics/D.json`, `content/metrics/inputs/D.json` and `fixtures/reference/`
 are committed in the P2 PR; JL's merge accepts the numbers. Later backfill output reaches `main` only
 through the `p5-golive` PR (its catch-up, which always runs before go-live, `--out content`) or, after go-live, through
 `--push` (`publishState()` under the run lock, §8.4, §8.7). Backfilled points are reconstructed from
 current records and can differ from what a daily run would have counted; `series.live_from` is the
-first week whose days were all counted by morning runs. Idempotent: two runs at the same commit and
-cutoff write byte-identical state files.
+first week whose days were all counted by morning runs. Idempotent: two runs at the same commit,
+catalog and cutoff write byte-identical state files, and metrics that differ only in `generated_at` and,
+through it, `provenance.inputs_sha256`.
 
 ### 5.10 computeMetrics order
 
@@ -3038,8 +3100,18 @@ run; P2 uses `--out content`). Publish copies them into `content/` and commits t
 4. `window` (w26, w13, reference, ratios), `flood`, `ai_credited`, `base_rate`, `fix_side`,
    `home_vendors`, `epss_movers` (§5.12), `series`.
 5. Block statuses: `ok` when its feeds were read and fresh, `stale` when it shows earlier values (with
-   their `as_of`), `failed` when it has none.
+   their `as_of`), `failed` when it has none. A stale block keeps the previous file's value and that
+   block's `as_of` (else the previous `data_cutoff_utc`), with today's reason as its note; a stale Window
+   keeps the previous directions and a failed one gives `n_too_small`. Window, KEV and home vendors are
+   `ok` whenever a catalog parsed today, the fallback URL included (§0.4 row 41).
 6. `headline` (§5.8), then the inputs manifest with every counted id and the feed hashes.
+
+With `frozenState: true` (inside a backfill build, §5.9) step 2 counts no day and updates no credit, step 3
+re-joins nothing (`new_since_last_edition` is [], and so is `flood.new_days`), and no state file is
+written. `runMetrics()` reads the clock once, for `generated_at`. The CLI's first stdout line names seven
+entries, the six blocks and then `epss`, grouped as `ok`, `stale` (with its as-of date) and `failed`
+(`metricsFirstLine()` in `lib/metrics/notes.ts`). With no collect cache for D, a morning or CLI run counts every feed as failed and
+exits 0, while a backfill build exits 1.
 
 Verify in P3: the step finishes in under 60 seconds on the timed dry run.
 
@@ -3080,18 +3152,22 @@ nothing unless a national CERT reports it exploited at home. Both home rules sto
 
 | Type | Source | Region | `date` |
 |---|---|---|---|
-| `agency_alert` | Every pack item whose `publisherFor()` publisher is in a region's `agencies` and whose normalised URL (`normalizeUrl()`, §4.1) matches one of that region's `alert_patterns` (flags "iu") | that region | Taipei date of `published_at` |
+| `agency_alert` | Every pack item or record whose `publisherFor()` publisher is in a region's `agencies` and whose normalised URL (`normalizeUrl()`, §4.1) matches one of that region's `alert_patterns` (flags "iu"), as `alertRegions(url, publisher, config)` decides | that region | Taipei date of `published_at` (a record's date) |
 | `home_vendor_kev` | Every KEV entry with `date_added` in `[addDays(date, −N_max), date]` whose `matchVendor()` country is a region's `home_vendor_country` (all lags; the rule filters by lag) | TW or JP | `date_added` (US date) |
 | `cert_exploitation` | Every pack record or item whose `publisherFor()` publisher is in a region's `certs` and whose sanitised title or text matches `CERT_EXPLOITATION_RE` | that region | Taipei date of the record's date |
 
 - `N_max` is the longest rule lookback in days (7 in the seed). `CERT_EXPLOITATION_RE` (case-insensitive,
   in `lib/regions.ts`) matches English "exploited in the wild", "actively exploited", "being exploited"
   and "exploitation has been observed", Japanese "悪用" and "攻撃が確認", and Chinese "遭利用", "已被利用"
-  and "攻擊活動". Verify in P2: over the last 12 months of TWCERT, JPCERT and MyJVN records it flags
-  every notice that reports exploitation and none that only describes a flaw; record misses in §0.4.
-- The pack's `alert` flag (§4.14) is derived from the same `alert_patterns`; `regions.json` is the only
-  place they live. Verify in P2: count the JPCERT `/at/` alerts of the last 12 months and the days they
-  would hold Japan at High; record it in §0.4 if more than half. TWCERT and the Administration for Cyber
+  and "攻擊活動". Verify (Kobol, P2 session 1): over the last 12 months of TWCERT, JPCERT and MyJVN
+  records it flags every notice that reports exploitation and none that only describes a flaw; record
+  misses in §0.4.
+- The pack's `alert` flag (§4.14) on an item, and `facts.alert` on a JPCERT record, come from the same
+  `alertRegions()` (`lib/regions.ts`) over the same `alert_patterns`; `regions.json` is the only place they
+  live. JPCERT notes are pack records, not items, so `collectSignals()` reads records too (§0.4 row 36).
+  Verify (Kobol, P2 session 1): count the JPCERT `/at/` alerts of the last 12 months (the feed held 6 of
+  21 items under `/at/` on 2026-11-09) and the days they would hold Japan at High; record it in §0.4 if
+  more than half. TWCERT and the Administration for Cyber
   Security have no alert feed the collector can read, so Taiwan's agency alerts come only through cited
   sources until a pattern is added.
 - Each signal has `id` `sig-YYYYMMDD-N` (edition date, then a counter in table order, then by date and
@@ -3195,8 +3271,9 @@ the pack window, they become one release candidate.
 - Patch Tuesday (second Tuesday, around 17:00 UTC, about 01:00 Taipei Wednesday) lands in Wednesday's
   pack window, so Wednesday's edition carries "Patch Tuesday: N fixes, n exploited" as one item. Verify
   in P3: on a `--date 2026-10-14` dry run, Microsoft's bundle is detected from CNA `microsoft` records
-  and its counts match Microsoft's release notes. Verify in P2: `schneider-electric` has no `cna` in
-  the seed `vendors.json`, so it gets no bundle until its CNA short name is added.
+  and its counts match Microsoft's release notes. `schneider-electric` had no `cna` in the seed
+  `vendors.json`; P2's v2 gives it `["schneider"]` (58 records in the clone's 2025 folder), so it gets
+  bundles (§0.4 row 38).
 
 **Step 3: CERT notes and news.** TVN, JPCERT and MyJVN records become candidates of their own; news and
 agency items become candidates with their pack score (§4.14). A note or news item **merges** into a
@@ -3241,6 +3318,33 @@ starting point; the calibration PR (§10) tunes them against the editions' actua
 
 **EPSS movers** (`metrics.epss_movers`, §4.7, for the data-only edition): the five largest score
 increases from E − 7 to E among CVEs scoring at least 0.10 on E, ties by CVE id.
+
+**Cases the steps leave open, settled in P2** (§0.4 row 36; `tests/rank.test.ts`):
+
+- Input order is canonicalised first (records by CVE id, items and advisories by id), so shuffled input
+  gives byte-identical output.
+- A record candidate's `kind` is `exploited_flaw` when the CVE is on the catalog, has CISA ADP SSVC
+  `Exploitation: active` or a CERT note about it matches `CERT_EXPLOITATION_RE`; `patch_batch` for a
+  bundle; `critical_flaw` otherwise.
+- A bundle takes its records from the vendor's `cna` list published in the record window (§4.14); the
+  newest bundled record's UTC publication date gives the release month and day. Its `cve_ids` are the
+  exploited ids, as a patch batch item's are; a merge matches against every bundled id.
+- A note or news item that matches several candidates merges into the one with the highest pre-merge
+  score, then the lowest id (`merged:<id>`); never on the vendor alone. A TVN, JPCERT or MyJVN note with
+  CVE ids and no record candidate becomes `cve-<first id>`, and later notes with that id merge into it;
+  one with no CVE id keeps its pack record id. Exchange notices and the dashboard record give no
+  candidates.
+- In step 4 a news item's pack score counts as its base, and `alert: true` lifts it to `cert_alert`.
+  Bonuses are tested over the candidate and everything merged into it, each at most once;
+  `watch_window` is a case-insensitive substring test on titles, snippets and record texts. `reasons`
+  come from fixed templates only, never feed text.
+- Step 5's ties compare the dates as ISO strings, so a bare date sorts before any timestamp of that day.
+- `cut.by_reason` has the keys `below_cap`, `merged` and `bundled` (ids only in the log file). A
+  candidate's `advisory_urls` are the union over its pack records in pack id order, at most 5.
+- Rank wraps each candidate title in `<untrusted>` tags (`candidateTitle()`). An EPSS-jump CVE gets no
+  record fetched by id: with no zip record it is still a candidate, titled by its CVE id, vendor and
+  product null. NVD and the EPSS API fallback run after ranking and only fill `cvss` and `epss` on kept
+  candidates, never scores.
 
 ## 6. Routes
 
