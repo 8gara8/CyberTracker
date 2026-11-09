@@ -1,0 +1,204 @@
+{
+  "https://cert.europa.eu/publications/security-advisories-rss": {
+    "error": "network"
+  },
+  "https://cloud.google.com/blog/topics/threat-intelligence/rss/": {
+    "status": 503,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://epss.empiricalsecurity.com/epss_scores-2026-10-06.csv.gz": {
+    "file": "epss/epss_scores-2026-10-06.csv.gz",
+    "content_type": "application/gzip"
+  },
+  "https://epss.empiricalsecurity.com/epss_scores-2026-10-12.csv.gz": {
+    "file": "epss/epss_scores-2026-10-12.csv.gz",
+    "content_type": "application/gzip"
+  },
+  "https://epss.empiricalsecurity.com/epss_scores-2026-10-13.csv.gz": {
+    "file": "epss/epss_scores-2026-10-13.csv.gz",
+    "content_type": "application/gzip"
+  },
+  "https://epss.empiricalsecurity.com/epss_scores-current.csv.gz": {
+    "file": "epss/epss_scores-2026-10-13.csv.gz",
+    "content_type": "application/gzip"
+  },
+  "https://feeds.feedburner.com/TheHackersNews": {
+    "error": "dns"
+  },
+  "https://feeds.feedburner.com/rsscna/engnews/": {
+    "file": "rss/must-match.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://feeds.feedburner.com/rsscna/technology": {
+    "file": "rss/must-match.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://github.com/CVEProject/cvelistV5/releases/download/cve_2026-10-12_at_end_of_day/2026-10-12_delta_CVEs_at_end_of_day.zip": {
+    "file": "cvelist/zips/2026-10-12_delta_CVEs_at_end_of_day.zip",
+    "content_type": "application/zip"
+  },
+  "https://github.com/CVEProject/cvelistV5/releases/download/cve_2026-10-13_2000Z/2026-10-13_delta_CVEs_at_2000Z.zip": {
+    "file": "cvelist/zips/2026-10-13_delta_CVEs_at_2000Z.zip",
+    "content_type": "application/zip"
+  },
+  "https://googleprojectzero.blogspot.com/feeds/posts/default": {
+    "file": "rss/stale.xml",
+    "content_type": "application/atom+xml"
+  },
+  "https://jvndb.jvn.jp/ja/rss/jvndb_new.rdf": {
+    "file": "myjvn/page-1.xml",
+    "content_type": "application/rdf+xml"
+  },
+  "https://krebsonsecurity.com/feed/": {
+    "error": "timeout"
+  },
+  "https://openai.com/news/rss.xml": {
+    "file": "rss/must-match.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://openapi.twse.com.tw/v1/opendata/t187ap04_L": {
+    "file": "exchange-tw/twse.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2015/3xxx/CVE-2015-3306.json": {
+    "status": 404,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2015/5xxx/CVE-2015-5477.json": {
+    "status": 404,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2016/3xxx/CVE-2016-3081.json": {
+    "status": 404,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2021/3xxx/CVE-2021-3199.json": {
+    "status": 404,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2023/22xxx/CVE-2023-22894.json": {
+    "status": 404,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2024/38xxx/CVE-2024-38112.json": {
+    "file": "cvelist/by-id/CVE-2024-38112.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2026/104xxx/CVE-2026-104935.json": {
+    "file": "cvelist/by-id/CVE-2026-104935.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2026/96xxx/CVE-2026-96951.json": {
+    "file": "cvelist/by-id/CVE-2026-96951.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/deltaLog.json": {
+    "file": "cvelist/deltaLog.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/deltaLog.json": {
+    "file": "cvelist/deltaLog.json",
+    "content_type": "application/json"
+  },
+  "https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json": {
+    "status": 503,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://raw.githubusercontent.com/cisagov/kev-data/feed000000000000000000000000000000001013/known_exploited_vulnerabilities.json": {
+    "status": 503,
+    "content_type": "text/plain; charset=utf-8"
+  },
+  "https://red.anthropic.com/2026/cvd/": {
+    "file": "anthropic-cvd/page.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://red.anthropic.com/2026/cvd/data/payload.json": {
+    "file": "anthropic-cvd/payload.json",
+    "content_type": "application/json"
+  },
+  "https://security.googleblog.com/feeds/posts/default": {
+    "file": "rss/nodate.xml",
+    "content_type": "application/atom+xml"
+  },
+  "https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=2026-10-12T20:30:00.000&pubEndDate=2026-10-13T20:30:00.000&resultsPerPage=2000&startIndex=0": {
+    "file": "nvd/page-1.json",
+    "content_type": "application/json"
+  },
+  "https://techcrunch.com/category/security/feed/": {
+    "status": 403,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://therecord.media/feed": {
+    "status": 502,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://unit42.paloaltonetworks.com/feed/": {
+    "file": "rss/stale.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.bleepingcomputer.com/feed/": {
+    "file": "rss/flood.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml": {
+    "file": "rss/format-cest.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.cert.ssi.gouv.fr/feed/": {
+    "file": "rss/garbage.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.cisa.gov/cybersecurity-advisories/all.xml": {
+    "file": "rss/format-atom.xml",
+    "content_type": "application/atom+xml"
+  },
+  "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json": {
+    "error": "timeout"
+  },
+  "https://www.ipa.go.jp/security/alert-rss.rdf": {
+    "file": "rss/zoneless.rdf",
+    "content_type": "application/rdf+xml"
+  },
+  "https://www.ithome.com.tw/rss/security": {
+    "file": "rss/format-ithome.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.jpcert.or.jp/rss/jpcert.rdf": {
+    "file": "jpcert/jpcert.rdf",
+    "content_type": "application/rdf+xml"
+  },
+  "https://www.microsoft.com/en-us/security/blog/feed/": {
+    "error": "tls"
+  },
+  "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml": {
+    "status": 500,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.nhk.or.jp/rss/news/cat0.xml": {
+    "file": "rss/must-match.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.security-next.com/feed": {
+    "file": "rss/zoneless.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.securityweek.com/feed/": {
+    "error": "timeout"
+  },
+  "https://www.taipeitimes.com/xml/index.rss": {
+    "file": "rss/must-match.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O": {
+    "file": "exchange-tw/tpex.json",
+    "content_type": "application/json"
+  },
+  "https://www.twcert.org.tw/tw/rss-132-1.xml": {
+    "file": "twcert-tvn/rss.xml",
+    "content_type": "application/rss+xml"
+  },
+  "https://www.volexity.com/feed/": {
+    "status": 404,
+    "content_type": "text/html; charset=utf-8"
+  }
+}

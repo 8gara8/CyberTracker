@@ -293,7 +293,9 @@ export async function readMyJvn(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<
   const p1 = first.data;
   const notes = [...p1.entries];
   let newest = p1.newest;
-  const pages = myjvnPageUrls(first.urlUsed!, p1.totalRes).slice(1);
+  const all = myjvnPageUrls(first.urlUsed!, p1.totalRes);
+  const paged = new URL(first.urlUsed!).searchParams.has("startItem");
+  const pages = all.slice(1);
   for (const [i, url] of pages.entries()) {
     const r = await get(ctx, url, "myjvn");
     if (!r.ok || !r.body) break;
@@ -307,7 +309,8 @@ export async function readMyJvn(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<
       break;
     }
   }
-  const note = notes.length < p1.totalRes ? `MyJVN: ${notes.length} of ${p1.totalRes} read.` : null;
+  // Only a paged query can fall short of totalRes; the RDF feed is one page by design.
+  const note = paged && notes.length < p1.totalRes ? `MyJVN: ${notes.length} of ${p1.totalRes} read.` : null;
   return { ...first, data: { notes, newest, totalRes: p1.totalRes, note } };
 }
 

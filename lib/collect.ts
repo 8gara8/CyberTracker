@@ -6,14 +6,15 @@
 
 import { addDays, taipeiDateOf, utcDateOf } from "./dates";
 import type { FetchErrorClass } from "./feeds/http";
-import type { CertNote, CheckLabel, CvdDashboard, CveRecord, ExchangeNotice, FeedState, GhsaAdvisory, JvnNote, KevEntry, RawItem } from "./feeds/types";
+import type { CertNote, CheckLabel, CvdDashboard, CveRecord, EpssDay, ExchangeNotice, FeedState, GhsaAdvisory, JvnNote, KevEntry, RawItem } from "./feeds/types";
+import { epssJump } from "./feeds/epss";
 import { endOfDayAsset, hourlyAsset, type ReleaseAsset } from "./feeds/github";
 import { kevNoteUrls } from "./feeds/kev";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
 import { jsonText } from "./json";
-import { byCodeUnit, compareIds } from "./ids";
+import { byCodeUnit, compareCveIds, compareIds } from "./ids";
 import { alertRegions, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
@@ -458,14 +459,55 @@ export function notePackRecords(source: "twcert-tvn" | "jpcert" | "myjvn", notes
 }
 
 /** metrics.epss_movers as records: our own wording, dated with E. */
-export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string): RecordDraft[] {
+/** A day-over-day EPSS jump (§5.12): crossed 0.99, or rose by 0.10 or more since E − 1. */
+export interface EpssJumpRow {
+  cve_id: string;
+  score: number;
+  percentile: number;
+  crossed: boolean;
+  rose: boolean;
+  change_24h: number | null;
+}
+
+/** Every CVE on E whose score crossed or rose since E − 1, in CVE id order (rank makes each a candidate). */
+export function epssJumps(e: EpssDay, e1: EpssDay | null): EpssJumpRow[] {
+  if (!e1) return [];
+  const out: EpssJumpRow[] = [];
+  for (const [cve_id, s] of e.scores) {
+    const j = epssJump(e, e1, cve_id);
+    if (j.crossed || j.rose) out.push({ cve_id, score: s.epss, percentile: s.percentile, crossed: j.crossed, rose: j.rose, change_24h: j.change_24h });
+  }
+  return out.sort((a, b) => compareCveIds(a.cve_id, b.cve_id));
+}
+
+/**
+ * EPSS records: the five 7-day movers and every day-over-day jump, one record per CVE (a CVE in both
+ * gets one record with both facts), so an EPSS candidate always has pack evidence.
+ */
+export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string, jumps: readonly EpssJumpRow[] = []): RecordDraft[] {
   const e = scoreDate.slice(0, 10);
   const from = addDays(e, -7);
-  return movers.map((m) => draft(
-    "epss", m.cve_id, cveOrgUrl(m.cve_id), [], `EPSS up ${m.delta_7d.toFixed(2)} in 7 days`,
-    `EPSS ${m.score.toFixed(2)} (percentile ${m.percentile.toFixed(2)}) on ${e}, up ${m.delta_7d.toFixed(2)} since ${from}.`,
-    e, null, null, [m.cve_id], { epss: m.score, epss_percentile: m.percentile, epss_delta_7d: m.delta_7d },
-  ));
+  const byCve = new Map<string, { mover?: EpssMover; jump?: EpssJumpRow }>();
+  for (const m of movers) byCve.set(m.cve_id, { mover: m });
+  for (const j of jumps) byCve.set(j.cve_id, { ...byCve.get(j.cve_id), jump: j });
+  return [...byCve.entries()].sort(([a], [b]) => compareCveIds(a, b)).map(([cve, { mover, jump }]) => {
+    const score = mover?.score ?? jump!.score;
+    const percentile = mover?.percentile ?? jump!.percentile;
+    const day = jump ? (jump.crossed ? "crossed percentile 0.99" : `up ${(jump.change_24h ?? 0).toFixed(2)} in a day`) : null;
+    const title = day ? `EPSS ${day}` : `EPSS up ${mover!.delta_7d.toFixed(2)} in 7 days`;
+    const parts = [
+      `EPSS ${score.toFixed(2)} (percentile ${percentile.toFixed(2)}) on ${e}`,
+      ...(jump?.change_24h != null ? [`${jump.change_24h >= 0 ? "up" : "down"} ${Math.abs(jump.change_24h).toFixed(2)} since ${addDays(e, -1)}`] : []),
+      ...(mover ? [`up ${mover.delta_7d.toFixed(2)} since ${from}`] : []),
+    ];
+    const facts: Facts = { epss: score, epss_percentile: percentile };
+    if (mover) facts.epss_delta_7d = mover.delta_7d;
+    if (jump) {
+      facts.epss_change_24h = jump.change_24h;
+      facts.epss_crossed_99 = jump.crossed;
+    }
+    return draft("epss", cve, cveOrgUrl(cve), [], title, `${parts.join(", ")}.`, e, null, null, [cve], facts);
+  });
 }
 
 /** Exchange notices in the window whose sanitised subject or text names a cyber incident (§8.3). */
@@ -710,6 +752,24 @@ function cut(text: string, max: number): string {
   return chars.length <= max ? text : `${chars.slice(0, max - 1).join("")}…`;
 }
 
+/**
+ * `prefix`, the wrapped text, then `suffix`, with the text cut (never the tags) so the line stays within
+ * MD_LINE_MAX UTF-16 code units, whatever the script or the bracket neutralising does to its length.
+ */
+function fitLine(prefix: string, source: string, text: string, suffix = ""): string {
+  const line = (t: string) => `${prefix}${wrapUntrusted(source, t)}${suffix}`;
+  let out = line(text);
+  if (out.length <= MD_LINE_MAX) return out;
+  const chars = Array.from(text);
+  let n = Math.min(chars.length, MD_LINE_MAX);
+  while (n > 0) {
+    n = Math.max(0, n - Math.max(1, out.length - MD_LINE_MAX));
+    out = line(`${chars.slice(0, n).join("")}…`);
+    if (out.length <= MD_LINE_MAX) return out;
+  }
+  return line("…");
+}
+
 const RECORD_LABEL: Readonly<Record<PackRecordSource, string>> = {
   kev: "KEV", cvelist: "CVE", epss: "EPSS", ghsa: "GHSA", nvd: "NVD", "twcert-tvn": "TVN", jpcert: "JPCERT", myjvn: "MyJVN",
   "anthropic-cvd": "Dashboard", "exchange-tw": "Exchange",
@@ -744,13 +804,13 @@ export function renderPackMd(pack: Pack, registry: Pick<SourcesFile, "feeds">, o
       const mark = i.flags.length ? " ⚠" : "";
       const seen = firstSeen.get(i.id);
       if (seen) {
-        lines.push(`- [${i.id}]${mark} see ${COVERAGE_LABEL[seen]}: ${wrapUntrusted(i.feed_id, cut(i.title, 90))}`);
+        lines.push(fitLine(`- [${i.id}]${mark} see ${COVERAGE_LABEL[seen]}: `, i.feed_id, cut(i.title, 90)));
         continue;
       }
       firstSeen.set(i.id, c);
       const text = i.snippet ? `${i.title} · ${i.snippet}` : i.title;
       const url = i.url.length <= ITEM_URL_SHOWN_MAX ? i.url : "(link in packs JSON)";
-      lines.push(`- [${i.id}]${mark} ${stamp(i.published_at)} · ${names.get(i.feed_id) ?? i.outlet} (T${i.tier}, ${i.language}) · ${wrapUntrusted(i.feed_id, text)} · ${url}`);
+      lines.push(fitLine(`- [${i.id}]${mark} ${stamp(i.published_at)} · ${names.get(i.feed_id) ?? i.outlet} (T${i.tier}, ${i.language}) · `, i.feed_id, text, ` · ${url}`));
     }
   }
   lines.push("", `## Records (${pack.records.length})`);
@@ -762,10 +822,10 @@ export function renderPackMd(pack: Pack, registry: Pick<SourcesFile, "feeds">, o
     const head = [r.vendor, r.product].filter(Boolean).join(" ");
     const label = [head, r.title].filter(Boolean).join(" · ");
     const url = r.url.length <= RECORD_URL_SHOWN_MAX ? r.url : "(link in packs JSON)";
-    const parts = [`- [${r.id}]${mark} ${RECORD_LABEL[r.source]} ${date}`, r.record_id !== ids ? cut(r.record_id, 60) : null, ids || null,
-      wrapUntrusted(r.source, label), url].filter((p): p is string => !!p);
-    lines.push(parts.join(" · "));
-    if (r.text) lines.push(`  ${wrapUntrusted(r.source, cut(r.text, MD_TEXT_MAX))}`);
+    const head1 = [`- [${r.id}]${mark} ${RECORD_LABEL[r.source]} ${date}`, r.record_id !== ids ? cut(r.record_id, 60) : null, ids || null]
+      .filter((p): p is string => !!p).join(" · ");
+    lines.push(fitLine(`${head1} · `, r.source, label, ` · ${url}`));
+    if (r.text) lines.push(fitLine("  ", r.source, cut(r.text, MD_TEXT_MAX)));
     for (const a of r.advisory_urls) if (a.length <= ADVISORY_URL_LENGTH_MAX) lines.push(`  advisory: ${a}`);
   }
   return `${lines.join("\n")}\n`;
