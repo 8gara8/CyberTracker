@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-6mpq-8r9v-2w3c",
+  "modified": "2026-10-13T10:00:00Z",
+  "published": "2026-10-01T08:00:00Z",
+  "aliases": [],
+  "summary": "SAMPLE: ct-sample-auth accepts expired sessions",
+  "details": "SAMPLE details, invented for the fixture. Published before the window, modified inside it. Fixed in 2.3.4.",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "RubyGems",
+        "name": "ct-sample-auth"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "fixed": "2.3.4"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://example.com/ct-sample/ghsa-6mpq-8r9v-2w3c"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://example.org/ct-sample/ct-sample-auth"
+    }
+  ],
+  "database_specific": {
+    "cwe_ids": [
+      "CWE-613"
+    ],
+    "severity": "HIGH",
+    "github_reviewed": true,
+    "github_reviewed_at": "2026-10-13T10:00:00Z",
+    "nvd_published_at": null
+  }
+}

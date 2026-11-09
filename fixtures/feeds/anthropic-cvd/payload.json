@@ -1,0 +1,229 @@
+{
+  "analysis_until": "2026-10-13T19:30:11Z",
+  "as_of": "2026-10-13T19:30:11Z",
+  "revision": 37,
+  "note": "SAMPLE: the dashboard payload's shape with invented figures.",
+  "headline": {
+    "disclosed": 4812,
+    "projects": 655,
+    "patched": 588,
+    "identifiers": 702,
+    "cves": 219,
+    "ghsas": 483
+  },
+  "cve_records": [
+    {
+      "cve_id": "CVE-2026-103658",
+      "project": "GNU Aspell"
+    },
+    {
+      "cve_id": "CVE-2026-77206",
+      "project": "libreswan"
+    },
+    {
+      "cve_id": "CVE-2026-77207",
+      "project": "libreswan"
+    }
+  ],
+  "ghsa_records": [
+    {
+      "ghsa_id": "GHSA-7q8r-9v2w-c3f4",
+      "project": "SAMPLE package"
+    },
+    {
+      "ghsa_id": "GHSA-9v2w-c3f4-g5h6",
+      "project": "SAMPLE package"
+    }
+  ],
+  "ledger": [
+    {
+      "hash": "sample-0001",
+      "committed_at": "2026-09-02T10:00:00Z",
+      "reveal_tier": 1,
+      "revealed": true,
+      "ant_id": "ANT-2026-SAMPLE",
+      "project": "GNU Aspell",
+      "bug_class": "heap-buffer-overflow",
+      "discovered_on": "2026-08-30",
+      "revealed_at": "2026-10-12T21:24:48Z",
+      "patched_at": "2026-10-10T00:00:00Z",
+      "is_fixed_in_response": true,
+      "passed_triage": true,
+      "vendor_confirmed": true,
+      "was_disclosed": true,
+      "patched": true,
+      "cve_ids": [
+        "CVE-2026-103658"
+      ],
+      "ghsa_ids": [],
+      "corrected_cve_ids": [],
+      "corrected_ghsa_ids": [],
+      "status": "patched",
+      "merged_into": null,
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "withdrawn_at": null,
+      "superseded_by": null
+    },
+    {
+      "hash": "sample-0002",
+      "committed_at": "2026-09-10T10:00:00Z",
+      "reveal_tier": 1,
+      "revealed": true,
+      "ant_id": "ANT-2026-SAMPLF",
+      "project": "libreswan",
+      "bug_class": "denial-of-service",
+      "discovered_on": "2026-09-08",
+      "revealed_at": "2026-10-13T21:28:11Z",
+      "patched_at": null,
+      "is_fixed_in_response": false,
+      "passed_triage": true,
+      "vendor_confirmed": true,
+      "was_disclosed": true,
+      "patched": false,
+      "cve_ids": [
+        "CVE-2026-77206",
+        "CVE-2026-77207"
+      ],
+      "ghsa_ids": [],
+      "corrected_cve_ids": [],
+      "corrected_ghsa_ids": [],
+      "status": "disclosed",
+      "merged_into": null,
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "withdrawn_at": null,
+      "superseded_by": null
+    },
+    {
+      "hash": "sample-0003",
+      "committed_at": "2026-09-12T10:00:00Z",
+      "reveal_tier": 2,
+      "revealed": true,
+      "ant_id": "ANT-2026-SAMPLG",
+      "project": "Xen",
+      "bug_class": "use-after-free",
+      "discovered_on": "2026-09-11",
+      "revealed_at": "2026-10-13T15:44:42Z",
+      "patched_at": "2026-10-13T15:44:42Z",
+      "is_fixed_in_response": true,
+      "passed_triage": true,
+      "vendor_confirmed": true,
+      "was_disclosed": true,
+      "patched": true,
+      "cve_ids": [
+        "CVE-2026-0000"
+      ],
+      "ghsa_ids": [],
+      "corrected_cve_ids": [
+        "CVE-2026-79610"
+      ],
+      "corrected_ghsa_ids": [],
+      "status": "patched",
+      "merged_into": null,
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "withdrawn_at": null,
+      "superseded_by": null
+    },
+    {
+      "hash": "sample-0004",
+      "committed_at": "2026-09-20T10:00:00Z",
+      "reveal_tier": 2,
+      "revealed": true,
+      "ant_id": "ANT-2026-SAMPLH",
+      "project": "SAMPLE package",
+      "bug_class": "path-traversal",
+      "discovered_on": "2026-09-18",
+      "revealed_at": "2026-10-01T00:00:00Z",
+      "patched_at": null,
+      "is_fixed_in_response": false,
+      "passed_triage": false,
+      "vendor_confirmed": false,
+      "was_disclosed": true,
+      "patched": false,
+      "cve_ids": [],
+      "ghsa_ids": [
+        "GHSA-8r9v-2w3c-f4g5"
+      ],
+      "corrected_cve_ids": [],
+      "corrected_ghsa_ids": [],
+      "status": "withdrawn",
+      "merged_into": null,
+      "withdrawn": true,
+      "withdrawn_reason": "SAMPLE: not a vulnerability",
+      "withdrawn_at": "2026-10-05T00:00:00Z",
+      "superseded_by": null
+    },
+    {
+      "hash": "sample-0005",
+      "committed_at": "2026-09-25T10:00:00Z",
+      "reveal_tier": 1,
+      "revealed": true,
+      "ant_id": "ANT-2026-SAMPLJ",
+      "project": "SAMPLE package",
+      "bug_class": "prototype-pollution",
+      "discovered_on": "2026-09-24",
+      "revealed_at": "2026-10-09T00:00:00Z",
+      "patched_at": "2026-10-09T00:00:00Z",
+      "is_fixed_in_response": true,
+      "passed_triage": true,
+      "vendor_confirmed": true,
+      "was_disclosed": true,
+      "patched": true,
+      "cve_ids": [],
+      "ghsa_ids": [
+        "GHSA-7q8r-9v2w-c3f4"
+      ],
+      "corrected_cve_ids": [],
+      "corrected_ghsa_ids": [],
+      "status": "patched",
+      "merged_into": null,
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "withdrawn_at": null,
+      "superseded_by": null
+    },
+    {
+      "hash": "sample-0006",
+      "committed_at": "2026-10-01T10:00:00Z",
+      "reveal_tier": 3,
+      "revealed": false,
+      "ant_id": null,
+      "project": null,
+      "bug_class": null,
+      "discovered_on": null,
+      "revealed_at": null,
+      "patched_at": null,
+      "is_fixed_in_response": false,
+      "passed_triage": true,
+      "vendor_confirmed": false,
+      "was_disclosed": false,
+      "patched": false,
+      "cve_ids": [],
+      "ghsa_ids": [],
+      "corrected_cve_ids": [],
+      "corrected_ghsa_ids": [],
+      "status": "sealed",
+      "merged_into": null,
+      "withdrawn": false,
+      "withdrawn_reason": null,
+      "withdrawn_at": null,
+      "superseded_by": null
+    }
+  ],
+  "fix_rate_pct": 91.8,
+  "fp_rate": 4.1,
+  "median_days_to_ack": 1.0,
+  "median_days_to_patch": 15.9,
+  "project_count": 655,
+  "total_acknowledged": 3420,
+  "total_cves": 219,
+  "total_disclosed": 4812,
+  "total_fixed": 205,
+  "total_fixed_in_response": 588,
+  "total_ghsas": 483,
+  "total_revealed": 221,
+  "total_sent": 4812,
+  "total_verified": 5710
+}

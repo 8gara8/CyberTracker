@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE feed without dates</title>
+<link>https://www.example.com/ct-sample/nodate</link>
+<description>SAMPLE: items with no dates (NODATE).</description>
+<item>
+<title>SAMPLE: a ransomware story with no date</title>
+<link>https://www.example.com/ct-sample/nodate-1</link>
+</item>
+<item>
+<title>SAMPLE: a vulnerability story with no date</title>
+<link>https://www.example.com/ct-sample/nodate-2</link>
+</item>
+</channel>
+</rss>
