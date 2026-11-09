@@ -134,7 +134,8 @@ function provenanceOf(i: MetricsInputs, index: KevIndexFile, log: string[]): Omi
     kev_date_released: pick("kev_date_released", catalog?.dateReleased ?? f.inputs.kev?.date_released, prev?.kev_date_released, `${dataCutoffFor(i.date)}T00:00:00Z`),
     cve_list_release: pick("cve_list_release", newestZipTag(f), prev?.cve_list_release, UNKNOWN),
     cve_list_commit: pick("cve_list_commit", f.inputs.commits.cvelist, prev?.cve_list_commit, UNKNOWN_SHA),
-    kev_data_commit: catalog && !kevFallback ? f.inputs.commits.kev_data : catalog ? null : prev?.kev_data_commit ?? null,
+    // null means the cisa.gov fallback; a mirror read whose commit ls-remote missed takes the earlier value or the placeholder (§0.4 row 41).
+    kev_data_commit: catalog && !kevFallback ? pick("kev_data_commit", f.inputs.commits.kev_data, prev?.kev_data_commit, UNKNOWN_SHA) : catalog ? null : prev?.kev_data_commit ?? null,
     epss_model_version: pick("epss_model_version", f.epss.e?.model_version ?? f.inputs.epss?.model_version, prev?.epss_model_version, UNKNOWN),
     epss_date: pick("epss_date", f.epss.e ? utcDateOf(f.epss.e.score_date) : null, prev?.epss_date, dataCutoffFor(i.date)),
     ghsa_source: GHSA_CREDIT_SOURCE,

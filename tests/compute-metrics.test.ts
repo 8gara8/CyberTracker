@@ -238,6 +238,16 @@ describe("computeMetrics: every block ok", () => {
       epss_model_version: "v2025.03.14", epss_date: "2026-11-07", ghsa_source: "git", ghsa_commit: SHA40("c") });
   });
 
+  it("writes the 40-zero placeholder, not the fallback's null, for a mirror read whose commit ls-remote missed (B11)", () => {
+    const v = world(D);
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, commits: { ...v.inputs.feeds.inputs.commits, kev_data: null } };
+    const p = computeMetrics(v.inputs);
+    expect(p.metrics.provenance.kev_data_commit).toBe("0".repeat(40));
+    expect(p.log).toContain("Provenance: kev_data_commit is unknown today and in every earlier file; written as a placeholder.");
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, kev: { ...v.inputs.feeds.inputs.kev!, fallback_used: true } };
+    expect(computeMetrics(v.inputs).metrics.provenance.kev_data_commit).toBeNull();
+  });
+
   it("lists the metrics feeds read, sorted by id", () => {
     expect(r.manifest.feeds.map((f) => f.id)).toEqual(["anthropic-cvd", "cvelist", "epss", "ghsa", "kev"]);
   });
