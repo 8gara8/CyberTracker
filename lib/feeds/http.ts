@@ -42,11 +42,12 @@ export const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 
 /** Per-request timeouts (§8.3): 15 s; 30 s for kev, nvd and each MyJVN page; 60 s per EPSS file; 90 s for deltaLog.json and each delta zip. */
 export const FEED_TIMEOUTS = { default: 15_000, kev: 30_000, nvd: 30_000, myjvn: 30_000, epss: 60_000, deltaLog: 90_000, zip: 90_000 } as const;
-/** Body caps (§8.3): 5 MB by default, 20 MB for KEV and EPSS, 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. */
+/** Body caps (§8.3): 5 MB by default, 20 MB for KEV, EPSS and the disclosure dashboard's payload, 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. */
 export const FEED_MAX_BYTES = {
   default: 5 * 1024 * 1024,
   kev: 20 * 1024 * 1024,
   epss: 20 * 1024 * 1024,
+  payload: 20 * 1024 * 1024,
   deltaLog: 64 * 1024 * 1024,
   zip: 64 * 1024 * 1024,
   snapshot: 3 * 1024 * 1024,

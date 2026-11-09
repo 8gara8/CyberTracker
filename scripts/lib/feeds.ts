@@ -320,7 +320,7 @@ export async function readCvd(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<Cv
   if (!page.ok || !page.body) return failed(page.error ?? "network", entry.url);
   cacheWrite(ctx, ctx.paths.feedBody(entry.id, "html"), page.body);
   const payloadUrl = cvdPayloadUrl(page.finalUrl || entry.url);
-  const payload = await get(ctx, payloadUrl);
+  const payload = await get(ctx, payloadUrl, "kev", "payload"); // about 6.4 MB on 2026-11-09, over the 5 MiB default
   if (payload.ok && payload.body) cacheWrite(ctx, ctx.paths.feedBody(entry.id, "payload.json"), payload.body);
   else ctx.log(`anthropic-cvd: no payload at ${CVD_PAYLOAD_PATH}; reading the page alone.`);
   try {
