@@ -72,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 2, ai_finders: 2, source_tiers: 1, regions: 1, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 2, ai_finders: 2, source_tiers: 2, regions: 1, actors: 1 });
   });
 });
 
@@ -180,10 +180,11 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("versioned files: vendors and ai-finders at 2 (P2: Schneider's CNA; the AISLE and Team Atlanta spellings), the rest at 1", () => {
+  it("versioned files: vendors, ai-finders and source-tiers at 2 (P2: Schneider's CNA; the AISLE and Team Atlanta spellings; Kobol's feed domains), the rest at 1", () => {
     const c = prod();
-    expect([c.vendors, c.aiFinders].map((f) => f.version)).toEqual([2, 2]);
-    for (const f of [c.sourceTiers, c.regions, c.actors]) expect(f.version).toBe(1);
+    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([2, 2, 2]);
+    expect(c.sourceTiers.updated).toBe("2026-11-10");
+    for (const f of [c.regions, c.actors]) expect(f.version).toBe(1);
   });
 });
 
@@ -338,8 +339,8 @@ describe("the P2 registry and the Verify items", () => {
     expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual(["avtech", "digiever", "merit-lilin", "fxc", "sky"]);
   });
 
-  it("names only gtig (unverified), the one feed path the cloud session could not confirm", () => {
-    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual(["gtig"]);
+  it("names no feed (unverified): Kobol session 1 confirmed gtig's feed path", () => {
+    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
   });
 
   // TODO(Kobol session 1, build plan §5.1 K2 and K3): unskip once sources:check confirms gtig's feed path

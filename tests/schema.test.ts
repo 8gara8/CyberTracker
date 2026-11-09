@@ -116,7 +116,7 @@ const rule = {
 };
 const fetched = {
   id: "sample-feed", name: "SAMPLE feed", kind: "rss", url: "https://example.org/feed", fallback_url: null, language: "en",
-  region: "GLOBAL", coverage: ["exploits"], priority: 2, fresh_days: 2, must_match: false,
+  region: "GLOBAL", coverage: ["exploits"], priority: 2, fresh_days: 2, must_match: false, date_zone: null,
 };
 const search = { id: "q-sample", name: "SAMPLE search", kind: "search", query: "SAMPLE query", language: "ja", region: "JP", coverage: ["japan"], priority: 2 };
 const feedIndexEntry = {
@@ -408,8 +408,10 @@ describe("schema-level constraints", () => {
   it("registry: every key written out; search entries take a query, never a URL", () => {
     const { fallback_url: _f, ...noFallback } = fetched;
     const { must_match: _m, ...noMustMatch } = fetched;
+    const { date_zone: _z, ...noDateZone } = fetched;
     fails(S.FeedEntry, noFallback);
     fails(S.FeedEntry, noMustMatch);
+    fails(S.FeedEntry, noDateZone);
     fails(S.FeedEntry, { ...fetched, url: "http://example.org/feed" });
     fails(S.FeedEntry, { ...search, url: "https://example.org/" });
     fails(S.SourcesFile, { schema_version: 1, keywords: ["only one"], feeds: [] });

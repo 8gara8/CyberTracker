@@ -3,9 +3,17 @@ import { run, type RunResult } from "./run";
 // Git through child processes (SPEC §8.8). Never prompts: GIT_TERMINAL_PROMPT=0 makes a missing
 // credential fail fast instead of hanging an unattended run. A deadline caps every command's timeout,
 // so publishing can't run past the hard stop. Copied from the Europe fork's scripts/lib/git.ts; syncMain
-// takes the allowed paths and fast-forwards, and onOriginMain replaces onOrigin.
+// takes the allowed paths and fast-forwards, and onOriginMain replaces onOrigin. Output is kept up to
+// GIT_STDOUT_MAX_BYTES (`git show` of a state or metrics file can pass run()'s 1 MB default); output cut
+// at the limit is a GitOutputCut error, never a string that looks whole.
 
 export class GitError extends Error {}
+
+/** The command's stdout ran past the limit, so what was kept is not the whole output. */
+export class GitOutputCut extends GitError {}
+
+/** Bytes of a git command's stdout kept (64 MiB: state files may reach 5 MB before they split, §4.7). */
+export const GIT_STDOUT_MAX_BYTES = 64 * 1024 * 1024;
 
 /** Main can't be brought up to date automatically; retrying won't help. */
 export class SyncError extends GitError {}
@@ -16,13 +24,15 @@ export interface Git {
   deadline: number | null;
 }
 
-export function git(cwd: string, opts: { deadline?: number } = {}): Git {
+export function git(cwd: string, opts: { deadline?: number; maxStdoutBytes?: number } = {}): Git {
   const deadline = opts.deadline ?? null;
+  const maxStdoutBytes = opts.maxStdoutBytes ?? GIT_STDOUT_MAX_BYTES;
   const fn = (async (args: string[], timeoutMs = 60_000) => {
     const ms = deadline === null ? timeoutMs : Math.min(timeoutMs, deadline - Date.now());
     if (ms <= 0) throw new GitError(`git ${args[0]} not started: the run's deadline has passed.`);
-    const r: RunResult = await run("git", args, { cwd, timeoutMs: ms, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
+    const r: RunResult = await run("git", args, { cwd, timeoutMs: ms, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, maxStdoutBytes });
     if (r.code !== 0) throw new GitError(`git ${args.join(" ")} failed (${r.timedOut ? "timeout" : `exit ${r.code}`}): ${r.stderr.trim().slice(0, 400)}`);
+    if (r.stdoutCut) throw new GitOutputCut(`git ${args.join(" ").slice(0, 200)}: the output passed ${maxStdoutBytes} bytes and was cut.`);
     // Only the end is trimmed: `status --porcelain` lines start with a meaningful space.
     return r.stdout.replace(/\s+$/, "");
   }) as Git;

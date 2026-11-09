@@ -3,7 +3,7 @@
     "file": "rss/zoneless.rdf",
     "content_type": "application/rdf+xml"
   },
-  "https://cloud.google.com/blog/topics/threat-intelligence/rss/": {
+  "https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/": {
     "status": 503,
     "content_type": "text/html; charset=utf-8"
   },
@@ -22,6 +22,10 @@
   "https://epss.empiricalsecurity.com/epss_scores-current.csv.gz": {
     "file": "epss/epss_scores-2026-10-13.csv.gz",
     "content_type": "application/gzip"
+  },
+  "https://feeds.feedburner.com/GoogleOnlineSecurityBlog": {
+    "file": "rss/nodate.xml",
+    "content_type": "application/atom+xml"
   },
   "https://feeds.feedburner.com/TheHackersNews": {
     "file": "rss/near-dup.xml",
@@ -118,10 +122,6 @@
     "file": "anthropic-cvd/payload.json",
     "content_type": "application/json"
   },
-  "https://security.googleblog.com/feeds/posts/default": {
-    "file": "rss/nodate.xml",
-    "content_type": "application/atom+xml"
-  },
   "https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=2026-10-12T20:30:00.000&pubEndDate=2026-10-13T20:30:00.000&resultsPerPage=2000&startIndex=0": {
     "file": "nvd/page-1.json",
     "content_type": "application/json"
@@ -142,7 +142,7 @@
     "file": "rss/flood.xml",
     "content_type": "application/rss+xml"
   },
-  "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml": {
+  "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml": {
     "file": "rss/format-cest.xml",
     "content_type": "application/rss+xml"
   },
@@ -150,7 +150,11 @@
     "file": "rss/format-cest.xml",
     "content_type": "application/rss+xml"
   },
-  "https://www.cisa.gov/cybersecurity-advisories/all.xml": {
+  "https://www.cisa.gov/cybersecurity-advisories/alerts.xml": {
+    "file": "rss/format-atom.xml",
+    "content_type": "application/atom+xml"
+  },
+  "https://www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml": {
     "file": "rss/format-atom.xml",
     "content_type": "application/atom+xml"
   },

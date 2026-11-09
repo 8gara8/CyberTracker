@@ -2,6 +2,8 @@
 // commits, and the sparse checkout of github/advisory-database. With CT_FIXTURE_FEEDS set, fixtureGit()
 // answers both from fixtures/feeds/. Every command runs through scripts/lib/run.ts with a hard timeout and
 // GIT_TERMINAL_PROMPT=0, so an unattended run never waits on a prompt; any failure is null, never a throw.
+// stdout is kept up to GIT_STDOUT_MAX_BYTES (`git ls-tree -r` over the months passes run()'s 1 MB default
+// near 7,500 advisories), and output cut at the limit is a failure, never parsed.
 
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -10,6 +12,7 @@ import { utcDateOf } from "../../lib/dates";
 import { parseLsRemote } from "../../lib/feeds/github";
 import { byCodeUnit } from "../../lib/ids";
 import { sha256Hex } from "../../lib/json";
+import { GIT_STDOUT_MAX_BYTES } from "./git";
 import { run } from "./run";
 
 export interface GitSource {
@@ -49,13 +52,16 @@ function patternMatches(ref: string, pattern: string): boolean {
 
 const gitEnv = () => ({ ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "", LC_ALL: "C" });
 
+/** One git command's stdout, or null when it fails, times out or its output passes `maxStdoutBytes` (cut output is never parsed). */
+export async function gitStdout(args: string[], cwd: string, timeoutMs: number, maxStdoutBytes = GIT_STDOUT_MAX_BYTES): Promise<string | null> {
+  if (timeoutMs <= 0) return null;
+  const r = await run("git", args, { cwd, timeoutMs, env: gitEnv(), killGraceMs: 2_000, maxStdoutBytes });
+  return r.code === 0 && !r.timedOut && !r.stdoutCut ? r.stdout : null;
+}
+
 /** The live runner, through scripts/lib/run.ts. */
 export function liveGit(root: string): GitSource {
-  const git = async (args: string[], cwd: string, timeoutMs: number) => {
-    if (timeoutMs <= 0) return null;
-    const r = await run("git", args, { cwd, timeoutMs, env: gitEnv(), killGraceMs: 2_000 });
-    return r.code === 0 && !r.timedOut ? r.stdout : null;
-  };
+  const git = (args: string[], cwd: string, timeoutMs: number) => gitStdout(args, cwd, timeoutMs);
   return {
     async lsRemote(repo, patterns) {
       if (!REPO_RE.test(repo)) return null;
