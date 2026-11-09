@@ -116,3 +116,85 @@ describe("readCvd: a payload left by an earlier run", () => {
   });
 });
 
+// ── KEV (A4, A5) ─────────────────────────────────────────────────────────────────────────────────
+
+describe("readKev: a catalog older than kev-index, and what is cached", () => {
+  const kev = entry({
+    id: "kev", kind: "kev", url: "https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json",
+    fallback_url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", region: "US", priority: 1, fresh_days: 7,
+  });
+  const v13 = read("kev/known_exploited_vulnerabilities.json"); // catalogVersion 2026.10.13
+  const withVersion = (version: string) => {
+    const c = JSON.parse(v13.toString("utf8")) as Record<string, unknown>;
+    return Buffer.from(JSON.stringify({ ...c, catalogVersion: version }));
+  };
+  const v12 = withVersion("2026.10.12");
+  const v14 = withVersion("2026.10.14");
+  const html = Buffer.from("<!DOCTYPE html><html><body>SAMPLE challenge page</body></html>");
+  const kevFile = (h: ReturnType<typeof harness>) => h.paths.feedBody("kev", "json");
+
+  it("fails schema when only an older catalog answers (the fallback timed out), logs both versions and caches nothing", async () => {
+    const h = harness({ [kev.url]: v12, [kev.fallback_url!]: "timeout" });
+    const r = await readKev(kev, h.ctx, { sha: null, minVersion: "2026.10.13" });
+    expect(r).toMatchObject({ ok: false, error: "schema", data: null, urlUsed: kev.url, triedFallback: true, fallbackUsed: false, sha256: null });
+    expect(h.log).toContain("KEV: only catalog 2026.10.12 answered, older than kev-index 2026.10.13");
+    expect(h.fetched).toEqual([kev.url, kev.fallback_url]);
+    expect(fs.existsSync(kevFile(h))).toBe(false);
+  });
+
+  it("fails schema when the fallback alone answers, older (the mirror failed), and when both answer older", async () => {
+    const mirrorDown = harness({ [kev.url]: 503, [kev.fallback_url!]: v12 });
+    const a = await readKev(kev, mirrorDown.ctx, { sha: null, minVersion: "2026.10.13" });
+    expect([a.ok, a.error, a.urlUsed]).toEqual([false, "schema", kev.fallback_url]);
+    expect(mirrorDown.log).toContain("KEV: only catalog 2026.10.12 answered, older than kev-index 2026.10.13");
+    const both = harness({ [kev.url]: v12, [kev.fallback_url!]: v12 });
+    const b = await readKev(kev, both.ctx, { sha: null, minVersion: "2026.10.13" });
+    expect([b.ok, b.error]).toEqual([false, "schema"]);
+    expect(fs.existsSync(kevFile(both))).toBe(false);
+  });
+
+  it("takes the fallback when it is current, and caches only that body", async () => {
+    const h = harness({ [kev.url]: v12, [kev.fallback_url!]: v14 });
+    const r = await readKev(kev, h.ctx, { sha: null, minVersion: "2026.10.13" });
+    expect(r).toMatchObject({ ok: true, error: null, urlUsed: kev.fallback_url, triedFallback: true, fallbackUsed: true, sha256: sha256Hex(v14) });
+    expect(r.data!.catalogVersion).toBe("2026.10.14");
+    expect(fs.readFileSync(kevFile(h))).toEqual(v14);
+  });
+
+  it("an equal catalog is current; without a kev-index any catalog is (sources:check)", async () => {
+    const same = harness({ [kev.url]: v13 });
+    expect((await readKev(kev, same.ctx, { sha: null, minVersion: "2026.10.13" })).ok).toBe(true);
+    expect(same.fetched).toEqual([kev.url]);
+    const none = harness({ [kev.url]: v12 });
+    expect((await readKev(kev, none.ctx, { sha: null, minVersion: null })).data?.catalogVersion).toBe("2026.10.12");
+  });
+
+  it("never caches a body it refused or could not parse: the older mirror plus an HTML fallback leave yesterday's kev.json", async () => {
+    const h = harness({ [kev.url]: v12, [kev.fallback_url!]: html });
+    fs.mkdirSync(path.dirname(kevFile(h)), { recursive: true });
+    fs.writeFileSync(kevFile(h), v13);
+    const r = await readKev(kev, h.ctx, { sha: null, minVersion: "2026.10.13" });
+    expect([r.ok, r.error]).toEqual([false, "schema"]);
+    expect(fs.readFileSync(kevFile(h))).toEqual(v13);
+    const down = harness({ [kev.url]: "timeout", [kev.fallback_url!]: html });
+    const d = await readKev(kev, { ...down.ctx, paths: h.paths }, { sha: null, minVersion: null });
+    expect([d.ok, d.error]).toEqual([false, "parse"]);
+    expect(fs.readFileSync(kevFile(h))).toEqual(v13);
+  });
+});
+
+describe("readRss: a body that does not parse is not cached", () => {
+  it("keeps the earlier cached body when today's answer is garbage", async () => {
+    const url = "https://www.example.com/ct-sample/feed.xml";
+    const feed = entry({ id: "sample-feed", kind: "rss", url });
+    const good = read("rss/zoneless.xml");
+    const h = harness({ [url]: good });
+    expect((await readRss(feed, h.ctx)).ok).toBe(true);
+    const file = h.paths.feedBody("sample-feed", "xml");
+    expect(fs.readFileSync(file)).toEqual(good);
+    const bad = await readRss(feed, { ...harness({ [url]: read("rss/garbage.xml") }).ctx, paths: h.paths });
+    expect([bad.ok, bad.error]).toEqual([false, "parse"]);
+    expect(fs.readFileSync(file)).toEqual(good);
+  });
+});
+

@@ -82,49 +82,69 @@ export interface Read<T> {
 const failed = <T>(error: FetchErrorClass, urlUsed: string | null, triedFallback = false): Read<T> =>
   ({ ok: false, error, urlUsed, triedFallback, fallbackUsed: false, sha256: null, data: null });
 
-/** One URL, then the registry's fallback when the first fails to fetch or parse. */
+/**
+ * One URL, then the registry's fallback when the first fails to fetch, fails to parse or answers data
+ * `accept` refuses (older than the run needs). `body` keeps a body in cache/ only once it is the one
+ * returned: parsed and accepted. When every answer that parsed was refused, the read fails "schema" (the
+ * body parsed, but what it holds breaks the run's rule) and `refused` gives the log line.
+ */
 async function withFallback<T>(
   ctx: FeedCtx,
   entry: FetchedFeed,
   first: string,
   parse: (body: Buffer, r: FetchResult) => T | Promise<T>,
-  opts: { limit?: Limit; max?: keyof typeof FEED_MAX_BYTES; body?: (body: Buffer) => void; accept?: (data: T) => boolean } = {},
+  opts: {
+    limit?: Limit; max?: keyof typeof FEED_MAX_BYTES; body?: (body: Buffer) => void;
+    accept?: (data: T) => boolean; refused?: (data: T) => string;
+  } = {},
 ): Promise<Read<T>> {
   const urls = [first, ...(entry.fallback_url ? [entry.fallback_url] : [])];
   let last: Read<T> = failed("network", first);
-  let older: Read<T> | null = null;
+  let refused: { url: string; data: T } | null = null;
   for (const [i, url] of urls.entries()) {
     const r = await get(ctx, url, opts.limit, opts.max);
     if (!r.ok || !r.body) {
       last = failed(r.error ?? "network", url, i > 0);
       continue;
     }
-    opts.body?.(r.body);
+    let data: T;
     try {
-      const data = await parse(r.body, r);
-      if (opts.accept && !opts.accept(data) && i + 1 < urls.length) {
-        ctx.log(`${entry.id}: ${url} answered with older data; trying the fallback URL.`);
-        older = { ok: true, error: null, urlUsed: url, triedFallback: true, fallbackUsed: false, sha256: sha256Hex(r.body), data };
-        continue;
-      }
-      return { ok: true, error: null, urlUsed: url, triedFallback: i > 0, fallbackUsed: i > 0, sha256: sha256Hex(r.body), data };
+      data = await parse(r.body, r);
     } catch (e) {
       ctx.log(`${entry.id}: ${url} did not parse: ${(e as Error).message.slice(0, 300)}`);
       last = failed(parseClass(e), url, i > 0);
+      continue;
     }
+    if (opts.accept && !opts.accept(data)) {
+      ctx.log(`${entry.id}: ${url} answered with older data${i + 1 < urls.length ? "; trying the fallback URL" : ""}.`);
+      refused = { url, data };
+      continue;
+    }
+    opts.body?.(r.body);
+    return { ok: true, error: null, urlUsed: url, triedFallback: i > 0, fallbackUsed: i > 0, sha256: sha256Hex(r.body), data };
   }
-  return older ?? { ...last, triedFallback: urls.length > 1 };
+  if (refused) {
+    if (opts.refused) ctx.log(opts.refused(refused.data));
+    return failed("schema", refused.url, urls.length > 1);
+  }
+  return { ...last, triedFallback: urls.length > 1 };
 }
 
 // ── KEV ──────────────────────────────────────────────────────────────────────────────────────────
 
-/** The KEV catalog: the mirror at `sha` (or as written), then the fallback when it fails or is older than `minVersion`. */
+/**
+ * The KEV catalog: the mirror at `sha` (or as written), then the fallback when it fails or is older than
+ * `minVersion` (the committed kev-index's catalog_version). A catalog older than the index is never an ok
+ * read: when only older catalogs answer, the read fails "schema" with the line "KEV: only catalog X
+ * answered, older than kev-index Y", and nothing is cached.
+ */
 export async function readKev(entry: FetchedFeed, ctx: FeedCtx, o: { sha: string | null; minVersion: string | null }): Promise<Read<KevCatalog>> {
   const first = o.sha ? rawAtCommit(entry.url, o.sha) : entry.url;
   return withFallback(ctx, entry, first, (b) => parseKev(b).catalog, {
     limit: "kev", max: "kev",
     body: (b) => cacheWrite(ctx, ctx.paths.feedBody(entry.id, "json"), b),
     accept: (c) => !o.minVersion || byCodeUnit(c.catalogVersion, o.minVersion) >= 0,
+    refused: (c) => `KEV: only catalog ${c.catalogVersion} answered, older than kev-index ${o.minVersion}`,
   });
 }
 
