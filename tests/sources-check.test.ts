@@ -17,7 +17,7 @@ import { BLOCKED_HOSTS } from "../lib/vocab";
 import { fetchFeed } from "../lib/feeds/http";
 import { checkFeeds, formatCheckTable, main, type CheckRow } from "../scripts/collect";
 import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
-import { EPSS_FILLER_ROWS, fixtureCveIds, main as scrubMain, SCRUB_ITEMS_MAX, scrubFeed, ScrubRefused } from "../fixtures/src/scrub-feed";
+import { EPSS_FILLER_ROWS, fixtureCveIds, keepsHost, main as scrubMain, SAMPLE_LINK_HOST, SCRUB_ITEMS_MAX, scrubFeed, scrubOptionsFor, ScrubRefused } from "../fixtures/src/scrub-feed";
 
 const ROOT = path.resolve(__dirname, "..");
 const FEEDS = path.join(ROOT, "fixtures", "feeds");
@@ -207,7 +207,7 @@ describe("checkFeeds exit codes and options", () => {
 describe("scrub-feed", () => {
   const opts = { sourceTiers: cfg.sourceTiers, keywords: cfg.sources.keywords };
   const links = (text: string) => text.replace(/&amp;/g, "&").match(/https?:\/\/[^\s"'<>\\)\]]+/g) ?? [];
-  const NS = /^http:\/\/(?:purl\.org|www\.w3\.org|jvn\.jp\/rss|data-marking\.mitre\.org|jvndb\.jvn\.jp\/myjvn|www\.us-cert\.gov\/tlp)\//;
+  const NS = /^http:\/\/(?:purl\.org\/|www\.w3\.org\/|jvn\.jp\/rss\/|data-marking\.mitre\.org\/|jvndb\.jvn\.jp\/myjvn\/|www\.us-cert\.gov\/tlp\/|wellformedweb\.org\/CommentAPI\/|search\.yahoo\.com\/mrss\/|www\.itunes\.com\/dtds\/podcast-1\.0\.dtd|news\.web\.nhk\/rss\/rss2\.0\/modules\/nhknews\/)/;
   const safe = (text: string) => {
     for (const u of links(text)) {
       if (u.startsWith("http://")) expect(u).toMatch(NS);
@@ -248,7 +248,9 @@ ${Array.from({ length: 8 }, (_, i) => `<item rdf:about="https://www.example.org/
     expect(out.match(/<rdf:li /g)!.length).toBe(SCRUB_ITEMS_MAX);
     const parsed = await parseRss(Buffer.from(out));
     expect(parsed.entries[0]!.title).toBe("SAMPLE title 2 ransomware CVE-2026-104935");
-    expect(parsed.entries[0]!.url).toBe("https://www.example.org/ct-sample/0");
+    // www.example.org is neither a registry host nor a listed publisher (C5): the link moves to www.example.com,
+    // and a path that is no id becomes a counter slug.
+    expect(parsed.entries[0]!.url).toBe("https://www.example.com/ct-sample/item-2");
     expect(parsed.entries[0]!.published_at).toBe("2026-10-13T01:00:00.000Z");
     const about = [...out.matchAll(/<item rdf:about="([^"]+)"/g)].map((m) => m[1]);
     const li = [...out.matchAll(/<rdf:li rdf:resource="([^"]+)"/g)].map((m) => m[1]);
@@ -260,9 +262,12 @@ ${Array.from({ length: 8 }, (_, i) => `<item rdf:about="https://www.example.org/
   it("refuses a capture that would keep a blocked host, another scheme or an unknown namespace", () => {
     const blocked = BLOCKED_HOSTS.find((b) => b.reason === "shortener")!.pattern;
     const rss = (link: string, ns = "") => Buffer.from(`<?xml version="1.0"?><rss version="2.0"${ns}><channel><title>x</title><item><title>t</title><link>${link}</link><pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate></item></channel></rss>`);
-    expect(() => scrubFeed("rss", rss(`https://${blocked}/abc`), opts)).toThrow(ScrubRefused);
+    // A link on a blocked host is never kept there: it moves to www.example.com (C5). One the tool cannot
+    // rewrite (a namespace value) is refused.
+    expect(scrubFeed("rss", rss(`https://${blocked}/abc`), opts).toString("utf8")).toContain("<link>https://www.example.com/ct-sample/item-1</link>");
+    expect(() => scrubFeed("rss", rss("https://www.example.org/a", ` xmlns:x="https://${blocked}/ns"`), opts)).toThrow(ScrubRefused);
     expect(() => scrubFeed("rss", rss("javascript:void(0)"), opts)).toThrow(ScrubRefused);
-    expect(() => scrubFeed("rss", rss("https://www.example.org/a", ' xmlns:media="http://search.yahoo.com/mrss/"'), opts)).toThrow(ScrubRefused);
+    expect(() => scrubFeed("rss", rss("https://www.example.org/a", ' xmlns:x="http://www.example.net/ns/"'), opts)).toThrow(ScrubRefused);
     expect(() => scrubFeed("rss", rss("https://www.example.org/a"), opts)).not.toThrow();
   });
 
@@ -315,6 +320,145 @@ ${Array.from({ length: 8 }, (_, i) => `<item rdf:about="https://www.example.org/
     expect(after.ledger_ids.every((id) => before.ledger_ids.includes(id))).toBe(true);
     safe(p2.toString("utf8"));
     safe(j2.toString("utf8"));
+  });
+
+  // ── Kobol's captures of 2026-11-09 (C4, C5): what the tool refused or let through, now fixed ──────────
+
+  const full = scrubOptionsFor(cfg);
+  const rssWith = (items: string, ns = "") => Buffer.from(`<?xml version="1.0"?><rss version="2.0"${ns}><channel><title>x</title>
+<link>https://www.bleepingcomputer.com/</link><docs>http://www.rssboard.org/rss-specification</docs>${items}</channel></rss>`);
+
+  it("replaces authors and names under any namespace prefix: dc:, a10:, atom:, itunes:, managingEditor (C4)", async () => {
+    const ns = ' xmlns:a10="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"';
+    const body = rssWith(`<managingEditor>editor@realcorp.invalid (Kenji Realperson)</managingEditor><itunes:author>Kenji Realperson</itunes:author>
+<item><title>t</title><link>https://www.bleepingcomputer.com/news/security/a/</link><pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate>
+<a10:author><a10:name>Jane Q. Realperson</a10:name><a10:email>jane@realcorp.invalid</a10:email><a10:uri>https://www.example.com/u/jane-realperson</a10:uri></a10:author>
+<a10:contributor><a10:name>Bob Realperson</a10:name></a10:contributor><dc:creator><![CDATA[Jane Realperson]]></dc:creator><dc:creator></dc:creator>
+<atom:name xmlns:atom="http://www.w3.org/2005/Atom">Jane Realperson</atom:name></item>`, ns);
+    const out = scrubFeed("rss", body, full).toString("utf8");
+    expect(out).not.toMatch(/Realperson|realperson|realcorp/);
+    expect(out).toContain("<a10:name>SAMPLE Author</a10:name><a10:email>sample@example.com</a10:email>");
+    expect(out).toContain("<a10:contributor><a10:name>SAMPLE Author</a10:name></a10:contributor>");
+    expect(out).toContain("<dc:creator>SAMPLE Author</dc:creator><dc:creator></dc:creator>");
+    expect(out).toContain("<itunes:author>SAMPLE Author</itunes:author>");
+    expect(out).toContain("<managingEditor>SAMPLE Author</managingEditor>");
+    expect(out).toMatch(/<atom:name xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom">SAMPLE Author<\/atom:name>/);
+    expect((await parseRss(Buffer.from(out))).total).toBe(1);
+  });
+
+  it("a JSON string that held an e-mail address is invented whole; a bare address keeps its form (C4)", () => {
+    const body = Buffer.from(JSON.stringify({ vulnerabilities: [{ cve: {
+      id: "CVE-2026-104935", sourceIdentifier: "jane.r@realcorp.invalid", published: "2026-11-07T21:17:00.150",
+      descriptions: [{ lang: "en", value: "Reported by Jane Q. Realperson (jane.r@realcorp.invalid), phone 02-1234-5678, of Example Lab." }],
+      metrics: { cvssMetricV31: [{ source: "nvd@nist.gov", type: "Primary", cvssData: { version: "3.1", vectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", baseScore: 9.8 } }] },
+    } }] }));
+    const out = scrubFeed("nvd", body, full).toString("utf8");
+    expect(out).not.toMatch(/Realperson|realcorp|1234-5678|Example Lab/);
+    const cve = JSON.parse(out).vulnerabilities[0].cve;
+    expect(cve.sourceIdentifier).toBe("sample@example.com");
+    expect(cve.descriptions[0].value).toMatch(/^SAMPLE value \d+$/);
+    expect(cve.metrics.cvssMetricV31[0].source).toBe("nvd@nist.gov");
+  });
+
+  it("keeps vectorString and NVD's status and role words as written, whatever their length (C5)", () => {
+    const v40 = "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P/CR:X/IR:X/AR:X/MAV:X/MAC:X/MAT:X/MPR:X/MUI:X/MVC:X/MVI:X/MVA:X/MSC:X/MSI:X/MSA:X/S:X/AU:X/R:X/V:X/RE:X/U:Clear";
+    expect(v40.length).toBeGreaterThan(120);
+    const body = Buffer.from(JSON.stringify({ vulnerabilities: [{ cve: {
+      id: "CVE-2026-104935", vulnStatus: "Awaiting Analysis",
+      metrics: {
+        cvssMetricV40: [{ source: "nvd@nist.gov", type: "Secondary", cvssData: { version: "4.0", vectorString: v40, baseSeverity: "HIGH" } }],
+        cvssMetricV2: [{ source: "nvd@nist.gov", type: "Primary", cvssData: { version: "2.0", vectorString: "AV:N/AC:L/Au:M/C:C/I:C/A:C" } }],
+        other: [{ content: { role: "CISA Coordinator", note: "Free text by Jane Realperson" } }],
+      },
+    } }] }));
+    const cve = JSON.parse(scrubFeed("nvd", body, full).toString("utf8")).vulnerabilities[0].cve;
+    expect(cve.vulnStatus).toBe("Awaiting Analysis");
+    expect(cve.metrics.cvssMetricV40[0].cvssData.vectorString).toBe(v40);
+    expect(cve.metrics.cvssMetricV2[0].cvssData.vectorString).toBe("AV:N/AC:L/Au:M/C:C/I:C/A:C");
+    expect(cve.metrics.other[0].content.role).toBe("CISA Coordinator");
+    expect(cve.metrics.other[0].content.note).toMatch(/^SAMPLE note \d+$/);
+  });
+
+  it("credits in JSON name no person: GitHub logins, OSV names and CVE credit values become SAMPLE Researcher (C4)", () => {
+    const body = Buffer.from(JSON.stringify({ ledger: [{ ghsa_id: "GHSA-2f8c-wq4h-r7jm", credits: [
+      { type: "reporter", user: { login: "maria-realperson", html_url: "https://github.com/maria-realperson" } },
+      { name: "Realperson", type: "FINDER" }, { lang: "en", value: "Jane Realperson", type: "finder" }, "kenji-realperson",
+    ] }] }));
+    const out = scrubFeed("anthropic-cvd", body, full).toString("utf8");
+    expect(out).not.toMatch(/realperson/i);
+    const c = JSON.parse(out).ledger[0].credits;
+    expect(c).toEqual([
+      { type: "reporter", user: { login: "SAMPLE Researcher", html_url: "https://www.example.com/ct-sample/item-1" } },
+      { name: "SAMPLE Researcher", type: "FINDER" }, { lang: "en", value: "SAMPLE Researcher", type: "finder" }, "SAMPLE Researcher",
+    ]);
+  });
+
+  it("accepts the four namespaces Kobol's captures declared, and keeps them as written (C5)", async () => {
+    const ns = ' xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:media="http://search.yahoo.com/mrss/"'
+      + ' xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:nhknews="http://news.web.nhk/rss/rss2.0/modules/nhknews/"';
+    const body = rssWith(`<item><title>t</title><link>https://www.bleepingcomputer.com/news/security/a/</link><pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate>
+<wfw:commentRss>https://www.bleepingcomputer.com/news/security/a/feed/</wfw:commentRss><media:content url="https://www.bleepingcomputer.com/images/a.jpg"/></item>`, ns);
+    const out = scrubFeed("rss", body, full).toString("utf8");
+    for (const u of ["http://wellformedweb.org/CommentAPI/", "http://search.yahoo.com/mrss/", "http://www.itunes.com/dtds/podcast-1.0.dtd", "http://news.web.nhk/rss/rss2.0/modules/nhknews/"]) {
+      expect(out).toContain(`"${u}"`);
+      expect(u, u).toMatch(NS);
+    }
+    expect(out).toContain('<media:content url="https://www.bleepingcomputer.com/ct-sample/img-1"/>');
+    expect((await parseRss(Buffer.from(out))).total).toBe(1);
+  });
+
+  it("rewrites the dashboard's GitHub advisory links to www.example.com instead of refusing its own output (C5)", () => {
+    const page = Buffer.from(`<!doctype html><html><body><p>Revision 40</p><p>Last updated 2026-11-02 19:30 UTC</p>
+<a href="https://github.com/advisories/GHSA-2f8c-wq4h-r7jm">GHSA-2f8c-wq4h-r7jm</a><a href="https://www.cve.org/CVERecord?id=CVE-2026-104935">CVE-2026-104935</a></body></html>`);
+    const p2 = scrubFeed("anthropic-cvd", page, full).toString("utf8");
+    expect(p2).toContain('href="https://www.example.com/ct-sample/ghsa-2f8c-wq4h-r7jm"');
+    expect(p2).not.toContain("github.com");
+    const payload = Buffer.from(JSON.stringify({ revision: 40, ghsa_records: [{ id: "GHSA-2f8c-wq4h-r7jm", url: "https://github.com/advisories/GHSA-2f8c-wq4h-r7jm" }] }));
+    const j2 = JSON.parse(scrubFeed("anthropic-cvd", payload, full).toString("utf8"));
+    expect(j2.ghsa_records[0]).toEqual({ id: "GHSA-2f8c-wq4h-r7jm", url: "https://www.example.com/ct-sample/ghsa-2f8c-wq4h-r7jm" });
+  });
+
+  it("keeps a link's host only for a registry host or a listed publisher, and a slug only when it is an id (C5)", () => {
+    const urls = [
+      "https://www.bleepingcomputer.com/news/security/jane-realperson-interview/", // registry host, a name in the path
+      "https://www.jpcert.or.jp/at/2026/at260033.html", // registry host, a JPCERT id
+      "https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012345.html",
+      "https://www.twcert.org.tw/tw/TVN-202611001.html",
+      "https://www.cve.org/CVERecord/CVE-2026-104935",
+      "https://ithome.superfeedr.com/", // a hub: not a publisher
+      "https://cwe.mitre.org/data/definitions/79.html",
+      "https://www.example.org/u/dana-realperson",
+      "https://www.bleepingcomputer.com/images/jane-realperson.png",
+      "HTTP://www.bleepingcomputer.com/news/security/Upper-Case/",
+    ];
+    // Two captures of five items each (the tool keeps six); each file numbers its own counter slugs.
+    const scrubbed = [urls.slice(0, 5), urls.slice(5)].map((part) => scrubFeed("rss", rssWith(part.map((u, i) =>
+      `<item><title>t${i}</title><link>${u}</link><pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate></item>`).join("")), full).toString("utf8"));
+    const links = scrubbed.flatMap((out) => [...out.matchAll(/<link>([^<]+)<\/link>/g)].map((m) => m[1]));
+    expect(links).toEqual([
+      "https://www.bleepingcomputer.com/ct-sample/home",
+      "https://www.bleepingcomputer.com/ct-sample/item-2",
+      "https://www.jpcert.or.jp/ct-sample/at260033",
+      "https://jvndb.jvn.jp/ct-sample/jvndb-2026-012345",
+      "https://www.twcert.org.tw/ct-sample/tvn-202611001",
+      "https://www.cve.org/ct-sample/cve-2026-104935",
+      "https://www.bleepingcomputer.com/ct-sample/home",
+      "https://www.example.com/ct-sample/home",
+      "https://www.example.com/ct-sample/item-2",
+      "https://www.example.com/ct-sample/item-3",
+      "https://www.bleepingcomputer.com/ct-sample/img-1",
+      "https://www.bleepingcomputer.com/ct-sample/item-4",
+    ]);
+    // The channel docs link (rssboard.org) moved too, and no path text but the ids survived.
+    for (const out of scrubbed) {
+      expect(out).toContain("<docs>https://www.example.com/ct-sample/item-1</docs>");
+      expect(out).not.toMatch(/realperson|interview|definitions|upper-case|superfeedr|rssboard|mitre/i);
+    }
+    // keepsHost(): registry hosts and listed publishers keep their host; blocked and unlisted ones never do.
+    const keep = keepsHost(full);
+    const kept = (h: string) => keep(`https://${h}/ct-sample/x`, h);
+    expect(["jvndb.jvn.jp", "www.twcert.org.tw", "www.cve.org", "feeds.feedburner.com", "cloudblog.withgoogle.com"].filter(kept)).toHaveLength(5);
+    expect(["cwe.mitre.org", "www.example.org", "github.com", "raw.githubusercontent.com", SAMPLE_LINK_HOST].filter(kept)).toEqual([]);
   });
 
   it("the command line writes on success, writes nothing when it refuses, and exits 2 on usage", async () => {

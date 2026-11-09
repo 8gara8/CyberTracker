@@ -641,7 +641,8 @@ describe("the fixture delta zips", () => {
 });
 
 describe("fixture safety under fixtures/feeds", () => {
-  const NAMESPACES = /^http:\/\/(?:purl\.org|www\.w3\.org|jvn\.jp\/rss|data-marking\.mitre\.org|jvndb\.jvn\.jp\/myjvn|www\.us-cert\.gov\/tlp)\//;
+  // The http prefixes of fixtures/src/scrub-feed.ts NAMESPACE_PREFIXES, grown together (Kobol's captures added the last four).
+  const NAMESPACES = /^http:\/\/(?:purl\.org\/|www\.w3\.org\/|jvn\.jp\/rss\/|data-marking\.mitre\.org\/|jvndb\.jvn\.jp\/myjvn\/|www\.us-cert\.gov\/tlp\/|wellformedweb\.org\/CommentAPI\/|search\.yahoo\.com\/mrss\/|www\.itunes\.com\/dtds\/podcast-1\.0\.dtd|news\.web\.nhk\/rss\/rss2\.0\/modules\/nhknews\/)/;
   const URL_RE = /https?:\/\/[^\s"'<>\\)]+/g;
   const textFiles = () => walk(FEEDS).filter((f) => !/\.(?:zip|gz)$/.test(f));
 
