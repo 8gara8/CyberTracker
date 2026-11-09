@@ -483,7 +483,7 @@ describe("collect on the fixture world (2026-10-14)", () => {
     expect(result.pack.degraded).toBe(false);
     expect(result.pack.feeds.length).toBe(cfg.sources.feeds.filter((f) => f.kind !== "search").length);
     expect(result.summary).toEqual([
-      expect.stringMatching(/^Pack 2026-10-14: \d+ items, \d+ records from 34\/36 feeds; \d+ candidates \(2 new KEV\)\.$/),
+      expect.stringMatching(/^Pack 2026-10-14: \d+ items, \d+ records from 35\/37 feeds; \d+ candidates \(2 new KEV\)\.$/),
       "Failed: krebs (timeout), gtig (http_503)",
       "Stale: unit42 (newest 2026-08-10), google-security (newest none)",
     ]);

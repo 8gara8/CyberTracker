@@ -1,7 +1,8 @@
-# Source registry (SPEC §4.13). Drafted in the Foundation PR. P2 applied Kobol's 2026-11-09 read of every
-# URL: MyJVN, the Anthropic dashboard, iThome, Focus Taiwan and NHK moved to the paths that answer, TPEx
-# joined, and the MSRC blog (no feed) left. The between-sessions pass finalises the rest with
-# `npm run sources:check`. Entries still marked "unverified" have no confirmed path yet.
+# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalised it on Kobol's reads of
+# 2026-11-09 (the curl read of every URL and P2 session 1's `npm run sources:check`). MyJVN, the Anthropic
+# dashboard, iThome, Focus Taiwan, NHK, the Google Threat Intelligence blog, Google's security blog, BSI and
+# the CISA advisories moved to the paths that answer; TPEx and CISA's alerts joined; the MSRC blog (no feed)
+# left. iThome's zone-less dates are Taipei time (date_zone).
 schema_version: 1
 keywords:            # ranking boosts and filters for news items; any language; case-insensitive
   - zero-day
@@ -236,7 +237,19 @@ feeds:
   - id: cisa-advisories
     name: CISA cybersecurity advisories
     kind: rss
-    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    url: https://www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml
+    fallback_url: null
+    language: en
+    region: US
+    coverage: [exploits, policy]
+    priority: 1
+    fresh_days: 60                                # joint advisories, about monthly (all.xml was 5.7 MB, over the RSS cap)
+    must_match: false
+    date_zone: null
+  - id: cisa-alerts
+    name: CISA alerts
+    kind: rss
+    url: https://www.cisa.gov/cybersecurity-advisories/alerts.xml
     fallback_url: null
     language: en
     region: US
@@ -246,9 +259,9 @@ feeds:
     must_match: false
     date_zone: null
   - id: gtig
-    name: Google Threat Intelligence blog (unverified)
+    name: Google Threat Intelligence blog
     kind: rss
-    url: https://cloud.google.com/blog/topics/threat-intelligence/rss/
+    url: https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/
     fallback_url: null
     language: en
     region: GLOBAL
@@ -308,7 +321,7 @@ feeds:
   - id: google-security
     name: Google Online Security Blog
     kind: rss
-    url: https://security.googleblog.com/feeds/posts/default
+    url: https://feeds.feedburner.com/GoogleOnlineSecurityBlog
     fallback_url: null
     language: en
     region: GLOBAL
@@ -351,13 +364,13 @@ feeds:
     region: EU
     coverage: [exploits, policy]
     priority: 2
-    fresh_days: 14
+    fresh_days: 30                                # publishes rarely: the newest was 16 days old on 2026-11-09
     must_match: false
     date_zone: null
   - id: bsi
-    name: BSI news
+    name: BSI press and events
     kind: rss
-    url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml
+    url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml
     fallback_url: null
     language: de
     region: EU

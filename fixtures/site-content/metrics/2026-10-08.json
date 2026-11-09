@@ -19,7 +19,7 @@
     "config_versions": {
       "vendors": 2,
       "ai_finders": 2,
-      "source_tiers": 1,
+      "source_tiers": 2,
       "regions": 1,
       "actors": 1
     },

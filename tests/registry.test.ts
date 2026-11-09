@@ -15,6 +15,7 @@ import { epssUrlFor } from "../lib/feeds/epss";
 import { cveRecordRawUrl, endOfDayAsset, hourlyAsset, rawAtCommit, REPOS } from "../lib/feeds/github";
 import { nvdUrls } from "../lib/feeds/nvd";
 import { FetchedFeed } from "../lib/schema/registry";
+import { publisherFor } from "../lib/sources";
 import { FEED_WORLD } from "../fixtures/src/feeds";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -120,7 +121,7 @@ describe("fixtures/feeds/index-degraded.json", () => {
       const e = degraded[f.url]!;
       return e.error !== undefined || (e.status ?? 200) >= 300 || e.file === "rss/garbage.xml";
     });
-    expect(failing.length).toBe(11);
+    expect(failing.length).toBe(12);
     expect(failing.length / rss.length).toBeGreaterThanOrEqual(0.4);
   });
 });
@@ -137,6 +138,54 @@ describe("fixtures/feeds/git-refs.json", () => {
 
   it("the registry's ghsa entry is the repo the git source reads", () => {
     expect(one("ghsa").url).toBe(`https://github.com/${REPOS.ghsa}.git`);
+  });
+});
+
+// Kobol, 2026-11-09 (the curl read and P2 session 1's sources:check): the feed paths that answer, and the
+// source-tiers domains that place them (version 2).
+describe("the registry as Kobol's reads finalised it", () => {
+  const byId = (id: string) => fetched.find((f) => f.id === id)!;
+  const tierOf = (url: string) => {
+    const p = publisherFor(url, "press", cfg);
+    return [p.tier, p.publisher];
+  };
+
+  it("reads the feed paths that answered", () => {
+    expect(byId("gtig")).toMatchObject({ name: "Google Threat Intelligence blog", url: "https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/" });
+    expect(byId("google-security").url).toBe("https://feeds.feedburner.com/GoogleOnlineSecurityBlog");
+    expect(byId("bsi")).toMatchObject({
+      name: "BSI press and events", url: "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml",
+    });
+    expect(byId("cert-eu").fresh_days).toBe(30);
+  });
+
+  it("splits CISA into its joint advisories (about monthly) and its alerts, both priority 1", () => {
+    const adv = byId("cisa-advisories");
+    const alerts = byId("cisa-alerts");
+    expect(adv).toMatchObject({ kind: "rss", url: "https://www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml", priority: 1, fresh_days: 60 });
+    expect(alerts).toMatchObject({
+      name: "CISA alerts", kind: "rss", url: "https://www.cisa.gov/cybersecurity-advisories/alerts.xml", fallback_url: null, priority: 1, fresh_days: 7,
+      must_match: false, date_zone: null,
+    });
+    expect([alerts.language, alerts.region, alerts.coverage]).toEqual([adv.language, adv.region, adv.coverage]);
+    expect(fetched.map((f) => f.id).indexOf("cisa-alerts")).toBe(fetched.map((f) => f.id).indexOf("cisa-advisories") + 1);
+    expect(cfg.sources.feeds).toHaveLength(48);
+    expect(fetched.filter((f) => f.kind === "rss")).toHaveLength(28);
+  });
+
+  it("source-tiers version 2 places the new paths with their publishers; TDnet's www host matches its parent domain", () => {
+    expect([cfg.sourceTiers.version, cfg.sourceTiers.updated]).toEqual([2, "2026-11-10"]);
+    expect(tierOf(byId("gtig").url)).toEqual([1, "mandiant"]);
+    expect(tierOf(byId("google-security").url)).toEqual([1, "google-security"]);
+    expect(tierOf("https://feeds.feedburner.com/googleonlinesecurityblog/")).toEqual([1, "google-security"]);
+    expect(tierOf(byId("bsi").url)).toEqual([1, "bsi"]);
+    expect(tierOf(byId("cisa-alerts").url)).toEqual([1, "cisa"]);
+    expect(tierOf("https://acs.gov.tw/")).toEqual([1, "moda-acs"]);
+    expect(tierOf("https://moda.gov.tw/ACS/")).toEqual([1, "moda-acs"]);
+    expect(tierOf("https://www.release.tdnet.info/inbs/I_main_00.html")).toEqual([1, "tdnet"]);
+    // Only the threat-intelligence path of Google's cloud blog is Mandiant's; other paths and feedburner feeds stay tier 3.
+    expect(tierOf("https://cloudblog.withgoogle.com/products/ct-sample/")[0]).toBe(3);
+    expect(tierOf("https://feeds.feedburner.com/ct-sample")[0]).toBe(3);
   });
 });
 
