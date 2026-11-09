@@ -202,7 +202,12 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const state = readState(contentDir, D);
   const paths = cachePaths(root);
 
-  // Step 3: empty the records cache; make the cache folders.
+  // Step 3: before anything is emptied or rewritten, remove the earlier run's inputs.json and index.json, so a
+  // run that dies leaves no inputs for D (the metrics then count every feed failed, §8.4) rather than an
+  // earlier run's inputs beside this run's bodies; they are written last. Then empty the records cache and
+  // make the cache folders.
+  fs.rmSync(paths.collectInputs, { force: true });
+  fs.rmSync(paths.feedIndex, { force: true });
   fs.rmSync(paths.recordsDir, { recursive: true, force: true });
   for (const d of [paths.feedsDir, paths.zipsDir, paths.recordsDir, path.dirname(paths.epssFile(D))]) fs.mkdirSync(d, { recursive: true });
 
@@ -502,21 +507,22 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const newKev = kept.filter((c) => c.reasons.includes("new KEV")).length;
   const summary = summaryLines({ pack, index, kept: kept.length, newKev });
 
-  // Step 12: write, unless the deadline has passed.
+  // Step 12: write, unless the deadline has passed; index.json and inputs.json last, so they exist only when
+  // everything before them was written.
   const texts: [string, string][] = [
-    [paths.feedIndex, jsonText(index, FeedIndexFile)],
-    [paths.collectInputs, jsonText(inputs, CollectInputsFile)],
     [path.join(root, run.paths.packs, `${D}.json`), jsonText(pack, Pack)],
     [path.join(root, run.paths.packs, `${D}.md`), built.md],
     [path.join(root, run.paths.packs, `${D}.candidates.json`), jsonText(candidates, CandidatesFile)],
     [path.join(root, run.paths.logs, `${D}.candidates.json`), jsonText(candidateLog, CandidateLogFile)],
+    [path.join(root, run.paths.logs, `${D}.collect.log`), `${[...lines, ...summary].join("\n")}\n`],
+    [paths.feedIndex, jsonText(index, FeedIndexFile)],
+    [paths.collectInputs, jsonText(inputs, CollectInputsFile)],
   ];
   if (now() >= o.deadline) throw new CollectTimeout();
   for (const [file, text] of texts) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, text);
   }
-  fs.writeFileSync(path.join(root, run.paths.logs, `${D}.collect.log`), `${[...lines, ...summary].join("\n")}\n`);
   return { pack, candidates, index, inputs, summary };
 }
 

@@ -580,6 +580,25 @@ describe("collect's other runs", () => {
     for (const f of OUTPUTS) expect(files).not.toContain(f);
   });
 
+  it("a rerun that dies leaves no inputs.json or index.json from the earlier run (B8)", async () => {
+    const root = tempRoot(true);
+    const inputs = path.join(root, "cache", "feeds", "inputs.json");
+    const index = path.join(root, "cache", "feeds", "index.json");
+    await run(root);
+    expect(fs.existsSync(inputs) && fs.existsSync(index)).toBe(true);
+    let calls = 0;
+    const now = () => (++calls > 40 ? T0 + 400_000 : T0);
+    await expect(run(root, { now, deadline: T0 + 300_000 })).rejects.toBeInstanceOf(CollectTimeout);
+    expect(fs.existsSync(inputs) || fs.existsSync(index)).toBe(false);
+    // A write that fails part way (a folder where the pack goes) leaves neither: they are written last.
+    await run(root);
+    const pack = path.join(root, "packs", `${DATE}.json`);
+    fs.rmSync(pack);
+    fs.mkdirSync(pack);
+    await expect(run(root)).rejects.toThrow();
+    expect(fs.existsSync(inputs) || fs.existsSync(index)).toBe(false);
+  });
+
   it("with no state at all it still writes a valid pack; per-id records it cannot find are listed", async () => {
     const root = tempRoot(false);
     const r = await run(root);
