@@ -7,6 +7,7 @@
 import { addDays, taipeiDateOf, utcDateOf } from "./dates";
 import type { FetchErrorClass } from "./feeds/http";
 import type { CertNote, CheckLabel, CvdDashboard, CveRecord, ExchangeNotice, FeedState, GhsaAdvisory, JvnNote, KevEntry, RawItem } from "./feeds/types";
+import { endOfDayAsset, hourlyAsset, type ReleaseAsset } from "./feeds/github";
 import { kevNoteUrls } from "./feeds/kev";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import { recordAdvisoryUrls } from "./feeds/cvelist";
@@ -106,6 +107,57 @@ export function cveIdsIn(text: string): string[] {
 }
 
 const isoUtc = (s: string) => `${new Date(Date.parse(s)).toISOString().slice(0, 19)}Z`;
+
+// ── CVE List zips (§8.3, ruling R37) ─────────────────────────────────────────────────────────────
+
+export const MISSING_DAYS_MAX = 25;
+
+export type PlannedZip = ReleaseAsset & { kind: "end_of_day" | "hourly"; utc_day: string };
+
+/** The zip for UTC day X: X's end-of-day asset before the run's UTC day T, T's newest hourly asset on T, nothing after. */
+function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): PlannedZip | null {
+  if (day < runUtcDay) return { ...endOfDayAsset(day), kind: "end_of_day", utc_day: day };
+  if (day > runUtcDay || !hourlyTag) return null;
+  const m = /^cve_(\d{4}-\d{2}-\d{2})_(\d{4})Z$/.exec(hourlyTag);
+  if (!m || m[1] !== day) return null;
+  return { ...hourlyAsset(day, m[2]!), kind: "hourly", utc_day: day };
+}
+
+/**
+ * Which delta zips a run reads (§8.3, ruling R37): for each UTC day X the record window touches, and each
+ * day `state/days.json` lacks (oldest first, at most 25, up to min(cutoff, T − 1)), X's zip and X + 1's,
+ * where a day before T means its end-of-day zip and T means T's newest hourly zip. So a morning run (T =
+ * D − 1) reads D − 2's end-of-day zip and T's hourly zip, and an afternoon run (T = D) reads D − 2's and
+ * D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null) only the window's zips.
+ * `days` lists each counted day with its two assets. Assets come oldest first, end-of-day before hourly.
+ */
+export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: string; hourlyTag: string | null; knownDays: readonly string[] | null; maxDays?: number }): { zips: PlannedZip[]; days: { date: string; zips: [string, string] }[]; missing: string[] } {
+  const cutoff = addDays(o.date, -2);
+  const first = utcDateOf(o.recordWindow.start);
+  const last = utcDateOf(new Date(Date.parse(o.recordWindow.end) - 1).toISOString());
+  const windowDays: string[] = [];
+  for (let d = first; d <= last; d = addDays(d, 1)) windowDays.push(d);
+  const missing: string[] = [];
+  if (o.knownDays && o.knownDays.length) {
+    const known = new Set(o.knownDays);
+    const newest = [...known].sort(byCodeUnit).at(-1)!;
+    const until = [cutoff, addDays(o.runUtcDay, -1)].sort(byCodeUnit)[0]!;
+    for (let d = addDays(newest, 1); d <= until && missing.length < (o.maxDays ?? MISSING_DAYS_MAX); d = addDays(d, 1)) if (!known.has(d)) missing.push(d);
+  }
+  const zips = new Map<string, PlannedZip>();
+  const add = (z: PlannedZip | null) => { if (z) zips.set(z.asset, z); };
+  for (const x of [...missing, ...windowDays]) {
+    add(zipFor(x, o.runUtcDay, o.hourlyTag));
+    add(zipFor(addDays(x, 1), o.runUtcDay, o.hourlyTag));
+  }
+  const days = missing.flatMap((x) => {
+    const a = zipFor(x, o.runUtcDay, o.hourlyTag);
+    const b = zipFor(addDays(x, 1), o.runUtcDay, o.hourlyTag);
+    return a && b ? [{ date: x, zips: [a.asset, b.asset] as [string, string] }] : [];
+  });
+  const ordered = [...zips.values()].sort((a, b) => byCodeUnit(a.utc_day, b.utc_day) || (a.kind === b.kind ? byCodeUnit(a.asset, b.asset) : a.kind === "end_of_day" ? -1 : 1));
+  return { zips: ordered, days, missing };
+}
 
 // ── Items ────────────────────────────────────────────────────────────────────────────────────────
 
