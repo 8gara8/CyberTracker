@@ -307,7 +307,7 @@
   "feeds_stale": [
     {
       "id": "ithome-security",
-      "name": "iThome 資安 (unverified)",
+      "name": "iThome 資安",
       "status": "failed",
       "newest": "2026-10-12T16:40:00+08:00",
       "stale_since": "2026-10-13"
@@ -331,7 +331,7 @@
     }
   ],
   "computed": {
-    "word_count": 532,
+    "word_count": 531,
     "reading_minutes": 3,
     "item_count": 1,
     "ai_linked": {

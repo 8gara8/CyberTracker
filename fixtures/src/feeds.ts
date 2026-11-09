@@ -1,7 +1,8 @@
 // The generated feed fixtures (fixtures plan §3.3): the KEV catalog the fixture mirror serves, a catalog
 // whose count is wrong, and the two CVE List delta zips of the 2026-10-14 morning, built from the static
-// trimmed records under fixtures/feeds/cvelist/. Not yet in build.ts's GENERATORS (integration adds it);
-// until then `tsx fixtures/src/feeds.ts` writes the files and tests/feeds.test.ts compares them.
+// trimmed records under fixtures/feeds/cvelist/. build.ts's GENERATORS lists feedOutputs(), so fixtures:gen
+// writes the files and fixtures:check compares them (the zips byte for byte); `tsx fixtures/src/feeds.ts`
+// still writes just these four.
 //
 // The KEV world is one list of real rows (P1's kev-rows.json plus kev-extra.json), so the served catalog
 // and fixtures/state/kev-index.json can never disagree: the "new KEV" set is their difference. The fixture
@@ -44,7 +45,7 @@ export const FEED_WORLD = {
   rejoinId: "CVE-2024-38112",
 } as const;
 
-/** One generated file: UTF-8 text, or bytes compared byte for byte (the shape build.ts's Output takes in P2). */
+/** One generated file: UTF-8 text, or bytes compared byte for byte (the same shape as build.ts's Output). */
 export type FeedOutput = { path: string; text: string } | { path: string; bytes: Buffer };
 
 export const FEEDS_DIR = path.join(FIXTURES_DIR, "feeds");

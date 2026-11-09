@@ -1,6 +1,7 @@
 // Writes every generated validator fixture (SPEC §4.12 "Fixtures and tests"), as the fork base's builder
 // does: the valid drafts with their contexts, evidence, metrics, packs and regions inputs, and the real CVE
-// records they cite. Each part of the fixtures adds its generator to GENERATORS.
+// records they cite; from P2 also the feed fixtures (the KEV catalogs and the two stored-method delta zips,
+// compared byte for byte) and fixtures/state/. Each part of the fixtures adds its generator to GENERATORS.
 //   tsx fixtures/src/build.ts           write every file, remove any other file in FIXTURE_DIRS, then validate
 //   tsx fixtures/src/build.ts --check   write nothing; exit 1 listing stale, missing or added files (fixtures:check)
 // Both exit 1 when a valid draft fails validateDraft() with any error or warning.
@@ -18,12 +19,14 @@ import { Pack } from "../../lib/schema/pack";
 import { RegionsInputFile, validateDraft, type ValidationIssue } from "../../lib/validate";
 import { editionDraft } from "./drafts";
 import { cveRecords, draftInputs, editionContext, editionEvidence, editionMetrics, editionPack, editionRegionsInput } from "./inputs";
+import { feedOutputs } from "./feeds";
 import { cvesGroundingAiCases } from "./invalid/cves-grounding-ai";
 import { metaItemsCases } from "./invalid/meta-items";
 import { namingSafetyComputedCases } from "./invalid/naming-safety-computed";
 import { wordsSourcesCases } from "./invalid/words-sources";
 import { siteOutputs } from "./site";
 import { softDraftProblems, softOutputs } from "./soft";
+import { stateOutputs } from "./state";
 import { EDITION_NAMES, REPO_ROOT, type EditionName } from "./world";
 
 // ── JSON ─────────────────────────────────────────────────────────────────────────────────────────
@@ -40,11 +43,25 @@ export function writeJson(file: string, value: unknown, schema?: z.ZodType): voi
 
 // ── Outputs ──────────────────────────────────────────────────────────────────────────────────────
 
-/** One generated file: its path relative to the repo root and its exact text. */
-export interface Output {
+/** A generated text file: its path relative to the repo root and its exact UTF-8 text. */
+export interface TextOutput {
   path: string;
   text: string;
 }
+
+/** A generated binary file (a stored-method zip): its path and its exact bytes, compared byte for byte. */
+export interface BinaryOutput {
+  path: string;
+  bytes: Buffer;
+}
+
+/** One generated file: text or bytes. */
+export type Output = TextOutput | BinaryOutput;
+
+export const isBinaryOutput = (o: Output): o is BinaryOutput => "bytes" in o;
+
+/** The outputs that are text, for the checks that read every generated string. */
+export const textOutputs = (outputs: readonly Output[]): TextOutput[] => outputs.filter((o): o is TextOutput => !isBinaryOutput(o));
 
 /** fixtures/<folder>/<name>.json for an edition's input. */
 export const inputPath = (folder: "context" | "evidence" | "metrics" | "packs" | "regions-input", name: EditionName) =>
@@ -54,7 +71,7 @@ export const cveRecordPath = (id: string) => `fixtures/cvelist/records/${id}.jso
 
 /** The valid drafts, everything they are validated against, and the CVE records they cite. */
 export function validOutputs(): Output[] {
-  const out: Output[] = [];
+  const out: TextOutput[] = [];
   for (const name of EDITION_NAMES) {
     out.push(
       { path: validDraftPath(name), text: jsonText(editionDraft(name), DraftBrief) },
@@ -123,8 +140,12 @@ export function invalidDraftProblems(): string[] {
   return out;
 }
 
-/** Every generator, in writing order. The invalid, soft and site fixtures add theirs here. */
-export const GENERATORS: readonly (() => Output[])[] = [validOutputs, invalidOutputs, softOutputs, siteOutputs];
+/**
+ * Every generator, in writing order. The invalid, soft and site fixtures add theirs here; P2 adds the feed
+ * fixtures (fixtures/src/feeds.ts) and fixtures/state/ (fixtures/src/state.ts), which builds its state in
+ * memory from the same inputs and never reads a generated file, so one fixtures:gen pass is enough.
+ */
+export const GENERATORS: readonly (() => Output[])[] = [validOutputs, invalidOutputs, softOutputs, siteOutputs, feedOutputs, stateOutputs];
 
 export function allOutputs(): Output[] {
   const out = GENERATORS.flatMap((g) => g());
@@ -139,11 +160,14 @@ export function allOutputs(): Output[] {
 /**
  * The folders the builder owns (SPEC §8.1): every file in them is one a generator writes, so any other file
  * there is "added" (fixtures:check fails; fixtures:gen removes it). Hand-made fixtures (fixtures/agent/,
- * config/, injection/, feeds/, src/) live outside them.
+ * config/, injection/, src/, ai-credit/, cvelist-clone/, and fixtures/feeds/ outside its kev/ and
+ * cvelist/zips/ folders) live outside them. fixtures/reference/ is outside too (ruling R53): only the
+ * backfill can rebuild it, and tests/reference.test.ts and --check-reference guard it.
  */
 export const FIXTURE_DIRS: readonly string[] = [
   "fixtures/drafts", "fixtures/context", "fixtures/evidence", "fixtures/metrics", "fixtures/packs", "fixtures/regions-input",
   "fixtures/cvelist/records", "fixtures/site-content", "fixtures/empty-content",
+  "fixtures/feeds/kev", "fixtures/feeds/cvelist/zips", "fixtures/state",
 ];
 
 /** Every file under the owned folders of `root`, as repo-relative paths with "/". */
@@ -162,9 +186,14 @@ function ownedFiles(root: string): string[] {
   return out.sort();
 }
 
+/** Whether the file at `abs` holds exactly what `o` would write (bytes for a binary output, UTF-8 text otherwise). */
+function sameContent(abs: string, o: Output): boolean {
+  return isBinaryOutput(o) ? fs.readFileSync(abs).equals(o.bytes) : fs.readFileSync(abs, "utf8") === o.text;
+}
+
 /**
- * The outputs whose file is missing, those whose text differs from what the builder would write, and the
- * files in the owned folders that no generator writes (added).
+ * The outputs whose file is missing, those whose content differs from what the builder would write (byte
+ * for byte for a binary output), and the files in the owned folders that no generator writes (added).
  */
 export function compareOutputs(outputs: readonly Output[], root: string = REPO_ROOT): { missing: string[]; stale: string[]; added: string[] } {
   const missing: string[] = [];
@@ -172,7 +201,7 @@ export function compareOutputs(outputs: readonly Output[], root: string = REPO_R
   for (const o of outputs) {
     const abs = path.join(root, o.path);
     if (!fs.existsSync(abs)) missing.push(o.path);
-    else if (fs.readFileSync(abs, "utf8") !== o.text) stale.push(o.path);
+    else if (!sameContent(abs, o)) stale.push(o.path);
   }
   const written = new Set(outputs.map((o) => o.path));
   return { missing, stale, added: ownedFiles(root).filter((p) => !written.has(p)) };
@@ -183,7 +212,7 @@ export function writeOutputs(outputs: readonly Output[], root: string = REPO_ROO
   for (const o of outputs) {
     const abs = path.join(root, o.path);
     fs.mkdirSync(path.dirname(abs), { recursive: true });
-    fs.writeFileSync(abs, o.text);
+    fs.writeFileSync(abs, isBinaryOutput(o) ? o.bytes : o.text);
   }
   const { added } = compareOutputs(outputs, root);
   for (const p of added) fs.rmSync(path.join(root, p));
