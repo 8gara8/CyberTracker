@@ -26,6 +26,13 @@ export const REFERENCE = {
     n: 68771, kernel_n: 4287, unscored_n: 7905 },
 } as const;
 
+/**
+ * SHA-256 of fixtures/reference/kev-cve-join.json's text: the inputs manifest's `window.reference_sha256`
+ * (ruling R24), kept outside the frozen REFERENCE so computeMetrics() reads no file; tests/reference.test.ts
+ * checks it against the file. S0 placeholder (64 zeros) until P2 WP5 generates the fixture and sets it.
+ */
+export const REFERENCE_JOIN_SHA256: string = "0".repeat(64);
+
 // Paces for a window of the same length as the reference's 731 days, as exact doubles (§5.3, §5.4).
 // Direction and threshold tests use these; the metrics file stores them rounded (§5 "Exact for tests").
 
