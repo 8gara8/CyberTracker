@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "stories": [
+    {
+      "id": "salt-typhoon",
+      "title": "Salt Typhoon and the telecom intrusions",
+      "summary": "A PRC-attributed group named by US agencies and vendors for long-running intrusions into telecom carriers, including lawful-intercept systems. New victims, advisories and indictments are developments; recaps are not.",
+      "regions": ["US", "EU", "TW", "JP", "GLOBAL"],
+      "topics": ["telecom"],
+      "actors": ["salt-typhoon"],
+      "match_terms": ["Salt Typhoon", "telecom intrusion", "lawful intercept"],
+      "seed_last_development": null,
+      "seed_source_url": null
+    },
+    {
+      "id": "volt-typhoon",
+      "title": "Volt Typhoon and pre-positioning in critical infrastructure",
+      "summary": "A PRC-attributed group that US and allied agencies say pre-positions in critical infrastructure networks, including near US bases relevant to a Taiwan contingency.",
+      "regions": ["US", "TW", "JP", "GLOBAL"],
+      "topics": ["ot_cni", "government"],
+      "actors": ["volt-typhoon"],
+      "match_terms": ["Volt Typhoon", "Vanguard Panda", "VOLTZITE", "pre-positioning"],
+      "seed_last_development": null,
+      "seed_source_url": null
+    },
+    {
+      "id": "dprk-it-workers",
+      "title": "North Korean IT workers",
+      "summary": "North Korean workers who take remote IT jobs under false identities to earn revenue for the state and sometimes steal data or extort employers. New indictments, sanctions and victim disclosures are developments.",
+      "regions": ["US", "EU", "JP", "GLOBAL"],
+      "topics": ["illicit_finance"],
+      "actors": ["dprk-it-workers"],
+      "match_terms": ["North Korean IT workers", "DPRK IT workers", "Famous Chollima", "Jasper Sleet", "laptop farm"],
+      "seed_last_development": null,
+      "seed_source_url": null
+    },
+    {
+      "id": "taiwan-undersea-cables",
+      "title": "Damage to Taiwan's undersea cables",
+      "summary": "Repeated cuts to cables serving Taiwan and its outlying islands, some involving PRC-linked vessels. New incidents, prosecutions and resilience measures are developments.",
+      "regions": ["TW"],
+      "topics": ["undersea_cable", "telecom"],
+      "actors": [],
+      "match_terms": ["undersea cable Taiwan", "海纜", "海底電纜", "Matsu cable", "Penghu cable"],
+      "seed_last_development": null,
+      "seed_source_url": null
+    }
+  ]
+}

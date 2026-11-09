@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "version": 1,
+  "updated": "2026-11-07",
+  "fields": ["cna.credits", "adp.credits", "ghsa.credits"],
+  "prefilter": "\\b(?:AI|LLMs?|Claude|Mythos|Glasswing|ANT-20\\d\\d|Anthropic|Aardvark|Codex|OpenAI|ChatGPT|Big ?Sleep|CodeMender|DeepMind|Gemini|XBOW|AISLE|depthfirst|ZeroPath|AIxCC|Buttercup|Atlanta|Atlantis|RoboDuck|Vulnhuntr|autonomous)\\b",
+  "strip": [
+    "\\S+@\\S+",
+    "\\b[\\w-]+\\.(?:ai|AI)\\b",
+    "\\bClaude (?!Mythos\\b|Code\\b|Security\\b|Agents?\\b)[A-Z][\\w'’-]+\\b(?! \\d)",
+    "\\b[A-Z][a-z]+-Claude\\b",
+    "\\b[Hh]untr(?:\\.com|\\.dev)?\\b",
+    "\\bProtect ?AI\\b",
+    "\\b(?:vLLM|LiteLLM|llama\\.cpp|LangChain|Langflow|Ollama|AutoGPT)\\b",
+    "\\bOpenAI[- ](?:Python|Node|SDK|API)\\b"
+  ],
+  "lab_context": "\\b(?:AI|LLMs?|[Mm]odels?|[Aa]gents?|[Aa]gentic|[Aa]utomated|[Aa]utonomous|[Mm]achine[- ][Ll]earning|[Ss]canner|[Tt]ool|OSS)\\b",
+  "finders": [
+    {
+      "id": "anthropic-claude",
+      "name": "Anthropic: Claude, Claude Mythos, Project Glasswing",
+      "family": "anthropic",
+      "kind": "ai_system",
+      "patterns": ["\\bClaude\\b(?! Code\\b)", "\\bMythos\\b", "\\bProject Glasswing\\b"],
+      "patterns_case_sensitive": ["\\bANT-20\\d\\d-[A-Z0-9]{6,}\\b"],
+      "lab_names": ["\\bAnthropic\\b"],
+      "examples": {
+        "match": [
+          "Claude (Anthropic)",
+          "Claude Mythos Preview",
+          "Anthropic's OSS Scanner, as vulnerability ANT-2026-K3J9QX",
+          "Claude and Ada Logics",
+          "Anthropic OSS program"
+        ],
+        "no_match": [
+          "Claude Dupont of Example Labs",
+          "Jean-Claude Martin",
+          "Anthropic Research",
+          "security@anthropic.example"
+        ]
+      },
+      "note": "Bare 'Anthropic' counts only beside a tool word (lab_context)"
+    },
+    {
+      "id": "anthropic-claude-code",
+      "name": "Anthropic: Claude Code used by a researcher",
+      "family": "anthropic",
+      "kind": "ai_assisted",
+      "patterns": ["\\bClaude Code\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["Jane Doe, found with Claude Code"], "no_match": ["Jane Doe"] },
+      "note": "A flaw in Claude Code is never matched: only credit fields are read"
+    },
+    {
+      "id": "openai-codex",
+      "name": "OpenAI: Aardvark, Codex Security",
+      "family": "openai",
+      "kind": "ai_system",
+      "patterns": ["\\bAardvark\\b", "\\bCodex Security\\b", "\\bOpenAI Codex\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": ["\\bOpenAI\\b"],
+      "examples": {
+        "match": ["OpenAI Codex Security", "Aardvark (OpenAI)", "OpenAI security research agent"],
+        "no_match": ["OpenAI Python SDK maintainers", "OpenAI Security Research"]
+      },
+      "note": null
+    },
+    {
+      "id": "openai-chatgpt",
+      "name": "OpenAI: ChatGPT used by a researcher",
+      "family": "openai",
+      "kind": "ai_assisted",
+      "patterns": ["\\bChatGPT\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["Wei Chen, using ChatGPT"], "no_match": ["Wei Chen"] },
+      "note": null
+    },
+    {
+      "id": "google-big-sleep",
+      "name": "Google: Big Sleep, CodeMender",
+      "family": "google",
+      "kind": "ai_system",
+      "patterns": ["\\bBig ?Sleep\\b", "\\bCodeMender\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": ["\\b(?:Google )?DeepMind\\b"],
+      "examples": {
+        "match": ["Google Big Sleep", "Big Sleep (Google Project Zero and Google DeepMind)", "Google DeepMind AI agent"],
+        "no_match": ["Google Project Zero", "Google DeepMind"]
+      },
+      "note": null
+    },
+    {
+      "id": "google-gemini",
+      "name": "Google: Gemini used by a researcher",
+      "family": "google",
+      "kind": "ai_assisted",
+      "patterns": ["\\b(?:using|with|via|by|and) Gemini\\b", "\\bGemini (?:CLI|Code Assist)\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["Ana Silva, with Gemini"], "no_match": ["Gemini Trust security team"] },
+      "note": null
+    },
+    {
+      "id": "xbow",
+      "name": "XBOW",
+      "family": "other",
+      "kind": "ai_system",
+      "patterns": ["\\bXBOW\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["XBOW", "https://github.com/xbow-security"], "no_match": ["crossbow"] },
+      "note": null
+    },
+    {
+      "id": "aisle",
+      "name": "AISLE",
+      "family": "other",
+      "kind": "ai_system",
+      "patterns": [],
+      "patterns_case_sensitive": ["\\bAISLE\\b"],
+      "lab_names": [],
+      "examples": { "match": ["AISLE Research"], "no_match": ["Aisle Smith"] },
+      "note": "Case-sensitive: 'aisle' is an ordinary word"
+    },
+    {
+      "id": "depthfirst",
+      "name": "depthfirst",
+      "family": "other",
+      "kind": "ai_system",
+      "patterns": ["\\bdepthfirst\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["depthfirst"], "no_match": ["depth first search"] },
+      "note": null
+    },
+    {
+      "id": "zeropath",
+      "name": "ZeroPath",
+      "family": "other",
+      "kind": "ai_system",
+      "patterns": ["\\bZeroPath\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["ZeroPath"], "no_match": ["zero path traversal"] },
+      "note": null
+    },
+    {
+      "id": "aixcc",
+      "name": "DARPA AIxCC systems (Team Atlanta, Buttercup, RoboDuck)",
+      "family": "other",
+      "kind": "ai_system",
+      "patterns": ["\\bAIxCC\\b", "\\bTeam Atlanta\\b", "\\bAtlantis[- ]CRS\\b", "\\bButtercup\\b", "\\bRoboDuck\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["Team Atlanta (AIxCC)", "Buttercup CRS"], "no_match": ["Atlanta, GA"] },
+      "note": null
+    },
+    {
+      "id": "vulnhuntr",
+      "name": "Vulnhuntr",
+      "family": "other",
+      "kind": "ai_assisted",
+      "patterns": ["\\bVulnhuntr\\b"],
+      "patterns_case_sensitive": [],
+      "lab_names": [],
+      "examples": { "match": ["found with Vulnhuntr"], "no_match": ["huntr.dev"] },
+      "note": null
+    },
+    {
+      "id": "generic-ai-assisted",
+      "name": "Other credits that say AI or an LLM was used",
+      "family": "other",
+      "kind": "ai_assisted",
+      "patterns": [],
+      "patterns_case_sensitive": [
+        "\\bAI[- ](?:[Aa]ssisted|[Pp]owered|[Dd]riven|[Bb]ased|[Aa]ugmented)\\b",
+        "\\b(?:[Uu]sing|[Ww]ith|[Vv]ia|[Bb]y) (?:an? )?(?:AI|LLMs?)\\b",
+        "\\bLLM[- ](?:assisted|based|powered|driven)\\b",
+        "\\bAI (?:[Aa]gents?|[Tt]ools?|[Ss]canners?)\\b",
+        "\\b[Aa]utonomous (?:AI|[Aa]gents?)\\b"
+      ],
+      "lab_names": [],
+      "examples": {
+        "match": ["Kim Lee (AI-assisted)", "found using an LLM", "Example Corp AI agent"],
+        "no_match": ["reported by Ai Tanaka", "Protect AI", "vLLM maintainers", "huntr"]
+      },
+      "note": "Last: a named finder above always wins"
+    }
+  ]
+}

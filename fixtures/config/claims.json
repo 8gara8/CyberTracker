@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "version": 1,
+  "claims": [
+    {
+      "id": "SB-01",
+      "origin": "rival",
+      "text": "SAMPLE. AI-credited flaws reach CISA's exploited list no more often than other flaws: most AI-found bugs are low-impact.",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "base_rate.ratio",
+      "data_source": "SAMPLE. CISA KEV and CVE List: AI-credited base rate, records listed within 90 days",
+      "support": { "kind": "value", "op": "<=", "value": 1.0, "bound": "ci80_hi" },
+      "challenge": { "kind": "value", "op": ">=", "value": 2.0, "bound": "ci80_lo" },
+      "opened": "2026-10-01",
+      "deadline": "2027-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-02",
+      "origin": "rival",
+      "text": "SAMPLE. By the end of 2028, AI-powered malware is used in an attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "SAMPLE. Statements by the UK government and the NCSC",
+      "support": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that an attack on UK critical infrastructure used AI-powered malware"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that a claimed AI-powered attack on UK critical infrastructure did not use AI-powered malware"
+      },
+      "opened": "2026-10-01",
+      "deadline": "2028-12-31",
+      "resolution": null
+    }
+  ]
+}
