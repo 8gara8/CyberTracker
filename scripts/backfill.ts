@@ -7,7 +7,8 @@
 // at one commit, catalog and cutoff write byte-identical state files (and, with one `now`, byte-identical
 // metrics). `--catch-up` and `--credits` start from contentDir()/state and write state only. `--fixtures`
 // also writes fixtures/reference/ and skips the metrics (R32); `--check-reference` recomputes Appendix D
-// from fixtures/reference/ and, at commit 67c39b1, from the clone, and prints the table. `--push` keeps its
+// from fixtures/reference/ and, at commit 67c39b1, from the clone at Appendix D's cutoff (the default there;
+// another cutoff is a usage error), and prints the table. `--push` keeps its
 // guards; publishState() arrives with P3 (R34). Everything read from the clone and the catalog is data.
 
 import fs from "node:fs";
@@ -190,9 +191,11 @@ export function parseBackfillArgs(argv: readonly string[], root: string, today: 
     if (/^[0-9a-f]{7,39}$/.test(commit) && REF.cveListCommit.startsWith(commit)) commit = REF.cveListCommit;
     else throw new Usage(`--commit takes a full 40-hex SHA (a short one only for ${sha7(REF.cveListCommit)}).`);
   }
+  // B15 (§8.4): a clone check at the reference commit is at Appendix D's cutoff, whatever day it runs.
+  const atReference = !!values["check-reference"] && commit === REF.cveListCommit;
   return {
     root,
-    cutoff: (values.cutoff as string | undefined) ?? dataCutoffFor(today),
+    cutoff: (values.cutoff as string | undefined) ?? (atReference ? REF.cutoff : dataCutoffFor(today)),
     commit,
     kevCommit: (values["kev-commit"] as string | undefined) ?? null,
     mode: values["catch-up"] ? "catch-up" : values.credits ? "credits" : "build",
@@ -218,6 +221,9 @@ function checkOptions(o: BackfillOptions, today: string): void {
     throw new Usage(`--fixtures needs --commit ${REF.cveListCommit} --kev-commit <the 2026.11.06 commit> --cutoff ${REF.cutoff}.`);
   }
   if (o.checkReference && o.commit === REF.cveListCommit && o.kevCommit === null) throw new Usage("--check-reference at the reference commit needs --kev-commit.");
+  if (o.checkReference && o.commit === REF.cveListCommit && o.cutoff !== REF.cutoff) {
+    throw new Usage(`--check-reference at ${sha7(REF.cveListCommit)} checks Appendix D's cutoff ${REF.cutoff}: leave out --cutoff or give --cutoff ${REF.cutoff}.`);
+  }
 }
 
 // ── The clone, the catalog and the build ───────────────────────────────────────────────────────────

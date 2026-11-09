@@ -465,6 +465,34 @@ describe("flags", () => {
     expect(o).toMatchObject({ commit: REFERENCE_INPUTS.cveListCommit, cutoff: "2026-11-07", mode: "build", out: DEFAULT_OUT });
   });
 
+  it("--check-reference at the reference commit checks Appendix D's cutoff, and refuses any other before the clone (B15)", async () => {
+    const at = ["--check-reference", "--commit", "67c39b1", "--kev-commit", KEV_COMMIT];
+    expect(parseBackfillArgs(at, REPO, today).cutoff).toBe(REFERENCE_INPUTS.cutoff);
+    expect(parseBackfillArgs([...at, "--fixtures"], REPO, today).cutoff).toBe(REFERENCE_INPUTS.cutoff);
+    // Without the reference commit the check is offline, and the cutoff stays today's default.
+    expect(parseBackfillArgs(["--check-reference"], REPO, today).cutoff).toBe("2026-11-07");
+    expect(parseBackfillArgs([...at.slice(0, 1), "--cutoff", "2026-11-05"], REPO, today).cutoff).toBe("2026-11-05");
+
+    const calls: string[] = [];
+    const lines: string[] = [];
+    const spyGit: GitSource = { ...noGit, lsRemote: async (repo, refs) => (calls.push(`ls-remote ${repo}`), noGit.lsRemote(repo, refs)) };
+    const deps: Partial<BackfillDeps> = {
+      git: spyGit, fetchKev: async (c) => (calls.push("fetchKev"), fetchKev(c)), freeBytes: (dir) => (calls.push(`freeBytes ${dir}`), 0),
+      now: () => NOW, workers: 1, print: (l) => lines.push(l),
+    };
+    for (const cutoff of ["2026-11-05", "2026-11-07"]) {
+      lines.length = 0;
+      expect(await runBackfill(parseBackfillArgs([...at, "--cutoff", cutoff], REPO, today), deps)).toBe(2);
+      expect(lines[0].split("\n")[0]).toBe(`--check-reference at ${REFERENCE_INPUTS.cveListCommit.slice(0, 7)} checks Appendix D's cutoff ${REFERENCE_INPUTS.cutoff}: ` +
+        `leave out --cutoff or give --cutoff ${REFERENCE_INPUTS.cutoff}.`);
+    }
+    expect(calls).toEqual([]);
+    // Appendix D's own cutoff passes the flag checks and goes on to the clone (refused here for want of disk space).
+    lines.length = 0;
+    expect(await runBackfill(parseBackfillArgs(at, REPO, today), deps)).toBe(1);
+    expect(lines.at(-1)).toMatch(/^The clone needs at least 10 GiB free/);
+  });
+
   it("the CLI prints the usage line on stderr and exits 2", () => {
     let code = 0;
     let stderr = "";
