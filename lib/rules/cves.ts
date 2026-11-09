@@ -189,16 +189,27 @@ const cvePublished = defineRule({
       (it.cve_ids ?? []).forEach((raw, k) => {
         const cve = String(raw).toUpperCase();
         if (published) {
-          if (!blockOf(it, cve)) {
-            out.push(error("CVE_PUBLISHED", `items[${i}].cve_ids[${k}]`,
-              `items[${i}] (${it.id}) lists ${cve} in cve_ids but holds no CVE block for it, so it was not PUBLISHED when the brief was built.`,
-              "Publish builds one CVE block per cve_ids entry; rebuild the brief, or remove the id."));
-          }
+          // §4.6: one CVE block per cve_ids entry, in the same order; readers take cves[0] as the item's own.
+          const at = "cves" in it && Array.isArray(it.cves) ? it.cves[k] : undefined;
+          if (at?.cve_id === cve) return;
+          const elsewhere = "cves" in it && Array.isArray(it.cves) ? it.cves.findIndex((c) => c.cve_id === cve) : -1;
+          out.push(error("CVE_PUBLISHED", `items[${i}].cve_ids[${k}]`,
+            elsewhere >= 0
+              ? `items[${i}] (${it.id}) holds the CVE block for ${cve} at cves[${elsewhere}], not at cves[${k}]: the blocks must follow cve_ids in order.`
+              : `items[${i}] (${it.id}) lists ${cve} in cve_ids but holds no CVE block for it, so it was not PUBLISHED when the brief was built.`,
+            "Publish builds one CVE block per cve_ids entry, in the same order; rebuild the brief, or remove the id."));
           return;
         }
         const why = notPublished(input, cve);
         if (why) out.push(error("CVE_PUBLISHED", `items[${i}].cve_ids[${k}]`, `items[${i}] (${it.id}) lists ${cve} in cve_ids, but ${why}.`, UNPUBLISHED_HINT));
       });
+      if (published && "cves" in it && Array.isArray(it.cves)) {
+        it.cves.slice(ids.length).forEach((c, j) => {
+          out.push(error("CVE_PUBLISHED", `items[${i}].cves[${ids.length + j}]`,
+            `items[${i}] (${it.id}) holds a CVE block for ${c?.cve_id ?? "an unknown id"} beyond its ${ids.length} cve_ids entr${ids.length === 1 ? "y" : "ies"}.`,
+            "Publish builds one CVE block per cve_ids entry, in the same order; rebuild the brief."));
+        });
+      }
       for (const f of texts.get(i) ?? []) {
         for (const cve of cveIdsIn(f.text)) {
           if (ids.includes(cve)) continue; // checked above, at its cve_ids entry

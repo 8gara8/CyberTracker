@@ -212,6 +212,25 @@ describe("CVE_PUBLISHED", () => {
     bItem(dataOnly, I.criticalExploited).cves = [];
     expect(only(checkPublished(dataOnly), "CVE_PUBLISHED")).toHaveLength(1);
   });
+
+  it("in published mode needs exactly one CVE block per cve_ids entry, in the same order (§4.6)", () => {
+    const base = asBrief(weekdayDraft());
+    const other = base.items.find((x) => x.id !== I.criticalExploited && (x.cves as unknown[] | undefined)?.length)!;
+    const two = (order: (a: unknown, b: unknown) => unknown[]) => {
+      const b = asBrief(weekdayDraft());
+      const top = bItem(b, I.criticalExploited);
+      const [a] = top.cves as Record<string, unknown>[];
+      const o = (bItem(b, other.id as string).cves as Record<string, unknown>[])[0]!;
+      top.cve_ids = [a!.cve_id, o.cve_id];
+      top.cves = order(a, o);
+      return only(checkPublished(b), "CVE_PUBLISHED").map((e) => e.path);
+    };
+    expect(two((a, o) => [a, o])).toEqual([]);
+    expect(two((a, o) => [o, a])).toEqual(["items[0].cve_ids[0]", "items[0].cve_ids[1]"]);
+    expect(two((a) => [a, a])).toEqual(["items[0].cve_ids[1]"]);
+    expect(two((a, o) => [a, o, a])).toEqual(["items[0].cves[2]"]);
+    expect(two((a) => [a])).toEqual(["items[0].cve_ids[1]"]);
+  });
 });
 
 // ── CVE_IN_SOURCE ────────────────────────────────────────────────────────────────────────────────
