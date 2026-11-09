@@ -1,7 +1,8 @@
 // computeMetrics() (SPEC §5.10): the metrics file, its inputs manifest and the updated state from the
 // state files, collect's feeds and the history. Pure: no clock, file, network or randomness; scripts/metrics.ts
 // reads everything and passes it in. Steps, in §5.10's order:
-//   2. count the UTC days days.json lacks (at most 25, none after more than 25 missed days), update the
+//   2. count the UTC days of the 25-day catch-up range that days.json lacks (none after more than 25 missed
+//      days; an older gap is only named, for the backfill's --catch-up), update the
 //      credits from the zips' records, recompute them after a list change, apply the dashboard ledger;
 //   3. KEV: update the index (re-joining rows whose record appeared), join, the `kev` summary; a catalog
 //      older than the index is not used (the index never moves back) and the KEV blocks carry;
@@ -15,7 +16,7 @@
 
 import type { CompiledConfig, LoadedConfig } from "../config";
 import { configVersions } from "../config";
-import { dataCutoffFor, daysBetween, newestCompleteWeek, utcDateOf, windowEnding } from "../dates";
+import { addDays, dataCutoffFor, newestCompleteWeek, utcDateOf, windowEnding } from "../dates";
 import { tagTime } from "../feeds/github";
 import { epssMovers } from "../feeds/epss";
 import { byCodeUnit } from "../ids";
@@ -30,7 +31,7 @@ import {
   updateCredits, type CreditState, type LedgerInput,
 } from "./ai-credit";
 import { updateAnthropicCvd, fixSide } from "./fix-side";
-import { countDay, dayIds, dayMap, DAYS_FROM, floodStats, missingDays, yearAgo } from "./flood";
+import { catchUpRange, countDay, dayIds, dayMap, DAYS_FROM, floodStats, inCatchUp, missingDays, yearAgo } from "./flood";
 import { composeHeadline } from "./headline";
 import { homeVendorKev } from "./home-vendors";
 import { indexEntries, indexFacts, kevSummary, updateKevIndex } from "./kev-index";
@@ -67,8 +68,7 @@ export interface ComputeResult {
   catchUpLine: string | null;
 }
 
-/** More missed days than this and the morning run counts none (§8.4): the backfill's --catch-up fills them. */
-export const CATCH_UP_DAYS = 25;
+export { CATCH_UP_DAYS } from "./flood";
 /** Placeholders for provenance fields no input and no earlier file can give (logged when used). */
 const UNKNOWN_SHA = "0".repeat(40);
 const UNKNOWN = "unavailable";
@@ -171,12 +171,15 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   const daysFile = i.state["days.json"];
   const days = dayMap(daysFile.days);
   const newest = newestDay(daysFile.days);
-  const catchUp = !frozen && (newest === null || daysBetween(newest, cutoff) > CATCH_UP_DAYS);
+  const catchUp = !frozen && inCatchUp(newest, cutoff);
   const stopAt = newest ?? DAYS_FROM;
   const newDays: InputsManifest["flood"]["new_days"] = [];
+  // The missing days are those of the catch-up range (§5.4, §8.3): each one read today counts, in date order,
+  // even past one that failed; a failed day stays missing and collect plans it again the next morning.
+  const range = catchUpRange(cutoff);
   if (!frozen && !catchUp) {
     const reads = new Map(feeds.cvelist.days.map((d) => [d.date, d]));
-    for (const d of missingDays(days, daysFile.days[0]?.[0] ?? DAYS_FROM, cutoff).slice(0, CATCH_UP_DAYS)) {
+    for (const d of missingDays(days, range.from, range.to)) {
       const read = reads.get(d);
       if (!read?.ok) continue;
       days.set(d, countDay(d, read.records));
@@ -272,8 +275,10 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   // Flood: complete from days.json, else carried.
   const fs = floodStats(days, cutoff);
   const w13 = windowEnding(cutoff, 91);
-  const missingNow = missingDays(days, daysFile.days[0]?.[0] ?? DAYS_FROM, cutoff);
-  const lateNote = catchUp ? BLOCK_NOTES.catchUp(stopAt) : BLOCK_NOTES.daysMissing(Math.max(1, missingNow.length), missingNow[0] ?? fs.missing[0] ?? cutoff);
+  // The note names the range's days still missing, then any older gap (only a backfill --catch-up fills those).
+  const recentMissing = missingDays(days, range.from, range.to);
+  const olderMissing = missingDays(days, DAYS_FROM, addDays(range.from, -1));
+  const lateNote = catchUp ? BLOCK_NOTES.catchUp(stopAt) : BLOCK_NOTES.daysMissing(recentMissing, olderMissing);
   let flood: Metrics["flood"];
   if (fs.flood) {
     flood = fs.flood;

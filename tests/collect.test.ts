@@ -13,6 +13,7 @@ import {
   recordWindow, skippedOutcome, toItemDrafts, toPackItems, zipPlan, type FeedOutcome, type ItemContext, type ItemDraft,
 } from "../lib/collect";
 import { loadConfig, matchCredit } from "../lib/config";
+import { addDays } from "../lib/dates";
 import { parseEpssCsv } from "../lib/feeds/epss";
 import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
@@ -183,15 +184,39 @@ describe("zipPlan", () => {
     ]);
   });
 
-  it("days missing from days.json add their zips, oldest first, up to the cutoff, at most 25", () => {
-    const known = ["2026-10-08", "2026-10-09"];
+  /** Every UTC day from `from` to `to`, minus `holes`. */
+  const history = (from: string, to: string, holes: string[] = []) => {
+    const out: string[] = [];
+    for (let d = from; d <= to; d = addDays(d, 1)) if (!holes.includes(d)) out.push(d);
+    return out;
+  };
+
+  it("days missing from days.json add their zips, oldest first, up to the cutoff", () => {
+    const known = history("2026-09-01", "2026-10-09");
     const p = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: known });
     expect(p.missing).toEqual(["2026-10-10", "2026-10-11", "2026-10-12"]);
     expect(p.days.map((d) => d.date)).toEqual(["2026-10-10", "2026-10-11", "2026-10-12"]);
     expect(assets(p)[0]).toBe("2026-10-10_delta_CVEs_at_end_of_day.zip");
-    const far = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: ["2026-01-01"] });
-    expect(far.days.length).toBe(25);
-    expect(far.days[0]!.date).toBe("2026-01-02");
+  });
+
+  it("plans a gap behind the newest counted day again, while it is inside the 25-day catch-up range (B5)", () => {
+    const known = history("2026-09-01", "2026-10-11", ["2026-09-17", "2026-09-18", "2026-10-08"]);
+    const p = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: known });
+    // The range is the 25 days ending at the cutoff (2026-09-18 to 2026-10-12); 2026-09-17 is older than it.
+    expect(p.missing).toEqual(["2026-09-18", "2026-10-08", "2026-10-12"]);
+    expect(p.days.map((d) => d.date)).toEqual(p.missing);
+    expect(assets(p)).toEqual(expect.arrayContaining(["2026-10-08_delta_CVEs_at_end_of_day.zip", "2026-10-09_delta_CVEs_at_end_of_day.zip"]));
+    expect(assets(p)).not.toContain("2026-09-17_delta_CVEs_at_end_of_day.zip");
+  });
+
+  it("plans no missed day after more than 25, when the metrics count none (a backfill --catch-up fills them)", () => {
+    const far = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: history("2026-01-01", "2026-09-16") });
+    expect(far.missing).toEqual([]);
+    expect(far.days).toEqual([]);
+    expect(assets(far)).toEqual(["2026-10-12_delta_CVEs_at_end_of_day.zip", "2026-10-13_delta_CVEs_at_2000Z.zip"]);
+    const edge = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: history("2026-01-01", "2026-09-17") });
+    expect(edge.missing.length).toBe(25);
+    expect(edge.missing[0]).toBe("2026-09-18");
   });
 });
 

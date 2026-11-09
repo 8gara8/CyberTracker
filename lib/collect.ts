@@ -10,6 +10,7 @@ import type { CertNote, CheckLabel, CvdDashboard, CveRecord, EpssDay, ExchangeNo
 import { epssJump } from "./feeds/epss";
 import { endOfDayAsset, hourlyAsset, type ReleaseAsset } from "./feeds/github";
 import { kevNoteUrls } from "./feeds/kev";
+import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
@@ -111,7 +112,8 @@ const isoUtc = (s: string) => `${new Date(Date.parse(s)).toISOString().slice(0, 
 
 // ── CVE List zips (§8.3, ruling R37) ─────────────────────────────────────────────────────────────
 
-export const MISSING_DAYS_MAX = 25;
+/** The catch-up range's length (lib/metrics/flood.ts CATCH_UP_DAYS): the most missing days a run plans. */
+export const MISSING_DAYS_MAX = CATCH_UP_DAYS;
 
 export type PlannedZip = ReleaseAsset & { kind: "end_of_day" | "hourly"; utc_day: string };
 
@@ -126,11 +128,14 @@ function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): Plann
 
 /**
  * Which delta zips a run reads (§8.3, ruling R37): for each UTC day X the record window touches, and each
- * day `state/days.json` lacks (oldest first, at most 25, up to min(cutoff, T − 1)), X's zip and X + 1's,
- * where a day before T means its end-of-day zip and T means T's newest hourly zip. So a morning run (T =
- * D − 1) reads D − 2's end-of-day zip and T's hourly zip, and an afternoon run (T = D) reads D − 2's and
- * D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null) only the window's zips.
- * `days` lists each counted day with its two assets. Assets come oldest first, end-of-day before hourly.
+ * day `state/days.json` lacks in the catch-up range (the 25 days ending at the cutoff, none before
+ * DAYS_FROM, oldest first, up to min(cutoff, T − 1); a gap behind the newest counted day included), X's zip
+ * and X + 1's, where a day before T means its end-of-day zip and T means T's newest hourly zip. So a
+ * morning run (T = D − 1) reads D − 2's end-of-day zip and T's hourly zip, and an afternoon run (T = D)
+ * reads D − 2's and D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null or
+ * empty), or when its newest day is more than 25 days before the cutoff (the metrics count no day then,
+ * §8.4), only the window's zips. `days` lists each counted day with its two assets. Assets come oldest
+ * first, end-of-day before hourly.
  */
 export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: string; hourlyTag: string | null; knownDays: readonly string[] | null; maxDays?: number }): { zips: PlannedZip[]; days: { date: string; zips: [string, string] }[]; missing: string[] } {
   const cutoff = addDays(o.date, -2);
@@ -139,11 +144,15 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
   const windowDays: string[] = [];
   for (let d = first; d <= last; d = addDays(d, 1)) windowDays.push(d);
   const missing: string[] = [];
+  const length = o.maxDays ?? MISSING_DAYS_MAX;
   if (o.knownDays && o.knownDays.length) {
     const known = new Set(o.knownDays);
     const newest = [...known].sort(byCodeUnit).at(-1)!;
-    const until = [cutoff, addDays(o.runUtcDay, -1)].sort(byCodeUnit)[0]!;
-    for (let d = addDays(newest, 1); d <= until && missing.length < (o.maxDays ?? MISSING_DAYS_MAX); d = addDays(d, 1)) if (!known.has(d)) missing.push(d);
+    if (!inCatchUp(newest, cutoff, length)) {
+      const range = catchUpRange(cutoff, length);
+      const until = [range.to, addDays(o.runUtcDay, -1)].sort(byCodeUnit)[0]!;
+      for (let d = range.from; d <= until; d = addDays(d, 1)) if (!known.has(d)) missing.push(d);
+    }
   }
   const zips = new Map<string, PlannedZip>();
   const add = (z: PlannedZip | null) => { if (z) zips.set(z.asset, z); };

@@ -4,7 +4,8 @@
 // The AI-finder notes live with the credit code (AI_NOTES) and the fix-side notes with fixSide()
 // (FIX_NOTES); both are re-exported here so every template is reachable from one module.
 
-import { shortDate } from "../format";
+import { addDays } from "../dates";
+import { dayMonth, shortDate } from "../format";
 
 export { AI_NOTES } from "./ai-credit";
 export { FIX_NOTES } from "./fix-side";
@@ -19,12 +20,61 @@ export const BLOCK_NOTES = {
   /** Window, KEV and home vendors when today's catalog is older than the one kev-index.json already holds (never moved back). */
   kevOlder: (read: string, index: string): string =>
     `CISA's KEV catalog read today (${read}) is older than the one already counted (${index}), so it was not used.`,
-  /** Flood and AI-credited when some UTC days before the cutoff are not yet counted. */
-  daysMissing: (n: number, from: string): string =>
-    `${n === 1 ? "One UTC day" : `${n} UTC days`} from ${shortDate(from)} could not be counted from the CVE List today.`,
+  /**
+   * Flood and AI-credited when some UTC days before the cutoff are not yet counted: the days of the catch-up
+   * range still missing (collect retries them each morning), then the older gaps, which only a backfill
+   * --catch-up fills. Runs of days are shown as ranges; a list too long for the note ends "and N more".
+   */
+  daysMissing: (recent: readonly string[], older: readonly string[]): string => missingDaysNote(recent, older),
   /** Flood and AI-credited when the newest counted day is more than 25 days before the cutoff (§8.4). */
   catchUp: (newest: string): string => `Flood counts stop at ${shortDate(newest)}; the missed days need a catch-up from the full CVE List.`,
 } as const;
+
+/** Consecutive UTC days as runs, oldest first. */
+function runsOf(days: readonly string[]): string[][] {
+  const runs: string[][] = [];
+  for (const d of [...new Set(days)].sort()) {
+    const last = runs.at(-1);
+    if (last && addDays(last.at(-1)!, 1) === d) last.push(d);
+    else runs.push([d]);
+  }
+  return runs;
+}
+
+/** "6 Nov 2026", "4 to 6 Nov 2026", "30 Oct to 1 Nov 2026", "31 Dec 2025 to 1 Jan 2026". */
+function runText(run: readonly string[]): string {
+  const a = run[0]!;
+  const b = run.at(-1)!;
+  if (a === b) return shortDate(a);
+  if (a.slice(0, 7) === b.slice(0, 7)) return `${Number(a.slice(8))} to ${shortDate(b)}`;
+  if (a.slice(0, 4) === b.slice(0, 4)) return `${dayMonth(a)} to ${shortDate(b)}`;
+  return `${shortDate(a)} to ${shortDate(b)}`;
+}
+
+function missingDaysNote(recent: readonly string[], older: readonly string[]): string {
+  const parts = [
+    { prefix: "UTC days not yet counted from the CVE List: ", runs: runsOf(recent) },
+    { prefix: "Older UTC days missing, for a backfill --catch-up: ", runs: runsOf(older) },
+  ].filter((p) => p.runs.length);
+  if (!parts.length) return "Some UTC days could not be counted from the CVE List today.";
+  const shown = parts.map((p) => p.runs.length);
+  const sentence = (i: number) => {
+    const { prefix, runs } = parts[i]!;
+    const n = shown[i]!;
+    if (n >= runs.length) return `${prefix}${runs.map(runText).join(", ")}.`;
+    const more = runs.slice(n).reduce((k, r) => k + r.length, 0);
+    return `${prefix}${runs.slice(0, n).map(runText).join(", ")} and ${more} more.`;
+  };
+  const text = () => parts.map((_, i) => sentence(i)).join(" ");
+  // Shorten the older list first, then the recent one, one run at a time.
+  while (text().length > NOTE_MAX) {
+    const i = shown.length > 1 && shown[1]! > 1 ? 1 : shown[0]! > 1 ? 0 : -1;
+    if (i < 0) break;
+    shown[i] = shown[i]! - 1;
+  }
+  const out = text();
+  return out.length <= NOTE_MAX ? out : `${out.slice(0, NOTE_MAX - 1)}…`;
+}
 
 /** The stdout line after more than 25 missed days, exactly as §8.4 writes it (the Notes line drops the full stop). */
 export function catchUpLine(newest: string): string {
