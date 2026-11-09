@@ -1,9 +1,11 @@
 // computeMetrics() (SPEC §5.10): the metrics file, its inputs manifest and the updated state from the
 // state files, collect's feeds and the history. Pure: no clock, file, network or randomness; scripts/metrics.ts
 // reads everything and passes it in. Steps, in §5.10's order:
-//   2. count the UTC days days.json lacks (at most 25, none after more than 25 missed days), update the
+//   2. count the UTC days of the 25-day catch-up range that days.json lacks (none after more than 25 missed
+//      days; an older gap is only named, for the backfill's --catch-up), update the
 //      credits from the zips' records, recompute them after a list change, apply the dashboard ledger;
-//   3. KEV: update the index (re-joining rows whose record appeared), join, the `kev` summary;
+//   3. KEV: update the index (re-joining rows whose record appeared), join, the `kev` summary; a catalog
+//      older than the index is not used (the index never moves back) and the KEV blocks carry;
 //   4. window, flood, ai_credited, base_rate, fix_side, home_vendors, epss_movers, series;
 //   5. block statuses: "ok" when computed from today's complete inputs (as_of the cutoff), "stale" when
 //      carrying the previous file's value (its as_of, today's reason as the note), "failed" (null) when
@@ -14,7 +16,7 @@
 
 import type { CompiledConfig, LoadedConfig } from "../config";
 import { configVersions } from "../config";
-import { dataCutoffFor, daysBetween, newestCompleteWeek, utcDateOf, windowEnding } from "../dates";
+import { addDays, dataCutoffFor, newestCompleteWeek, utcDateOf, windowEnding } from "../dates";
 import { tagTime } from "../feeds/github";
 import { epssMovers } from "../feeds/epss";
 import { byCodeUnit } from "../ids";
@@ -29,7 +31,7 @@ import {
   updateCredits, type CreditState, type LedgerInput,
 } from "./ai-credit";
 import { updateAnthropicCvd, fixSide } from "./fix-side";
-import { countDay, dayIds, dayMap, DAYS_FROM, floodStats, missingDays, yearAgo } from "./flood";
+import { catchUpRange, countDay, dayIds, dayMap, DAYS_FROM, floodStats, inCatchUp, missingDays, yearAgo } from "./flood";
 import { composeHeadline } from "./headline";
 import { homeVendorKev } from "./home-vendors";
 import { indexEntries, indexFacts, kevSummary, updateKevIndex } from "./kev-index";
@@ -66,8 +68,7 @@ export interface ComputeResult {
   catchUpLine: string | null;
 }
 
-/** More missed days than this and the morning run counts none (§8.4): the backfill's --catch-up fills them. */
-export const CATCH_UP_DAYS = 25;
+export { CATCH_UP_DAYS } from "./flood";
 /** Placeholders for provenance fields no input and no earlier file can give (logged when used). */
 const UNKNOWN_SHA = "0".repeat(40);
 const UNKNOWN = "unavailable";
@@ -117,7 +118,7 @@ function newestZipTag(feeds: MetricsFeeds): string | null {
   return best?.tag ?? feeds.inputs.cvelist.newest_hourly_tag;
 }
 
-function provenanceOf(i: MetricsInputs, index: KevIndexFile, log: string[]): Omit<Provenance, "inputs_sha256"> {
+function provenanceOf(i: MetricsInputs, index: KevIndexFile, catalog: MetricsFeeds["kev"]["catalog"], log: string[]): Omit<Provenance, "inputs_sha256"> {
   const prev = i.history.previous?.provenance ?? null;
   const f = i.feeds;
   const pick = <T>(name: string, today: T | null | undefined, earlier: T | null | undefined, placeholder: T): T => {
@@ -126,15 +127,17 @@ function provenanceOf(i: MetricsInputs, index: KevIndexFile, log: string[]): Omi
     log.push(`Provenance: ${name} is unknown today and in every earlier file; written as a placeholder.`);
     return placeholder;
   };
-  const catalog = f.kev.catalog;
-  const kevFallback = f.inputs.kev?.fallback_used ?? false;
+  // `catalog` is the one the metrics used: null when none parsed or it was older than the index.
+  const kevInput = catalog ? f.inputs.kev : null;
+  const kevFallback = kevInput?.fallback_used ?? false;
   return {
     kev_catalog_version: catalog?.catalogVersion ?? prev?.kev_catalog_version ?? index.catalog_version,
     kev_count: catalog?.count ?? prev?.kev_count ?? index.entries.length,
-    kev_date_released: pick("kev_date_released", catalog?.dateReleased ?? f.inputs.kev?.date_released, prev?.kev_date_released, `${dataCutoffFor(i.date)}T00:00:00Z`),
+    kev_date_released: pick("kev_date_released", catalog?.dateReleased ?? kevInput?.date_released, prev?.kev_date_released, `${dataCutoffFor(i.date)}T00:00:00Z`),
     cve_list_release: pick("cve_list_release", newestZipTag(f), prev?.cve_list_release, UNKNOWN),
     cve_list_commit: pick("cve_list_commit", f.inputs.commits.cvelist, prev?.cve_list_commit, UNKNOWN_SHA),
-    kev_data_commit: catalog && !kevFallback ? f.inputs.commits.kev_data : catalog ? null : prev?.kev_data_commit ?? null,
+    // null means the cisa.gov fallback; a mirror read whose commit ls-remote missed takes the earlier value or the placeholder (§0.4 row 41).
+    kev_data_commit: catalog && !kevFallback ? pick("kev_data_commit", f.inputs.commits.kev_data, prev?.kev_data_commit, UNKNOWN_SHA) : catalog ? null : prev?.kev_data_commit ?? null,
     epss_model_version: pick("epss_model_version", f.epss.e?.model_version ?? f.inputs.epss?.model_version, prev?.epss_model_version, UNKNOWN),
     epss_date: pick("epss_date", f.epss.e ? utcDateOf(f.epss.e.score_date) : null, prev?.epss_date, dataCutoffFor(i.date)),
     ghsa_source: GHSA_CREDIT_SOURCE,
@@ -168,12 +171,15 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   const daysFile = i.state["days.json"];
   const days = dayMap(daysFile.days);
   const newest = newestDay(daysFile.days);
-  const catchUp = !frozen && (newest === null || daysBetween(newest, cutoff) > CATCH_UP_DAYS);
+  const catchUp = !frozen && inCatchUp(newest, cutoff);
   const stopAt = newest ?? DAYS_FROM;
   const newDays: InputsManifest["flood"]["new_days"] = [];
+  // The missing days are those of the catch-up range (§5.4, §8.3): each one read today counts, in date order,
+  // even past one that failed; a failed day stays missing and collect plans it again the next morning.
+  const range = catchUpRange(cutoff);
   if (!frozen && !catchUp) {
     const reads = new Map(feeds.cvelist.days.map((d) => [d.date, d]));
-    for (const d of missingDays(days, daysFile.days[0]?.[0] ?? DAYS_FROM, cutoff).slice(0, CATCH_UP_DAYS)) {
+    for (const d of missingDays(days, range.from, range.to)) {
       const read = reads.get(d);
       if (!read?.ok) continue;
       days.set(d, countDay(d, read.records));
@@ -211,7 +217,12 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   }
 
   // ── Step 3: KEV ────────────────────────────────────────────────────────────────────────────────
-  const catalog = feeds.kev.catalog;
+  // A catalog older than the index never moves it back (frozen or not): the KEV blocks carry, with today's reason.
+  const readCatalog = feeds.kev.catalog;
+  const olderCatalog = readCatalog !== null && byCodeUnit(readCatalog.catalogVersion, index.catalog_version) < 0;
+  if (olderCatalog) log.push(`KEV catalog ${readCatalog.catalogVersion} is older than kev-index ${index.catalog_version}: the index is not moved back.`);
+  const kevNote = olderCatalog ? BLOCK_NOTES.kevOlder(readCatalog.catalogVersion, index.catalog_version) : BLOCK_NOTES.kevNotRead;
+  const catalog = olderCatalog ? null : readCatalog;
   if (frozen && catalog && catalog.catalogVersion !== index.catalog_version) {
     throw new Error(`computeMetrics: the built kev-index.json is for catalog ${index.catalog_version} but the cached catalog is ${catalog.catalogVersion}`);
   }
@@ -247,16 +258,16 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
     blocks.kev = ok(cutoff);
     blocks.home_vendors = ok(cutoff);
   } else {
-    const w = carry(prev, "window", prev?.window, BLOCK_NOTES.kevNotRead);
+    const w = carry(prev, "window", prev?.window, kevNote);
     window = w.value;
     blocks.window = w.block;
     directions = w.value && prev
       ? { at_disclosure_direction: prev.headline.at_disclosure_direction, after_disclosure_direction: prev.headline.after_disclosure_direction }
       : { at_disclosure_direction: "n_too_small", after_disclosure_direction: "n_too_small" };
-    const k = carry(prev, "kev", prev?.kev, BLOCK_NOTES.kevNotRead);
+    const k = carry(prev, "kev", prev?.kev, kevNote);
     kev = k.value ? { ...k.value, new_since_last_edition: { ...k.value.new_since_last_edition, cve_ids: [] } } : null;
     blocks.kev = k.block;
-    const h = carry(prev, "home_vendors", prev?.home_vendors, BLOCK_NOTES.kevNotRead);
+    const h = carry(prev, "home_vendors", prev?.home_vendors, kevNote);
     homeVendors = h.value;
     blocks.home_vendors = h.block;
   }
@@ -264,8 +275,10 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   // Flood: complete from days.json, else carried.
   const fs = floodStats(days, cutoff);
   const w13 = windowEnding(cutoff, 91);
-  const missingNow = missingDays(days, daysFile.days[0]?.[0] ?? DAYS_FROM, cutoff);
-  const lateNote = catchUp ? BLOCK_NOTES.catchUp(stopAt) : BLOCK_NOTES.daysMissing(Math.max(1, missingNow.length), missingNow[0] ?? fs.missing[0] ?? cutoff);
+  // The note names the range's days still missing, then any older gap (only a backfill --catch-up fills those).
+  const recentMissing = missingDays(days, range.from, range.to);
+  const olderMissing = missingDays(days, DAYS_FROM, addDays(range.from, -1));
+  const lateNote = catchUp ? BLOCK_NOTES.catchUp(stopAt) : BLOCK_NOTES.daysMissing(recentMissing, olderMissing);
   let flood: Metrics["flood"];
   if (fs.flood) {
     flood = fs.flood;
@@ -348,7 +361,7 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
     data_cutoff_utc: cutoff,
     reconstructed: i.reconstructed,
     code_commit: i.codeCommit,
-    provenance: { ...provenanceOf(i, index, log), inputs_sha256: sha256Hex(manifestText) },
+    provenance: { ...provenanceOf(i, index, catalog, log), inputs_sha256: sha256Hex(manifestText) },
     blocks: orderedBlocks,
     headline,
     flood,

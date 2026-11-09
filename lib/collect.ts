@@ -8,24 +8,26 @@ import { addDays, taipeiDateOf, utcDateOf } from "./dates";
 import type { FetchErrorClass } from "./feeds/http";
 import type { CertNote, CheckLabel, CvdDashboard, CveRecord, EpssDay, ExchangeNotice, FeedState, GhsaAdvisory, JvnNote, KevEntry, RawItem } from "./feeds/types";
 import { epssJump } from "./feeds/epss";
-import { endOfDayAsset, hourlyAsset, type ReleaseAsset } from "./feeds/github";
+import { endOfDayAsset, hourlyAsset, tagTime, type ReleaseAsset } from "./feeds/github";
 import { kevNoteUrls } from "./feeds/kev";
+import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
-import { jsonText } from "./json";
+import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
 import { alertRegions, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
 import type { RunFile, SourceTiersFile } from "./schema/config";
 import type { Evidence } from "./schema/misc";
-import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource } from "./schema/pack";
+import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type RankLogEntry } from "./schema/pack";
+import type { Candidate } from "./schema/context";
 import type { FetchedFeed, FetchedFeedKind, SourcesFile } from "./schema/registry";
-import type { TimeWindow } from "./schema/common";
+import { ID_PATTERNS, type TimeWindow } from "./schema/common";
 import { blockedReason, publisherFor, type PublisherConfig } from "./sources";
 import { jaccard } from "./text";
-import { normalizeUrl } from "./urls";
+import { isHttpsUrl, normalizeUrl } from "./urls";
 import { COVERAGE, type Coverage } from "./vocab";
 
 // ── Limits (§4.14) ───────────────────────────────────────────────────────────────────────────────
@@ -111,7 +113,8 @@ const isoUtc = (s: string) => `${new Date(Date.parse(s)).toISOString().slice(0, 
 
 // ── CVE List zips (§8.3, ruling R37) ─────────────────────────────────────────────────────────────
 
-export const MISSING_DAYS_MAX = 25;
+/** The catch-up range's length (lib/metrics/flood.ts CATCH_UP_DAYS): the most missing days a run plans. */
+export const MISSING_DAYS_MAX = CATCH_UP_DAYS;
 
 export type PlannedZip = ReleaseAsset & { kind: "end_of_day" | "hourly"; utc_day: string };
 
@@ -126,11 +129,14 @@ function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): Plann
 
 /**
  * Which delta zips a run reads (§8.3, ruling R37): for each UTC day X the record window touches, and each
- * day `state/days.json` lacks (oldest first, at most 25, up to min(cutoff, T − 1)), X's zip and X + 1's,
- * where a day before T means its end-of-day zip and T means T's newest hourly zip. So a morning run (T =
- * D − 1) reads D − 2's end-of-day zip and T's hourly zip, and an afternoon run (T = D) reads D − 2's and
- * D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null) only the window's zips.
- * `days` lists each counted day with its two assets. Assets come oldest first, end-of-day before hourly.
+ * day `state/days.json` lacks in the catch-up range (the 25 days ending at the cutoff, none before
+ * DAYS_FROM, oldest first, up to min(cutoff, T − 1); a gap behind the newest counted day included), X's zip
+ * and X + 1's, where a day before T means its end-of-day zip and T means T's newest hourly zip. So a
+ * morning run (T = D − 1) reads D − 2's end-of-day zip and T's hourly zip, and an afternoon run (T = D)
+ * reads D − 2's and D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null or
+ * empty), or when its newest day is more than 25 days before the cutoff (the metrics count no day then,
+ * §8.4), only the window's zips. `days` lists each counted day with its two assets. Assets come oldest
+ * first, end-of-day before hourly.
  */
 export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: string; hourlyTag: string | null; knownDays: readonly string[] | null; maxDays?: number }): { zips: PlannedZip[]; days: { date: string; zips: [string, string] }[]; missing: string[] } {
   const cutoff = addDays(o.date, -2);
@@ -139,11 +145,15 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
   const windowDays: string[] = [];
   for (let d = first; d <= last; d = addDays(d, 1)) windowDays.push(d);
   const missing: string[] = [];
+  const length = o.maxDays ?? MISSING_DAYS_MAX;
   if (o.knownDays && o.knownDays.length) {
     const known = new Set(o.knownDays);
     const newest = [...known].sort(byCodeUnit).at(-1)!;
-    const until = [cutoff, addDays(o.runUtcDay, -1)].sort(byCodeUnit)[0]!;
-    for (let d = addDays(newest, 1); d <= until && missing.length < (o.maxDays ?? MISSING_DAYS_MAX); d = addDays(d, 1)) if (!known.has(d)) missing.push(d);
+    if (!inCatchUp(newest, cutoff, length)) {
+      const range = catchUpRange(cutoff, length);
+      const until = [range.to, addDays(o.runUtcDay, -1)].sort(byCodeUnit)[0]!;
+      for (let d = range.from; d <= until; d = addDays(d, 1)) if (!known.has(d)) missing.push(d);
+    }
   }
   const zips = new Map<string, PlannedZip>();
   const add = (z: PlannedZip | null) => { if (z) zips.set(z.asset, z); };
@@ -158,6 +168,92 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
   });
   const ordered = [...zips.values()].sort((a, b) => byCodeUnit(a.utc_day, b.utc_day) || (a.kind === b.kind ? byCodeUnit(a.asset, b.asset) : a.kind === "end_of_day" ? -1 : 1));
   return { zips: ordered, days, missing };
+}
+
+/**
+ * The instant the zips read reach (§8.3): an end-of-day zip of X reaches X + 1 at 00:00Z, T's hourly zip
+ * its tag's hour; the latest of them, or null when none was read.
+ */
+export function zipsReach(zips: readonly PlannedZip[]): string | null {
+  let reach: string | null = null;
+  for (const z of zips) {
+    const end = z.kind === "end_of_day" ? `${addDays(z.utc_day, 1)}T00:00:00Z` : tagTime(z.tag);
+    if (end && (reach === null || end > reach)) reach = end;
+  }
+  return reach;
+}
+
+/**
+ * The cvelist note when the zips read end before the record window does (the minus-40-minute guess after
+ * a failed ls-remote, or a late hourly release): the records of the gap are in no zip read, so the feed
+ * is stale, never ok, and nothing is invented for the gap. Null when the zips reach the window's end.
+ */
+export function zipsShortNote(reach: string | null, recordWindow: TimeWindow): string | null {
+  if (reach === null || Date.parse(reach) >= Date.parse(recordWindow.end)) return null;
+  const at = (iso: string) => `${iso.slice(11, 16)} UTC on ${iso.slice(0, 10)}`;
+  return `Stale: the CVE List zips read end at ${at(reach)}, before the record window ends at ${at(new Date(Date.parse(recordWindow.end)).toISOString())}.`;
+}
+
+// ── Feed-controlled fields printed outside the untrusted tags (§4.14 Sanitisation) ─────────────────
+
+/**
+ * A feed's link fit to print as plain text in packs/D.md: normalizeUrl()'s output of a well-formed https
+ * URL, with no space, control character, quote, backtick or angle bracket; else null (the caller drops the
+ * link and counts a flag). normalizeUrl() hands back unparseable input unchanged, so its output alone is
+ * not enough.
+ */
+export function safeLink(raw: string): string | null {
+  const u = normalizeUrl(raw.trim());
+  if (!isHttpsUrl(u) || /[\s\p{Cc}"'`<>\\]/u.test(u)) return null;
+  return u;
+}
+
+/** The strict shape of each source's record id (§4.14); anything else is replaced and flagged. */
+export const RECORD_ID_PATTERNS: Readonly<Record<PackRecordSource, RegExp>> = {
+  kev: ID_PATTERNS.cve,
+  cvelist: ID_PATTERNS.cve,
+  epss: ID_PATTERNS.cve,
+  nvd: ID_PATTERNS.cve,
+  ghsa: ID_PATTERNS.ghsa,
+  "twcert-tvn": /^TVN-\d{9,10}$/,
+  // A JPCERT page's file name without its extension: at260031, wr264101.
+  jpcert: /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/,
+  myjvn: /^JVNDB-\d{4}-\d{6,}$/,
+  "anthropic-cvd": /^revision-[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/,
+  // The company code and the minute it spoke (Taipei, YYYYMMDDHHMM).
+  "exchange-tw": /^[0-9A-Z]{4,6}-\d{12}$/,
+};
+
+/** A record id that matches its source's pattern, else a fixed stand-in (`<source>-unsafe-<12 hex>`) and true. */
+export function safeRecordId(source: PackRecordSource, raw: string): { id: string; replaced: boolean } {
+  if (RECORD_ID_PATTERNS[source].test(raw)) return { id: raw, replaced: false };
+  return { id: `${source}-unsafe-${sha256Hex(raw).slice(0, 12)}`, replaced: true };
+}
+
+/** Counts what the record builders dropped for an unsafe link (a whole record when its own link is unsafe). */
+export interface LinkScreen {
+  dropped: number;
+}
+
+/** The per-id record fetch's cap (§8.3): KEV ids are never cut; the other ids share what is left of 500. */
+export const PER_ID_MAX = 500;
+
+/**
+ * The per-id record fetch (§8.3 CVE records): every KEV id not in today's zips, then, when the dashboard's
+ * revision changed (`ledgerIds` non-null), its ledger CVE ids that no state file dates (`dated`: kev-index,
+ * credit-candidates and ai-credits rows with a date) and no zip read today holds (`have`), newest id first,
+ * up to PER_ID_MAX in all, so the metrics can date them for the ledger (§5.5). `overCap` counts the ledger
+ * ids left out; they wait for the next revision.
+ */
+export function perIdPlan(o: { kevIds: readonly string[]; ledgerIds: readonly string[] | null; dated: ReadonlySet<string>; have: ReadonlySet<string>; max?: number }): { ids: string[]; ledger: string[]; overCap: number } {
+  const kev = [...new Set(o.kevIds)].filter((id) => !o.have.has(id));
+  const taken = new Set(kev);
+  const wanted = [...new Set((o.ledgerIds ?? []).map((x) => x.trim().toUpperCase()))]
+    .filter((id) => ID_PATTERNS.cve.test(id) && !taken.has(id) && !o.dated.has(id) && !o.have.has(id))
+    .sort((a, b) => compareCveIds(b, a));
+  const room = Math.max(0, (o.max ?? PER_ID_MAX) - kev.length);
+  const ledger = wanted.slice(0, room).sort(compareCveIds);
+  return { ids: [...kev, ...ledger].sort(compareCveIds), ledger, overCap: wanted.length - ledger.length };
 }
 
 // ── Items ────────────────────────────────────────────────────────────────────────────────────────
@@ -186,6 +282,8 @@ export interface ItemDraftResult {
   outOfWindow: number;
   missedKeywords: number;
   badUrl: number;
+  /** Items dropped because their link is not a safe https URL (safeLink()); each counts as an injection flag. */
+  unsafeLinks: number;
 }
 
 /**
@@ -194,15 +292,19 @@ export interface ItemDraftResult {
  * so a newsroom quoting an agency's alert page never counts as the agency. The outlet is the entry's name.
  */
 export function toItemDrafts(entry: FetchedFeed, items: readonly RawItem[], ctx: ItemContext): ItemDraftResult {
-  const out: ItemDraftResult = { drafts: [], dated: 0, outOfWindow: 0, missedKeywords: 0, badUrl: 0 };
+  const out: ItemDraftResult = { drafts: [], dated: 0, outOfWindow: 0, missedKeywords: 0, badUrl: 0, unsafeLinks: 0 };
   for (const raw of items) {
     if (raw.published_at) out.dated += 1;
     if (!inWindow(raw.published_at, ctx.window, ctx.lookbackHours)) {
       if (raw.published_at) out.outOfWindow += 1;
       continue;
     }
-    const url = normalizeUrl(raw.url.trim());
-    if (!/^https:\/\//.test(url) || url.length > ADVISORY_URL_LENGTH_MAX || blockedReason(url, ctx.publishers.sourceTiers)) {
+    const url = safeLink(raw.url);
+    if (url === null) {
+      out.unsafeLinks += 1;
+      continue;
+    }
+    if (url.length > ADVISORY_URL_LENGTH_MAX || blockedReason(url, ctx.publishers.sourceTiers)) {
       out.badUrl += 1;
       continue;
     }
@@ -354,6 +456,12 @@ function usableName(s: string | null | undefined, max: number): string | null {
   return c || null;
 }
 
+/**
+ * One record draft. The fields packs/D.md prints outside the untrusted tags are screened (§4.14): a record
+ * whose own link is not safe (safeLink()) is dropped and counted in `screen`; an id that fails its source's
+ * pattern is replaced (safeRecordId()); unsafe advisory links and malformed CVE ids are left out. Each
+ * replacement or omission counts as a flag on the record.
+ */
 function draft(
   source: PackRecordSource,
   recordId: string,
@@ -366,46 +474,58 @@ function draft(
   product: string | null,
   cveIds: string[],
   facts: Facts,
-): RecordDraft {
+  screen: LinkScreen,
+): RecordDraft | null {
+  const link = safeLink(url);
+  if (link === null) {
+    screen.dropped += 1;
+    return null;
+  }
+  const id = safeRecordId(source, recordId);
+  const advisories = advisoryUrls.map(safeLink).filter((u): u is string => u !== null);
+  const cves = cveIds.filter((c) => ID_PATTERNS.cve.test(c));
   const t = field(title, TITLE_MAX);
   const x = field(text, TEXT_MAX);
-  const flagged = t.flagged + x.flagged;
+  const flagged = t.flagged + x.flagged + (id.replaced ? 1 : 0) + (advisoryUrls.length - advisories.length) + (cveIds.length - cves.length);
   return {
-    key: `${source}:${recordId}`,
+    key: `${source}:${id.id}`,
     source,
-    record_id: recordId,
-    url: normalizeUrl(url),
-    advisory_urls: advisoryUrls,
-    title: t.text || recordId.slice(0, TITLE_MAX),
+    record_id: id.id,
+    url: link,
+    advisory_urls: [...new Set(advisories)],
+    title: t.text || id.id.slice(0, TITLE_MAX),
     text: x.text,
     date,
     vendor: usableName(vendor, 80),
     product: usableName(product, 120),
-    cve_ids: cveIds,
+    cve_ids: cves,
     facts,
     flags: flagged ? ["injection_like"] : [],
     flagged,
   };
 }
 
+const present = <T>(xs: readonly (T | null)[]): T[] => xs.filter((x): x is T => x !== null);
+
 /** The CVE record page every CVE-keyed record links to. */
 export const cveOrgUrl = (cveId: string) => `https://www.cve.org/CVERecord?id=${cveId}`;
 
 /** KEV entries outside the baseline (the new ids), as records: `notes` URLs become advisory URLs; never cut. */
-export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet<string>, cfg: Pick<SourceTiersFile, "github">): RecordDraft[] {
-  return entries.filter((e) => newIds.has(e.cveID)).map((e) => draft(
+export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet<string>, cfg: Pick<SourceTiersFile, "github">, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(entries.filter((e) => newIds.has(e.cveID)).map((e) => draft(
     "kev", e.cveID, cveOrgUrl(e.cveID), advisoryUrlFilter(kevNoteUrls(e.notes), cfg), e.vulnerabilityName,
     [e.shortDescription, e.requiredAction].filter(Boolean).join(" "), e.dateAdded, e.vendorProject, e.product, [e.cveID],
     { date_added_us: e.dateAdded, due_date: e.dueDate, ransomware: e.knownRansomwareCampaignUse.toLowerCase() === "known" ? "known" : "unknown" },
-  ));
+    screen,
+  )));
 }
 
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
 /** CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit flag. */
-export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts): RecordDraft[] {
-  return recs.filter(keep).map((r) => {
+export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
     const event = r.published_at ?? r.updated_at;
     const facts: Facts = {
@@ -425,37 +545,37 @@ export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) 
       ...(extra ? extra(r) : {}),
     };
     return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter(recordAdvisoryUrls(r, cfg), cfg), r.title ?? r.description,
-      r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts);
-  });
+      r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
+  }));
 }
 
 const inExact = (ts: string | null, w: TimeWindow) => !!ts && inWindow(ts, w, 0);
 
 /** Reviewed, unwithdrawn GitHub advisories published in the window. */
-export function ghsaPackRecords(advs: readonly GhsaAdvisory[], window: TimeWindow): RecordDraft[] {
-  return advs.filter((g) => g.reviewed && !g.withdrawn && inExact(g.published_at, window)).map((g) => draft(
+export function ghsaPackRecords(advs: readonly GhsaAdvisory[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(advs.filter((g) => g.reviewed && !g.withdrawn && inExact(g.published_at, window)).map((g) => draft(
     "ghsa", g.id, ghsaRecordUrl(g.id), [], g.summary ?? g.id, g.summary, g.published, null,
     g.packages[0] ? `${g.packages[0].ecosystem} ${g.packages[0].name}` : null, [...g.cve_ids],
-    { severity: g.severity, fixed: g.fixed, aliases: g.aliases.join(" ") || null },
-  ));
+    { severity: g.severity, fixed: g.fixed, aliases: g.aliases.join(" ") || null }, screen,
+  )));
 }
 
 /** TVN, JPCERT and MyJVN notes in the window; JPCERT alerts carry `facts.alert` (ruling R36). Dates are Taipei. */
-export function notePackRecords(source: "twcert-tvn" | "jpcert" | "myjvn", notes: readonly (CertNote | JvnNote)[], window: TimeWindow): RecordDraft[] {
-  const out: RecordDraft[] = [];
+export function notePackRecords(source: "twcert-tvn" | "jpcert" | "myjvn", notes: readonly (CertNote | JvnNote)[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  const out: (RecordDraft | null)[] = [];
   for (const n of notes) {
     if ("link" in n) {
       const issued = n.issued ?? n.modified;
       if (!inExact(issued, window)) continue;
       out.push(draft(source, n.id, n.link, [], n.title, n.description, taipeiDateOf(issued!), null, null, [...n.cve_ids],
-        { cvss: n.cvss?.score ?? null, cvss_version: n.cvss?.version ?? null, issued: n.issued, modified: n.modified }));
+        { cvss: n.cvss?.score ?? null, cvss_version: n.cvss?.version ?? null, issued: n.issued, modified: n.modified }, screen));
     } else {
       if (!inExact(n.published_at, window)) continue;
       out.push(draft(source, n.id, n.url, [], n.title, n.text, taipeiDateOf(n.published_at!), null, null, [...n.cve_ids],
-        { alert: n.alert, published_at: isoUtc(n.published_at!) }));
+        { alert: n.alert, published_at: isoUtc(n.published_at!) }, screen));
     }
   }
-  return out;
+  return present(out);
 }
 
 /** metrics.epss_movers as records: our own wording, dated with E. */
@@ -484,13 +604,13 @@ export function epssJumps(e: EpssDay, e1: EpssDay | null): EpssJumpRow[] {
  * EPSS records: the five 7-day movers and every day-over-day jump, one record per CVE (a CVE in both
  * gets one record with both facts), so an EPSS candidate always has pack evidence.
  */
-export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string, jumps: readonly EpssJumpRow[] = []): RecordDraft[] {
+export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string, jumps: readonly EpssJumpRow[] = [], screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
   const e = scoreDate.slice(0, 10);
   const from = addDays(e, -7);
   const byCve = new Map<string, { mover?: EpssMover; jump?: EpssJumpRow }>();
   for (const m of movers) byCve.set(m.cve_id, { mover: m });
   for (const j of jumps) byCve.set(j.cve_id, { ...byCve.get(j.cve_id), jump: j });
-  return [...byCve.entries()].sort(([a], [b]) => compareCveIds(a, b)).map(([cve, { mover, jump }]) => {
+  return present([...byCve.entries()].sort(([a], [b]) => compareCveIds(a, b)).map(([cve, { mover, jump }]) => {
     const score = mover?.score ?? jump!.score;
     const percentile = mover?.percentile ?? jump!.percentile;
     const day = jump ? (jump.crossed ? "crossed percentile 0.99" : `up ${(jump.change_24h ?? 0).toFixed(2)} in a day`) : null;
@@ -506,22 +626,22 @@ export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string,
       facts.epss_change_24h = jump.change_24h;
       facts.epss_crossed_99 = jump.crossed;
     }
-    return draft("epss", cve, cveOrgUrl(cve), [], title, `${parts.join(", ")}.`, e, null, null, [cve], facts);
-  });
+    return draft("epss", cve, cveOrgUrl(cve), [], title, `${parts.join(", ")}.`, e, null, null, [cve], facts, screen);
+  }));
 }
 
 /** Exchange notices in the window whose sanitised subject or text names a cyber incident (§8.3). */
-export function exchangePackRecords(notices: readonly ExchangeNotice[], window: TimeWindow): RecordDraft[] {
-  return notices.filter((n) => inExact(n.spoken_at, window) && hitsExchangeTerms(sanitize(`${n.subject} ${n.text}`))).map((n) => {
+export function exchangePackRecords(notices: readonly ExchangeNotice[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(notices.filter((n) => inExact(n.spoken_at, window) && hitsExchangeTerms(sanitize(`${n.subject} ${n.text}`))).map((n) => {
     const stamp = taipeiDateOf(n.spoken_at);
     const id = `${n.company_code}-${n.spoken_at.slice(0, 16).replace(/[-:T]/g, "")}`;
     return draft("exchange-tw", id, n.url, [], n.subject, n.text, stamp, n.company, null, cveIdsIn(`${n.subject} ${n.text}`),
-      { company_code: n.company_code, spoken_at: n.spoken_at });
-  });
+      { company_code: n.company_code, spoken_at: n.spoken_at }, screen);
+  }));
 }
 
 /** The dashboard's figures as one record when its revision differs from the last one read. */
-export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, url: string): RecordDraft | null {
+export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, url: string, screen: LinkScreen = { dropped: 0 }): RecordDraft | null {
   if (d.revision === previousRevision) return null;
   const figures = [
     d.found_n !== null ? `${d.found_n} found` : null,
@@ -531,7 +651,7 @@ export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, 
   return draft("anthropic-cvd", `revision-${d.revision}`, url, [], `Anthropic disclosure dashboard, revision ${d.revision}`,
     `As of ${d.as_of.slice(0, 10)}: ${figures || "no figures read"}; ${d.ledger_ids.length} CVE and GHSA ids listed.`,
     d.as_of.slice(0, 10), null, null, [],
-    { revision: d.revision, previous_revision: previousRevision, found_n: d.found_n, disclosed_n: d.disclosed_n, patched_n: d.patched_n });
+    { revision: d.revision, previous_revision: previousRevision, found_n: d.found_n, disclosed_n: d.disclosed_n, patched_n: d.patched_n }, screen);
 }
 
 const SOURCE_ORDER: readonly PackRecordSource[] = ["kev", "cvelist", "epss", "ghsa", "nvd", "twcert-tvn", "jpcert", "myjvn", "anthropic-cvd", "exchange-tw"];
@@ -556,18 +676,46 @@ function toPackRecord(d: Omit<PackRecord, "id"> & Partial<Pick<RecordDraft, "key
 }
 
 /**
+ * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `referenced`, then the
+ * rest; within each, date descending, then source, then record id. The size caps cut from its end.
+ */
+export function recordKeepOrder(referenced: ReadonlySet<string>): (a: PackRecord, b: PackRecord) => number {
+  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
+  return (a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id);
+}
+
+/**
  * At most 400 records: KEV records are never cut, then records a kept candidate references, then the rest
  * by date descending, source and record id. The kept records get final ids in display order; `idMap`
  * maps each provisional id to its final one so collect can rewrite the candidates' `pack_ids`.
  */
 export function capRecords(records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
-  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
-  const priority = [...records].sort((a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id));
+  const priority = [...records].sort(recordKeepOrder(referenced));
   const keep = priority.filter((r, i) => i < max || r.source === "kev");
   const kept = keep.sort(byRecord).map((r, i) => toPackRecord(r, padId("r", i + 1)));
   const idMap = new Map<string, string>();
   keep.forEach((r, i) => idMap.set(r.id, kept[i]!.id));
   return { kept, idMap, cut: records.length - kept.length };
+}
+
+/** What a record the cap removed is called in the candidates and the log: no id, so it matches no kept record. */
+export const CAPPED_ID = "capped";
+
+/**
+ * Rewrites provisional record ids to capRecords()' final ids (§4.14 Caps, §5.12 step 6): the candidates'
+ * own ids and pack_ids, the cut entries (`merged:<id>` included) and the ranking log's MERGED and BUNDLED
+ * details. A record the cap removed is CAPPED_ID, and leaves pack_ids. Item ids pass through.
+ */
+export function remapIds(kept: readonly Candidate[], cut: readonly CutEntry[], log: readonly RankLogEntry[], idMap: ReadonlyMap<string, string>): { kept: Candidate[]; cut: CutEntry[]; log: RankLogEntry[] } {
+  const isRecord = (id: string) => /^r\d{4,}$/.test(id);
+  const one = (id: string) => (isRecord(id) ? idMap.get(id) ?? CAPPED_ID : id);
+  const ids = (xs: readonly string[]) => xs.filter((x) => !isRecord(x) || idMap.has(x)).map(one).sort(byCodeUnit);
+  const detail = (text: string) => text.replace(/(^|\s)(r\d{4,})(?=[\s.,:;]|$)/g, (_, pre: string, id: string) => `${pre}${one(id)}`);
+  return {
+    kept: kept.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids) })),
+    cut: cut.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids), reason: c.reason.startsWith("merged:") ? `merged:${one(c.reason.slice(7))}` : c.reason })),
+    log: log.map((l) => (l.code === "MERGED" || l.code === "BUNDLED" ? { ...l, detail: detail(l.detail) } : { ...l })),
+  };
 }
 
 // ── Feed states (§8.3 Feed status) ───────────────────────────────────────────────────────────────
@@ -597,11 +745,13 @@ export interface FeedOutcome {
   skipped: boolean;
   /** Fixed-template notes beyond the state ("MyJVN: 500 of 612 read."). */
   notes: string[];
+  /** A fixed-template reason a read that is ok is stale all the same (zipsShortNote()), or null. */
+  staleNote: string | null;
 }
 
 export const skippedOutcome = (): FeedOutcome => ({
   ok: false, error: null, triedFallback: false, fallbackUsed: false, urlUsed: null, newest: null, items: 0, kept: 0, records: 0,
-  version: null, sha256: null, fetchedAt: null, skipped: true, notes: [],
+  version: null, sha256: null, fetchedAt: null, skipped: true, notes: [], staleNote: null,
 });
 
 /** Kinds whose freshness is the registry's `fresh_days` (ruling R40); nvd, exchange and anthropic-cvd follow §8.3's own rules. */
@@ -635,6 +785,7 @@ export function feedState(kind: FetchedFeedKind, r: FeedOutcome, entry: Pick<Fet
       return { state: "stale", label: "STALE", note: [`Stale: newest entry ${newest.slice(0, 10)}.`, ...notes].join(" ") };
     }
   }
+  if (r.staleNote) return { state: "stale", label: "STALE", note: [r.staleNote, ...notes].join(" ") };
   return { state: "ok", label: "OK", note: notes.join(" ") || null };
 }
 
@@ -683,38 +834,60 @@ export function injectionCount(items: readonly Pick<ItemDraft, "flagged">[], rec
 
 const byteLength = (s: string) => Buffer.byteLength(s, "utf8");
 
+/** buildPack()'s options: the lookback for the header, and what the size caps must respect. */
+export interface BuildPackOptions {
+  lookbackHours?: number;
+  /**
+   * Final ids of the items and records a kept candidate references (its own id and its pack_ids): such a
+   * record is never cut, such an item only after every other item and record the caps may cut.
+   */
+  referenced?: ReadonlySet<string>;
+  /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
+  recount?: (items: readonly PackItem[], records: readonly PackRecord[]) => { feeds: PackFeed[]; injectionFlags: number };
+}
+
 /**
- * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown): over a cap, the
- * lowest-scoring items go first, then the oldest non-KEV records; KEV records are never cut. Returns the
- * pack, its Markdown and what the size caps cut.
+ * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown, §4.14 Caps). Over a cap,
+ * cut in this order, about a twentieth of what is left of a group at a time: the items no kept candidate
+ * references, lowest score first; then records from the end of capRecords()' keep order (recordKeepOrder()),
+ * never a KEV record and never one a kept candidate references; then the referenced items, lowest score
+ * first. When only those remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags`
+ * are recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
  */
-export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: { lookbackHours?: number } = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number } } {
+export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number; over: boolean } } {
+  const referenced = opts.referenced ?? new Set<string>();
   let items = [...input.items];
   let records = [...input.records];
+  let feeds = input.feeds;
+  let injectionFlags = input.injectionFlags;
   const make = (): Pack => Pack.parse({
     schema_version: 1, date: input.date, window: { ...input.window }, generated_at: input.generatedAt, data_cutoff_utc: input.cutoff,
-    degraded: input.degraded, feeds: input.feeds, items, records, injection_flags: input.injectionFlags,
+    degraded: input.degraded, feeds, items, records, injection_flags: injectionFlags,
   });
   let pack = make();
   let md = renderPackMd(pack, registry, opts);
-  const sizeCut = { items: 0, records: 0 };
-  for (let guard = 0; guard < 10_000; guard++) {
-    const over = byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
-    if (!over) break;
-    if (items.length) {
-      items = items.slice(0, -Math.max(1, Math.ceil(items.length / 20)));
-      sizeCut.items = input.items.length - items.length;
-    } else {
-      const cuttable = records.filter((r) => r.source !== "kev").sort((a, b) => byCodeUnit(a.date, b.date) || compareIds(a.record_id, b.record_id));
-      if (!cuttable.length) break;
-      const drop = new Set(cuttable.slice(0, Math.max(1, Math.ceil(cuttable.length / 20))));
-      records = records.filter((r) => !drop.has(r));
-      sizeCut.records = input.records.length - records.length;
+  const over = () => byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
+  const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
+  const groups: string[][] = [
+    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
+    [...input.records].sort(recordKeepOrder(referenced)).reverse().filter((r) => r.source !== "kev" && !referenced.has(r.id)).map((r) => r.id),
+    lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
+  ];
+  const gone = new Set<string>();
+  for (const group of groups) {
+    let next = 0;
+    while (next < group.length && over()) {
+      const step = Math.max(1, Math.ceil((group.length - next) / 20));
+      for (const id of group.slice(next, next + step)) gone.add(id);
+      next += step;
+      items = input.items.filter((i) => !gone.has(i.id));
+      records = input.records.filter((r) => !gone.has(r.id));
+      if (opts.recount) ({ feeds, injectionFlags } = opts.recount(items, records));
+      pack = make();
+      md = renderPackMd(pack, registry, opts);
     }
-    pack = make();
-    md = renderPackMd(pack, registry, opts);
   }
-  return { pack, md, sizeCut };
+  return { pack, md, sizeCut: { items: input.items.length - items.length, records: input.records.length - records.length, over: over() } };
 }
 
 /** A schema-valid empty pack, degraded (a crash or timeout, §4.14 Degraded). */

@@ -3,7 +3,7 @@
 // when the day is counted; kernel: assignerShortName exactly "Linux"; unscored: no CVSS v4.0, v3.1 or v3.0
 // base score from the CNA or CISA ADP (CveFacts.scored).
 
-import { addDays, inRange, newestCompleteWeek, windowEnding } from "../dates";
+import { addDays, daysBetween, inRange, newestCompleteWeek, windowEnding } from "../dates";
 import type { CveFacts } from "../feeds/types";
 import { byCodeUnit } from "../ids";
 import { sha256Hex } from "../json";
@@ -65,6 +65,23 @@ export function countDays(from: string, to: string, records: readonly DayFacts[]
   const out: DayRow[] = [];
   for (let d = from; d <= to; d = addDays(d, 1)) out.push(rowOf(d, byDay.get(d) ?? []));
   return out;
+}
+
+/**
+ * More missed days than this and the morning run counts none (§8.4): the backfill's --catch-up fills them.
+ * It is also the length of the catch-up range below, the only days collect plans and the metrics count.
+ */
+export const CATCH_UP_DAYS = 25;
+
+/** The catch-up range (§5.4, §8.3): the CATCH_UP_DAYS UTC days ending at the cutoff, none before DAYS_FROM. */
+export function catchUpRange(cutoff: string, length: number = CATCH_UP_DAYS): { from: string; to: string } {
+  const from = addDays(cutoff, -(length - 1));
+  return { from: from < DAYS_FROM ? DAYS_FROM : from, to: cutoff };
+}
+
+/** True when the newest counted day is more than CATCH_UP_DAYS before the cutoff (or nothing is counted): the morning counts no day. */
+export function inCatchUp(newest: string | null, cutoff: string, length: number = CATCH_UP_DAYS): boolean {
+  return newest === null || daysBetween(newest, cutoff) > length;
 }
 
 /** The days in [from, to] that `days` lacks, oldest first. */

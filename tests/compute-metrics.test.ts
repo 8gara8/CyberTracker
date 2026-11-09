@@ -238,6 +238,16 @@ describe("computeMetrics: every block ok", () => {
       epss_model_version: "v2025.03.14", epss_date: "2026-11-07", ghsa_source: "git", ghsa_commit: SHA40("c") });
   });
 
+  it("writes the 40-zero placeholder, not the fallback's null, for a mirror read whose commit ls-remote missed (B11)", () => {
+    const v = world(D);
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, commits: { ...v.inputs.feeds.inputs.commits, kev_data: null } };
+    const p = computeMetrics(v.inputs);
+    expect(p.metrics.provenance.kev_data_commit).toBe("0".repeat(40));
+    expect(p.log).toContain("Provenance: kev_data_commit is unknown today and in every earlier file; written as a placeholder.");
+    v.inputs.feeds.inputs = { ...v.inputs.feeds.inputs, kev: { ...v.inputs.feeds.inputs.kev!, fallback_used: true } };
+    expect(computeMetrics(v.inputs).metrics.provenance.kev_data_commit).toBeNull();
+  });
+
   it("lists the metrics feeds read, sorted by id", () => {
     expect(r.manifest.feeds.map((f) => f.id)).toEqual(["anthropic-cvd", "cvelist", "epss", "ghsa", "kev"]);
   });
@@ -251,7 +261,8 @@ describe("computeMetrics: every block ok", () => {
   });
 
   it("keeps every block note within 200 characters", () => {
-    for (const n of [BLOCK_NOTES.kevNotRead, BLOCK_NOTES.daysMissing(25, "2026-10-12"), BLOCK_NOTES.catchUp("2026-10-11"), AI_NOTES.recomputed(12), AI_NOTES.prefilterChanged]) {
+    const many = Array.from({ length: 25 }, (_, k) => addDays("2026-10-01", k * 2));
+    for (const n of [BLOCK_NOTES.kevNotRead, BLOCK_NOTES.kevOlder("2026.10.10", "2026.10.13"), BLOCK_NOTES.daysMissing(many, many), BLOCK_NOTES.catchUp("2026-10-11"), AI_NOTES.recomputed(12), AI_NOTES.prefilterChanged]) {
       expect(n.length).toBeLessThanOrEqual(NOTE_MAX);
     }
   });
@@ -291,6 +302,42 @@ describe("computeMetrics: KEV not read", () => {
   });
 });
 
+describe("computeMetrics: a KEV catalog older than kev-index.json (B4)", () => {
+  const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+  const older = (w: World) => {
+    const idx = w.inputs.state["kev-index.json"];
+    // One day before the index's catalog: the mirror answered behind what the index already holds.
+    const version = versionOf(addDays(`${idx.catalog_version.replaceAll(".", "-")}`, -1));
+    w.inputs.feeds.kev.catalog = { ...w.inputs.feeds.kev.catalog!, catalogVersion: version };
+    return { version, indexVersion: idx.catalog_version };
+  };
+
+  it("never moves the index back: Window, KEV and home vendors carry as stale with today's reason", () => {
+    const w = world(D, { previous });
+    const v = older(w);
+    const r = computeMetrics(w.inputs);
+    const { metrics, manifest } = parsed(r);
+    expect(r.state["kev-index.json"]).toBeUndefined();
+    const note = BLOCK_NOTES.kevOlder(v.version, v.indexVersion);
+    expect(note.length).toBeLessThanOrEqual(NOTE_MAX);
+    for (const k of ["window", "kev", "home_vendors"] as const) expect(metrics.blocks[k]).toEqual({ status: "stale", as_of: previous.data_cutoff_utc, note });
+    expect(metrics.kev!.new_since_last_edition.cve_ids).toEqual([]);
+    expect(manifest.kev_new).toEqual([]);
+    expect(metrics.provenance.kev_catalog_version).toBe(previous.provenance.kev_catalog_version);
+    expect(r.log).toContain(`KEV catalog ${v.version} is older than kev-index ${v.indexVersion}: the index is not moved back.`);
+    expect(manifestIssues(metrics, manifest)).toEqual([]);
+  });
+
+  it("does the same inside a build (frozenState) instead of refusing", () => {
+    const w = world(D, { frozen: true });
+    const v = older(w);
+    const r = computeMetrics(w.inputs);
+    expect(r.state).toEqual({});
+    expect(statuses(r.metrics)).toMatchObject({ window: "failed", kev: "failed", home_vendors: "failed" });
+    expect(r.metrics.blocks.kev.note).toBe(BLOCK_NOTES.kevOlder(v.version, v.indexVersion));
+  });
+});
+
 describe("computeMetrics: CVE List days", () => {
   it("leaves a day whose zips failed uncounted: Flood and AI-credited stale with the note", () => {
     const previous = computeMetrics(world("2026-11-07").inputs).metrics;
@@ -298,13 +345,58 @@ describe("computeMetrics: CVE List days", () => {
     const r = computeMetrics(w.inputs);
     const { metrics, manifest } = parsed(r);
     expect(statuses(metrics)).toMatchObject({ flood: "stale", ai_credited: "stale", window: "ok", kev: "ok" });
-    expect(metrics.blocks.flood).toEqual({ status: "stale", as_of: previous.data_cutoff_utc, note: BLOCK_NOTES.daysMissing(1, w.cutoff) });
+    expect(metrics.blocks.flood).toEqual({ status: "stale", as_of: previous.data_cutoff_utc, note: BLOCK_NOTES.daysMissing([w.cutoff], []) });
+    expect(metrics.blocks.flood.note).toBe("UTC days not yet counted from the CVE List: 6 Nov 2026.");
     expect(metrics.flood).toEqual(previous.flood);
     expect(metrics.ai_credited).toEqual(previous.ai_credited);
     expect(r.state["days.json"]).toBeUndefined();
     expect(manifest.flood.new_days).toEqual([]);
     expect(metrics.headline.second_line.startsWith("Flood, as of 5 Nov:")).toBe(true);
     expect(manifestIssues(metrics, manifest)).toEqual([]);
+  });
+
+  it("counts each readable missing day even past one that failed; the gap stays and the note names it (B5)", () => {
+    const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+    const w = world(D, { daysBack: 3, previous });
+    const C = w.cutoff;
+    w.inputs.feeds.cvelist.days = [
+      { date: addDays(C, -2), ok: false, records: [] },
+      { date: addDays(C, -1), ok: true, records: [] },
+      { date: C, ok: true, records: w.zipDay },
+    ];
+    const r = computeMetrics(w.inputs);
+    const days = r.state["days.json"]!.days.map((d) => d[0]);
+    expect(days.slice(-3)).toEqual([addDays(C, -3), addDays(C, -1), C]);
+    expect(r.manifest.flood.new_days.map((d) => d.date)).toEqual([addDays(C, -1), C]);
+    expect(r.metrics.blocks.flood).toEqual({ status: "stale", as_of: previous.data_cutoff_utc, note: "UTC days not yet counted from the CVE List: 4 Nov 2026." });
+    expect(r.catchUpLine).toBeNull();
+  });
+
+  it("counts today's day past a gap older than the 25-day range, and names that gap with backfill --catch-up (B5)", () => {
+    const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+    const w = world(D, { previous });
+    const C = w.cutoff;
+    // A 30-day hole in the year-ago window, far outside the catch-up range.
+    const hole = new Set<string>();
+    for (let d = addDays(C, -380); d <= addDays(C, -351); d = addDays(d, 1)) hole.add(d);
+    const s = w.inputs.state["days.json"];
+    w.inputs.state["days.json"] = { ...s, days: s.days.filter((r) => !hole.has(r[0])) };
+    const r = computeMetrics(w.inputs);
+    expect(r.manifest.flood.new_days.map((d) => d.date)).toEqual([C]);
+    expect(r.state["days.json"]!.days.at(-1)![0]).toBe(C);
+    const note = r.metrics.blocks.flood.note!;
+    expect(r.metrics.blocks.flood.status).toBe("stale");
+    expect(note).toBe("Older UTC days missing, for a backfill --catch-up: 22 Oct to 20 Nov 2025.");
+    expect(note.length).toBeLessThanOrEqual(NOTE_MAX);
+  });
+
+  it("keeps a long list of missing days within 200 characters", () => {
+    const every = (from: string, n: number, step: number) => Array.from({ length: n }, (_, k) => addDays(from, k * step));
+    const n = BLOCK_NOTES.daysMissing(every("2026-10-01", 13, 2), every("2025-01-01", 30, 3));
+    expect(n.length).toBeLessThanOrEqual(NOTE_MAX);
+    expect(n).toMatch(/^UTC days not yet counted from the CVE List: 1 Oct 2026, 3 Oct 2026, .* and \d+ more\./);
+    expect(BLOCK_NOTES.daysMissing(["2026-10-30", "2026-10-31", "2026-11-01"], [])).toBe("UTC days not yet counted from the CVE List: 30 Oct to 1 Nov 2026.");
+    expect(BLOCK_NOTES.daysMissing(["2025-12-31", "2026-01-01"], [])).toBe("UTC days not yet counted from the CVE List: 31 Dec 2025 to 1 Jan 2026.");
   });
 
   it(`counts no day after more than ${CATCH_UP_DAYS} missed days and prints the catch-up line`, () => {

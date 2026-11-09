@@ -14,7 +14,9 @@ import { parseNvdPage } from "../lib/feeds/nvd";
 import { parseRss } from "../lib/feeds/rss";
 import { blockedReason } from "../lib/sources";
 import { BLOCKED_HOSTS } from "../lib/vocab";
+import { fetchFeed } from "../lib/feeds/http";
 import { checkFeeds, formatCheckTable, main, type CheckRow } from "../scripts/collect";
+import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
 import { EPSS_FILLER_ROWS, fixtureCveIds, main as scrubMain, SCRUB_ITEMS_MAX, scrubFeed, ScrubRefused } from "../fixtures/src/scrub-feed";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -80,8 +82,9 @@ describe("checkFeeds on the fixture feeds", () => {
     expect(exitCode).toBe(0);
   });
 
-  it("keeps the raw bodies in cache/feeds/ for scrub-feed.ts and writes no pack", () => {
-    expect(fs.existsSync(path.join(root, "cache", "feeds", "therecord.xml"))).toBe(true);
+  it("keeps the raw bodies in its own cache, cache/check/feeds/, for scrub-feed.ts and writes no pack", () => {
+    expect(fs.existsSync(path.join(root, "cache", "check", "feeds", "therecord.xml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "cache", "feeds"))).toBe(false);
     expect(fs.existsSync(path.join(root, "packs"))).toBe(false);
     expect(fs.existsSync(path.join(root, "content"))).toBe(false);
   });
@@ -95,6 +98,58 @@ describe("checkFeeds on the fixture feeds", () => {
     const ok = rows.filter((r) => r.status === "OK").length;
     expect(lines.at(-1)).toBe(`${ok} of ${fetched.length} entries ok; 0 priority-1 problems.`);
     expect(ok).toBe(fetched.length - 4);
+  });
+});
+
+describe("checkFeeds reads in two waves and keeps its own cache (B1, B2)", () => {
+  // The light reads: every registry URL of these kinds (NVD's carries its query).
+  const LIGHT = new Set(["rss", "nvd", "myjvn", "exchange", "anthropic-cvd", "kev"]);
+  const lightUrls = fetched
+    .filter((f) => LIGHT.has(f.kind))
+    .flatMap((f) => { const e = f as { url: string; fallback_url: string | null }; return [e.url, e.fallback_url]; })
+    .filter((u): u is string => typeof u === "string");
+  const isLight = (u: string) => lightUrls.some((p) => u === p || u.startsWith(`${p}?`));
+  const isHeavy = (u: string) => u === "ghsa-sync" || /(?:deltaLog\.json|\.zip|\.csv\.gz)$/.test(u);
+
+  it("requests every light feed before the deltaLog, the EPSS files or the GHSA sync, and keeps registry order (B1)", async () => {
+    const order: string[] = [];
+    const base = fixtureGit(FEEDS);
+    const git: GitSource = { ...base, syncGhsa: async (dir, months) => { order.push("ghsa-sync"); return base.syncGhsa(dir, months); } };
+    const fetch: typeof fetchFeed = (url, opts) => { order.push(url); return fetchFeed(url, opts); };
+    const { rows } = await checkFeeds({ now: T0, root: tempRoot(), deps: { fetch, git } });
+    const firstHeavy = order.findIndex(isHeavy);
+    const lastLight = order.reduce((at, u, i) => (isLight(u) ? i : at), -1);
+    expect(order.filter(isHeavy)).toEqual(expect.arrayContaining(["ghsa-sync", "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/deltaLog.json"]));
+    expect(order.some((u) => /\.csv\.gz$/.test(u))).toBe(true);
+    expect(order.filter(isLight).length).toBeGreaterThan(30);
+    expect(lastLight).toBeLessThan(firstHeavy);
+    expect(rows.map((r) => r.id)).toEqual(cfg.sources.feeds.map((f) => f.id));
+  });
+
+  it("writes under cache/check/ and never into collect's cache (B2)", async () => {
+    const root = tempRoot();
+    const mine = (rel: string, text: string) => {
+      const file = path.join(root, "cache", ...rel.split("/"));
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, text);
+    };
+    mine("feeds/kev.json", "collect's catalog");
+    mine("feeds/inputs.json", "collect's inputs");
+    mine("ghsa/advisories/keep.json", "collect's checkout");
+    mine("epss/epss_scores-2026-10-13.csv.gz", "collect's scores");
+    await checkFeeds({ now: T0, root });
+    expect(fs.readFileSync(path.join(root, "cache", "feeds", "kev.json"), "utf8")).toBe("collect's catalog");
+    expect(fs.readdirSync(path.join(root, "cache", "feeds")).sort()).toEqual(["inputs.json", "kev.json"]);
+    expect(fs.readdirSync(path.join(root, "cache", "ghsa"))).toEqual(["advisories"]);
+    expect(fs.readdirSync(path.join(root, "cache", "ghsa", "advisories"))).toEqual(["keep.json"]);
+    expect(fs.readdirSync(path.join(root, "cache", "epss"))).toEqual(["epss_scores-2026-10-13.csv.gz"]);
+    expect(fs.readFileSync(path.join(root, "cache", "epss", "epss_scores-2026-10-13.csv.gz"), "utf8")).toBe("collect's scores");
+    expect(fs.readdirSync(path.join(root, "cache")).sort()).toEqual(["check", "epss", "feeds", "ghsa"]);
+    const check = path.join(root, "cache", "check");
+    expect(JSON.parse(fs.readFileSync(path.join(check, "feeds", "kev.json"), "utf8"))).toHaveProperty("catalogVersion");
+    expect(fs.existsSync(path.join(check, "feeds", "cvelist.deltaLog.json"))).toBe(true);
+    expect(fs.existsSync(path.join(check, "ghsa"))).toBe(true);
+    expect(fs.readdirSync(path.join(check, "epss")).some((f) => f.endsWith(".csv.gz"))).toBe(true);
   });
 });
 
@@ -147,7 +202,7 @@ describe("checkFeeds exit codes and options", () => {
   });
 });
 
-// ── fixtures/src/scrub-feed.ts: what sources:check leaves in cache/feeds/, scrubbed into a fixture ─────
+// ── fixtures/src/scrub-feed.ts: what sources:check leaves in cache/check/feeds/, scrubbed into a fixture ─
 
 describe("scrub-feed", () => {
   const opts = { sourceTiers: cfg.sourceTiers, keywords: cfg.sources.keywords };
@@ -163,7 +218,7 @@ describe("scrub-feed", () => {
   it("an RSS body from sources:check: six items, invented titles, links rewritten, dates and structure kept", async () => {
     const root = tempRoot();
     await checkFeeds({ id: "bleepingcomputer", now: T0, root });
-    const body = fs.readFileSync(path.join(root, "cache", "feeds", "bleepingcomputer.xml"));
+    const body = fs.readFileSync(path.join(root, "cache", "check", "feeds", "bleepingcomputer.xml"));
     const before = await parseRss(body);
     const out = scrubFeed("rss", body, opts);
     const after = await parseRss(out);

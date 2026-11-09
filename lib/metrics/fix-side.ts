@@ -56,13 +56,16 @@ function asOfDate(s: string): string | null {
 }
 
 /**
- * state/anthropic-cvd.json after this run (§5.6 item 1): replaced only when the dashboard's revision
- * differs from the stored one, else returned unchanged (updated_at included: the file changes only with
- * the revision). fetched_at and source_url come from collect's feed index (ruling R13), never the clock.
- * A read whose as-of date cannot be read is ignored.
+ * state/anthropic-cvd.json after this run (§5.6 item 1): replaced when the dashboard's revision differs
+ * from the stored one, or when the stored read of that revision came from the page alone (no found_n,
+ * because the payload failed that day) and today's read has the payload's figures; else returned unchanged
+ * (updated_at included). fetched_at and source_url come from collect's feed index (ruling R13), never the
+ * clock. A read whose as-of date cannot be read is ignored.
  */
 export function updateAnthropicCvd(prev: AnthropicCvdFile, read: CvdDashboard | null, meta: { fetchedAt: string; sourceUrl: string }, cutoff: string): AnthropicCvdFile {
-  if (!read || read.revision === prev.revision) return prev;
+  if (!read) return prev;
+  const completes = read.revision === prev.revision && prev.found_n === null && read.found_n !== null;
+  if (read.revision === prev.revision && !completes) return prev;
   const asOf = asOfDate(read.as_of);
   if (!asOf) return prev;
   return {

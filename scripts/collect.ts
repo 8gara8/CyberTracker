@@ -13,13 +13,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
-  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow,
-  provisionalRecords, recordWindow, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, type FeedOutcome,
-  type ItemDraft, type RecordDraft,
+  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
+  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
+  type ItemDraft, type LinkScreen, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
 import { addDays, at, dataCutoffFor, isValidDate, taipeiTimestamp, taipeiToday, utcDateOf } from "../lib/dates";
-import { cachePaths } from "../lib/feeds/cache";
+import { cachePaths, type CachePaths } from "../lib/feeds/cache";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { epssMovers } from "../lib/feeds/epss";
 import { ghsaMonths } from "../lib/feeds/ghsa";
@@ -32,12 +32,11 @@ import { byCodeUnit, compareCveIds } from "../lib/ids";
 import { jsonText } from "../lib/json";
 import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
-import { AnthropicCvdFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
+import { AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
-  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type CutEntry, type FeedIndexEntry, type PackItem,
+  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord,
   type RankLogEntry, type ZipRead,
 } from "../lib/schema/pack";
-import type { Candidate } from "../lib/schema/context";
 import type { FetchedFeed } from "../lib/schema/registry";
 import {
   cacheWrite, readCveById, readCvd, readDeltaLog, readEpss, readEpssApi, readExchange, readGhsa, readKev, readMyJvn, readNvd,
@@ -110,6 +109,39 @@ export function fixtureGuard(env: NodeJS.ProcessEnv = process.env, fixtureOk = f
 }
 
 const PHASE_A_POOL = 8;
+/**
+ * Phase A's two waves (§8.3): the light reads first, then the heavy downloads (the cvelist deltaLog and
+ * zips, the EPSS files, the GHSA sync), each wave a pool of 8 under the one budget and deadline. Run 1 on
+ * Kobol timed out six small feeds while the 37 MB deltaLog, EPSS and GHSA downloads ran beside them.
+ */
+const HEAVY_KINDS: ReadonlySet<FetchedFeed["kind"]> = new Set(["cvelist", "epss", "ghsa"]);
+
+/** Runs `light` then `heavy`, each as a pool of PHASE_A_POOL; the results in the order given, light first. */
+async function inTwoWaves<T, R>(light: readonly T[], heavy: readonly T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const first = await pool(light, PHASE_A_POOL, fn);
+  return [...first, ...(await pool(heavy, PHASE_A_POOL, fn))];
+}
+
+/**
+ * sources:check's own cache root, cache/check/ (§8.10): cachePaths()'s layout moved under it, so a check
+ * never rewrites collect's bodies, zips, EPSS files or GHSA checkout, and scrub-feed.ts reads its bodies
+ * from cache/check/feeds/.
+ */
+export function checkCachePaths(root: string): CachePaths {
+  const from = path.join(root, "cache");
+  const to = path.join(from, "check");
+  const move = (p: string) => path.join(to, path.relative(from, p));
+  const p = cachePaths(root);
+  return {
+    feedsDir: move(p.feedsDir), feedIndex: move(p.feedIndex), collectInputs: move(p.collectInputs),
+    feedBody: (id, ext) => move(p.feedBody(id, ext)),
+    zipsDir: move(p.zipsDir), zip: (asset) => move(p.zip(asset)), recordsDir: move(p.recordsDir),
+    epssFile: (date) => move(p.epssFile(date)), ghsaDir: move(p.ghsaDir), cvelistClone: move(p.cvelistClone),
+    stagedMetrics: (date) => move(p.stagedMetrics(date)), stagedBackfill: move(p.stagedBackfill),
+    // Not a cache path (logs/recompute); a check never writes it.
+    recompute: p.recompute,
+  };
+}
 const PER_ID_POOL = 16;
 const BUDGET_MS = 240_000;
 const REJOIN_FROM = "2023-01-01";
@@ -128,6 +160,13 @@ function readState(contentDir: string, date: string) {
   const days = DaysFile.safeParse(readJson(path.join(contentDir, "state", "days.json")));
   const index = KevIndexFile.safeParse(readJson(path.join(contentDir, "state", "kev-index.json")));
   const cvd = AnthropicCvdFile.safeParse(readJson(path.join(contentDir, "state", "anthropic-cvd.json")));
+  const candidates = CreditCandidatesFile.safeParse(readJson(path.join(contentDir, "state", "credit-candidates.json")));
+  const credits = AiCreditsFile.safeParse(readJson(path.join(contentDir, "state", "ai-credits.json")));
+  // CVE ids whose publication date the state already holds (the metrics' publishedDates() reads the same rows).
+  const dated = new Set<string>();
+  for (const r of index.success ? index.data.entries : []) if (r[4] !== null) dated.add(r[0]);
+  for (const r of candidates.success ? candidates.data.candidates : []) dated.add(r[0]);
+  for (const r of credits.success ? credits.data.matches : []) dated.add(r[0]);
   const releaseIds = new Set<string>();
   const briefs = path.join(contentDir, "briefs");
   if (fs.existsSync(briefs)) {
@@ -142,6 +181,7 @@ function readState(contentDir: string, date: string) {
     knownDays: days.success ? days.data.days.map((d) => d[0]) : null,
     kevIndex: index.success ? index.data : null,
     cvdRevision: cvd.success ? cvd.data.revision : null,
+    dated,
     earlierReleaseIds: [...releaseIds].sort(byCodeUnit),
   };
 }
@@ -161,16 +201,6 @@ function indexEntry(entry: FetchedFeed, o: FeedOutcome, ref: number): FeedIndexE
     id: entry.id, kind: entry.kind, status: s.state, label: s.label, error_class: s.state === "failed" ? o.error ?? "network" : null,
     url_used: o.urlUsed, fallback_used: o.fallbackUsed, newest: newestOf(o.newest), items: o.items, records: o.records,
     version: o.version, sha256: o.sha256, fetched_at: o.fetchedAt, note: s.note ? s.note.slice(0, 200) : null,
-  };
-}
-
-function remapIds(kept: Candidate[], cut: CutEntry[], idMap: ReadonlyMap<string, string>): { kept: Candidate[]; cut: CutEntry[] } {
-  const isRecord = (id: string) => /^r\d{4,}$/.test(id);
-  const one = (id: string) => (isRecord(id) ? idMap.get(id) ?? id : id);
-  const ids = (xs: readonly string[]) => xs.filter((x) => !isRecord(x) || idMap.has(x)).map(one).sort(byCodeUnit);
-  return {
-    kept: kept.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids) })),
-    cut: cut.map((c) => ({ ...c, id: one(c.id), pack_ids: ids(c.pack_ids), reason: c.reason.startsWith("merged:") ? `merged:${one(c.reason.slice(7))}` : c.reason })),
   };
 }
 
@@ -202,7 +232,12 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const state = readState(contentDir, D);
   const paths = cachePaths(root);
 
-  // Step 3: empty the records cache; make the cache folders.
+  // Step 3: before anything is emptied or rewritten, remove the earlier run's inputs.json and index.json, so a
+  // run that dies leaves no inputs for D (the metrics then count every feed failed, §8.4) rather than an
+  // earlier run's inputs beside this run's bodies; they are written last. Then empty the records cache and
+  // make the cache folders.
+  fs.rmSync(paths.collectInputs, { force: true });
+  fs.rmSync(paths.feedIndex, { force: true });
   fs.rmSync(paths.recordsDir, { recursive: true, force: true });
   for (const d of [paths.feedsDir, paths.zipsDir, paths.recordsDir, path.dirname(paths.epssFile(D))]) fs.mkdirSync(d, { recursive: true });
 
@@ -247,22 +282,24 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   let cvd: Awaited<ReturnType<typeof readCvd>> | null = null;
   const months = ghsaMonths(cutoff);
 
-  const tasks: (() => Promise<void>)[] = [];
-  for (const entry of byKind("kev")) tasks.push(async () => {
+  // The light wave, then the heavy wave (HEAVY_KINDS); nvd is phase C here.
+  const light: (() => Promise<void>)[] = [];
+  const heavy: (() => Promise<void>)[] = [];
+  for (const entry of byKind("kev")) light.push(async () => {
     kevRead = await readKev(entry, ctx, { sha: commits.kev_data, minVersion: state.kevIndex?.catalog_version ?? null });
     catalog = kevRead.data;
   });
-  for (const entry of byKind("cvelist")) tasks.push(async () => {
+  for (const entry of byKind("myjvn")) light.push(async () => { myjvn = await readMyJvn(entry, ctx); });
+  for (const entry of byKind("anthropic-cvd")) light.push(async () => { cvd = await readCvd(entry, ctx); });
+  for (const entry of byKind("exchange")) light.push(async () => { exchangeReads.set(entry.id, await readExchange(entry, ctx)); });
+  for (const entry of byKind("rss")) light.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
+  for (const entry of byKind("cvelist")) heavy.push(async () => {
     deltaLog = await readDeltaLog(entry, ctx, commits.cvelist);
     for (const z of plan.zips) zipReads.set(z.asset, await readZip(ctx, z));
   });
-  for (const entry of byKind("epss")) tasks.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
-  if (byKind("ghsa").length) tasks.push(async () => { ghsa = await readGhsa(ctx, git, months); });
-  for (const entry of byKind("myjvn")) tasks.push(async () => { myjvn = await readMyJvn(entry, ctx); });
-  for (const entry of byKind("anthropic-cvd")) tasks.push(async () => { cvd = await readCvd(entry, ctx); });
-  for (const entry of byKind("exchange")) tasks.push(async () => { exchangeReads.set(entry.id, await readExchange(entry, ctx)); });
-  for (const entry of byKind("rss")) tasks.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
-  await pool(tasks, PHASE_A_POOL, (t) => t());
+  for (const entry of byKind("epss")) heavy.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
+  if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months); });
+  await inTwoWaves(light, heavy, (t) => t());
   const fetchedAt = generatedAt;
 
   // CVE records: oldest zip first, so X + 1's copy wins.
@@ -285,9 +322,15 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const baseline = catalog ? kevBaseline({ contentDir, date: D, catalog, asOf: o.asOf === true }) : null;
   if (baseline) catalog = baseline.catalog;
   const newKevIds = baseline?.newKevIds ?? [];
-  const wanted = new Set<string>(newKevIds);
-  for (const r of state.kevIndex?.entries ?? []) if (r[1] >= REJOIN_FROM && r[4] === null) wanted.add(r[0]);
-  const byId = [...wanted].filter((id) => !records.has(id)).sort(compareCveIds);
+  const kevWanted = new Set<string>(newKevIds);
+  for (const r of state.kevIndex?.entries ?? []) if (r[1] >= REJOIN_FROM && r[4] === null) kevWanted.add(r[0]);
+  // A new dashboard revision: its ledger ids the state cannot date are fetched too, after the KEV ids.
+  const dashRead = (cvd as Awaited<ReturnType<typeof readCvd>> | null)?.data ?? null;
+  const ledgerIds = dashRead && dashRead.revision !== state.cvdRevision ? dashRead.ledger_ids : null;
+  const perId = perIdPlan({ kevIds: [...kevWanted], ledgerIds, dated: state.dated, have: new Set(records.keys()) });
+  const byId = perId.ids;
+  if (perId.ledger.length) log(`cvelist: ${perId.ledger.length} ledger ids of revision ${dashRead!.revision} fetched by id for their dates.`);
+  if (perId.overCap) log(`cvelist: ${perId.overCap} ledger ids over the per-id cap of ${PER_ID_MAX}, left for the next revision.`);
   const fetched: string[] = [];
   const notFound: string[] = [];
   await pool(byId, PER_ID_POOL, async (id) => {
@@ -312,18 +355,21 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const jpAlert = (config.regions.regions.find((r) => r.code === "JP")?.alert_patterns ?? []).map((p) => new RegExp(p, ALERT_PATTERN_FLAGS));
   const itemDrafts: ItemDraft[] = [];
   const recordDrafts: RecordDraft[] = [];
+  // Items and records dropped for a link unfit to print outside the untrusted tags (§4.14): injection flags.
+  const screen: LinkScreen = { dropped: 0 };
   for (const entry of byKind("rss")) {
     const r = rssReads.get(entry.id);
     if (!r?.ok || !r.data) continue;
     const asRecords = RSS_RECORD_FEEDS[entry.id];
     if (asRecords) {
       const notes = asRecords === "jpcert" ? jpcertRecords(r.data.items, jpAlert) : tvnRecords(r.data.items);
-      recordDrafts.push(...notePackRecords(asRecords, notes, window));
+      recordDrafts.push(...notePackRecords(asRecords, notes, window, screen));
       continue;
     }
     const d = toItemDrafts(entry, r.data.items, itemCtx);
     itemDrafts.push(...d.drafts);
-    log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}.`);
+    screen.dropped += d.unsafeLinks;
+    log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}${d.unsafeLinks ? `, ${d.unsafeLinks} dropped for a malformed link (flagged)` : ""}.`);
   }
   const deduped = dedupe(itemDrafts);
   const capped = capItems(deduped.kept);
@@ -342,19 +388,20 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const s = e?.e?.scores.get(rec.cve_id);
     return { epss: s?.epss ?? null, epss_percentile: s?.percentile ?? null };
   };
-  if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers));
-  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts));
-  if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1)));
-  recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window));
+  if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers, screen));
+  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts, screen));
+  if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1), screen));
+  recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window, screen));
   const jvn = myjvn as Awaited<ReturnType<typeof readMyJvn>> | null;
-  if (jvn?.data) recordDrafts.push(...notePackRecords("myjvn", jvn.data.notes, window));
-  for (const r of exchangeReads.values()) if (r.data) recordDrafts.push(...exchangePackRecords(r.data.notices, window));
+  if (jvn?.data) recordDrafts.push(...notePackRecords("myjvn", jvn.data.notes, window, screen));
+  for (const r of exchangeReads.values()) if (r.data) recordDrafts.push(...exchangePackRecords(r.data.notices, window, screen));
   const dash = cvd as Awaited<ReturnType<typeof readCvd>> | null;
   const cvdEntry = byKind("anthropic-cvd")[0];
   if (dash?.data && cvdEntry) {
-    const rec = cvdPackRecord(dash.data, state.cvdRevision, cvdEntry.url);
+    const rec = cvdPackRecord(dash.data, state.cvdRevision, cvdEntry.url, screen);
     if (rec) recordDrafts.push(rec);
   }
+  if (screen.dropped) log(`pack: ${screen.dropped} items and records dropped for a malformed link (counted as injection flags).`);
   const provisional = provisionalRecords(recordDrafts);
 
   // Step 8: rank on the provisional pack.
@@ -395,7 +442,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id)));
   const capR = capRecords(provisional, referenced);
   if (capR.cut) log(`records: ${capR.cut} over the cap of 400.`);
-  const remapped = remapIds(kept, ranked.cut, capR.idMap);
+  const remapped = remapIds(kept, ranked.cut, ranked.log, capR.idMap);
   kept = remapped.kept;
 
   // Step 11: feed states, the degraded rule, the pack.
@@ -408,10 +455,14 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const windowZips = plan.zips.filter((z) => z.utc_day >= utcDateOf(rw.start));
     const zipFail = windowZips.map((z) => zipReads.get(z.asset)).find((r) => r && !r.ok);
     const notes = windowZips.filter((z) => !zipReads.get(z.asset)?.ok).map((z) => `CVE List: ${z.asset} not read.`);
+    if (perId.overCap) notes.push(`CVE List: ${perId.overCap} ids over the per-id cap of ${PER_ID_MAX}.`);
     const ok = dl.ok && !zipFail && windowZips.length > 0;
+    // Zips that end before the record window does leave its last hours in no zip read: stale, with the hour.
+    const staleNote = ok ? zipsShortNote(zipsReach(windowZips), rw) : null;
+    if (staleNote) log(`cvelist: ${staleNote}`);
     outcomes.set(cveEntry.id, {
       ...outcomeOf(dl, fetchedAt), ok, error: ok ? null : dl.error ?? zipFail?.error ?? "network", newest: dl.data?.newest ?? null,
-      items: dl.data?.entries.length ?? 0, version: hourlyTag, notes: notes.slice(0, 2),
+      items: dl.data?.entries.length ?? 0, version: hourlyTag, notes: notes.slice(0, 2), staleNote,
     });
   }
   if (epssEntry && epss) {
@@ -436,46 +487,62 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const r = rssReads.get(entry.id);
     if (r) outcomes.set(entry.id, outcomeOf(r, fetchedAt, { newest: r.data?.newest ?? null, items: r.data?.total ?? 0, kept: keptByFeed[entry.id] ?? 0 }));
   }
-  const recordsBySource = new Map<string, number>();
-  for (const r of capR.kept) recordsBySource.set(r.source, (recordsBySource.get(r.source) ?? 0) + 1);
-  const recordCount = (entry: FetchedFeed): number => {
-    if (entry.kind === "kev" || entry.kind === "cvelist" || entry.kind === "epss" || entry.kind === "ghsa" || entry.kind === "myjvn" || entry.kind === "anthropic-cvd") {
-      return recordsBySource.get(entry.kind) ?? 0;
-    }
-    if (entry.kind === "exchange") return capR.kept.filter((r) => r.source === "exchange-tw" && exchangeReads.get(entry.id)?.data?.notices.some((n) => r.record_id.startsWith(`${n.company_code}-`))).length;
-    if (RSS_RECORD_FEEDS[entry.id]) return recordsBySource.get(RSS_RECORD_FEEDS[entry.id]!) ?? 0;
-    return 0;
+  // The index's records counts and the pack's feeds[] and injection flags, for a given set of pack items
+  // and records: computed for the capped records, then again for what the size caps leave (§4.14 Caps).
+  const indexFeedsFor = (recs: readonly PackRecord[]): FeedIndexEntry[] => {
+    const recordsBySource = new Map<string, number>();
+    for (const r of recs) recordsBySource.set(r.source, (recordsBySource.get(r.source) ?? 0) + 1);
+    const recordCount = (entry: FetchedFeed): number => {
+      if (entry.kind === "kev" || entry.kind === "cvelist" || entry.kind === "epss" || entry.kind === "ghsa" || entry.kind === "myjvn" || entry.kind === "anthropic-cvd") {
+        return recordsBySource.get(entry.kind) ?? 0;
+      }
+      if (entry.kind === "exchange") return recs.filter((r) => r.source === "exchange-tw" && exchangeReads.get(entry.id)?.data?.notices.some((n) => r.record_id.startsWith(`${n.company_code}-`))).length;
+      if (RSS_RECORD_FEEDS[entry.id]) return recordsBySource.get(RSS_RECORD_FEEDS[entry.id]!) ?? 0;
+      return 0;
+    };
+    return config.sources.feeds.map((entry) => {
+      if (entry.kind === "search") {
+        return { id: entry.id, kind: entry.kind, status: "skipped", label: "SKIP", error_class: null, url_used: null, fallback_used: false, newest: null, items: 0, records: 0, version: null, sha256: null, fetched_at: null, note: null };
+      }
+      const out = outcomes.get(entry.id) ?? { ...emptyOutcome(), error: "network" as const, notes: ["Not read before the budget ran out."] };
+      return indexEntry(entry, { ...out, records: out.skipped ? 0 : recordCount(entry) }, ref);
+    });
   };
-  const indexFeeds: FeedIndexEntry[] = config.sources.feeds.map((entry) => {
-    if (entry.kind === "search") {
-      return { id: entry.id, kind: entry.kind, status: "skipped", label: "SKIP", error_class: null, url_used: null, fallback_used: false, newest: null, items: 0, records: 0, version: null, sha256: null, fetched_at: null, note: null };
-    }
-    const out = outcomes.get(entry.id) ?? { ...emptyOutcome(), error: "network" as const, notes: ["Not read before the budget ran out."] };
-    return indexEntry(entry, { ...out, records: out.skipped ? 0 : recordCount(entry) }, ref);
-  });
-  const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeeds };
-  const degraded = isDegraded(indexFeeds);
-
+  const degraded = isDegraded(indexFeedsFor(capR.kept));
   const flaggedByKey = new Map<string, number>();
   for (const d of capped.kept) flaggedByKey.set(`i:${d.feed_id}:${d.url}`, d.flagged);
   for (const d of recordDrafts) flaggedByKey.set(`r:${d.source}:${d.record_id}`, d.flagged);
-  const injectionFlags = injectionCount(
-    items.map((i) => ({ flagged: flaggedByKey.get(`i:${i.feed_id}:${i.url}`) ?? 0 })),
-    capR.kept.map((r) => ({ flagged: flaggedByKey.get(`r:${r.source}:${r.record_id}`) ?? 0 })),
-  );
-  const built = buildPack({
-    date: D, window, generatedAt, cutoff, degraded, feeds: packFeeds(indexFeeds, keptByFeed), items, records: capR.kept, injectionFlags,
-  }, config.sources, { lookbackHours: run.pack.lookback_hours });
+  const recount = (its: readonly PackItem[], recs: readonly PackRecord[]) => {
+    const keptBy: Record<string, number> = {};
+    for (const it of its) keptBy[it.feed_id] = (keptBy[it.feed_id] ?? 0) + 1;
+    const injectionFlags = screen.dropped + injectionCount(
+      its.map((i) => ({ flagged: flaggedByKey.get(`i:${i.feed_id}:${i.url}`) ?? 0 })),
+      recs.map((r) => ({ flagged: flaggedByKey.get(`r:${r.source}:${r.record_id}`) ?? 0 })),
+    );
+    return { feeds: packFeeds(indexFeedsFor(recs), keptBy), injectionFlags };
+  };
+  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last.
+  const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+  const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
+    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, recount,
+  });
   if (built.sizeCut.items || built.sizeCut.records) log(`pack: the size caps cut ${built.sizeCut.items} items and ${built.sizeCut.records} records.`);
+  if (built.sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
   const pack = built.pack;
+  const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
+  const lost = kept.filter((c) => /^p\d{4,}$/.test(c.id) && !inPack.has(c.id)).length;
+  if (lost) log(`pack: ${lost} kept candidates lost their own item to the size caps.`);
   kept = kept.map((c) => ({ ...c, pack_ids: c.pack_ids.filter((id) => inPack.has(id)) }));
 
   const cut = remapped.cut;
   const byReason = { below_cap: 0, merged: 0, bundled: 0 };
   for (const c of cut) byReason[c.reason === "below_cap" ? "below_cap" : c.reason.startsWith("merged:") ? "merged" : "bundled"] += 1;
   const candidates: CandidatesFile = { schema_version: 1, date: D, kept, cut: { count: cut.length, by_reason: byReason } };
-  const rankLog: RankLogEntry[] = [...ranked.log];
+  const rankLog: RankLogEntry[] = [
+    ...remapped.log,
+    ...(perId.overCap ? [{ code: "CVE_FETCH_CAP" as const, detail: `${perId.overCap} dashboard ledger ids over the per-id cap of ${PER_ID_MAX}; ${perId.ledger.length} fetched after the KEV ids.` }] : []),
+  ];
   const candidateLog = { schema_version: 1 as const, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog };
 
   const kevData = kr?.data ?? null;
@@ -489,7 +556,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
       days: plan.days.map((d) => ({ date: d.date, zips: d.zips, ok: d.zips.every((a) => zipReads.get(a)?.ok === true) })),
       newest_hourly_tag: hourlyTag,
       delta_log_newest: newestOf(dl?.data?.newest ?? null) && /T/.test(newestOf(dl?.data?.newest ?? null)!) ? newestOf(dl!.data!.newest)! : null,
-      by_id: { fetched, not_found: notFound, over_cap: 0 },
+      by_id: { fetched, not_found: notFound, over_cap: perId.overCap },
     },
     kev: kevData && kr ? {
       catalog_version: kevData.catalogVersion, date_released: newestOf(kevData.dateReleased) ?? `${kevData.dateReleased.slice(0, 10)}T00:00:00Z`,
@@ -502,21 +569,22 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const newKev = kept.filter((c) => c.reasons.includes("new KEV")).length;
   const summary = summaryLines({ pack, index, kept: kept.length, newKev });
 
-  // Step 12: write, unless the deadline has passed.
+  // Step 12: write, unless the deadline has passed; index.json and inputs.json last, so they exist only when
+  // everything before them was written.
   const texts: [string, string][] = [
-    [paths.feedIndex, jsonText(index, FeedIndexFile)],
-    [paths.collectInputs, jsonText(inputs, CollectInputsFile)],
     [path.join(root, run.paths.packs, `${D}.json`), jsonText(pack, Pack)],
     [path.join(root, run.paths.packs, `${D}.md`), built.md],
     [path.join(root, run.paths.packs, `${D}.candidates.json`), jsonText(candidates, CandidatesFile)],
     [path.join(root, run.paths.logs, `${D}.candidates.json`), jsonText(candidateLog, CandidateLogFile)],
+    [path.join(root, run.paths.logs, `${D}.collect.log`), `${[...lines, ...summary].join("\n")}\n`],
+    [paths.feedIndex, jsonText(index, FeedIndexFile)],
+    [paths.collectInputs, jsonText(inputs, CollectInputsFile)],
   ];
   if (now() >= o.deadline) throw new CollectTimeout();
   for (const [file, text] of texts) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, text);
   }
-  fs.writeFileSync(path.join(root, run.paths.logs, `${D}.collect.log`), `${[...lines, ...summary].join("\n")}\n`);
   return { pack, candidates, index, inputs, summary };
 }
 
@@ -535,7 +603,7 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
   const ref = o.now ?? clock();
   const fixtures = process.env.CT_FIXTURE_FEEDS ? path.resolve(process.env.CT_FIXTURE_FEEDS) : null;
   const git = o.deps?.git ?? (fixtures ? fixtureGit(fixtures) : liveGit(root));
-  const paths = cachePaths(root);
+  const paths = checkCachePaths(root);
   for (const d of [paths.feedsDir, paths.zipsDir, path.dirname(paths.epssFile("2026-01-01"))]) fs.mkdirSync(d, { recursive: true });
   const ctx: FeedCtx = {
     fetch: o.deps?.fetch ?? fetchFeed, budget: fetchBudget(BUDGET_MS), deadline: clock() + 5 * 60_000, now: clock, log: o.deps?.log ?? (() => {}), paths,
@@ -544,7 +612,9 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
   const entries = config.sources.feeds.filter((f) => !o.id || f.id === o.id);
   if (o.id && !entries.length) throw new Error(`sources:check: no registry entry "${o.id}"`);
   const day = new Date(ref).toISOString().slice(0, 10);
-  const rows = await pool(entries, PHASE_A_POOL, async (entry): Promise<CheckRow> => {
+  // Two waves as in collect (HEAVY_KINDS last), the rows put back in registry order.
+  const heavyFirst = (e: (typeof entries)[number]) => e.kind !== "search" && HEAVY_KINDS.has(e.kind);
+  const waves = await inTwoWaves(entries.filter((e) => !heavyFirst(e)), entries.filter(heavyFirst), async (entry): Promise<CheckRow> => {
     if (entry.kind === "search") return { id: entry.id, kind: entry.kind, status: "SKIP", items: 0, newest: null, fresh: "-", priority: entry.priority, error: null };
     let r: Read<unknown>;
     let newest: string | null = null;
@@ -568,6 +638,8 @@ export async function checkFeeds(o: { id?: string; now?: number; root?: string; 
     const s = feedState(entry.kind, out, entry, ref);
     return { id: entry.id, kind: entry.kind, status: s.label, items, newest: newestOf(newest), fresh: freshColumn(entry.kind, s.label, newest, ref), priority: entry.priority, error: s.state === "failed" ? r.error ?? "network" : null };
   });
+  const byId = new Map(waves.map((row) => [row.id, row]));
+  const rows = entries.map((e) => byId.get(e.id)!);
   const bad = rows.some((row) => row.priority === 1 && (row.status === "FAIL" || row.status === "NODATE" || row.status === "STALE"));
   return { rows, exitCode: bad ? 1 : 0 };
 }

@@ -93,11 +93,11 @@ function opts(r: Root, over: Partial<BackfillOptions> = {}): BackfillOptions {
 }
 
 /** collect's cache for edition date E, with every feed failed (the backfill's metrics then use the state alone). */
-function writeCache(root: string, editionDate: string, cutoff: string): void {
+function writeCache(root: string, editionDate: string, cutoff: string, cvelistCommit: string | null = null): void {
   const inputs = CollectInputsFile.parse({
     schema_version: 1, date: editionDate, data_cutoff_utc: cutoff, generated_at: `${cutoff}T20:40:00Z`, run_utc_day: cutoff,
     record_window: { start: `${cutoff}T00:00:00Z`, end: `${cutoff}T00:00:00Z` },
-    commits: { cvelist: null, kev_data: null, ghsa: null },
+    commits: { cvelist: cvelistCommit, kev_data: null, ghsa: null },
     cvelist: { zips: [], days: [], newest_hourly_tag: null, delta_log_newest: null, by_id: { fetched: [], not_found: [], over_cap: 0 } },
     kev: null, epss: null, ghsa: null, anthropic_cvd: null,
   });
@@ -145,6 +145,61 @@ describe("the clone reader", () => {
     expect(cleaned.reused).toBe(false);
     expect(fs.existsSync(path.join(dir, "cves", "stray.txt"))).toBe(false);
     await expect(ensureClone(dir, r.url, "abc1234")).rejects.toThrow(/full commit SHA/);
+  }, SLOW);
+});
+
+describe("the clone stays inside cache/cvelistV5 (B12)", () => {
+  /** The enclosing repo's state that a clone command run against it would change. */
+  const outer = (root: string) => ({
+    head: sh(root, "rev-parse", "HEAD"), branch: sh(root, "symbolic-ref", "HEAD"), remotes: sh(root, "remote"),
+    shallow: fs.existsSync(path.join(root, ".git", "shallow")), status: sh(root, "status", "--porcelain"),
+  });
+
+  it("removes a broken .git and clones fresh, never running git against the enclosing repo", async () => {
+    const r = makeRoot();
+    const dir = path.join(r.root, "cache", "cvelistV5");
+    fs.mkdirSync(path.join(dir, ".git"), { recursive: true }); // an interrupted rm -rf: .git without HEAD
+    write(path.join(dir, "cves", "left-over.txt"), "partial copy");
+    write(path.join(r.root, "config", "run.json"), `${fs.readFileSync(path.join(r.root, "config", "run.json"), "utf8")}\n`); // an uncommitted edit
+    const before = outer(r.root);
+    expect(before.status).toBe("M config/run.json");
+    const info = await ensureClone(dir, r.url, r.sha);
+    expect(info).toMatchObject({ commit: r.sha, reused: false });
+    expect(outer(r.root)).toEqual(before);
+    expect(sh(dir, "rev-parse", "--show-toplevel")).toBe(fs.realpathSync(dir));
+    expect(fs.existsSync(path.join(dir, "cves", "left-over.txt"))).toBe(false);
+  }, SLOW);
+
+  it("ignores GIT_DIR and GIT_WORK_TREE in the environment", async () => {
+    const r = makeRoot();
+    const dir = path.join(r.root, "cache", "cvelistV5");
+    const before = outer(r.root);
+    const saved = { dir: process.env.GIT_DIR, tree: process.env.GIT_WORK_TREE };
+    process.env.GIT_DIR = path.join(r.root, ".git");
+    process.env.GIT_WORK_TREE = r.root;
+    try {
+      const info = await ensureClone(dir, r.url, r.sha);
+      expect(info.commit).toBe(r.sha);
+      expect((await ensureClone(dir, r.url, r.sha)).reused).toBe(true);
+    } finally {
+      if (saved.dir === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = saved.dir;
+      if (saved.tree === undefined) delete process.env.GIT_WORK_TREE;
+      else process.env.GIT_WORK_TREE = saved.tree;
+    }
+    expect(outer(r.root)).toEqual(before);
+    expect(sh(dir, "rev-parse", "--show-toplevel")).toBe(fs.realpathSync(dir));
+  }, SLOW);
+
+  it("removes nothing that is not <repo>/cache/cvelistV5", async () => {
+    const r = makeRoot();
+    const elsewhere = path.join(r.root, "cache", "other");
+    fs.mkdirSync(path.join(elsewhere, ".git"), { recursive: true });
+    write(path.join(elsewhere, "keep.txt"), "not a clone");
+    const before = outer(r.root);
+    await expect(ensureClone(elsewhere, r.url, r.sha)).rejects.toThrow(/not a clone of its own.*cache\/cvelistV5/);
+    expect(fs.readFileSync(path.join(elsewhere, "keep.txt"), "utf8")).toBe("not a clone");
+    expect(outer(r.root)).toEqual(before);
   }, SLOW);
 });
 
@@ -265,6 +320,49 @@ describe("--catch-up and --credits", () => {
     expect(r.lines.find((l) => l.startsWith("Catch-up to "))).toMatch(/^Catch-up to 2026-11-06: 2 days added \(2026-11-05 to 2026-11-06\)/);
   }, SLOW);
 
+  it("--catch-up applies the dashboard ledger with the clone's publication dates, as the build and --credits do (B14)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-06", "2026-11-04");
+    expect(await runBackfill(opts(r, { cutoff: "2026-11-04", out: "out/early" }), r.deps)).toBe(0);
+    const content = path.join(r.root, "content");
+    copyState(path.join(r.root, "out", "early"), content);
+    const early = stateOf(content);
+    expect(early["ai-credits.json"].matches.filter((m) => m[7] === "cvd_ledger")).toEqual([]);
+    // A later dashboard revision lists three records without AI credit text: one published on 27 October, in a
+    // week the series already holds, and two on 4 and 6 November, in a week not yet complete.
+    const cvd = { ...early["anthropic-cvd.json"], ledger_ids: ["CVE-2026-100164", "CVE-2026-62662", "CVE-2026-100080", "GHSA-7q8r-9v2w-c3f4"] };
+    write(path.join(content, "state", "anthropic-cvd.json"), jsonText(cvd, STATE_SCHEMAS["anthropic-cvd.json"]));
+    writeCache(r.root, "2026-11-08", C);
+    expect(await runBackfill(opts(r, { mode: "catch-up" }), r.deps)).toBe(0);
+    const after = stateOf(path.join(r.root, DEFAULT_OUT));
+    const ledger = after["ai-credits.json"].matches.filter((m) => m[7] === "cvd_ledger").map((m) => [m[0], m[1], m[5], m[8]]);
+    expect(ledger).toEqual(expect.arrayContaining([
+      ["CVE-2026-100164", "2026-10-27", "cvd_ledger", C], ["CVE-2026-62662", "2026-11-04", "cvd_ledger", C], ["CVE-2026-100080", "2026-11-06", "cvd_ledger", C],
+    ]));
+    expect(ledger).toHaveLength(3);
+    const s = after["series.json"];
+    expect(s.weeks.at(-1)).toBe("2026-10-26");
+    expect(s.ai_ledger_only_weekly.at(-1)).toBe(1);
+    expect(s.ai_ledger_only_weekly.reduce((a, b) => a + b, 0)).toBe(1);
+  }, SLOW);
+
+  it("--catch-up without --commit uses the CVE List commit collect read for E, and says so (B16)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-06", "2026-11-04");
+    expect(await runBackfill(opts(r, { cutoff: "2026-11-04", out: "out/early" }), r.deps)).toBe(0);
+    copyState(path.join(r.root, "out", "early"), path.join(r.root, "content"));
+    // ls-remote answers nothing here (noGit), so only collect's cache can name the commit.
+    writeCache(r.root, "2026-11-08", C, r.sha);
+    r.lines.length = 0;
+    expect(await runBackfill(opts(r, { mode: "catch-up", commit: null }), r.deps)).toBe(0);
+    expect(r.lines).toContain(`CVE List commit ${r.sha} (collect's cache for 2026-11-08).`);
+    // collect's cache for another edition date is not used.
+    writeCache(r.root, "2026-11-07", "2026-11-05", r.sha);
+    r.lines.length = 0;
+    expect(await runBackfill(opts(r, { mode: "catch-up", commit: null }), r.deps)).toBe(1);
+    expect(r.lines).toContain("git ls-remote could not read the tip of CVEProject/cvelistV5 main.");
+  }, SLOW);
+
   it("--credits rebuilds both credit files and keeps each match's first_matched", async () => {
     const r = makeRoot();
     writeCache(r.root, "2026-11-08", C);
@@ -365,6 +463,34 @@ describe("flags", () => {
   it("expands 67c39b1 to the reference commit and defaults the cutoff to today's", () => {
     const o = parseBackfillArgs(["--commit", "67c39b1"], REPO, today);
     expect(o).toMatchObject({ commit: REFERENCE_INPUTS.cveListCommit, cutoff: "2026-11-07", mode: "build", out: DEFAULT_OUT });
+  });
+
+  it("--check-reference at the reference commit checks Appendix D's cutoff, and refuses any other before the clone (B15)", async () => {
+    const at = ["--check-reference", "--commit", "67c39b1", "--kev-commit", KEV_COMMIT];
+    expect(parseBackfillArgs(at, REPO, today).cutoff).toBe(REFERENCE_INPUTS.cutoff);
+    expect(parseBackfillArgs([...at, "--fixtures"], REPO, today).cutoff).toBe(REFERENCE_INPUTS.cutoff);
+    // Without the reference commit the check is offline, and the cutoff stays today's default.
+    expect(parseBackfillArgs(["--check-reference"], REPO, today).cutoff).toBe("2026-11-07");
+    expect(parseBackfillArgs([...at.slice(0, 1), "--cutoff", "2026-11-05"], REPO, today).cutoff).toBe("2026-11-05");
+
+    const calls: string[] = [];
+    const lines: string[] = [];
+    const spyGit: GitSource = { ...noGit, lsRemote: async (repo, refs) => (calls.push(`ls-remote ${repo}`), noGit.lsRemote(repo, refs)) };
+    const deps: Partial<BackfillDeps> = {
+      git: spyGit, fetchKev: async (c) => (calls.push("fetchKev"), fetchKev(c)), freeBytes: (dir) => (calls.push(`freeBytes ${dir}`), 0),
+      now: () => NOW, workers: 1, print: (l) => lines.push(l),
+    };
+    for (const cutoff of ["2026-11-05", "2026-11-07"]) {
+      lines.length = 0;
+      expect(await runBackfill(parseBackfillArgs([...at, "--cutoff", cutoff], REPO, today), deps)).toBe(2);
+      expect(lines[0].split("\n")[0]).toBe(`--check-reference at ${REFERENCE_INPUTS.cveListCommit.slice(0, 7)} checks Appendix D's cutoff ${REFERENCE_INPUTS.cutoff}: ` +
+        `leave out --cutoff or give --cutoff ${REFERENCE_INPUTS.cutoff}.`);
+    }
+    expect(calls).toEqual([]);
+    // Appendix D's own cutoff passes the flag checks and goes on to the clone (refused here for want of disk space).
+    lines.length = 0;
+    expect(await runBackfill(parseBackfillArgs(at, REPO, today), deps)).toBe(1);
+    expect(lines.at(-1)).toMatch(/^The clone needs at least 10 GiB free/);
   });
 
   it("the CLI prints the usage line on stderr and exits 2", () => {
