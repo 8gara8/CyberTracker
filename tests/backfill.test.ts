@@ -320,6 +320,54 @@ describe("--catch-up and --credits", () => {
     expect(r.lines.find((l) => l.startsWith("Catch-up to "))).toMatch(/^Catch-up to 2026-11-06: 2 days added \(2026-11-05 to 2026-11-06\)/);
   }, SLOW);
 
+  it("--catch-up rematches the credits of a day it fills behind the newest counted day (round 1)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-08", C);
+    expect(await runBackfill(opts(r, { out: "out/full" }), r.deps)).toBe(0);
+    const content = path.join(r.root, "content");
+    copyState(path.join(r.root, "out", "full"), content);
+    const full = stateOf(content);
+    // A morning that missed a day missed the credits of the records published on it: take one AI-credited
+    // record's day out of days.json and its rows out of both credit files, as such a morning leaves them.
+    const hit = full["ai-credits.json"].matches.find((m) => m[7] === "pattern" && m[1] < C)!;
+    const day = hit[1];
+    const sameDay = new Set(full["ai-credits.json"].matches.filter((m) => m[1] === day).map((m) => m[0]));
+    write(path.join(content, "state", "days.json"), jsonText({ ...full["days.json"], days: full["days.json"].days.filter((d) => d[0] !== day) }, STATE_SCHEMAS["days.json"]));
+    write(path.join(content, "state", "ai-credits.json"), jsonText({ ...full["ai-credits.json"], matches: full["ai-credits.json"].matches.filter((m) => !sameDay.has(m[0])) }, STATE_SCHEMAS["ai-credits.json"]));
+    write(path.join(content, "state", "credit-candidates.json"), jsonText({ ...full["credit-candidates.json"], candidates: full["credit-candidates.json"].candidates.filter((c) => c[1] !== day) }, STATE_SCHEMAS["credit-candidates.json"]));
+
+    expect(await runBackfill(opts(r, { mode: "catch-up" }), r.deps)).toBe(0);
+    const after = stateOf(path.join(r.root, DEFAULT_OUT));
+    expect(after["days.json"].days).toEqual(full["days.json"].days);
+    expect(after["credit-candidates.json"].candidates).toEqual(full["credit-candidates.json"].candidates);
+    expect(after["ai-credits.json"].matches.map((m) => m.slice(0, 8))).toEqual(full["ai-credits.json"].matches.map((m) => m.slice(0, 8)));
+    expect(after["ai-credits.json"].matches.find((m) => m[0] === hit[0])![8]).toBe(C);
+    expect(after["series.json"].ai_weekly).toEqual(full["series.json"].ai_weekly);
+    expect(r.lines.find((l) => l.startsWith("Catch-up to "))).toMatch(new RegExp(`^Catch-up to ${C}: 1 days added \\(${day}\\), \\d+ records to ${C} rematched`));
+  }, SLOW);
+
+  it("--catch-up rematches every record to the cutoff: a credit the mornings missed on a counted day comes back (round 1)", async () => {
+    const r = makeRoot();
+    writeCache(r.root, "2026-11-08", C);
+    expect(await runBackfill(opts(r, { out: "out/full" }), r.deps)).toBe(0);
+    const content = path.join(r.root, "content");
+    copyState(path.join(r.root, "out", "full"), content);
+    const full = stateOf(content);
+    // Mornings in catch-up mode match no credits: a record published before the newest counted day that
+    // gained its credit then has no rows, while its day stays counted.
+    const hit = full["ai-credits.json"].matches.find((m) => m[7] === "pattern" && m[1] < C)!;
+    write(path.join(content, "state", "ai-credits.json"), jsonText({ ...full["ai-credits.json"], matches: full["ai-credits.json"].matches.filter((m) => m[0] !== hit[0]) }, STATE_SCHEMAS["ai-credits.json"]));
+    write(path.join(content, "state", "credit-candidates.json"), jsonText({ ...full["credit-candidates.json"], candidates: full["credit-candidates.json"].candidates.filter((c) => c[0] !== hit[0]) }, STATE_SCHEMAS["credit-candidates.json"]));
+
+    expect(await runBackfill(opts(r, { mode: "catch-up" }), r.deps)).toBe(0);
+    const after = stateOf(path.join(r.root, DEFAULT_OUT));
+    expect(after["days.json"].days).toEqual(full["days.json"].days);
+    expect(after["credit-candidates.json"].candidates).toEqual(full["credit-candidates.json"].candidates);
+    expect(after["ai-credits.json"].matches.map((m) => m.slice(0, 8))).toEqual(full["ai-credits.json"].matches.map((m) => m.slice(0, 8)));
+    expect(after["series.json"].ai_weekly).toEqual(full["series.json"].ai_weekly);
+    expect(r.lines.find((l) => l.startsWith("Catch-up to "))).toMatch(new RegExp(`^Catch-up to ${C}: 0 days added \\(none\\), \\d+ records to ${C} rematched`));
+  }, SLOW);
+
   it("--catch-up applies the dashboard ledger with the clone's publication dates, as the build and --credits do (B14)", async () => {
     const r = makeRoot();
     writeCache(r.root, "2026-11-06", "2026-11-04");

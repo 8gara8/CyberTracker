@@ -118,7 +118,7 @@ function writeCache(root: string): void {
       by_id: { fetched: byId.map((n) => n.replace(/\.json$/, "")), not_found: [], over_cap: 0 },
     },
     kev: { catalog_version: catalog.catalogVersion, date_released: catalog.dateReleased, count: catalog.count, url_used: "https://example.com/ct-sample/kev", sha256: sha256Hex(kevBody), fallback_used: false },
-    epss: { source: "csv", model_version: "v2026.06.15", files: Object.entries(epss).map(([role, date]) => ({ role, date, sha256: sha256Hex(date) })) },
+    epss: { source: "csv", model_version: "v2026.06.15", files: Object.entries(epss).map(([role, date]) => ({ role, date, sha256: sha256Hex(fs.readFileSync(path.join(FEEDS, "epss", `epss_scores-${date}.csv.gz`))) })) },
     ghsa: { commit: "c".repeat(40), head_date: T, months: ["2026/10"], tree_sha256: sha256Hex("tree"), advisories: 5 },
     anthropic_cvd: { revision: "37", as_of: "2026-10-13", sha256: sha256Hex("cvd"), fetched_at: `${T}T20:41:00Z`, changed: true },
   });
@@ -196,6 +196,68 @@ describe("loadFeedCache", () => {
     expect(g.anthropicCvd.read).toMatchObject({ version: "37", sha256: sha256Hex(page) });
   });
 
+  it("uses only the zips and EPSS files collect read: one missing or changed since is left out and the read is stale (round 1)", () => {
+    const root = repo();
+    const zips = path.join(root, "cache", "cvelist", "zips");
+    const [eod, hourly] = [path.basename(EOD_ZIP_PATH), path.basename(HOURLY_ZIP_PATH)];
+    const full = loadFeedCache(root, D);
+    expect(full.cvelist.missingZips).toEqual([]);
+    expect(full.cvelist.read.status).toBe("ok");
+    expect(full.epss.read.status).toBe("ok");
+    // The hourly zip replaced by other valid zip bytes (not the ones collect read), then removed.
+    fs.copyFileSync(path.join(zips, eod), path.join(zips, hourly));
+    for (const f of [loadFeedCache(root, D), (fs.rmSync(path.join(zips, hourly)), loadFeedCache(root, D))]) {
+      expect(f.cvelist.missingZips).toEqual([hourly]);
+      expect(f.cvelist.read).toMatchObject({ status: "stale", version: `${"a".repeat(40)} ${FEED_WORLD.eodTag}` });
+      expect(f.cvelist.days).toEqual([{ date: C, ok: false, records: [] }]);
+      expect(f.cvelist.zipRecords.length).toBeGreaterThan(0); // the end-of-day zip still counts for the KEV join
+    }
+    // An EPSS file overwritten with another day's file is left out.
+    const epss = path.join(root, "cache", "epss");
+    fs.copyFileSync(path.join(epss, `epss_scores-${T}.csv.gz`), path.join(epss, `epss_scores-${C}.csv.gz`));
+    const g = loadFeedCache(root, D);
+    expect(g.epss.e1).toBeNull();
+    expect(g.epss.e && g.epss.e7).toBeTruthy();
+    expect(g.epss.read).toMatchObject({ status: "stale", version: `e=${T} e7=${addDays(T, -7)}` });
+  });
+
+  it("leaves out every other feed's body that is not what collect read: KEV, all EPSS files, GHSA, the payload, by-id records (round 1)", () => {
+    const root = repo();
+    const cache = path.join(root, "cache");
+    // KEV: a catalog with another SHA-256 than collect's (one entry fewer) is not used.
+    const kevFile = path.join(cache, "feeds", "kev.json");
+    const kev = JSON.parse(fs.readFileSync(kevFile, "utf8")) as { vulnerabilities: unknown[]; count: number };
+    write(kevFile, JSON.stringify({ ...kev, count: kev.count - 1, vulnerabilities: kev.vulnerabilities.slice(1) }));
+    // EPSS: every file collect read replaced by another day's valid file.
+    const epss = path.join(cache, "epss");
+    const names = fs.readdirSync(epss).sort();
+    const bodies = names.map((n) => fs.readFileSync(path.join(epss, n)));
+    names.forEach((n, k) => write(path.join(epss, n), bodies[(k + 1) % names.length]!));
+    // GHSA: one advisory folder gone since collect counted five.
+    const month = path.join(cache, "ghsa", "advisories", "github-reviewed", "2026", "10");
+    fs.rmSync(path.join(month, fs.readdirSync(month).sort()[0]!), { recursive: true });
+    // The dashboard: collect read the payload (its hash is the index entry's), now gone.
+    fs.rmSync(path.join(cache, "feeds", "anthropic-cvd.payload.json"));
+    // A record collect fetched by id, gone.
+    fs.rmSync(path.join(cache, "cvelist", "records", `${FEED_WORLD.rejoinId}.json`));
+
+    const f = loadFeedCache(root, D);
+    expect(f.kev).toMatchObject({ catalog: null, read: { status: "failed", sha256: null } });
+    expect(f.epss).toMatchObject({ e: null, e1: null, e7: null, read: { status: "failed", sha256: null } });
+    expect(f.ghsa).toMatchObject({ advisories: [], read: { status: "failed", sha256: null } });
+    expect(f.anthropicCvd).toMatchObject({ dashboard: null, read: { status: "failed", sha256: null } });
+    expect(f.cvelist.missingRecords).toEqual([FEED_WORLD.rejoinId]);
+    expect(f.cvelist.byId.has(FEED_WORLD.rejoinId)).toBe(false);
+    const full = loadFeedCache(repo(), D);
+    expect(f.cvelist.read).toMatchObject({ status: "stale", records: full.cvelist.read.records - 1 });
+    expect(full.cvelist.missingRecords).toEqual([]);
+    // With every zip and by-id record left out, nothing of the CVE List read is here: failed, out of the manifest.
+    fs.rmSync(path.join(cache, "cvelist"), { recursive: true });
+    const g = loadFeedCache(root, D);
+    expect(g.cvelist.read).toMatchObject({ status: "failed", sha256: null, records: 0 });
+    expect(g.cvelist.missingZips).toHaveLength(2);
+  });
+
   it("names the kev-data commit as the KEV version only for a mirror read; a cisa.gov read is its catalogVersion (B11)", () => {
     const root = repo();
     expect(loadFeedCache(root, D).kev.read.version).toBe("b".repeat(40));
@@ -235,6 +297,20 @@ describe("runMetrics", () => {
     expect(idx.entries.find((e) => e[0] === FEED_WORLD.rejoinId)![4]).not.toBeNull();
     InputsManifest.parse(JSON.parse(fs.readFileSync(path.join(staged, "metrics", "inputs", `${D}.json`), "utf8")));
     expect(exists(path.join(root, "content", "metrics"))).toBe(false);
+  });
+
+  it("with a zip collect read gone, counts no day, names only a zip it read as the release, and logs it (round 1)", async () => {
+    const root = repo();
+    const hourly = path.basename(HOURLY_ZIP_PATH);
+    fs.rmSync(path.join(root, "cache", "cvelist", "zips", hourly));
+    const r = await runMetrics({ date: D, root, now: NOW });
+    expect(r.code).toBe(0);
+    expect(r.lines).toContain(`CVE List: 1 zip collect read is missing or changed in cache/ (${hourly}): no day is counted and the credit matches wait for the next run.`);
+    const staged = path.join(root, "cache", "staged", D);
+    expect(readMetrics(staged).provenance.cve_list_release).toBe(FEED_WORLD.eodTag);
+    expect(exists(path.join(staged, "state", "days.json"))).toBe(false);
+    const manifest = InputsManifest.parse(JSON.parse(fs.readFileSync(path.join(staged, "metrics", "inputs", `${D}.json`), "utf8")));
+    expect(manifest.feeds.find((x) => x.id === "cvelist")!.version).toBe(`${"a".repeat(40)} ${FEED_WORLD.eodTag}`);
   });
 
   it("writes byte-identical files on a rerun with the same clock (R31)", async () => {

@@ -51,7 +51,7 @@ const versionOf = (c: string) => `${c.slice(0, 4)}.${c.slice(5, 7)}.${c.slice(8)
 interface World { inputs: MetricsInputs; cutoff: string; newIds: string[]; rejoinId: string; zipDay: CveFacts[] }
 
 /** Options: drop KEV, fail day C, push the state's newest day back, store an older list version, or build frozen state at C. */
-interface WorldOptions { kevFailed?: boolean; dayFailed?: boolean; daysBack?: number; staleList?: boolean; frozen?: boolean; previous?: MetricsT | null; prefilter?: boolean }
+interface WorldOptions { kevFailed?: boolean; dayFailed?: boolean; zipMissing?: boolean; daysBack?: number; staleList?: boolean; frozen?: boolean; previous?: MetricsT | null; prefilter?: boolean }
 
 function world(date: string, o: WorldOptions = {}): World {
   const C = dataCutoffFor(date);
@@ -152,7 +152,10 @@ function world(date: string, o: WorldOptions = {}): World {
     inputs,
     index: { schema_version: 1, date, generated_at: inputs.generated_at, feeds: [] },
     kev: o.kevFailed ? { read: read("kev", { status: "failed", sha256: null, as_of: null, version: null, records: 0 }), catalog: null } : { read: read("kev"), catalog: today },
-    cvelist: { read: read("cvelist"), days: [{ date: C, ok: !o.dayFailed, records: o.dayFailed ? [] : zipDay }], zipRecords: o.dayFailed ? [] : zipDay, byId },
+    // zipMissing: collect read both zips, but the hourly one is gone from cache/ (loadFeedCache leaves it out).
+    cvelist: o.zipMissing
+      ? { read: read("cvelist", { status: "stale" }), days: [{ date: C, ok: false, records: [] }], zipRecords: zipDay, missingZips: [`${runDay}_delta_CVEs_at_2000Z.zip`], missingRecords: [], byId }
+      : { read: read("cvelist"), days: [{ date: C, ok: !o.dayFailed, records: o.dayFailed ? [] : zipDay }], zipRecords: o.dayFailed ? [] : zipDay, missingZips: [], missingRecords: [], byId },
     epss: { read: read("epss"), e: epssDay(runDay, 1), e1: null, e7: epssDay(addDays(runDay, -7), 0) },
     ghsa: { read: read("ghsa"), advisories: ghsa, headDate: runDay },
     anthropicCvd: { read: read("anthropic-cvd", { fetched_at: `${runDay}T20:41:00Z` }), dashboard, sourceUrl: "https://example.com/ct-sample/cvd-dashboard" },
@@ -353,6 +356,61 @@ describe("computeMetrics: CVE List days", () => {
     expect(manifest.flood.new_days).toEqual([]);
     expect(metrics.headline.second_line.startsWith("Flood, as of 5 Nov:")).toBe(true);
     expect(manifestIssues(metrics, manifest)).toEqual([]);
+  });
+
+  it("holds the credit matches when a zip collect read is missing from cache/; the day stays uncounted (round 1)", () => {
+    const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+    const normal = computeMetrics(world(D, { previous }).inputs);
+    expect(normal.state["ai-credits.json"]!.matches.some((m) => m[0] === "CVE-2026-91002")).toBe(true);
+    const w = world(D, { zipMissing: true, previous });
+    const r = computeMetrics(w.inputs);
+    const { metrics, manifest } = parsed(r);
+    expect(r.log).toContain(`CVE List: 1 zip collect read is missing or changed in cache/ (${addDays(w.cutoff, 1)}_delta_CVEs_at_2000Z.zip): no day is counted and the credit matches wait for the next run.`);
+    expect((r.state["ai-credits.json"] ?? w.inputs.state["ai-credits.json"]).matches.some((m) => m[0] === "CVE-2026-91002")).toBe(false);
+    expect(r.log.some((l) => l.startsWith("Credit matches changed:"))).toBe(false);
+    expect(statuses(metrics)).toMatchObject({ flood: "stale", ai_credited: "stale" });
+    expect(r.state["days.json"]).toBeUndefined();
+    expect(manifest.feeds.find((f) => f.id === "cvelist")).toBeDefined();
+    expect(manifestIssues(metrics, manifest)).toEqual([]);
+  });
+
+  it("counts no day while a zip is left out, even a day whose own zips loaded, so its credits are not lost (round 1)", () => {
+    const previous = computeMetrics(world("2026-11-07").inputs).metrics;
+    const C = dataCutoffFor(D);
+    // A catch-up morning with two missing days: C − 1's zips loaded and hold an AI-credited record; the hourly
+    // zip (C's second) is gone. Counting C − 1 now would drop it from the next plan with its credit unmatched.
+    const x = facts("CVE-2026-95001", addDays(C, -1), { credits: [{ field: "cna.credits", value: "SAMPLE Researcher using Claude (Anthropic)" }] });
+    const hourly = `${addDays(C, 1)}_delta_CVEs_at_2000Z.zip`;
+    for (const days of [
+      [{ date: addDays(C, -1), ok: true, records: [x] }, { date: C, ok: false, records: [] }],
+      // An afternoon rerun: the left-out zip belongs to no planned day, and every day loaded.
+      [{ date: addDays(C, -1), ok: true, records: [x] }, { date: C, ok: true, records: [] }],
+    ]) {
+      const w = world(D, { daysBack: 2, previous });
+      w.inputs.feeds.cvelist = { ...w.inputs.feeds.cvelist, read: { ...w.inputs.feeds.cvelist.read, status: "stale" }, days, zipRecords: [x, ...w.zipDay], missingZips: [hourly] };
+      const r = computeMetrics(w.inputs);
+      const { metrics, manifest } = parsed(r);
+      expect(r.log).toContain(`CVE List: 1 zip collect read is missing or changed in cache/ (${hourly}): no day is counted and the credit matches wait for the next run.`);
+      expect(r.log.some((l) => l.startsWith("Counted "))).toBe(false);
+      expect(r.state["days.json"]).toBeUndefined();
+      expect(manifest.flood.new_days).toEqual([]);
+      expect((r.state["ai-credits.json"] ?? w.inputs.state["ai-credits.json"]).matches.some((m) => m[0] === x.cve_id)).toBe(false);
+      expect(metrics.blocks.flood.note).toBe(BLOCK_NOTES.daysMissing([addDays(C, -1), C], []));
+      expect(statuses(metrics)).toMatchObject({ flood: "stale", ai_credited: "stale" });
+      expect(manifestIssues(metrics, manifest)).toEqual([]);
+    }
+    // The control: with every zip here, C − 1 counts and X is matched.
+    const w = world(D, { daysBack: 2, previous });
+    w.inputs.feeds.cvelist = { ...w.inputs.feeds.cvelist, days: [{ date: addDays(C, -1), ok: true, records: [x] }, { date: C, ok: true, records: w.zipDay }], zipRecords: [x, ...w.zipDay] };
+    const r = computeMetrics(w.inputs);
+    expect(r.manifest.flood.new_days.map((d) => d.date)).toEqual([addDays(C, -1), C]);
+    expect(r.state["ai-credits.json"]!.matches.some((m) => m[0] === x.cve_id)).toBe(true);
+  });
+
+  it("logs the records collect fetched by id that are missing from cache/ (round 1)", () => {
+    const w = world(D);
+    w.inputs.feeds.cvelist = { ...w.inputs.feeds.cvelist, missingRecords: ["CVE-2026-90001"] };
+    expect(computeMetrics(w.inputs).log).toContain("CVE List: 1 record collect fetched by id is missing or unreadable in cache/ (CVE-2026-90001): left out today.");
   });
 
   it("counts each readable missing day even past one that failed; the gap stays and the note names it (B5)", () => {

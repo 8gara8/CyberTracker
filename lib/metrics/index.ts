@@ -107,15 +107,20 @@ function publishedDates(feeds: MetricsFeeds, index: KevIndexFile, credits: Credi
   return out;
 }
 
-/** The newest CVE List tag whose zip the run read (end-of-day tags end at the next day's 00:00 UTC). */
+/**
+ * The newest CVE List tag whose zip the run read (end-of-day tags end at the next day's 00:00 UTC); a zip
+ * left out of the cache read (§8.4) is not read. Null when collect listed zips and every one was left out.
+ */
 function newestZipTag(feeds: MetricsFeeds): string | null {
+  const left = new Set(feeds.cvelist.missingZips);
   let best: { tag: string; at: string } | null = null;
   for (const z of feeds.inputs.cvelist.zips) {
+    if (left.has(z.asset)) continue;
     const at = z.kind === "hourly" ? tagTime(z.tag) : `${z.utc_day}T24:00:00Z`;
     if (at === null) continue;
     if (!best || at > best.at || (at === best.at && byCodeUnit(z.tag, best.tag) > 0)) best = { tag: z.tag, at };
   }
-  return best?.tag ?? feeds.inputs.cvelist.newest_hourly_tag;
+  return best?.tag ?? (left.size ? null : feeds.inputs.cvelist.newest_hourly_tag);
 }
 
 function provenanceOf(i: MetricsInputs, index: KevIndexFile, catalog: MetricsFeeds["kev"]["catalog"], log: string[]): Omit<Provenance, "inputs_sha256"> {
@@ -176,8 +181,18 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
   const newDays: InputsManifest["flood"]["new_days"] = [];
   // The missing days are those of the catch-up range (§5.4, §8.3): each one read today counts, in date order,
   // even past one that failed; a failed day stays missing and collect plans it again the next morning.
+  // With a zip collect read left out of the cache read (§8.4), no day counts and no credit match moves this
+  // run: every missing day stays planned, so the next morning reads all their zips, and their credits, again.
   const range = catchUpRange(cutoff);
-  if (!frozen && !catchUp) {
+  const missingZips = feeds.cvelist.missingZips;
+  if (!frozen && missingZips.length) {
+    log.push(`CVE List: ${missingZips.length === 1 ? "1 zip" : `${missingZips.length} zips`} collect read ${missingZips.length === 1 ? "is" : "are"} missing or changed in cache/ (${missingZips.join(", ")}): no day is counted and the credit matches wait for the next run.`);
+  }
+  if (!frozen && feeds.cvelist.missingRecords.length) {
+    const ids = feeds.cvelist.missingRecords;
+    log.push(`CVE List: ${ids.length === 1 ? "1 record" : `${ids.length} records`} collect fetched by id ${ids.length === 1 ? "is" : "are"} missing or unreadable in cache/ (${ids.join(", ")}): left out today.`);
+  }
+  if (!frozen && !catchUp && !missingZips.length) {
     const reads = new Map(feeds.cvelist.days.map((d) => [d.date, d]));
     for (const d of missingDays(days, range.from, range.to)) {
       const read = reads.get(d);
@@ -206,9 +221,13 @@ export function computeMetrics(i: MetricsInputs): ComputeResult {
         aiNote = AI_NOTES.recomputed(run.version);
         log.push(aiNote);
       }
-      const upd = updateCredits(credits, { records: feeds.cvelist.zipRecords, ghsa: [] }, run, cutoff);
-      credits = upd.state;
-      if (upd.changed.length) log.push(`Credit matches changed: ${upd.changed.join(", ")}.`);
+      // The credit matches move only on every zip collect read (above): with one left out, a record could take
+      // an older copy, and the days it holds stay uncounted for the next morning.
+      if (!missingZips.length) {
+        const upd = updateCredits(credits, { records: feeds.cvelist.zipRecords, ghsa: [] }, run, cutoff);
+        credits = upd.state;
+        if (upd.changed.length) log.push(`Credit matches changed: ${upd.changed.join(", ")}.`);
+      }
       const led = applyLedger(credits.credits, ledger(), run, cutoff);
       credits = { ...credits, credits: led.credits };
       if (led.missing.length) log.push(`Ledger ids without a publication date: ${led.missing.join(", ")}.`);

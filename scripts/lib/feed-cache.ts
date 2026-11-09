@@ -1,7 +1,9 @@
 // Reads what collect left in cache/ (cache/feeds/inputs.json, index.json and the bodies) for the metrics
 // (SPEC §5.10 step 1, §8.3, §8.4). Every body is parsed by the WP1 parser that collect used, so the metrics
 // see exactly the facts collect saw. A body that is missing or does not parse makes that feed "failed"
-// here; it never throws. Only a missing or foreign inputs.json throws (NoFeedsError).
+// here; it never throws. Only a missing or foreign inputs.json throws (NoFeedsError). The cache counts only
+// as collect read it (§0.4 row 65): a body whose SHA-256 (or, for GHSA, advisory count) is not what
+// collect recorded is left out like a missing one, and a feed with part of its read left out is never "ok".
 //
 // Layout read (lib/feeds/cache.ts cachePaths()):
 //   cache/feeds/inputs.json, cache/feeds/index.json
@@ -52,6 +54,14 @@ export interface MetricsFeeds {
     /** Day X with X + 1's copy of a record winning. */
     days: { date: string; ok: boolean; records: CveFacts[] }[];
     zipRecords: CveFacts[];
+    /**
+     * Assets collect read that are missing here, do not parse, or are not the bytes collect read (their
+     * SHA-256 differs): left out like an unread zip, and the read is "stale". computeMetrics() then counts
+     * no day and moves no credit match that run (§8.4).
+     */
+    missingZips: string[];
+    /** Ids collect fetched by id whose record is missing here or does not parse: left out, the read "stale". */
+    missingRecords: string[];
     /** null = 404. */
     byId: ReadonlyMap<string, CveFacts | null>;
   };
@@ -121,8 +131,13 @@ function cvelistFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile
   const read = readOf("cvelist", entry);
   const zips = [...inputs.cvelist.zips].sort((a, b) => byCodeUnit(zipEnd(a), zipEnd(b)) || byCodeUnit(a.tag, b.tag));
   const byAsset = new Map<string, { facts: CveFacts[]; sha256: string } | null>();
-  for (const z of zips) byAsset.set(z.asset, zipFacts(p.zip(z.asset)));
+  for (const z of zips) {
+    // A zip counts only as the bytes collect read: one missing, unreadable or changed since is left out.
+    const got = zipFacts(p.zip(z.asset));
+    byAsset.set(z.asset, got && got.sha256 === z.sha256 ? got : null);
+  }
   const loaded = zips.filter((z) => byAsset.get(z.asset));
+  const missingZips = zips.filter((z) => !byAsset.get(z.asset)).map((z) => z.asset);
 
   const days = inputs.cvelist.days.map((d) => {
     const a = byAsset.get(d.zips[0]);
@@ -132,27 +147,33 @@ function cvelistFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile
   const zipRecords = merged(loaded.map((z) => byAsset.get(z.asset)!.facts));
 
   const byId = new Map<string, CveFacts | null>();
+  const missingRecords: string[] = [];
   for (const id of [...inputs.cvelist.by_id.not_found].sort(compareCveIds)) byId.set(id, null);
   for (const id of [...inputs.cvelist.by_id.fetched].sort(compareCveIds)) {
     const buf = readFile(path.join(p.recordsDir, `${id}.json`));
-    if (!buf) continue;
+    let f: CveFacts | null = null;
     try {
-      const f = cveFacts(JSON.parse(buf.toString("utf8")) as unknown);
-      if (f) byId.set(id, f);
+      f = buf ? cveFacts(JSON.parse(buf.toString("utf8")) as unknown) : null;
     } catch {
-      // An unparsable record is left out: the row stays as it was.
+      f = null;
     }
+    // A record missing or unparsable is left out (its KEV row stays as it was) and makes the read partial.
+    if (f) byId.set(id, f);
+    else missingRecords.push(id);
   }
 
   const commit = inputs.commits.cvelist;
-  const out: FeedRead = !usable(read) && loaded.length === 0 ? unusable(read) : {
+  // Nothing collect read is here (every zip and by-id record left out): the read is not used, like a failed one.
+  const nothingLeft = loaded.length === 0 && inputs.cvelist.by_id.fetched.length === missingRecords.length && missingZips.length + missingRecords.length > 0;
+  const out: FeedRead = (!usable(read) && loaded.length === 0) || nothingLeft ? unusable(read) : {
     ...read,
-    status: usable(read) ? read.status : "stale",
+    // Part of what collect read is missing here: the read is partial, never "ok".
+    status: usable(read) && !missingZips.length && !missingRecords.length ? read.status : "stale",
     version: [commit ?? "branch", ...loaded.map((z) => z.tag)].join(" "),
     sha256: loaded.length ? sha256Hex(loaded.map((z) => `${z.asset} ${byAsset.get(z.asset)!.sha256}\n`).join("")) : read.sha256,
-    records: loaded.reduce((n, z) => n + z.records, 0) + inputs.cvelist.by_id.fetched.length,
+    records: loaded.reduce((n, z) => n + z.records, 0) + inputs.cvelist.by_id.fetched.length - missingRecords.length,
   };
-  return { read: out, days, zipRecords, byId };
+  return { read: out, days, zipRecords, missingZips, missingRecords, byId };
 }
 
 function kevFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, entry: FeedIndexEntry | undefined): MetricsFeeds["kev"] {
@@ -162,6 +183,8 @@ function kevFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, en
   if (!body) return { read: unusable(read), catalog: null };
   try {
     const parsed = parseKev(body);
+    // Only the catalog collect read counts: a body changed since (another SHA-256) is not used, as kevSource() does.
+    if (!inputs.kev || parsed.sha256 !== inputs.kev.sha256) return { read: unusable(read), catalog: null };
     return {
       // The kev-data commit names the catalog only when collect read the mirror at it; a cisa.gov read is its catalogVersion.
       read: { ...read, version: !inputs.kev?.fallback_used && inputs.commits.kev_data ? inputs.commits.kev_data : parsed.catalog.catalogVersion, sha256: parsed.sha256, records: parsed.catalog.count },
@@ -183,6 +206,8 @@ function epssFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, e
       if (!buf) continue;
       try {
         const parsed = parseEpssCsv(buf);
+        // Only the bytes collect read count, as for the CVE List zips: a file changed since is left out.
+        if (parsed.sha256 !== f.sha256) continue;
         days[f.role] = parsed.day;
         used.push({ role: f.role, date: f.date, sha256: parsed.sha256 });
       } catch {
@@ -190,10 +215,13 @@ function epssFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, e
       }
     }
   }
-  if (!used.length) return { read: usable(read) ? read : unusable(read), ...days };
+  // Every file collect read is left out: nothing of the read is here, so it is not used (an API read lists none).
+  if (!used.length) return { read: usable(read) && !files.length ? read : unusable(read), ...days };
   return {
     read: {
       ...read,
+      // A file collect read that is not usable here makes the read partial: "stale", never "ok".
+      status: usable(read) && used.length === files.length ? read.status : "stale",
       version: used.map((f) => `${f.role}=${f.date}`).join(" "),
       sha256: sha256Hex(used.map((f) => `${f.role} ${f.date} ${f.sha256}\n`).join("")),
       records: days.e?.scores.size ?? 0,
@@ -228,6 +256,9 @@ function ghsaFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, e
     }
   }
   advisories.sort((a, b) => byCodeUnit(a.id, b.id));
+  // The checkout is not the one collect read when its advisory count differs (a folder removed or changed
+  // since): the read is not used, so the GHSA figure carries its earlier value (§5.6).
+  if (advisories.length !== g.advisories) return { read: unusable(read), advisories: [], headDate: null };
   return {
     read: { ...read, version: g.commit ?? inputs.commits.ghsa ?? read.version, sha256: g.tree_sha256, records: advisories.length },
     advisories,
@@ -242,9 +273,11 @@ function cvdFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, en
   if (!body) return { read: unusable(read), dashboard: null, sourceUrl };
   try {
     // The payload counts only when it is the one collect read today (its hash is the index entry's); a payload
-    // left by an earlier run is ignored and the page is read alone, as collect read it.
+    // left by an earlier run is ignored and the page is read alone, as collect read it. When the entry's hash
+    // is neither, collect read a payload that is gone or changed since: the page alone is not that read.
     const cached = readFile(p.feedBody("anthropic-cvd", "payload.json"));
     const payload = cached && entry?.sha256 === sha256Hex(cached) ? cached : null;
+    if (!payload && entry?.sha256 !== sha256Hex(body)) return { read: unusable(read), dashboard: null, sourceUrl };
     const dashboard = parseAnthropicCvd(body, "text/html", payload);
     return {
       read: { ...read, version: dashboard.revision, sha256: sha256Hex(payload ? Buffer.concat([body, payload]) : body), records: dashboard.ledger_ids.length },
@@ -295,7 +328,7 @@ export function noFeeds(date: string, cutoff: string, generatedAt: string): Metr
     inputs,
     index: { schema_version: 1, date, generated_at: generatedAt, feeds: [] },
     kev: { read: failedRead("kev"), catalog: null },
-    cvelist: { read: failedRead("cvelist"), days: [], zipRecords: [], byId: new Map() },
+    cvelist: { read: failedRead("cvelist"), days: [], zipRecords: [], missingZips: [], missingRecords: [], byId: new Map() },
     epss: { read: failedRead("epss"), e: null, e1: null, e7: null },
     ghsa: { read: failedRead("ghsa"), advisories: [], headDate: null },
     anthropicCvd: { read: failedRead("anthropic-cvd"), dashboard: null, sourceUrl: "" },

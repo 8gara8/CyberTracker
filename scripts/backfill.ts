@@ -450,7 +450,7 @@ async function build(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig):
   return r.code;
 }
 
-/** --catch-up (§8.4): the days days.json lacks, credits for records published since, the series extended. State only. */
+/** --catch-up (§8.4): the days days.json lacks, every record's credits rematched, the series extended. State only. */
 async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig): Promise<0 | 1> {
   const content = path.resolve(o.root, contentDir());
   const prev = readStateDir(path.join(content, "state"));
@@ -469,7 +469,6 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
   const run = aiFindersOf(config, config.compiled);
 
   const days = dayMap(prev["days.json"].days);
-  const newestBefore = prev["days.json"].days.reduce((m, r) => (r[0] > m ? r[0] : m), "");
   const missing = missingDays(days, DAYS_FROM, o.cutoff);
   const wanted = new Set(missing);
   const byDay = new Map<string, CveFacts[]>();
@@ -482,9 +481,12 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
   const added: DayRow[] = missing.map((day) => countDay(day, byDay.get(day) ?? []));
   const allDays = [...prev["days.json"].days, ...added].sort((a, b) => byCodeUnit(a[0], b[0]));
 
-  const since = facts.filter((f) => f.date_published !== null && f.date_published > newestBefore && f.date_published <= o.cutoff);
+  // Rematched: every record published to the cutoff, first_matched kept (§8.4, §0.4 row 65). The
+  // mornings a catch-up stands in for matched none (in catch-up mode, or the morning that missed a day behind
+  // the newest counted one), and a record published earlier can have changed in that time.
+  const rematch = facts.filter((f) => f.date_published !== null && f.date_published <= o.cutoff);
   const prevCredits: CreditState = { candidates: prev["credit-candidates.json"], credits: prev["ai-credits.json"] };
-  const updated = updateCredits(prevCredits, { records: since, ghsa: [] }, run, o.cutoff).state;
+  const updated = updateCredits(prevCredits, { records: rematch, ghsa: [] }, run, o.cutoff).state;
   // B14: the dashboard's ledger ids applied again with the clone's publication dates, as the build and --credits do.
   const credits: CreditState = {
     candidates: updated.candidates,
@@ -512,7 +514,7 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
     "series.json": series,
   };
   d.print(`Catch-up to ${o.cutoff}: ${added.length} days added (${added[0]?.[0] ?? "none"}${added.length > 1 ? ` to ${added.at(-1)![0]}` : ""}), ` +
-    `${since.length} records published since ${newestBefore || "the start"} rematched, ${series.weeks.length} weeks; live_from ${series.live_from}.`);
+    `${rematch.length} records to ${o.cutoff} rematched, ${series.weeks.length} weeks; live_from ${series.live_from}.`);
   return finishStateOnly(o, d, state);
 }
 
