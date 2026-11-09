@@ -1,6 +1,7 @@
-# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalises it with
-# `npm run sources:check` and drops or replaces any entry that fails. Entries marked "unverified" have
-# no confirmed path yet (SPEC §4.13 "Verify in P2").
+# Source registry (SPEC §4.13). Drafted in the Foundation PR. P2 applied Kobol's 2026-11-09 read of every
+# URL: MyJVN, the Anthropic dashboard, iThome, Focus Taiwan and NHK moved to the paths that answer, TPEx
+# joined, and the MSRC blog (no feed) left. The between-sessions pass finalises the rest with
+# `npm run sources:check`. Entries still marked "unverified" have no confirmed path yet.
 schema_version: 1
 keywords:            # ranking boosts and filters for news items; any language; case-insensitive
   - zero-day
@@ -109,7 +110,7 @@ feeds:
   - id: myjvn
     name: MyJVN (JVN iPedia)
     kind: myjvn
-    url: https://jvndb.jvn.jp/myjvn?method=getVulnOverviewList&feed=hnd&rangeDatePublic=w&maxCountItem=50&startItem=1
+    url: https://jvndb.jvn.jp/ja/rss/jvndb_new.rdf
     fallback_url: null
     language: ja
     region: JP
@@ -120,7 +121,7 @@ feeds:
   - id: anthropic-cvd
     name: Anthropic coordinated disclosure dashboard
     kind: anthropic-cvd
-    url: https://red.anthropic.com/
+    url: https://red.anthropic.com/2026/cvd/
     fallback_url: null
     language: en
     region: GLOBAL
@@ -132,6 +133,17 @@ feeds:
     name: TWSE material information (open data)
     kind: exchange
     url: https://openapi.twse.com.tw/v1/opendata/t187ap04_L
+    fallback_url: null
+    language: zh-Hant-TW
+    region: TW
+    coverage: [breaches, taiwan]
+    priority: 2
+    fresh_days: 3
+    must_match: false
+  - id: exchange-tpex
+    name: TPEx material information (open data)
+    kind: exchange
+    url: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
     fallback_url: null
     language: zh-Hant-TW
     region: TW
@@ -239,17 +251,6 @@ feeds:
     priority: 2
     fresh_days: 14
     must_match: false
-  - id: msrc
-    name: Microsoft Security Response Center blog
-    kind: rss
-    url: https://msrc.microsoft.com/blog/feed
-    fallback_url: null
-    language: en
-    region: GLOBAL
-    coverage: [exploits]
-    priority: 2
-    fresh_days: 30
-    must_match: false
   - id: unit42
     name: Palo Alto Networks Unit 42
     kind: rss
@@ -318,7 +319,7 @@ feeds:
     fresh_days: 14
     must_match: false
   - id: cert-eu
-    name: CERT-EU security advisories (unverified)
+    name: CERT-EU security advisories
     kind: rss
     url: https://cert.europa.eu/publications/security-advisories-rss
     fallback_url: null
@@ -363,9 +364,9 @@ feeds:
     fresh_days: 14
     must_match: false
   - id: focustaiwan
-    name: Focus Taiwan (CNA English) (unverified)
+    name: Focus Taiwan (CNA English)
     kind: rss
-    url: https://focustaiwan.tw/rss/aall.xml
+    url: https://feeds.feedburner.com/rsscna/engnews/
     fallback_url: null
     language: en
     region: TW
@@ -385,7 +386,7 @@ feeds:
     fresh_days: 2
     must_match: true
   - id: cna
-    name: Central News Agency 中央社 (unverified)
+    name: Central News Agency 中央社
     kind: rss
     url: https://feeds.feedburner.com/rsscna/technology
     fallback_url: null
@@ -396,9 +397,9 @@ feeds:
     fresh_days: 2
     must_match: true
   - id: ithome-security
-    name: iThome 資安 (unverified)
+    name: iThome 資安
     kind: rss
-    url: https://www.ithome.com.tw/rss
+    url: https://www.ithome.com.tw/rss/security
     fallback_url: null
     language: zh-Hant-TW
     region: TW
@@ -419,7 +420,7 @@ feeds:
     fresh_days: 14                                # 注意喚起 pages under /at/ are alerts through regions.json alert_patterns (§5.11)
     must_match: false
   - id: ipa
-    name: IPA security alerts (unverified)
+    name: IPA security alerts
     kind: rss
     url: https://www.ipa.go.jp/security/alert-rss.rdf
     fallback_url: null
@@ -443,7 +444,7 @@ feeds:
   - id: nhk
     name: NHK News
     kind: rss
-    url: https://www3.nhk.or.jp/rss/news/cat0.xml
+    url: https://www.nhk.or.jp/rss/news/cat0.xml
     fallback_url: null
     language: ja
     region: JP
