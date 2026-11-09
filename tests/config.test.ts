@@ -1,6 +1,7 @@
 // config/ (SPEC §4.11, §4.13, Appendix B): every file parses with its schema and passes validateConfig();
-// the seed counts Appendix B states; the D.7 strip fix; normalizeVendor() and matchVendor(); sample mode
-// and overrides; and a broken copy of each config file failing with its CONFIG_* code (§4.12 T cases).
+// the seed counts Appendix B states; the D.7 strip fix; normalizeVendor() and matchVendor(); the P2
+// registry and Verify checks; sample mode and overrides; and a broken copy of each config file failing with
+// its CONFIG_* code (§4.12 T cases).
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,7 +14,7 @@ import {
 import { liveIndicators, listedHosts } from "@/lib/rules/safety";
 import { ClaimsFile } from "@/lib/schema/scoreboard";
 import { contentDir, isSampleData, issueFormUrl, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
-import { compileTier1Paths, publisherFor, TIER1_PATH_FLAGS } from "@/lib/sources";
+import { blockedReason, compileTier1Paths, publisherFor, TIER1_PATH_FLAGS } from "@/lib/sources";
 import { blockedEntry, hostMatches } from "@/lib/urls";
 import { COVERAGE, LEVELLED_REGIONS, REGION_RULE_TYPES } from "@/lib/vocab";
 
@@ -289,6 +290,64 @@ describe("source registry (§4.13)", () => {
     expect(publisherFor("https://feeds.feedburner.com/SomeOtherFeed", "press", { sourceTiers, vendors }).tier).toBe(3);
     const aggregators = sourceTiers.publishers.filter((p) => p.kind === "aggregator").flatMap((p) => p.domains);
     for (const f of feeds) if (f.kind === "rss") expect(aggregators.some((d) => hostMatches(new URL(f.url).hostname, d)), f.id).toBe(false);
+  });
+});
+
+// P2 finalises the registry and the seed's Verify items (§4.13, Appendix B; fixtures plan §7). These are the
+// checks that hold before the Kobol sessions; the two that need them stay skipped until then.
+describe("the P2 registry and the Verify items", () => {
+  const { sources, sourceTiers } = loadConfig({ root, fresh: true });
+  const feeds = sources.feeds;
+  const fetched = feeds.flatMap((f) => (f.kind === "search" ? [] : [f]));
+  const STRUCTURED = ["kev", "cvelist", "epss", "ghsa", "nvd", "myjvn", "anthropic-cvd", "exchange"] as const;
+  const one = (id: string) => feeds.find((f) => f.id === id)!;
+
+  it("has unique ids, every structured kind (one entry each, exchange aside), and no search entry at priority 1", () => {
+    expect(new Set(feeds.map((f) => f.id)).size).toBe(feeds.length);
+    for (const k of STRUCTURED) {
+      const n = feeds.filter((f) => f.kind === k).length;
+      if (k === "exchange") expect(n, k).toBeGreaterThanOrEqual(1);
+      else expect(n, k).toBe(1);
+    }
+    expect(feeds.filter((f) => f.kind === "search" && f.priority === 1).map((f) => f.id)).toEqual([]);
+  });
+
+  it("keeps §4.13's stated priorities and freshness, and the optional NVD read below priority 1", () => {
+    expect(one("kev")).toMatchObject({ kind: "kev", priority: 1, fresh_days: 7 });
+    expect(one("bleepingcomputer")).toMatchObject({ kind: "rss", priority: 1, fresh_days: 2 });
+    expect(one("jpcert")).toMatchObject({ kind: "rss", priority: 1, fresh_days: 14 });
+    expect(one("nvd").priority).toBeGreaterThan(1);
+    for (const f of fetched) expect(f.fresh_days, f.id).toBeGreaterThanOrEqual(1);
+  });
+
+  it("fetches only https; raw.githubusercontent.com only for kev and cvelist (by script), and no other URL on a blocked host", () => {
+    for (const f of fetched) {
+      for (const u of [f.url, f.fallback_url].filter((x): x is string => x !== null)) {
+        expect(u.startsWith("https://"), `${f.id}: ${u}`).toBe(true);
+        const host = new URL(u).hostname;
+        if (host === "raw.githubusercontent.com") expect(["kev", "cvelist"], `${f.id}: ${u}`).toContain(f.kind);
+        else if (f.kind === "ghsa") expect(u).toBe("https://github.com/github/advisory-database.git");
+        else expect(blockedReason(u, sourceTiers), `${f.id}: ${u}`).toBeNull();
+      }
+    }
+  });
+
+  it("source-tiers.json, regions.json and annotations.json hold no Verify note; vendors.json's are Appendix B.1's five domain and HQ checks", () => {
+    for (const f of ["source-tiers.json", "regions.json", "annotations.json"]) expect(read(`config/${f}`), f).not.toMatch(/\bverify\b/i);
+    const vendors = (json("config/vendors.json") as { vendors: { id: string; note: string | null }[] }).vendors;
+    expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual(["avtech", "digiever", "merit-lilin", "fxc", "sky"]);
+  });
+
+  it("names only gtig (unverified), the one feed path the cloud session could not confirm", () => {
+    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual(["gtig"]);
+  });
+
+  // TODO(Kobol session 1, build plan §5.1 K2 and K3): unskip once sources:check confirms gtig's feed path
+  // (or the entry is replaced or dropped, ruling R49) and V15 settles the five vendor domains and HQs.
+  it.skip("no registry name says (unverified) and no vendors.json note asks to Verify (after Kobol session 1)", () => {
+    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
+    const vendors = (json("config/vendors.json") as { vendors: { id: string; note: string | null }[] }).vendors;
+    expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual([]);
   });
 });
 
