@@ -71,7 +71,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 1, ai_finders: 1, source_tiers: 1, regions: 1, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 2, ai_finders: 2, source_tiers: 1, regions: 1, actors: 1 });
   });
 });
 
@@ -94,7 +94,7 @@ describe("seed counts (Appendix B)", () => {
 
   it("B.2 ai-finders: three fields, thirteen finders in match order, generic last", () => {
     const af = prod().aiFinders;
-    expect(af.updated).toBe("2026-11-07");
+    expect(af.updated).toBe("2026-11-09");
     expect(af.fields).toEqual(["cna.credits", "adp.credits", "ghsa.credits"]);
     expect(af.finders.map((f) => f.id)).toEqual(["anthropic-claude", "anthropic-claude-code", "openai-codex", "openai-chatgpt",
       "google-big-sleep", "google-gemini", "xbow", "aisle", "depthfirst", "zeropath", "aixcc", "vulnhuntr", "generic-ai-assisted"]);
@@ -179,9 +179,10 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("every versioned file is at version 1", () => {
+  it("versioned files: vendors and ai-finders at 2 (P2: Schneider's CNA; the AISLE and Team Atlanta spellings), the rest at 1", () => {
     const c = prod();
-    for (const f of [c.vendors, c.aiFinders, c.sourceTiers, c.regions, c.actors]) expect(f.version).toBe(1);
+    expect([c.vendors, c.aiFinders].map((f) => f.version)).toEqual([2, 2]);
+    for (const f of [c.sourceTiers, c.regions, c.actors]) expect(f.version).toBe(1);
   });
 });
 
