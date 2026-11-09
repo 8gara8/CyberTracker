@@ -123,7 +123,11 @@ function writeCache(root: string): void {
   });
   const index = FeedIndexFile.parse({
     schema_version: 1, date: D, generated_at: `${T}T20:42:00Z`,
-    feeds: [indexEntry("kev", "kev"), indexEntry("cvelist", "cvelist"), indexEntry("epss", "epss"), indexEntry("ghsa", "ghsa"), indexEntry("anthropic-cvd", "anthropic-cvd")],
+    feeds: [
+      indexEntry("kev", "kev"), indexEntry("cvelist", "cvelist"), indexEntry("epss", "epss"), indexEntry("ghsa", "ghsa"),
+      // collect records the payload's hash when it read the payload (scripts/lib/feeds.ts readCvd).
+      indexEntry("anthropic-cvd", "anthropic-cvd", { sha256: sha256Hex(fs.readFileSync(path.join(FEEDS, "anthropic-cvd", "payload.json"))) }),
+    ],
   });
   write(path.join(cache, "feeds", "inputs.json"), jsonText(inputs, CollectInputsFile));
   write(path.join(cache, "feeds", "index.json"), jsonText(index, FeedIndexFile));
@@ -145,6 +149,19 @@ function repo(o: { state?: boolean; cache?: boolean } = {}): string {
   return root;
 }
 
+/** Rewrites one row of collect's cache/feeds/index.json. */
+function editIndex(root: string, id: string, o: Partial<FeedIndexEntry>): void {
+  const file = path.join(root, "cache", "feeds", "index.json");
+  const index = FeedIndexFile.parse(JSON.parse(fs.readFileSync(file, "utf8")));
+  write(file, jsonText({ ...index, feeds: index.feeds.map((f) => (f.id === id ? { ...f, ...o } : f)) }, FeedIndexFile));
+}
+
+/** Rewrites collect's cache/feeds/inputs.json. */
+function editInputs(root: string, edit: (i: CollectInputsFile) => CollectInputsFile): void {
+  const file = path.join(root, "cache", "feeds", "inputs.json");
+  write(file, jsonText(edit(CollectInputsFile.parse(JSON.parse(fs.readFileSync(file, "utf8")))), CollectInputsFile));
+}
+
 const readMetrics = (dir: string) => Metrics.parse(JSON.parse(fs.readFileSync(path.join(dir, "metrics", `${D}.json`), "utf8")));
 
 describe("loadFeedCache", () => {
@@ -161,6 +178,30 @@ describe("loadFeedCache", () => {
     expect(f.anthropicCvd.dashboard?.revision).toBe("37");
     expect(f.cvelist.read.version).toBe(`${"a".repeat(40)} ${FEED_WORLD.eodTag} ${FEED_WORLD.hourlyTag}`);
     expect(f.epss.read.version).toBe(`e=${T} e1=${C} e7=${addDays(T, -7)}`);
+  });
+
+  it("uses the cached dashboard payload only when its hash is the one collect recorded, else the page alone (B3)", () => {
+    const root = repo();
+    const f = loadFeedCache(root, D);
+    expect(f.anthropicCvd.dashboard).toMatchObject({ revision: "37", found_n: 5710 });
+    // Today's payload fetch failed: collect parsed the page alone and recorded the page's hash, while an
+    // earlier run's payload (another revision) is still on disk.
+    const page = fs.readFileSync(path.join(root, "cache", "feeds", "anthropic-cvd.html"));
+    editIndex(root, "anthropic-cvd", { sha256: sha256Hex(page) });
+    const stale = JSON.parse(fs.readFileSync(path.join(FEEDS, "anthropic-cvd", "payload.json"), "utf8")) as Record<string, unknown>;
+    write(path.join(root, "cache", "feeds", "anthropic-cvd.payload.json"), JSON.stringify({ ...stale, revision: 36, total_verified: 5000 }));
+    const g = loadFeedCache(root, D);
+    expect(g.anthropicCvd.dashboard).toMatchObject({ revision: "37", found_n: null });
+    expect(g.anthropicCvd.read).toMatchObject({ version: "37", sha256: sha256Hex(page) });
+  });
+
+  it("names the kev-data commit as the KEV version only for a mirror read; a cisa.gov read is its catalogVersion (B11)", () => {
+    const root = repo();
+    expect(loadFeedCache(root, D).kev.read.version).toBe("b".repeat(40));
+    editInputs(root, (i) => ({ ...i, kev: { ...i.kev!, fallback_used: true, url_used: "https://www.cisa.gov/ct-sample/kev" } }));
+    expect(loadFeedCache(root, D).kev.read.version).toBe(FEED_WORLD.kev.version);
+    editInputs(root, (i) => ({ ...i, commits: { ...i.commits, kev_data: null }, kev: { ...i.kev!, fallback_used: false } }));
+    expect(loadFeedCache(root, D).kev.read.version).toBe(FEED_WORLD.kev.version);
   });
 
   it("throws NoFeedsError without inputs.json or for another date, and fails a feed whose body is missing", () => {

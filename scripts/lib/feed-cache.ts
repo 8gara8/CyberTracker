@@ -10,9 +10,11 @@
 //   cache/cvelist/records/<CVE>.json          every by-id record inputs.json lists as fetched
 //   cache/epss/epss_scores-<date>.csv.gz      every EPSS file inputs.json lists, by role
 //   cache/ghsa/advisories/github-reviewed/<YYYY>/<MM>/<GHSA id>/<GHSA id>.json, for inputs.json's months
-//   cache/feeds/anthropic-cvd.html and anthropic-cvd.payload.json (the payload optional)
+//   cache/feeds/anthropic-cvd.html and anthropic-cvd.payload.json (the payload optional, and read only when
+//   its SHA-256 is the index entry's, so an earlier run's payload never joins today's page)
 // A feed's manifest `version` is what --recompute re-fetches it by: the commit SHA and zip tags (cvelist),
-// the commit (kev, ghsa), the EPSS score dates, the dashboard revision. Its `sha256` covers the bytes read
+// the commit (kev when collect read the mirror at it, else the catalogVersion; ghsa), the EPSS score dates,
+// the dashboard revision. Its `sha256` covers the bytes read
 // here: the catalog body; "<asset> <sha256>" lines of the zips; "<role> <date> <sha256>" lines of the EPSS
 // files; collect's GHSA tree hash; the dashboard page followed by its payload.
 
@@ -161,7 +163,8 @@ function kevFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, en
   try {
     const parsed = parseKev(body);
     return {
-      read: { ...read, version: inputs.commits.kev_data ?? parsed.catalog.catalogVersion, sha256: parsed.sha256, records: parsed.catalog.count },
+      // The kev-data commit names the catalog only when collect read the mirror at it; a cisa.gov read is its catalogVersion.
+      read: { ...read, version: !inputs.kev?.fallback_used && inputs.commits.kev_data ? inputs.commits.kev_data : parsed.catalog.catalogVersion, sha256: parsed.sha256, records: parsed.catalog.count },
       catalog: parsed.catalog,
     };
   } catch {
@@ -238,7 +241,10 @@ function cvdFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile, en
   const body = usable(read) && sourceUrl ? readFile(p.feedBody("anthropic-cvd", "html")) : null;
   if (!body) return { read: unusable(read), dashboard: null, sourceUrl };
   try {
-    const payload = readFile(p.feedBody("anthropic-cvd", "payload.json"));
+    // The payload counts only when it is the one collect read today (its hash is the index entry's); a payload
+    // left by an earlier run is ignored and the page is read alone, as collect read it.
+    const cached = readFile(p.feedBody("anthropic-cvd", "payload.json"));
+    const payload = cached && entry?.sha256 === sha256Hex(cached) ? cached : null;
     const dashboard = parseAnthropicCvd(body, "text/html", payload);
     return {
       read: { ...read, version: dashboard.revision, sha256: sha256Hex(payload ? Buffer.concat([body, payload]) : body), records: dashboard.ledger_ids.length },

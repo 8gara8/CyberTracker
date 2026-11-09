@@ -92,6 +92,18 @@ describe("updateAnthropicCvd and anthropicCvdFigures (§5.6 item 1)", () => {
     expect(updateAnthropicCvd(EMPTY_CVD, { ...read, as_of: "last Tuesday" }, meta, C)).toBe(EMPTY_CVD);
   });
 
+  it("completes a same-revision state read from the page alone once the payload's figures arrive (B3)", () => {
+    // Day 1: the payload failed, so the page alone gave revision 41 with no found_n and only the ids it shows.
+    const pageOnly = updateAnthropicCvd(cvdState("2026-10-20"), { ...read, found_n: null, ledger_ids: ["CVE-2026-1002"] }, meta, C);
+    expect(pageOnly).toMatchObject({ revision: "41", found_n: null, ledger_ids: ["CVE-2026-1002"] });
+    // Day 2: the payload answers for the same revision; its figures and full ledger replace the page-only read.
+    const later = { fetchedAt: "2026-11-08T20:41:12Z", sourceUrl: SOURCE };
+    const full = updateAnthropicCvd(pageOnly, read, later, "2026-11-07");
+    expect(full).toMatchObject({ revision: "41", found_n: 6100, fetched_at: later.fetchedAt, updated_at: "2026-11-07", ledger_ids: ["CVE-2026-999", "CVE-2026-1002", "GHSA-zzzz-0000-0001"] });
+    // A page-only read never replaces a payload read of the same revision.
+    expect(updateAnthropicCvd(full, { ...read, found_n: null }, meta, "2026-11-08")).toBe(full);
+  });
+
   it("is null before any read, ok at 14 days and stale at 15", () => {
     expect(anthropicCvdFigures(EMPTY_CVD, C)).toBeNull();
     expect(CVD_STALE_DAYS).toBe(14);
