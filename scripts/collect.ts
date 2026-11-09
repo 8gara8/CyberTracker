@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
-  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow,
+  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
   provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
   type ItemDraft, type LinkScreen, type RecordDraft,
 } from "../lib/collect";
@@ -32,7 +32,7 @@ import { byCodeUnit, compareCveIds } from "../lib/ids";
 import { jsonText } from "../lib/json";
 import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
-import { AnthropicCvdFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
+import { AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
   CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord,
   type RankLogEntry, type ZipRead,
@@ -160,6 +160,13 @@ function readState(contentDir: string, date: string) {
   const days = DaysFile.safeParse(readJson(path.join(contentDir, "state", "days.json")));
   const index = KevIndexFile.safeParse(readJson(path.join(contentDir, "state", "kev-index.json")));
   const cvd = AnthropicCvdFile.safeParse(readJson(path.join(contentDir, "state", "anthropic-cvd.json")));
+  const candidates = CreditCandidatesFile.safeParse(readJson(path.join(contentDir, "state", "credit-candidates.json")));
+  const credits = AiCreditsFile.safeParse(readJson(path.join(contentDir, "state", "ai-credits.json")));
+  // CVE ids whose publication date the state already holds (the metrics' publishedDates() reads the same rows).
+  const dated = new Set<string>();
+  for (const r of index.success ? index.data.entries : []) if (r[4] !== null) dated.add(r[0]);
+  for (const r of candidates.success ? candidates.data.candidates : []) dated.add(r[0]);
+  for (const r of credits.success ? credits.data.matches : []) dated.add(r[0]);
   const releaseIds = new Set<string>();
   const briefs = path.join(contentDir, "briefs");
   if (fs.existsSync(briefs)) {
@@ -174,6 +181,7 @@ function readState(contentDir: string, date: string) {
     knownDays: days.success ? days.data.days.map((d) => d[0]) : null,
     kevIndex: index.success ? index.data : null,
     cvdRevision: cvd.success ? cvd.data.revision : null,
+    dated,
     earlierReleaseIds: [...releaseIds].sort(byCodeUnit),
   };
 }
@@ -314,9 +322,15 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const baseline = catalog ? kevBaseline({ contentDir, date: D, catalog, asOf: o.asOf === true }) : null;
   if (baseline) catalog = baseline.catalog;
   const newKevIds = baseline?.newKevIds ?? [];
-  const wanted = new Set<string>(newKevIds);
-  for (const r of state.kevIndex?.entries ?? []) if (r[1] >= REJOIN_FROM && r[4] === null) wanted.add(r[0]);
-  const byId = [...wanted].filter((id) => !records.has(id)).sort(compareCveIds);
+  const kevWanted = new Set<string>(newKevIds);
+  for (const r of state.kevIndex?.entries ?? []) if (r[1] >= REJOIN_FROM && r[4] === null) kevWanted.add(r[0]);
+  // A new dashboard revision: its ledger ids the state cannot date are fetched too, after the KEV ids.
+  const dashRead = (cvd as Awaited<ReturnType<typeof readCvd>> | null)?.data ?? null;
+  const ledgerIds = dashRead && dashRead.revision !== state.cvdRevision ? dashRead.ledger_ids : null;
+  const perId = perIdPlan({ kevIds: [...kevWanted], ledgerIds, dated: state.dated, have: new Set(records.keys()) });
+  const byId = perId.ids;
+  if (perId.ledger.length) log(`cvelist: ${perId.ledger.length} ledger ids of revision ${dashRead!.revision} fetched by id for their dates.`);
+  if (perId.overCap) log(`cvelist: ${perId.overCap} ledger ids over the per-id cap of ${PER_ID_MAX}, left for the next revision.`);
   const fetched: string[] = [];
   const notFound: string[] = [];
   await pool(byId, PER_ID_POOL, async (id) => {
@@ -441,6 +455,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const windowZips = plan.zips.filter((z) => z.utc_day >= utcDateOf(rw.start));
     const zipFail = windowZips.map((z) => zipReads.get(z.asset)).find((r) => r && !r.ok);
     const notes = windowZips.filter((z) => !zipReads.get(z.asset)?.ok).map((z) => `CVE List: ${z.asset} not read.`);
+    if (perId.overCap) notes.push(`CVE List: ${perId.overCap} ids over the per-id cap of ${PER_ID_MAX}.`);
     const ok = dl.ok && !zipFail && windowZips.length > 0;
     // Zips that end before the record window does leave its last hours in no zip read: stale, with the hour.
     const staleNote = ok ? zipsShortNote(zipsReach(windowZips), rw) : null;
@@ -524,7 +539,10 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const byReason = { below_cap: 0, merged: 0, bundled: 0 };
   for (const c of cut) byReason[c.reason === "below_cap" ? "below_cap" : c.reason.startsWith("merged:") ? "merged" : "bundled"] += 1;
   const candidates: CandidatesFile = { schema_version: 1, date: D, kept, cut: { count: cut.length, by_reason: byReason } };
-  const rankLog: RankLogEntry[] = remapped.log;
+  const rankLog: RankLogEntry[] = [
+    ...remapped.log,
+    ...(perId.overCap ? [{ code: "CVE_FETCH_CAP" as const, detail: `${perId.overCap} dashboard ledger ids over the per-id cap of ${PER_ID_MAX}; ${perId.ledger.length} fetched after the KEV ids.` }] : []),
+  ];
   const candidateLog = { schema_version: 1 as const, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog };
 
   const kevData = kr?.data ?? null;
@@ -538,7 +556,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
       days: plan.days.map((d) => ({ date: d.date, zips: d.zips, ok: d.zips.every((a) => zipReads.get(a)?.ok === true) })),
       newest_hourly_tag: hourlyTag,
       delta_log_newest: newestOf(dl?.data?.newest ?? null) && /T/.test(newestOf(dl?.data?.newest ?? null)!) ? newestOf(dl!.data!.newest)! : null,
-      by_id: { fetched, not_found: notFound, over_cap: 0 },
+      by_id: { fetched, not_found: notFound, over_cap: perId.overCap },
     },
     kev: kevData && kr ? {
       catalog_version: kevData.catalogVersion, date_released: newestOf(kevData.dateReleased) ?? `${kevData.dateReleased.slice(0, 10)}T00:00:00Z`,

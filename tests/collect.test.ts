@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
-  notePackRecords, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
+  notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
 } from "../lib/collect";
 import { loadConfig, matchCredit } from "../lib/config";
 import { addDays } from "../lib/dates";
@@ -527,6 +527,22 @@ describe("records", () => {
     expect(epssJumps(e, null)).toEqual([]);
   });
 
+  it("perIdPlan: every KEV id, then a new revision's ledger CVE ids the state cannot date, newest first, within 500 (B13)", () => {
+    const p = perIdPlan({
+      kevIds: ["CVE-2026-0002", "CVE-2026-0001", "CVE-2026-0003"],
+      ledgerIds: ["cve-2026-0009", "CVE-2026-0008", "CVE-2026-0007", "CVE-2026-0006", "CVE-2026-0002", "GHSA-7q8r-9v2w-c3f4", "CVE-2026-0005", "CVE-2026-0008"],
+      dated: new Set(["CVE-2026-0007"]), have: new Set(["CVE-2026-0003", "CVE-2026-0006"]), max: 4,
+    });
+    // Two KEV ids to fetch (0003 is in today's zips), so two places are left, for the newest undated ledger ids;
+    // 0007 is dated, 0006 is in the zips, 0002 is a KEV id and the GHSA id is no CVE: 0005 is over the cap.
+    expect(p).toEqual({ ids: ["CVE-2026-0001", "CVE-2026-0002", "CVE-2026-0008", "CVE-2026-0009"], ledger: ["CVE-2026-0008", "CVE-2026-0009"], overCap: 1 });
+    expect(perIdPlan({ kevIds: ["CVE-2026-0001"], ledgerIds: null, dated: new Set(), have: new Set() })).toEqual({ ids: ["CVE-2026-0001"], ledger: [], overCap: 0 });
+    const many = Array.from({ length: PER_ID_MAX + 10 }, (_, i) => `CVE-2026-${String(10000 + i)}`);
+    const kevOnly = perIdPlan({ kevIds: many, ledgerIds: ["CVE-2025-0001"], dated: new Set(), have: new Set() });
+    expect(kevOnly.ids.length).toBe(PER_ID_MAX + 10);
+    expect(kevOnly).toMatchObject({ ledger: [], overCap: 1 });
+  });
+
   it("remapIds gives the candidates, cut entries and MERGED and BUNDLED log lines final ids, and a capped record none (B10)", () => {
     // r0001 and r0002 swap places in display order; r0350 fell to the cap of 400.
     const idMap = new Map([["r0001", "r0002"], ["r0002", "r0001"]]);
@@ -778,6 +794,43 @@ describe("collect's other runs", () => {
     const full = await run(tempRoot(true));
     expect(full.index.feeds.find((f) => f.id === "cvelist")).toMatchObject({ status: "ok", note: null });
     expect(r.pack.records.length).toBe(full.pack.records.length);
+  });
+
+  it("a new dashboard revision makes collect fetch by id the ledger CVE ids the state cannot date, for the metrics (B13)", async () => {
+    const LEDGER_ID = "CVE-2026-77206";
+    const perIdUrl = "https://raw.githubusercontent.com/CVEProject/cvelistV5/c0de000000000000000000000000000000002013/cves/2026/77xxx/CVE-2026-77206.json";
+    // The fixture state has no anthropic-cvd.json, so revision 37 is new: the id is asked for (the fixture CVE List answers 404).
+    const urls: string[] = [];
+    const log: string[] = [];
+    const first = await run(tempRoot(true), { urls, log });
+    expect(urls).toContain(perIdUrl);
+    expect(first.inputs.cvelist.by_id.not_found).toContain(LEDGER_ID);
+    expect(first.inputs.cvelist.by_id.over_cap).toBe(0);
+    // The payload lists CVE-2026-77206, -77207, -79610 and -103658; the last is in the end-of-day zip.
+    expect(log).toContain("cvelist: 3 ledger ids of revision 37 fetched by id for their dates.");
+    // Published by now: the record is fetched, cached for the metrics and listed.
+    const feeds = feedsVariant((idx) => { idx[perIdUrl] = { file: "cvelist/by-id/CVE-2026-77206.json", content_type: "application/json" }; });
+    const src = fs.readFileSync(path.join(FEEDS, "cvelist", "by-id", "CVE-2024-38112.json"), "utf8");
+    fs.writeFileSync(path.join(feeds, "cvelist", "by-id", "CVE-2026-77206.json"), src.replaceAll("CVE-2024-38112", LEDGER_ID));
+    const root = tempRoot(true);
+    const got = await run(root, { feeds });
+    expect(got.inputs.cvelist.by_id.fetched).toContain(LEDGER_ID);
+    expect(fs.existsSync(path.join(root, "cache", "cvelist", "records", `${LEDGER_ID}.json`))).toBe(true);
+    // The same revision as the state's: not asked for again.
+    const same = tempRoot(true);
+    const cvdState = { schema_version: 1, updated_at: "2026-10-11", revision: "37", as_of: "2026-10-13", fetched_at: "2026-10-13T04:37:00+08:00", source_url: "https://red.anthropic.com/2026/cvd", found_n: null, disclosed_n: 4812, patched_n: 588, ledger_ids: [LEDGER_ID] };
+    fs.writeFileSync(path.join(same, "content", "state", "anthropic-cvd.json"), JSON.stringify(cvdState));
+    const sameUrls: string[] = [];
+    await run(same, { urls: sameUrls });
+    expect(sameUrls).not.toContain(perIdUrl);
+    // A new revision, but credit-candidates.json already dates the id: not asked for.
+    const datedRoot = tempRoot(true);
+    fs.writeFileSync(path.join(datedRoot, "content", "state", "anthropic-cvd.json"), JSON.stringify({ ...cvdState, revision: "36" }));
+    const candidates = { schema_version: 1, updated_at: "2026-10-11", prefilter_sha256: sha256Hex("prefilter"), candidates: [[LEDGER_ID, "2026-09-20", "cna.credits", "SAMPLE Researcher using Claude"]] };
+    fs.writeFileSync(path.join(datedRoot, "content", "state", "credit-candidates.json"), JSON.stringify(candidates));
+    const datedUrls: string[] = [];
+    await run(datedRoot, { urls: datedUrls });
+    expect(datedUrls).not.toContain(perIdUrl);
   });
 
   it("a rerun that dies leaves no inputs.json or index.json from the earlier run (B8)", async () => {

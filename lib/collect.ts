@@ -235,6 +235,27 @@ export interface LinkScreen {
   dropped: number;
 }
 
+/** The per-id record fetch's cap (§8.3): KEV ids are never cut; the other ids share what is left of 500. */
+export const PER_ID_MAX = 500;
+
+/**
+ * The per-id record fetch (§8.3 CVE records): every KEV id not in today's zips, then, when the dashboard's
+ * revision changed (`ledgerIds` non-null), its ledger CVE ids that no state file dates (`dated`: kev-index,
+ * credit-candidates and ai-credits rows with a date) and no zip read today holds (`have`), newest id first,
+ * up to PER_ID_MAX in all, so the metrics can date them for the ledger (§5.5). `overCap` counts the ledger
+ * ids left out; they wait for the next revision.
+ */
+export function perIdPlan(o: { kevIds: readonly string[]; ledgerIds: readonly string[] | null; dated: ReadonlySet<string>; have: ReadonlySet<string>; max?: number }): { ids: string[]; ledger: string[]; overCap: number } {
+  const kev = [...new Set(o.kevIds)].filter((id) => !o.have.has(id));
+  const taken = new Set(kev);
+  const wanted = [...new Set((o.ledgerIds ?? []).map((x) => x.trim().toUpperCase()))]
+    .filter((id) => ID_PATTERNS.cve.test(id) && !taken.has(id) && !o.dated.has(id) && !o.have.has(id))
+    .sort((a, b) => compareCveIds(b, a));
+  const room = Math.max(0, (o.max ?? PER_ID_MAX) - kev.length);
+  const ledger = wanted.slice(0, room).sort(compareCveIds);
+  return { ids: [...kev, ...ledger].sort(compareCveIds), ledger, overCap: wanted.length - ledger.length };
+}
+
 // ── Items ────────────────────────────────────────────────────────────────────────────────────────
 
 /** A pack item before ids: sanitised strings, flags, score and a provisional key (`<feed id>:<normalised url>`). */
