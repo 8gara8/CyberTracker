@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { addDays } from "../../lib/dates";
+import { addDays, utcDateOf } from "../../lib/dates";
 import type { DraftSource, SourceType } from "../../lib/schema/common";
 import { KevIndexRow } from "../../lib/schema/metrics";
 
@@ -260,7 +260,7 @@ export function recordView(id: string): RecordView {
     id,
     title: (r.title ?? `${first.vendor} ${first.product}: ${r.description.split(". ")[0]}`).slice(0, 200),
     text: text.slice(0, 1000),
-    date: r.published.slice(0, 10),
+    date: utcDateOf(r.published),
     vendor: first.vendor,
     product: first.product,
     cvss: { score: r.cvss.score, version: r.cvss.version, scorer: "cna" },

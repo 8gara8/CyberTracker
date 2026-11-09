@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { loadCheckedConfig, SAMPLE_CLAIMS_FILE, type LoadedConfig } from "./config";
-import { inRange, isValidDate } from "./dates";
+import { inRange, isValidDate, utcDateOf } from "./dates";
 import { Brief, RegionSignal } from "./schema/brief";
 import type { AgentContext } from "./schema/context";
 import { DraftBrief } from "./schema/draft-brief";
@@ -287,7 +287,15 @@ const CveMetadata = z.object({
   dateUpdated: z.string().nullish().catch(null),
 });
 
-const utcDate = (s: unknown) => (typeof s === "string" && /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null);
+/** The UTC calendar date of a record timestamp (§5.1), offset applied; null when absent or unreadable. */
+const utcDate = (s: unknown): string | null => {
+  if (typeof s !== "string") return null;
+  try {
+    return utcDateOf(s);
+  } catch {
+    return null;
+  }
+};
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const obj = (v: unknown): Record<string, unknown> => (isRecord(v) ? v : {});
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v.trim() : null);

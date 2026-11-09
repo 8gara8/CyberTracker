@@ -619,6 +619,19 @@ describe("readers", () => {
     expect(cveRecordInfo({ not: "a record" })).toBeNull();
   });
 
+  it("cveRecordInfo takes UTC dates of offset timestamps across midnight, and null for unreadable ones", () => {
+    const withDates = (datePublished: unknown, dateUpdated: unknown) =>
+      cveRecordInfo({ ...SAMPLE_RECORD, cveMetadata: { ...SAMPLE_RECORD.cveMetadata, datePublished, dateUpdated } });
+    expect(withDates("2026-11-07T05:00:00+08:00", "2026-11-06T20:30:00-05:00")).toMatchObject({
+      date_published: "2026-11-06", date_updated: "2026-11-07",
+    });
+    expect(withDates("2026-11-07T05:00:00.123Z", "2026-11-07T23:59:59")).toMatchObject({
+      date_published: "2026-11-07", date_updated: "2026-11-07",
+    });
+    expect(withDates("2026-11-07", "not a date")).toMatchObject({ date_published: "2026-11-07", date_updated: null });
+    expect(withDates("2026-02-30T01:00:00Z", 42)).toMatchObject({ date_published: null, date_updated: null });
+  });
+
   it("cveLookupFromDir reads records lazily, any case, and misses unknown ids", () => {
     const dir = freshDir({ "CVE-2099-0001.json": SAMPLE_RECORD, "CVE-2099-0003.json": "{ broken" });
     const lookup = cveLookupFromDir(dir);

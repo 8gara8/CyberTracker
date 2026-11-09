@@ -27,7 +27,7 @@
 import { createHash } from "node:crypto";
 import type { z } from "zod";
 import { matchCredit, matchVendor, type LoadedConfig } from "../../lib/config";
-import { addDays } from "../../lib/dates";
+import { addDays, utcDateOf } from "../../lib/dates";
 import { longDate, shortDate } from "../../lib/format";
 import { actorNexusOf, publicExploitOf } from "../../lib/items";
 import { kevLines } from "../../lib/metrics/headline";
@@ -503,7 +503,7 @@ function freezeSource(s: DraftBrief["sources"][number], seenAs: Source["seen_as"
 
 type Obj = Record<string, unknown>;
 const obj = (x: unknown): Obj => (x && typeof x === "object" ? (x as Obj) : {});
-const utcDate = (ts: string) => new Date(Date.parse(ts)).toISOString().slice(0, 10);
+const utcDate = (ts: string) => utcDateOf(ts);
 
 /** The CVE block of a fixture record as it stood when publish built it (`capturedAt`). */
 function recordBlock(
