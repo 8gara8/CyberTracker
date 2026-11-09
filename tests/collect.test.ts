@@ -24,7 +24,7 @@ import { regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
 import { CANARY_URL_MARK } from "../lib/vocab";
 import { matchRecord } from "../lib/metrics/ai-credit";
-import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry } from "../lib/schema/pack";
+import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
 import { collect, CollectTimeout, FixtureGuardError, fixtureGuard, main } from "../scripts/collect";
@@ -287,6 +287,58 @@ describe("scores and keywords", () => {
 });
 
 describe("items", () => {
+  it("the size caps never cut a referenced or KEV record, cut records from the end of capRecords' order, and recount (B7)", () => {
+    const rec = (i: number, source: "kev" | "cvelist" | "myjvn", date: string, flagged = 0) => ({
+      key: `${source}:${i}`, source, record_id: source === "myjvn" ? `JVNDB-2026-${String(100000 + i)}` : `CVE-2026-${String(10000 + i)}`,
+      url: source === "myjvn" ? `https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-${100000 + i}.html` : `https://www.cve.org/CVERecord?id=CVE-2026-${10000 + i}`,
+      advisory_urls: [], title: `SAMPLE ${"t".repeat(150)}`, text: `SAMPLE ${"x".repeat(500)}`, date, vendor: null, product: null,
+      cve_ids: source === "myjvn" ? [] : [`CVE-2026-${10000 + i}`], facts: {}, flags: flagged ? ["injection_like" as const] : [], flagged,
+    });
+    // A Patch Tuesday morning: 120 referenced CVE records dated D - 2, and 200 MyJVN notes, half dated D - 1, half D - 3.
+    const drafts = [
+      ...Array.from({ length: 3 }, (_, i) => rec(i, "kev", "2026-10-13")),
+      ...Array.from({ length: 120 }, (_, i) => rec(100 + i, "cvelist", "2026-10-12")),
+      ...Array.from({ length: 200 }, (_, i) => rec(1000 + i, "myjvn", i % 2 ? "2026-10-13" : "2026-10-11", i === 0 || i === 1 ? 1 : 0)),
+    ];
+    const provisional = provisionalRecords(drafts);
+    const refProvisional = new Set(provisional.filter((r) => r.source === "cvelist").map((r) => r.id));
+    const capped = capRecords(provisional, refProvisional);
+    const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = toPackItems(capItems(Array.from({ length: 60 }, (_, i) => ({
+      ...base, feed_id: i % 2 ? "therecord" : "krebs", key: `k${i}`, url: `https://therecord.media/ct-sample/item-${i}`, snippet: "s".repeat(290), score: 50 - i / 10,
+    }))).kept);
+    // A kept candidate points at every CVE record and at the 20 best items.
+    const referenced = new Set([...capped.kept.filter((r) => r.source === "cvelist").map((r) => r.id), ...items.slice(0, 20).map((i) => i.id)]);
+    const flaggedOf = new Map(drafts.map((d) => [`${d.source}:${d.record_id}`, d.flagged]));
+    const recount = (its: readonly PackItem[], recs: readonly PackRecord[]) => ({
+      feeds: ["therecord", "krebs", "myjvn"].map((id) => ({
+        id, kind: id === "myjvn" ? "myjvn" : "rss", ok: true, stale: false, newest: null, items_total: 0, sha256: null, error: null,
+        items_kept: id === "myjvn" ? recs.filter((r) => r.source === "myjvn").length : its.filter((i) => i.feed_id === id).length,
+      })),
+      injectionFlags: recs.reduce((n, r) => n + (flaggedOf.get(`${r.source}:${r.record_id}`) ?? 0), 0),
+    });
+    const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, items, records: capped.kept, ...recount(items, capped.kept) }, cfg.sources, { referenced, recount });
+    const left = built.pack.records;
+    expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(built.sizeCut.over).toBe(false);
+    expect(built.sizeCut.records).toBeGreaterThan(0);
+    // Every referenced record and every KEV record stays; only MyJVN notes go, the oldest first.
+    expect(left.filter((r) => r.source === "cvelist").length).toBe(120);
+    expect(left.filter((r) => r.source === "kev").length).toBe(3);
+    const notes = left.filter((r) => r.source === "myjvn");
+    expect(notes.length).toBe(200 - built.sizeCut.records);
+    expect(notes.every((r) => r.date === "2026-10-13")).toBe(true);
+    // The unreferenced items went before any record; the referenced ones stay while unreferenced records remain.
+    expect(built.sizeCut.items).toBe(40);
+    expect(built.pack.items.map((i) => i.id)).toEqual(items.slice(0, 20).map((i) => i.id));
+    // feeds[] and injection_flags describe what is left: of the two flagged notes, the one dated D - 3 is gone.
+    const kept = new Map(built.pack.feeds.map((f) => [f.id, f.items_kept]));
+    expect(kept.get("myjvn")).toBe(notes.length);
+    expect((kept.get("therecord") ?? 0) + (kept.get("krebs") ?? 0)).toBe(20);
+    expect(built.pack.injection_flags).toBe(notes.filter((r) => (flaggedOf.get(`myjvn:${r.record_id}`) ?? 0) > 0).length);
+    expect(built.pack.injection_flags).toBe(1);
+  });
+
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
     const d = toItemDrafts(feedById("nhk"), [
       raw("SAMPLE ransomware attack on a hospital", "https://www3.nhk.or.jp/ct-sample/a"),

@@ -655,13 +655,21 @@ function toPackRecord(d: Omit<PackRecord, "id"> & Partial<Pick<RecordDraft, "key
 }
 
 /**
+ * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `referenced`, then the
+ * rest; within each, date descending, then source, then record id. The size caps cut from its end.
+ */
+export function recordKeepOrder(referenced: ReadonlySet<string>): (a: PackRecord, b: PackRecord) => number {
+  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
+  return (a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id);
+}
+
+/**
  * At most 400 records: KEV records are never cut, then records a kept candidate references, then the rest
  * by date descending, source and record id. The kept records get final ids in display order; `idMap`
  * maps each provisional id to its final one so collect can rewrite the candidates' `pack_ids`.
  */
 export function capRecords(records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
-  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
-  const priority = [...records].sort((a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id));
+  const priority = [...records].sort(recordKeepOrder(referenced));
   const keep = priority.filter((r, i) => i < max || r.source === "kev");
   const kept = keep.sort(byRecord).map((r, i) => toPackRecord(r, padId("r", i + 1)));
   const idMap = new Map<string, string>();
@@ -805,38 +813,60 @@ export function injectionCount(items: readonly Pick<ItemDraft, "flagged">[], rec
 
 const byteLength = (s: string) => Buffer.byteLength(s, "utf8");
 
+/** buildPack()'s options: the lookback for the header, and what the size caps must respect. */
+export interface BuildPackOptions {
+  lookbackHours?: number;
+  /**
+   * Final ids of the items and records a kept candidate references (its own id and its pack_ids): such a
+   * record is never cut, such an item only after every other item and record the caps may cut.
+   */
+  referenced?: ReadonlySet<string>;
+  /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
+  recount?: (items: readonly PackItem[], records: readonly PackRecord[]) => { feeds: PackFeed[]; injectionFlags: number };
+}
+
 /**
- * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown): over a cap, the
- * lowest-scoring items go first, then the oldest non-KEV records; KEV records are never cut. Returns the
- * pack, its Markdown and what the size caps cut.
+ * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown, §4.14 Caps). Over a cap,
+ * cut in this order, about a twentieth of what is left of a group at a time: the items no kept candidate
+ * references, lowest score first; then records from the end of capRecords()' keep order (recordKeepOrder()),
+ * never a KEV record and never one a kept candidate references; then the referenced items, lowest score
+ * first. When only those remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags`
+ * are recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
  */
-export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: { lookbackHours?: number } = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number } } {
+export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number; over: boolean } } {
+  const referenced = opts.referenced ?? new Set<string>();
   let items = [...input.items];
   let records = [...input.records];
+  let feeds = input.feeds;
+  let injectionFlags = input.injectionFlags;
   const make = (): Pack => Pack.parse({
     schema_version: 1, date: input.date, window: { ...input.window }, generated_at: input.generatedAt, data_cutoff_utc: input.cutoff,
-    degraded: input.degraded, feeds: input.feeds, items, records, injection_flags: input.injectionFlags,
+    degraded: input.degraded, feeds, items, records, injection_flags: injectionFlags,
   });
   let pack = make();
   let md = renderPackMd(pack, registry, opts);
-  const sizeCut = { items: 0, records: 0 };
-  for (let guard = 0; guard < 10_000; guard++) {
-    const over = byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
-    if (!over) break;
-    if (items.length) {
-      items = items.slice(0, -Math.max(1, Math.ceil(items.length / 20)));
-      sizeCut.items = input.items.length - items.length;
-    } else {
-      const cuttable = records.filter((r) => r.source !== "kev").sort((a, b) => byCodeUnit(a.date, b.date) || compareIds(a.record_id, b.record_id));
-      if (!cuttable.length) break;
-      const drop = new Set(cuttable.slice(0, Math.max(1, Math.ceil(cuttable.length / 20))));
-      records = records.filter((r) => !drop.has(r));
-      sizeCut.records = input.records.length - records.length;
+  const over = () => byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
+  const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
+  const groups: string[][] = [
+    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
+    [...input.records].sort(recordKeepOrder(referenced)).reverse().filter((r) => r.source !== "kev" && !referenced.has(r.id)).map((r) => r.id),
+    lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
+  ];
+  const gone = new Set<string>();
+  for (const group of groups) {
+    let next = 0;
+    while (next < group.length && over()) {
+      const step = Math.max(1, Math.ceil((group.length - next) / 20));
+      for (const id of group.slice(next, next + step)) gone.add(id);
+      next += step;
+      items = input.items.filter((i) => !gone.has(i.id));
+      records = input.records.filter((r) => !gone.has(r.id));
+      if (opts.recount) ({ feeds, injectionFlags } = opts.recount(items, records));
+      pack = make();
+      md = renderPackMd(pack, registry, opts);
     }
-    pack = make();
-    md = renderPackMd(pack, registry, opts);
   }
-  return { pack, md, sizeCut };
+  return { pack, md, sizeCut: { items: input.items.length - items.length, records: input.records.length - records.length, over: over() } };
 }
 
 /** A schema-valid empty pack, degraded (a crash or timeout, §4.14 Degraded). */

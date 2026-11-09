@@ -34,7 +34,7 @@ import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { AnthropicCvdFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
-  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem,
+  CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord,
   type RankLogEntry, type ZipRead,
 } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
@@ -472,39 +472,52 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const r = rssReads.get(entry.id);
     if (r) outcomes.set(entry.id, outcomeOf(r, fetchedAt, { newest: r.data?.newest ?? null, items: r.data?.total ?? 0, kept: keptByFeed[entry.id] ?? 0 }));
   }
-  const recordsBySource = new Map<string, number>();
-  for (const r of capR.kept) recordsBySource.set(r.source, (recordsBySource.get(r.source) ?? 0) + 1);
-  const recordCount = (entry: FetchedFeed): number => {
-    if (entry.kind === "kev" || entry.kind === "cvelist" || entry.kind === "epss" || entry.kind === "ghsa" || entry.kind === "myjvn" || entry.kind === "anthropic-cvd") {
-      return recordsBySource.get(entry.kind) ?? 0;
-    }
-    if (entry.kind === "exchange") return capR.kept.filter((r) => r.source === "exchange-tw" && exchangeReads.get(entry.id)?.data?.notices.some((n) => r.record_id.startsWith(`${n.company_code}-`))).length;
-    if (RSS_RECORD_FEEDS[entry.id]) return recordsBySource.get(RSS_RECORD_FEEDS[entry.id]!) ?? 0;
-    return 0;
+  // The index's records counts and the pack's feeds[] and injection flags, for a given set of pack items
+  // and records: computed for the capped records, then again for what the size caps leave (§4.14 Caps).
+  const indexFeedsFor = (recs: readonly PackRecord[]): FeedIndexEntry[] => {
+    const recordsBySource = new Map<string, number>();
+    for (const r of recs) recordsBySource.set(r.source, (recordsBySource.get(r.source) ?? 0) + 1);
+    const recordCount = (entry: FetchedFeed): number => {
+      if (entry.kind === "kev" || entry.kind === "cvelist" || entry.kind === "epss" || entry.kind === "ghsa" || entry.kind === "myjvn" || entry.kind === "anthropic-cvd") {
+        return recordsBySource.get(entry.kind) ?? 0;
+      }
+      if (entry.kind === "exchange") return recs.filter((r) => r.source === "exchange-tw" && exchangeReads.get(entry.id)?.data?.notices.some((n) => r.record_id.startsWith(`${n.company_code}-`))).length;
+      if (RSS_RECORD_FEEDS[entry.id]) return recordsBySource.get(RSS_RECORD_FEEDS[entry.id]!) ?? 0;
+      return 0;
+    };
+    return config.sources.feeds.map((entry) => {
+      if (entry.kind === "search") {
+        return { id: entry.id, kind: entry.kind, status: "skipped", label: "SKIP", error_class: null, url_used: null, fallback_used: false, newest: null, items: 0, records: 0, version: null, sha256: null, fetched_at: null, note: null };
+      }
+      const out = outcomes.get(entry.id) ?? { ...emptyOutcome(), error: "network" as const, notes: ["Not read before the budget ran out."] };
+      return indexEntry(entry, { ...out, records: out.skipped ? 0 : recordCount(entry) }, ref);
+    });
   };
-  const indexFeeds: FeedIndexEntry[] = config.sources.feeds.map((entry) => {
-    if (entry.kind === "search") {
-      return { id: entry.id, kind: entry.kind, status: "skipped", label: "SKIP", error_class: null, url_used: null, fallback_used: false, newest: null, items: 0, records: 0, version: null, sha256: null, fetched_at: null, note: null };
-    }
-    const out = outcomes.get(entry.id) ?? { ...emptyOutcome(), error: "network" as const, notes: ["Not read before the budget ran out."] };
-    return indexEntry(entry, { ...out, records: out.skipped ? 0 : recordCount(entry) }, ref);
-  });
-  const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeeds };
-  const degraded = isDegraded(indexFeeds);
-
+  const degraded = isDegraded(indexFeedsFor(capR.kept));
   const flaggedByKey = new Map<string, number>();
   for (const d of capped.kept) flaggedByKey.set(`i:${d.feed_id}:${d.url}`, d.flagged);
   for (const d of recordDrafts) flaggedByKey.set(`r:${d.source}:${d.record_id}`, d.flagged);
-  const injectionFlags = screen.dropped + injectionCount(
-    items.map((i) => ({ flagged: flaggedByKey.get(`i:${i.feed_id}:${i.url}`) ?? 0 })),
-    capR.kept.map((r) => ({ flagged: flaggedByKey.get(`r:${r.source}:${r.record_id}`) ?? 0 })),
-  );
-  const built = buildPack({
-    date: D, window, generatedAt, cutoff, degraded, feeds: packFeeds(indexFeeds, keptByFeed), items, records: capR.kept, injectionFlags,
-  }, config.sources, { lookbackHours: run.pack.lookback_hours });
+  const recount = (its: readonly PackItem[], recs: readonly PackRecord[]) => {
+    const keptBy: Record<string, number> = {};
+    for (const it of its) keptBy[it.feed_id] = (keptBy[it.feed_id] ?? 0) + 1;
+    const injectionFlags = screen.dropped + injectionCount(
+      its.map((i) => ({ flagged: flaggedByKey.get(`i:${i.feed_id}:${i.url}`) ?? 0 })),
+      recs.map((r) => ({ flagged: flaggedByKey.get(`r:${r.source}:${r.record_id}`) ?? 0 })),
+    );
+    return { feeds: packFeeds(indexFeedsFor(recs), keptBy), injectionFlags };
+  };
+  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last.
+  const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+  const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
+    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, recount,
+  });
   if (built.sizeCut.items || built.sizeCut.records) log(`pack: the size caps cut ${built.sizeCut.items} items and ${built.sizeCut.records} records.`);
+  if (built.sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
   const pack = built.pack;
+  const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
+  const lost = kept.filter((c) => /^p\d{4,}$/.test(c.id) && !inPack.has(c.id)).length;
+  if (lost) log(`pack: ${lost} kept candidates lost their own item to the size caps.`);
   kept = kept.map((c) => ({ ...c, pack_ids: c.pack_ids.filter((id) => inPack.has(id)) }));
 
   const cut = remapped.cut;
