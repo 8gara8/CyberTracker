@@ -1,7 +1,8 @@
 // The Window (SPEC §5.3): the pure helpers that compare `window.w26` with the 2023 to 2024 reference.
 // P2 adds joinKev() and windowStats() here. Directions use exact doubles, never stored values (§5).
 
-import type { SpeedDirection, ShareDirection, WindowStats } from "../schema/metrics";
+import type { KevEntry } from "../feeds/types";
+import type { GapWindow, SpeedDirection, ShareDirection, WindowRow, WindowStats } from "../schema/metrics";
 import { MIN_N } from "../vocab";
 import { REFERENCE, REFERENCE_PACE_26W } from "./reference";
 import { mannWhitneyZ, newcombe80, poissonCi80, round4, Z80 } from "./stats";
@@ -59,4 +60,60 @@ export function pacePhrase(n: number): string {
   const bp = Math.round(round4(r) * 1e4); // the stored volume_ratio in basis points
   if (r > 1) return `${Math.min(99, Math.floor((bp - 10000 + 50) / 100))}% above`;
   return `${Math.min(99, Math.floor((10000 - bp + 50) / 100))}% below`;
+}
+
+// ── The KEV join and the Window's stats (§5.3). P2 WP3 fills these stubs (S0 contract). ──────────────
+
+/** What the join needs from a CVE record: from CveFacts or a kev-index row. */
+export interface JoinFacts {
+  state: string;
+  date_published: string | null;
+  assigner: string | null;
+}
+
+/** One KEV entry joined to its CVE record; lag_days null when unjoined. */
+export interface JoinRow {
+  cve_id: string;
+  date_added: string;
+  vendor_project: string;
+  date_published: string | null;
+  lag_days: number | null;
+}
+
+/** ≤ 1 day, 2 to 30, 31 to 365, over 365, or no lag. */
+export type Band = "at_disclosure" | "n_day" | "late" | "old" | "unjoined";
+
+/** KEV additions from this date on are joined (§5.3). */
+export const JOIN_FROM = "2023-01-01";
+
+/** One row per entry with dateAdded ≥ JOIN_FROM, sorted by date_added, then CVE id. */
+export function joinKev(
+  catalog: readonly Pick<KevEntry, "cveID" | "dateAdded" | "vendorProject">[],
+  records: ReadonlyMap<string, JoinFacts>,
+): JoinRow[] {
+  throw new Error("not implemented: joinKev");
+}
+
+export function bandOf(lag: number | null): Band {
+  throw new Error("not implemented: bandOf");
+}
+
+/** §4.7 WindowStats over rows with date_added in [from, to]. */
+export function windowStats(rows: readonly JoinRow[], from: string, to: string): WindowStats {
+  throw new Error("not implemented: windowStats");
+}
+
+/** The after-disclosure lags (2 to 365) in [from, to], ascending: speedDirection()'s input. */
+export function afterLags(rows: readonly JoinRow[], from: string, to: string): number[] {
+  throw new Error("not implemented: afterLags");
+}
+
+/** The inputs manifest's WindowRow[] for [from, to], in row order. */
+export function windowManifestRows(rows: readonly JoinRow[], from: string, to: string): WindowRow[] {
+  throw new Error("not implemented: windowManifestRows");
+}
+
+/** metrics.window for a cutoff, with w26's after lags for speedDirection(). */
+export function gapWindow(rows: readonly JoinRow[], cutoff: string): { window: GapWindow; w26AfterLags: number[] } {
+  throw new Error("not implemented: gapWindow");
 }
