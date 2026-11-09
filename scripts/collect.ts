@@ -15,7 +15,7 @@ import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
   freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow,
   provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
-  type ItemDraft, type RecordDraft,
+  type ItemDraft, type LinkScreen, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
 import { addDays, at, dataCutoffFor, isValidDate, taipeiTimestamp, taipeiToday, utcDateOf } from "../lib/dates";
@@ -341,18 +341,21 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const jpAlert = (config.regions.regions.find((r) => r.code === "JP")?.alert_patterns ?? []).map((p) => new RegExp(p, ALERT_PATTERN_FLAGS));
   const itemDrafts: ItemDraft[] = [];
   const recordDrafts: RecordDraft[] = [];
+  // Items and records dropped for a link unfit to print outside the untrusted tags (§4.14): injection flags.
+  const screen: LinkScreen = { dropped: 0 };
   for (const entry of byKind("rss")) {
     const r = rssReads.get(entry.id);
     if (!r?.ok || !r.data) continue;
     const asRecords = RSS_RECORD_FEEDS[entry.id];
     if (asRecords) {
       const notes = asRecords === "jpcert" ? jpcertRecords(r.data.items, jpAlert) : tvnRecords(r.data.items);
-      recordDrafts.push(...notePackRecords(asRecords, notes, window));
+      recordDrafts.push(...notePackRecords(asRecords, notes, window, screen));
       continue;
     }
     const d = toItemDrafts(entry, r.data.items, itemCtx);
     itemDrafts.push(...d.drafts);
-    log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}.`);
+    screen.dropped += d.unsafeLinks;
+    log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}${d.unsafeLinks ? `, ${d.unsafeLinks} dropped for a malformed link (flagged)` : ""}.`);
   }
   const deduped = dedupe(itemDrafts);
   const capped = capItems(deduped.kept);
@@ -371,19 +374,20 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     const s = e?.e?.scores.get(rec.cve_id);
     return { epss: s?.epss ?? null, epss_percentile: s?.percentile ?? null };
   };
-  if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers));
-  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts));
-  if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1)));
-  recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window));
+  if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers, screen));
+  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts, screen));
+  if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1), screen));
+  recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window, screen));
   const jvn = myjvn as Awaited<ReturnType<typeof readMyJvn>> | null;
-  if (jvn?.data) recordDrafts.push(...notePackRecords("myjvn", jvn.data.notes, window));
-  for (const r of exchangeReads.values()) if (r.data) recordDrafts.push(...exchangePackRecords(r.data.notices, window));
+  if (jvn?.data) recordDrafts.push(...notePackRecords("myjvn", jvn.data.notes, window, screen));
+  for (const r of exchangeReads.values()) if (r.data) recordDrafts.push(...exchangePackRecords(r.data.notices, window, screen));
   const dash = cvd as Awaited<ReturnType<typeof readCvd>> | null;
   const cvdEntry = byKind("anthropic-cvd")[0];
   if (dash?.data && cvdEntry) {
-    const rec = cvdPackRecord(dash.data, state.cvdRevision, cvdEntry.url);
+    const rec = cvdPackRecord(dash.data, state.cvdRevision, cvdEntry.url, screen);
     if (rec) recordDrafts.push(rec);
   }
+  if (screen.dropped) log(`pack: ${screen.dropped} items and records dropped for a malformed link (counted as injection flags).`);
   const provisional = provisionalRecords(recordDrafts);
 
   // Step 8: rank on the provisional pack.
@@ -491,7 +495,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const flaggedByKey = new Map<string, number>();
   for (const d of capped.kept) flaggedByKey.set(`i:${d.feed_id}:${d.url}`, d.flagged);
   for (const d of recordDrafts) flaggedByKey.set(`r:${d.source}:${d.record_id}`, d.flagged);
-  const injectionFlags = injectionCount(
+  const injectionFlags = screen.dropped + injectionCount(
     items.map((i) => ({ flagged: flaggedByKey.get(`i:${i.feed_id}:${i.url}`) ?? 0 })),
     capR.kept.map((r) => ({ flagged: flaggedByKey.get(`r:${r.source}:${r.record_id}`) ?? 0 })),
   );

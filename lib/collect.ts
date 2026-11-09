@@ -14,7 +14,7 @@ import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
-import { jsonText } from "./json";
+import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
 import { alertRegions, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
@@ -24,10 +24,10 @@ import type { Evidence } from "./schema/misc";
 import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type RankLogEntry } from "./schema/pack";
 import type { Candidate } from "./schema/context";
 import type { FetchedFeed, FetchedFeedKind, SourcesFile } from "./schema/registry";
-import type { TimeWindow } from "./schema/common";
+import { ID_PATTERNS, type TimeWindow } from "./schema/common";
 import { blockedReason, publisherFor, type PublisherConfig } from "./sources";
 import { jaccard } from "./text";
-import { normalizeUrl } from "./urls";
+import { isHttpsUrl, normalizeUrl } from "./urls";
 import { COVERAGE, type Coverage } from "./vocab";
 
 // ── Limits (§4.14) ───────────────────────────────────────────────────────────────────────────────
@@ -194,6 +194,47 @@ export function zipsShortNote(reach: string | null, recordWindow: TimeWindow): s
   return `Stale: the CVE List zips read end at ${at(reach)}, before the record window ends at ${at(new Date(Date.parse(recordWindow.end)).toISOString())}.`;
 }
 
+// ── Feed-controlled fields printed outside the untrusted tags (§4.14 Sanitisation) ─────────────────
+
+/**
+ * A feed's link fit to print as plain text in packs/D.md: normalizeUrl()'s output of a well-formed https
+ * URL, with no space, control character, quote, backtick or angle bracket; else null (the caller drops the
+ * link and counts a flag). normalizeUrl() hands back unparseable input unchanged, so its output alone is
+ * not enough.
+ */
+export function safeLink(raw: string): string | null {
+  const u = normalizeUrl(raw.trim());
+  if (!isHttpsUrl(u) || /[\s\p{Cc}"'`<>\\]/u.test(u)) return null;
+  return u;
+}
+
+/** The strict shape of each source's record id (§4.14); anything else is replaced and flagged. */
+export const RECORD_ID_PATTERNS: Readonly<Record<PackRecordSource, RegExp>> = {
+  kev: ID_PATTERNS.cve,
+  cvelist: ID_PATTERNS.cve,
+  epss: ID_PATTERNS.cve,
+  nvd: ID_PATTERNS.cve,
+  ghsa: ID_PATTERNS.ghsa,
+  "twcert-tvn": /^TVN-\d{9,10}$/,
+  // A JPCERT page's file name without its extension: at260031, wr264101.
+  jpcert: /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/,
+  myjvn: /^JVNDB-\d{4}-\d{6,}$/,
+  "anthropic-cvd": /^revision-[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/,
+  // The company code and the minute it spoke (Taipei, YYYYMMDDHHMM).
+  "exchange-tw": /^[0-9A-Z]{4,6}-\d{12}$/,
+};
+
+/** A record id that matches its source's pattern, else a fixed stand-in (`<source>-unsafe-<12 hex>`) and true. */
+export function safeRecordId(source: PackRecordSource, raw: string): { id: string; replaced: boolean } {
+  if (RECORD_ID_PATTERNS[source].test(raw)) return { id: raw, replaced: false };
+  return { id: `${source}-unsafe-${sha256Hex(raw).slice(0, 12)}`, replaced: true };
+}
+
+/** Counts what the record builders dropped for an unsafe link (a whole record when its own link is unsafe). */
+export interface LinkScreen {
+  dropped: number;
+}
+
 // ── Items ────────────────────────────────────────────────────────────────────────────────────────
 
 /** A pack item before ids: sanitised strings, flags, score and a provisional key (`<feed id>:<normalised url>`). */
@@ -220,6 +261,8 @@ export interface ItemDraftResult {
   outOfWindow: number;
   missedKeywords: number;
   badUrl: number;
+  /** Items dropped because their link is not a safe https URL (safeLink()); each counts as an injection flag. */
+  unsafeLinks: number;
 }
 
 /**
@@ -228,15 +271,19 @@ export interface ItemDraftResult {
  * so a newsroom quoting an agency's alert page never counts as the agency. The outlet is the entry's name.
  */
 export function toItemDrafts(entry: FetchedFeed, items: readonly RawItem[], ctx: ItemContext): ItemDraftResult {
-  const out: ItemDraftResult = { drafts: [], dated: 0, outOfWindow: 0, missedKeywords: 0, badUrl: 0 };
+  const out: ItemDraftResult = { drafts: [], dated: 0, outOfWindow: 0, missedKeywords: 0, badUrl: 0, unsafeLinks: 0 };
   for (const raw of items) {
     if (raw.published_at) out.dated += 1;
     if (!inWindow(raw.published_at, ctx.window, ctx.lookbackHours)) {
       if (raw.published_at) out.outOfWindow += 1;
       continue;
     }
-    const url = normalizeUrl(raw.url.trim());
-    if (!/^https:\/\//.test(url) || url.length > ADVISORY_URL_LENGTH_MAX || blockedReason(url, ctx.publishers.sourceTiers)) {
+    const url = safeLink(raw.url);
+    if (url === null) {
+      out.unsafeLinks += 1;
+      continue;
+    }
+    if (url.length > ADVISORY_URL_LENGTH_MAX || blockedReason(url, ctx.publishers.sourceTiers)) {
       out.badUrl += 1;
       continue;
     }
@@ -388,6 +435,12 @@ function usableName(s: string | null | undefined, max: number): string | null {
   return c || null;
 }
 
+/**
+ * One record draft. The fields packs/D.md prints outside the untrusted tags are screened (§4.14): a record
+ * whose own link is not safe (safeLink()) is dropped and counted in `screen`; an id that fails its source's
+ * pattern is replaced (safeRecordId()); unsafe advisory links and malformed CVE ids are left out. Each
+ * replacement or omission counts as a flag on the record.
+ */
 function draft(
   source: PackRecordSource,
   recordId: string,
@@ -400,46 +453,58 @@ function draft(
   product: string | null,
   cveIds: string[],
   facts: Facts,
-): RecordDraft {
+  screen: LinkScreen,
+): RecordDraft | null {
+  const link = safeLink(url);
+  if (link === null) {
+    screen.dropped += 1;
+    return null;
+  }
+  const id = safeRecordId(source, recordId);
+  const advisories = advisoryUrls.map(safeLink).filter((u): u is string => u !== null);
+  const cves = cveIds.filter((c) => ID_PATTERNS.cve.test(c));
   const t = field(title, TITLE_MAX);
   const x = field(text, TEXT_MAX);
-  const flagged = t.flagged + x.flagged;
+  const flagged = t.flagged + x.flagged + (id.replaced ? 1 : 0) + (advisoryUrls.length - advisories.length) + (cveIds.length - cves.length);
   return {
-    key: `${source}:${recordId}`,
+    key: `${source}:${id.id}`,
     source,
-    record_id: recordId,
-    url: normalizeUrl(url),
-    advisory_urls: advisoryUrls,
-    title: t.text || recordId.slice(0, TITLE_MAX),
+    record_id: id.id,
+    url: link,
+    advisory_urls: [...new Set(advisories)],
+    title: t.text || id.id.slice(0, TITLE_MAX),
     text: x.text,
     date,
     vendor: usableName(vendor, 80),
     product: usableName(product, 120),
-    cve_ids: cveIds,
+    cve_ids: cves,
     facts,
     flags: flagged ? ["injection_like"] : [],
     flagged,
   };
 }
 
+const present = <T>(xs: readonly (T | null)[]): T[] => xs.filter((x): x is T => x !== null);
+
 /** The CVE record page every CVE-keyed record links to. */
 export const cveOrgUrl = (cveId: string) => `https://www.cve.org/CVERecord?id=${cveId}`;
 
 /** KEV entries outside the baseline (the new ids), as records: `notes` URLs become advisory URLs; never cut. */
-export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet<string>, cfg: Pick<SourceTiersFile, "github">): RecordDraft[] {
-  return entries.filter((e) => newIds.has(e.cveID)).map((e) => draft(
+export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet<string>, cfg: Pick<SourceTiersFile, "github">, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(entries.filter((e) => newIds.has(e.cveID)).map((e) => draft(
     "kev", e.cveID, cveOrgUrl(e.cveID), advisoryUrlFilter(kevNoteUrls(e.notes), cfg), e.vulnerabilityName,
     [e.shortDescription, e.requiredAction].filter(Boolean).join(" "), e.dateAdded, e.vendorProject, e.product, [e.cveID],
     { date_added_us: e.dateAdded, due_date: e.dueDate, ransomware: e.knownRansomwareCampaignUse.toLowerCase() === "known" ? "known" : "unknown" },
-  ));
+    screen,
+  )));
 }
 
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
 /** CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit flag. */
-export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts): RecordDraft[] {
-  return recs.filter(keep).map((r) => {
+export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
     const event = r.published_at ?? r.updated_at;
     const facts: Facts = {
@@ -459,37 +524,37 @@ export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) 
       ...(extra ? extra(r) : {}),
     };
     return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter(recordAdvisoryUrls(r, cfg), cfg), r.title ?? r.description,
-      r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts);
-  });
+      r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
+  }));
 }
 
 const inExact = (ts: string | null, w: TimeWindow) => !!ts && inWindow(ts, w, 0);
 
 /** Reviewed, unwithdrawn GitHub advisories published in the window. */
-export function ghsaPackRecords(advs: readonly GhsaAdvisory[], window: TimeWindow): RecordDraft[] {
-  return advs.filter((g) => g.reviewed && !g.withdrawn && inExact(g.published_at, window)).map((g) => draft(
+export function ghsaPackRecords(advs: readonly GhsaAdvisory[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(advs.filter((g) => g.reviewed && !g.withdrawn && inExact(g.published_at, window)).map((g) => draft(
     "ghsa", g.id, ghsaRecordUrl(g.id), [], g.summary ?? g.id, g.summary, g.published, null,
     g.packages[0] ? `${g.packages[0].ecosystem} ${g.packages[0].name}` : null, [...g.cve_ids],
-    { severity: g.severity, fixed: g.fixed, aliases: g.aliases.join(" ") || null },
-  ));
+    { severity: g.severity, fixed: g.fixed, aliases: g.aliases.join(" ") || null }, screen,
+  )));
 }
 
 /** TVN, JPCERT and MyJVN notes in the window; JPCERT alerts carry `facts.alert` (ruling R36). Dates are Taipei. */
-export function notePackRecords(source: "twcert-tvn" | "jpcert" | "myjvn", notes: readonly (CertNote | JvnNote)[], window: TimeWindow): RecordDraft[] {
-  const out: RecordDraft[] = [];
+export function notePackRecords(source: "twcert-tvn" | "jpcert" | "myjvn", notes: readonly (CertNote | JvnNote)[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  const out: (RecordDraft | null)[] = [];
   for (const n of notes) {
     if ("link" in n) {
       const issued = n.issued ?? n.modified;
       if (!inExact(issued, window)) continue;
       out.push(draft(source, n.id, n.link, [], n.title, n.description, taipeiDateOf(issued!), null, null, [...n.cve_ids],
-        { cvss: n.cvss?.score ?? null, cvss_version: n.cvss?.version ?? null, issued: n.issued, modified: n.modified }));
+        { cvss: n.cvss?.score ?? null, cvss_version: n.cvss?.version ?? null, issued: n.issued, modified: n.modified }, screen));
     } else {
       if (!inExact(n.published_at, window)) continue;
       out.push(draft(source, n.id, n.url, [], n.title, n.text, taipeiDateOf(n.published_at!), null, null, [...n.cve_ids],
-        { alert: n.alert, published_at: isoUtc(n.published_at!) }));
+        { alert: n.alert, published_at: isoUtc(n.published_at!) }, screen));
     }
   }
-  return out;
+  return present(out);
 }
 
 /** metrics.epss_movers as records: our own wording, dated with E. */
@@ -518,13 +583,13 @@ export function epssJumps(e: EpssDay, e1: EpssDay | null): EpssJumpRow[] {
  * EPSS records: the five 7-day movers and every day-over-day jump, one record per CVE (a CVE in both
  * gets one record with both facts), so an EPSS candidate always has pack evidence.
  */
-export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string, jumps: readonly EpssJumpRow[] = []): RecordDraft[] {
+export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string, jumps: readonly EpssJumpRow[] = [], screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
   const e = scoreDate.slice(0, 10);
   const from = addDays(e, -7);
   const byCve = new Map<string, { mover?: EpssMover; jump?: EpssJumpRow }>();
   for (const m of movers) byCve.set(m.cve_id, { mover: m });
   for (const j of jumps) byCve.set(j.cve_id, { ...byCve.get(j.cve_id), jump: j });
-  return [...byCve.entries()].sort(([a], [b]) => compareCveIds(a, b)).map(([cve, { mover, jump }]) => {
+  return present([...byCve.entries()].sort(([a], [b]) => compareCveIds(a, b)).map(([cve, { mover, jump }]) => {
     const score = mover?.score ?? jump!.score;
     const percentile = mover?.percentile ?? jump!.percentile;
     const day = jump ? (jump.crossed ? "crossed percentile 0.99" : `up ${(jump.change_24h ?? 0).toFixed(2)} in a day`) : null;
@@ -540,22 +605,22 @@ export function epssPackRecords(movers: readonly EpssMover[], scoreDate: string,
       facts.epss_change_24h = jump.change_24h;
       facts.epss_crossed_99 = jump.crossed;
     }
-    return draft("epss", cve, cveOrgUrl(cve), [], title, `${parts.join(", ")}.`, e, null, null, [cve], facts);
-  });
+    return draft("epss", cve, cveOrgUrl(cve), [], title, `${parts.join(", ")}.`, e, null, null, [cve], facts, screen);
+  }));
 }
 
 /** Exchange notices in the window whose sanitised subject or text names a cyber incident (§8.3). */
-export function exchangePackRecords(notices: readonly ExchangeNotice[], window: TimeWindow): RecordDraft[] {
-  return notices.filter((n) => inExact(n.spoken_at, window) && hitsExchangeTerms(sanitize(`${n.subject} ${n.text}`))).map((n) => {
+export function exchangePackRecords(notices: readonly ExchangeNotice[], window: TimeWindow, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+  return present(notices.filter((n) => inExact(n.spoken_at, window) && hitsExchangeTerms(sanitize(`${n.subject} ${n.text}`))).map((n) => {
     const stamp = taipeiDateOf(n.spoken_at);
     const id = `${n.company_code}-${n.spoken_at.slice(0, 16).replace(/[-:T]/g, "")}`;
     return draft("exchange-tw", id, n.url, [], n.subject, n.text, stamp, n.company, null, cveIdsIn(`${n.subject} ${n.text}`),
-      { company_code: n.company_code, spoken_at: n.spoken_at });
-  });
+      { company_code: n.company_code, spoken_at: n.spoken_at }, screen);
+  }));
 }
 
 /** The dashboard's figures as one record when its revision differs from the last one read. */
-export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, url: string): RecordDraft | null {
+export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, url: string, screen: LinkScreen = { dropped: 0 }): RecordDraft | null {
   if (d.revision === previousRevision) return null;
   const figures = [
     d.found_n !== null ? `${d.found_n} found` : null,
@@ -565,7 +630,7 @@ export function cvdPackRecord(d: CvdDashboard, previousRevision: string | null, 
   return draft("anthropic-cvd", `revision-${d.revision}`, url, [], `Anthropic disclosure dashboard, revision ${d.revision}`,
     `As of ${d.as_of.slice(0, 10)}: ${figures || "no figures read"}; ${d.ledger_ids.length} CVE and GHSA ids listed.`,
     d.as_of.slice(0, 10), null, null, [],
-    { revision: d.revision, previous_revision: previousRevision, found_n: d.found_n, disclosed_n: d.disclosed_n, patched_n: d.patched_n });
+    { revision: d.revision, previous_revision: previousRevision, found_n: d.found_n, disclosed_n: d.disclosed_n, patched_n: d.patched_n }, screen);
 }
 
 const SOURCE_ORDER: readonly PackRecordSource[] = ["kev", "cvelist", "epss", "ghsa", "nvd", "twcert-tvn", "jpcert", "myjvn", "anthropic-cvd", "exchange-tw"];
