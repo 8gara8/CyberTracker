@@ -951,6 +951,63 @@ describe("RSS: parseRss, feedDate and zoneOf", () => {
     expect(zoneOf("Tue, 13 Oct 2026 16:36:26 CEST")).toBe("+02:00");
     expect(zoneOf("Tue, 13 Oct 2026 16:36:26 GMT")).toBe("Z");
     expect(zoneOf(undefined)).toBe("Z");
+    // A value that is not a string (an element with attributes or children) is no date, never a throw.
+    expect(feedDate({ _: "x" } as unknown as string)).toBeNull();
+    // Date.parse reads "Tuesday +0900" as the year 900: text without a digit, or a year outside 1990 to 2100, is no date.
+    expect(feedDate("Tuesday", "+09:00")).toBeNull();
+    expect(feedDate("x 7", "+09:00")).toBeNull();
+    expect(feedDate("Tue, 13 Oct 1066 16:36:26 GMT")).toBeNull();
+    expect(feedDate("Tue, 13 Oct 1990 16:36:26 GMT")).toBe("1990-10-13T16:36:26.000Z");
+    expect(zoneOf({ b: ["x"] } as unknown as string)).toBe("Z");
+  });
+
+  const atom = (feedUpdated: string, ...entries: string[]) => Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>SAMPLE Atom</title><id>tag:example.com,2026:ct-sample</id>${feedUpdated}
+${entries.map((e, i) => `<entry><title>SAMPLE ${i + 1}</title><link href="https://www.example.com/ct-sample/atom-${i + 1}"/><id>tag:example.com,2026:${i + 1}</id>${e}</entry>`).join("\n")}
+</feed>`);
+
+  it("Atom: a zone-less <published> takes the feed's offset, never the machine's zone", async () => {
+    const body = atom("<updated>2026-11-09T12:00:00+09:00</updated>",
+      "<published>2026-11-09T10:00:00</published><updated>2026-11-09T11:00:00</updated>",
+      "<updated>2026-11-09 09:30</updated>");
+    const read = async () => (await parseRss(body)).entries.map((e) => e.published_at);
+    for (const tz of ["UTC", "Asia/Taipei", "America/New_York"]) {
+      expect(await withTzAsync(tz, read), tz).toEqual(["2026-11-09T01:00:00.000Z", "2026-11-09T00:30:00.000Z"]);
+    }
+    // No feed date: date_zone, else UTC.
+    const bare = atom("", "<published>2026-11-09T10:00:00</published>");
+    expect((await withTzAsync("Asia/Taipei", () => parseRss(bare))).entries[0]!.published_at).toBe("2026-11-09T10:00:00.000Z");
+    expect((await withTzAsync("UTC", () => parseRss(bare, "+08:00"))).entries[0]!.published_at).toBe("2026-11-09T02:00:00.000Z");
+  });
+
+  it("Atom: an unreadable <published> drops that date, not the entry or the feed", async () => {
+    const body = atom("<updated>2026-11-09T12:00:00+09:00</updated>",
+      "<published>Tuesday</published><updated>2026-11-09T11:00:00+09:00</updated>",
+      "<published>Tuesday</published>",
+      "<published>2026-11-08T10:00:00Z</published>");
+    const p = await parseRss(body);
+    expect(p.entries.map((e) => [e.title, e.published_at])).toEqual([
+      ["SAMPLE 1", "2026-11-09T02:00:00.000Z"], ["SAMPLE 2", null], ["SAMPLE 3", "2026-11-08T10:00:00.000Z"],
+    ]);
+    expect(p.newest).toBe("2026-11-09T02:00:00.000Z");
+  });
+
+  it("a channel or entry date that is not a plain string never throws: attributes are read, anything else ignored", async () => {
+    const item = "<item><title>SAMPLE</title><link>https://www.example.com/ct-sample/a</link><pubDate>2026-11-09 09:00</pubDate></item>";
+    const rss = (channel: string) => Buffer.from(`<rss version="2.0"><channel><title>SAMPLE</title>${channel}${item}</channel></rss>`);
+    // Children in lastBuildDate: no channel zone, so date_zone or UTC.
+    const kids = await parseRss(rss("<lastBuildDate><b>x</b></lastBuildDate>"), "+08:00");
+    expect(kids.entries.map((e) => e.published_at)).toEqual(["2026-11-09T01:00:00.000Z"]);
+    // An attribute on the channel date: its text still gives the zone.
+    const attr = await parseRss(rss('<lastBuildDate xml:lang="en">Mon, 09 Nov 2026 10:00:00 +0900</lastBuildDate>'));
+    expect(attr.entries.map((e) => e.published_at)).toEqual(["2026-11-09T00:00:00.000Z"]);
+    // Atom: feed-level <updated> with an attribute, or with no text at all.
+    const lang = atom('<updated xml:lang="en">2026-11-09T10:00:00+09:00</updated>', '<published xml:lang="en">2026-11-09T10:00:00</published>');
+    expect((await parseRss(lang)).entries.map((e) => e.published_at)).toEqual(["2026-11-09T01:00:00.000Z"]);
+    const empty = atom('<updated a="1"/>', "<published>2026-11-09T10:00:00Z</published>");
+    expect((await parseRss(empty)).entries.map((e) => e.published_at)).toEqual(["2026-11-09T10:00:00.000Z"]);
+    expect(rssItems({ pubDate: { b: ["x"] }, items: [{ title: "SAMPLE", link: "https://www.example.com/ct-sample/a", pubDate: { $: { a: "1" } } }] }))
+      .toEqual([{ title: "SAMPLE", url: "https://www.example.com/ct-sample/a", published_at: null, snippet: "" }]);
   });
 });
 
