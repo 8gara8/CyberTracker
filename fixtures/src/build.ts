@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { z } from "zod";
+import { jsonText } from "../../lib/json";
 import { AgentContext } from "../../lib/schema/context";
 import { DraftBrief } from "../../lib/schema/draft-brief";
 import { Metrics } from "../../lib/schema/metrics";
@@ -27,13 +28,8 @@ import { EDITION_NAMES, REPO_ROOT, type EditionName } from "./world";
 
 // ── JSON ─────────────────────────────────────────────────────────────────────────────────────────
 
-/**
- * The fixture text of a value: parsed with `schema` when given (so keys follow the schema's order and a
- * bad value throws), printed with two-space indent and a trailing newline.
- */
-export function jsonText(value: unknown, schema?: z.ZodType): string {
-  return `${JSON.stringify(schema ? schema.parse(value) : value, null, 2)}\n`;
-}
+// jsonText() lives in lib/json.ts so scripts write content files exactly as the fixtures do (§4.1).
+export { jsonText };
 
 /** Writes `jsonText(value, schema)` to `file` (absolute, or relative to the repo root), creating folders. */
 export function writeJson(file: string, value: unknown, schema?: z.ZodType): void {
