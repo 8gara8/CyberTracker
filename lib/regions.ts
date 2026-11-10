@@ -18,7 +18,7 @@ import { publisherFor } from "./sources";
 import { jaccard } from "./text";
 import { normalizeUrl } from "./urls";
 import {
-  COUNTRY_CODES, LEVELLED_REGIONS, REGION_LEVEL_INFO, REGION_LEVELS, REGION_SIGNAL_TYPES, type CountryCode, type LevelledRegion,
+  COUNTRY_CODES, LEVELLED_REGIONS, REGION_LEVEL_INFO, REGION_LEVELS, REGION_SIGNAL_TYPES, WITHHELD_MARK, type CountryCode, type LevelledRegion,
   type RegionLevel, type RegionRuleType,
 } from "./vocab";
 
@@ -442,7 +442,8 @@ const severityOk = (ctx: EvalContext, item: RegionItem): boolean =>
 /**
  * The publishers of an item as §4.12 counts them: the distinct `publisher` values of its tier 1 and 2
  * sources (`source_ids`), syndicated copies folded into one (the same publisher, or titles, `title_en` if
- * present, whose word sets have Jaccard similarity ≥ 0.8).
+ * present, whose word sets have Jaccard similarity ≥ 0.8). A WITHHELD_MARK title never folds, so a withhold
+ * leaves the count, and every region level, as it was.
  */
 export function publisherCount(item: Pick<RegionItem, "source_ids" | "sources">): number {
   const list = [...new Set(item.source_ids)].map((id) => item.sources.get(id)).filter((s): s is RegionSource => !!s && s.tier <= 2);
@@ -452,7 +453,11 @@ export function publisherCount(item: Pick<RegionItem, "source_ids" | "sources">)
     for (let j = i + 1; j < list.length; j += 1) {
       const a = list[i]!;
       const b = list[j]!;
-      if (a.publisher === b.publisher || jaccard(a.title_en ?? a.title, b.title_en ?? b.title) >= 0.8) parent[find(i)] = find(j);
+      const ta = a.title_en ?? a.title;
+      const tb = b.title_en ?? b.title;
+      // A withhold's WITHHELD_MARK titles are not syndicated copies (§4.10; publishersOfItem() in lib/rules/shared.ts).
+      const copies = ta !== WITHHELD_MARK && tb !== WITHHELD_MARK && jaccard(ta, tb) >= 0.8;
+      if (a.publisher === b.publisher || copies) parent[find(i)] = find(j);
     }
   }
   return new Set(list.map((_, i) => find(i))).size;

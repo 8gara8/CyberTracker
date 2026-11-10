@@ -16,7 +16,9 @@ import {
   RegionSignal as RegionSignalSchema, Regions as RegionsSchema, RegionsFile, SourceTiersFile, VendorsFile, type DraftSource, type Item,
   type KevIndexRow, type Pack, type RegionSignal, type Regions, type Source,
 } from "@/lib/schema";
-import { LEVELLED_REGIONS, REGION_RULE_TYPES, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import type { Brief } from "@/lib/schema/brief";
+import { LEVELLED_REGIONS, REGION_RULE_TYPES, WITHHELD_MARK, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import { rewriteItem } from "@/lib/withhold-mask";
 import { D6_JP, D6_TW } from "./helpers/d6";
 
 const DATE = "2026-11-08";
@@ -187,6 +189,46 @@ describe("confirmed_disruption (cni-disruption, critical, 72 h)", () => {
   it("ignores tier 3 sources when counting publishers", () => {
     const blog = src("s2", "https://blog.example.com/post", "host:blog.example.com", 3, "A blog post about the grid");
     expect(firedIds(run({ items: [disrupted()], sources: [REUTERS, blog] }), "EU")).not.toContain("cni-disruption");
+  });
+});
+
+describe("a withhold (§4.10) leaves every region level unchanged", () => {
+  // rewriteItem() sets the title of each source only the item cites to WITHHELD_MARK; two such titles must
+  // not fold as syndicated copies (publishersOfItem() in lib/rules/shared.ts already keeps them apart).
+  const disrupted = (first_seen: string) => item({
+    id: "inc-grid", kind: "breach", severity: "critical", regions: ["EU"], source_ids: ["s1", "s2"], first_seen,
+    incident: incident({ disruption: true, victim: "Sample Grid Operator" }),
+  });
+  /** The stored brief a withhold rewrites: just the parts rewriteItem() reads. */
+  const stored = (date: string): Brief => ({
+    date, items: [disrupted(date)], sources: [structuredClone(REUTERS), structuredClone(BLEEPING)], regions: regionsWith({}),
+    lead: [], elsewhere: [], angle: null, week_in_review: null,
+    taiwan_lens: { analysis: "", item_ids: [], source_ids: [], rows: [], japan: { text: null, item_ids: [], source_ids: [] } },
+  }) as unknown as Brief;
+  const levels = (r: Regions) => r.rows.map((x) => [x.code, x.level, x.rule_id]);
+
+  it("counts two publishers whose titles a withhold set to WITHHELD_MARK as two; one publisher still folds", () => {
+    const masked = [{ ...REUTERS, title: WITHHELD_MARK }, { ...BLEEPING, title: WITHHELD_MARK }];
+    expect(publisherCount(regionItems([disrupted(DATE)], masked, CONFIG)[0]!)).toBe(2);
+    const same = [masked[0]!, { ...masked[0]!, id: "s2", url: "https://www.reuters.com/world/grid-operator-hit-update" }];
+    expect(publisherCount(regionItems([disrupted(DATE)], same, CONFIG)[0]!)).toBe(1);
+  });
+
+  it("gives the same levels from today's items and from history, before and after a victim or attribution withhold", () => {
+    for (const kind of ["victim", "attribution"] as const) {
+      const today = stored(DATE);
+      const before = run({ items: today.items, sources: today.sources });
+      expect(row(before, "EU")).toMatchObject({ level: "critical", rule_id: "cni-disruption" });
+      rewriteItem(today, today.items[0]!, { kind, since: DATE }, "C-0001");
+      expect(today.sources.map((x) => x.title)).toEqual([WITHHELD_MARK, WITHHELD_MARK]);
+      expect(levels(run({ items: today.items, sources: today.sources }))).toEqual(levels(before));
+
+      const past = stored(addDays(DATE, -1));
+      const hBefore = run({ history: [brief(past.date, structuredClone(past.items), structuredClone(past.sources))] });
+      expect(row(hBefore, "EU").level).toBe("critical");
+      rewriteItem(past, past.items[0]!, { kind, since: DATE }, "C-0001");
+      expect(levels(run({ history: [brief(past.date, past.items, past.sources)] }))).toEqual(levels(hBefore));
+    }
   });
 });
 
