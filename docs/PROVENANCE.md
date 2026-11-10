@@ -108,7 +108,7 @@ Every carried file names its Europe source in its header comment.
 
 | Files | What they are |
 |---|---|
-| `lib/data-only.ts`, `lib/withhold.ts`, `lib/withhold-mask.ts` | The data-only edition and the dispute withholds, ported from CyberTracker's own `fixtures/src/site.ts` (SPEC §4.5, §4.10); `withhold-mask.ts` holds the rewrite both share and the masking of later editions (SPEC §0.4 row 95) |
+| `lib/data-only.ts`, `lib/withhold.ts`, `lib/withhold-mask.ts` | The data-only edition and the dispute withholds, ported from CyberTracker's own `fixtures/src/site.ts` (SPEC §4.5, §4.10); `withhold-mask.ts` holds the rewrite both share, the masking of later editions and the same-day withhold's id adoption and carry-over (SPEC §0.4 rows 95, 121 and 124) |
 | `lib/html-text.ts`, `lib/run-inputs.ts` | One page-text extraction for snapshots and the link check; the reads the P3 stages share |
 | `scripts/recheck.ts` | Dispute intake, the 14-day re-check and the link check (SPEC §8.9, §8.11) |
 | `scripts/lib/{clock,cve-facts,cve-fetch,evidence,paths,run-lines,snapshot,status,validate-loop}.ts` | The run clock and `realDeadline()`, CVE facts and fetches for publish and the validator, the evidence, every run path, the run log's fixed lines, page snapshots, run records and stage notes, and the validate loop (`evidence.ts` replaces Europe's `evidenceUrls()`) |
