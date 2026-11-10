@@ -110,7 +110,7 @@ describe("stage notes", () => {
       NOTES.flagsSkipped(["kev"]), NOTES.flagsSkipped(["kev", "cvelist"]), NOTES.tooLittleTime("05:30"), NOTES.notInDryRun,
       NOTES.missedTarget("data_only", "04:55", "04:50"), NOTES.missedTarget("full", "05:21", "05:15"), NOTES.siteNotShowing(1),
       NOTES.siteNotShowing(8), NOTES.notReached(1), NOTES.notReached(12), NOTES.simulated, NOTES.notRun("metrics"), NOTES.notRun("cli"),
-      NOTES.notRun("data_only"), NOTES.notRun("hard_stop"), NOTES.pendingNotPushed, NOTES.notComposed, NOTES.maskedRepeats(1),
+      NOTES.notRun("data_only"), NOTES.notRun("hard_stop"), NOTES.pendingNotPushed, NOTES.notComposed, NOTES.notValid, NOTES.maskedRepeats(1),
       NOTES.maskedRepeats(2), NOTES.keptWithheld(1), NOTES.keptWithheld(2), NOTES.keptInSlot(1), NOTES.keptInSlot(2),
       NOTES.failure("E_TIMEOUT", { date: D, errors: 0, repairs: 0, attempts: 1, agentMinutes: null, hardStop: "05:30", publishUntil: "11:00" }),
       NOTES.failure("E_VALIDATION", { date: D, errors: 3, repairs: 2, attempts: 2, agentMinutes: 22, hardStop: "05:30", publishUntil: "11:00" }),
@@ -138,12 +138,12 @@ describe("stage notes", () => {
     const chatTexts = [
       STAGE_NOTES.dataOnlyRequested, STAGE_NOTES.startedAfterHardStop("05:30"), STAGE_NOTES.alreadyPublished("05:07"),
       STAGE_NOTES.tooLate("11:00"), STAGE_NOTES.replaced("05:07"), STAGE_NOTES.floodStops("2026-10-12"), STAGE_NOTES.depsChanged,
-      STAGE_NOTES.notComposed,
+      STAGE_NOTES.notComposed, STAGE_NOTES.notValid,
     ];
     expect(chatTexts.map((t) => CHAT_READ_NOTES.filter((re) => re.test(t)).length)).toEqual(chatTexts.map(() => 1));
     expect(Object.keys(STAGE_NOTES)).toHaveLength(CHAT_READ_NOTES.length);
     expect([NOTES.dataOnlyRequested, NOTES.startedAfterHardStop("05:30"), NOTES.alreadyPublished("05:07"), NOTES.tooLate("11:00"),
-      NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.notComposed]).toEqual(chatTexts);
+      NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.notComposed, NOTES.notValid]).toEqual(chatTexts);
     for (const t of [NOTES.restored, NOTES.staleLock("02:31"), NOTES.dataOnlyFailed, NOTES.notInDryRun, NOTES.pendingNotPushed]) {
       expect(CHAT_READ_NOTES.some((re) => re.test(t)), t).toBe(false);
     }

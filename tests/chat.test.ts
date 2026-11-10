@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  CHAT_MAX_LINES, CHAT_NOTES, ERROR_CODES, NEXT_STEP, NOT_COMPOSED, RERUN_BEFORE, STAGE_NOTES, WHAT_HAPPENED, chatGuard, chatInputFor,
+  CHAT_MAX_LINES, CHAT_NOTES, ERROR_CODES, NEXT_STEP, NOT_COMPOSED, NOT_VALID, RERUN_BEFORE, STAGE_NOTES, WHAT_HAPPENED, chatGuard, chatInputFor,
   fallbackChat, gapLines, heldLockLine, lastRunRecords, nextStepFor, orderNotes, renderChat, safePath, whatHappened,
   type ChatInput, type WhatFacts,
 } from "@/lib/chat";
@@ -466,6 +466,30 @@ describe("chat edition: data-only format", () => {
     expect(dry).toMatchObject({ kind: "failed", nextStep: NOT_COMPOSED.nextStep.replaceAll("{date}", D), what: NOT_COMPOSED.what });
   });
 
+  it("gives a whole-tree validation failure (E_PUBLISH with the not-valid note on the publish stage) its own lines: the Validation lines decide draft or PR", () => {
+    // Before T4 it said "the draft is valid" and to publish again, which fails the same way.
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const failed = (publishNote: string) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: publishNote } },
+    })];
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const input = chatInputFor({ date: D, brief: b, runs: failed(`${what} ${STAGE_NOTES.notValid}`) });
+    expect(input).toMatchObject({ kind: "data_only", code: "E_PUBLISH", what: NOT_VALID.what, nextStep: NOT_VALID.nextStep.replaceAll("{date}", D) });
+    const text = render(input).split("\n");
+    expect(text).toContain("What happened: The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed.");
+    expect(text).toContain(`Next step: read the Validation lines in logs/${D}.daily.log: if they name only briefs/${D}.json, fix drafts/${D}.json, then in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date ${D} before 11:00; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`);
+    expect(render(input)).not.toContain("the draft is valid");
+    // The failed format (a dry run that left no copy) reads the same note; a push failure keeps E_PUBLISH's own lines.
+    const dry = chatInputFor({ date: D, brief: null, runs: failed(`${what} ${STAGE_NOTES.notValid}`).map((r) => ({ ...r, trigger: "dry_run" as const, outcome: "dry_run" as const, edition: null })) });
+    expect(dry).toMatchObject({ kind: "failed", what: NOT_VALID.what, nextStep: NOT_VALID.nextStep.replaceAll("{date}", D) });
+    expect(chatInputFor({ date: D, brief: b, runs: failed(what) })).toMatchObject({ what, nextStep: nextStepFor("E_PUBLISH", D) });
+    // Another code on the record never takes these lines.
+    const agent = [record(D, { outcome: "published_data_only", edition: "data_only", error_code: "E_AGENT", data_only_published_at: b.data_only_published_at, stage: { publish: { status: "skipped", note: STAGE_NOTES.notValid } } })];
+    expect(chatInputFor({ date: D, brief: b, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
+  });
+
   it("keeps the metrics KEV count when the data-only brief holds no items", () => {
     const D = "2026-11-12";
     const b = dataOnlyBrief(D, []);
@@ -821,6 +845,11 @@ describe("NEXT_STEP and WHAT_HAPPENED", () => {
     expect(NOT_COMPOSED.what).toMatch(/^[A-Z].*\.$/);
     expect(chatGuard(composeStep, SITE)).toBe(composeStep);
     expect(chatGuard(NOT_COMPOSED.what, SITE)).toBe(NOT_COMPOSED.what);
+    const validStep = NOT_VALID.nextStep.replaceAll("{date}", "2026-11-14");
+    expect(validStep).not.toMatch(/—|\{date\}/);
+    expect(NOT_VALID.what).toMatch(/^[A-Z].*\.$/);
+    expect(chatGuard(validStep, SITE)).toBe(validStep);
+    expect(chatGuard(NOT_VALID.what, SITE)).toBe(NOT_VALID.what);
     expect(RERUN_BEFORE).toBe("10:00");
     expect(nextStepFor("E_PUBLISH", "2026-11-14")).toBe(
       "the draft is valid: in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date 2026-11-14 before 11:00");

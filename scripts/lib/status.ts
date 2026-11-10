@@ -73,6 +73,11 @@ export interface Notes {
    * lib/chat.ts STAGE_NOTES.notComposed: on the publish stage it gives E_PUBLISH the NOT_COMPOSED lines.
    */
   notComposed: string;
+  /**
+   * Publish's PublishError("validation") on the full edition: the tree with it failed validateAll().
+   * lib/chat.ts STAGE_NOTES.notValid: on the publish stage it gives E_PUBLISH the NOT_VALID lines.
+   */
+  notValid: string;
   /** The full edition masked N draft items that re-report a withheld item (ContentChanges.masked; N counts item ids). */
   maskedRepeats(n: number): string;
   /** The full edition kept N items withheld this morning that the draft left out (MaskedItem match "carried"). */
@@ -129,6 +134,7 @@ export const NOTES: Notes = {
   failure: (code, facts) => whatHappened(code, facts),
   pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
   notComposed: STAGE_NOTES.notComposed,
+  notValid: STAGE_NOTES.notValid,
   maskedRepeats: (n) => `Withheld ${plural(n, "re-reported item")} under reader disputes.`,
   keptWithheld: (n) => `Kept ${plural(n, "withheld item")} the draft left out, so its correction resolves.`,
   keptInSlot: (n) =>
@@ -152,6 +158,7 @@ export const CHAT_READ_NOTES: readonly RegExp[] = [
   /^Flood counts stop at \d{4}-\d{2}-\d{2}: run npm run backfill -- --catch-up --push\.$/,
   /^Dependencies changed since the last npm ci\.$/,
   /^Not composed: a release or CVE block lacks its date, page or record facts \(see the daily log\)\.$/,
+  /^Not valid: the full edition failed whole-tree validation \(see the Validation lines in the daily log\)\.$/,
 ];
 
 const isChatRead = (note: string) => CHAT_READ_NOTES.some((re) => re.test(note));

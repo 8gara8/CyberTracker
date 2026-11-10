@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ComposeError, applyDraft } from "@/lib/apply";
-import { NOT_COMPOSED, nextStepFor } from "@/lib/chat";
+import { NOT_COMPOSED, NOT_VALID, nextStepFor } from "@/lib/chat";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
 import { Brief } from "@/lib/schema/brief";
@@ -550,6 +550,31 @@ describe("daily.ts end to end", () => {
     expect(stageOf(r, "publish").note).toContain("Withheld 1 re-reported item under reader disputes.");
     expect(dailyLog(h)).toContain(`Withheld ${ITEM} in this edition: it re-reports the item C-0001 withholds (id match).`);
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D44 a full edition that fails whole-tree validation gives E_PUBLISH with the not-valid note and lines that read the Validation lines, exit 3", async () => {
+    // Before T4 the chat edition said the draft was valid and to publish it again by hand, which fails the same way.
+    const h = harness();
+    okAgent(h);
+    const actual = await vi.importActual<typeof import("@/lib/apply")>("@/lib/apply");
+    vi.mocked(applyDraft).mockImplementationOnce((i) => {
+      const ch = actual.applyDraft(i);
+      ch.brief!.computed.word_count += 1;
+      return ch;
+    });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    expect(subjects(h).filter((x) => x.startsWith("brief: "))).toEqual([`brief: ${D} · data-only edition`]);
+    expect(briefOn(h)!.edition).toBe("data_only");
+    const r = statusOn(h)!.runs[0]!;
+    expect([r.outcome, r.error_code]).toEqual(["published_data_only", "E_PUBLISH"]);
+    expect(stageOf(r, "publish")).toMatchObject({ status: "failed" });
+    expect(stageOf(r, "publish").note).toContain("Not valid: the full edition failed whole-tree validation (see the Validation lines in the daily log).");
+    expect(dailyLog(h)).toContain(`Validation: COMPUTED_MISMATCH at briefs/${D}.json: computed.word_count`);
+    expect(summary(h)).toContain(`\nWhat happened: ${NOT_VALID.what}\n`);
+    expect(summary(h)).toContain(`\nNext step: ${NOT_VALID.nextStep.replaceAll("{date}", D)}\n`);
+    expect(summary(h)).not.toContain(nextStepFor("E_PUBLISH", D));
+    expect(fs.existsSync(path.join(h.root, "drafts", `${D}.json`))).toBe(true);
     expectContentOnly(h);
   }, TIMEOUT);
 

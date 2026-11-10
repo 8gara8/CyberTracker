@@ -103,6 +103,18 @@ export const NOT_COMPOSED = {
   nextStep: `in ${CHECKOUT}, edit drafts/{date}.json to fix or drop the item whose block logs/{date}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}`,
 } as const;
 
+/**
+ * E_PUBLISH's lines after PublishError("validation") (§0.4 row 129): the publish stage of the record that
+ * carries the code holds STAGE_NOTES.notValid. The draft passed its own checks, but the tree with the
+ * edition in it did not, so publishing the same draft again fails the same way. Publish's daily-log lines
+ * `Validation: <code> at <file>: <path>` name the files, relative to content/: today's brief is made from
+ * the draft, any other file is stored content the fix must reach through a PR. `{date}` as in NEXT_STEP.
+ */
+export const NOT_VALID = {
+  what: "The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed.",
+  nextStep: `read the Validation lines in logs/{date}.daily.log: if they name only briefs/{date}.json, fix drafts/{date}.json, then in ${CHECKOUT} run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`,
+} as const;
+
 /** What WHAT_HAPPENED's templates are filled from: the run records (chatInputFor() builds it). */
 export interface WhatFacts {
   date: string;
@@ -175,6 +187,8 @@ export const STAGE_NOTES = {
   depsChanged: "Dependencies changed since the last npm ci.",
   /** data_only, publish: publish's PublishError("compose"); on the publish stage it selects NOT_COMPOSED. */
   notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
+  /** publish: publish's PublishError("validation") on the full edition; on the publish stage it selects NOT_VALID. */
+  notValid: "Not valid: the full edition failed whole-tree validation (see the Validation lines in the daily log).",
 } as const;
 
 const NOTE_RES = {
@@ -186,6 +200,7 @@ const NOTE_RES = {
   floodStops: /Flood counts stop at (\d{4}-\d{2}-\d{2})/,
   depsChanged: /Dependencies changed since the last npm ci/,
   notComposed: /Not composed: a release or CVE block lacks its date, page or record facts/,
+  notValid: /Not valid: the full edition failed whole-tree validation/,
 } as const;
 
 /** The Notes line's entries (§8.8), each in the spec's words. */
@@ -413,11 +428,13 @@ export function chatInputFor(src: ChatSource): ChatInput {
     hardStop: schedule.hard_stop,
     publishUntil: schedule.publish_until,
   };
-  // E_PUBLISH from a draft the composer could not freeze: only the publish stage's note says so (a
-  // data-only stage that was not composed leaves the full edition's own failure as it was).
-  const notComposed = code === "E_PUBLISH" && coded !== null && NOTE_RES.notComposed.test(stage(coded, "publish")?.note ?? "");
-  const what = (c: string) => (notComposed ? NOT_COMPOSED.what : whatHappened(c, facts));
-  const next = (c: string) => (notComposed ? NOT_COMPOSED.nextStep.replaceAll("{date}", date) : nextStepFor(c, date));
+  // E_PUBLISH from a draft the composer could not freeze, or whose edition failed whole-tree validation: only
+  // the publish stage's note says so (a data-only stage that was not composed leaves the full edition's own
+  // failure as it was). A push failure keeps E_PUBLISH's own lines.
+  const publishNote = code === "E_PUBLISH" && coded !== null ? stage(coded, "publish")?.note ?? "" : "";
+  const special = NOTE_RES.notComposed.test(publishNote) ? NOT_COMPOSED : NOTE_RES.notValid.test(publishNote) ? NOT_VALID : null;
+  const what = (c: string) => (special ? special.what : whatHappened(c, facts));
+  const next = (c: string) => (special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date));
 
   let left: Edition | null = null;
   if (last && dryRun) left = last.edition;

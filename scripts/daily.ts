@@ -885,6 +885,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       line(errorText(e));
       fail("E_PUBLISH", "publish");
       if (e instanceof PublishError && e.code === "compose") addNote(cur(), "publish", NOTES.notComposed);
+      if (e instanceof PublishError && e.code === "validation") addNote(cur(), "publish", NOTES.notValid);
     }
   };
 
