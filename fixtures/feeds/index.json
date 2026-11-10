@@ -206,6 +206,14 @@
     "file": "pages/cve-org--cverecord-cve-2026-104935.html",
     "content_type": "text/html; charset=utf-8"
   },
+  "https://www.cve.org/CVERecord?id=CVE-2026-108917": {
+    "file": "pages/cve-org--cverecord-cve-2026-108917.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.cve.org/CVERecord?id=CVE-2026-110036": {
+    "file": "pages/cve-org--cverecord-cve-2026-110036.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://www.cve.org/CVERecord?id=CVE-2026-96951": {
     "file": "pages/cve-org--cverecord-cve-2026-96951.html",
     "content_type": "text/html; charset=utf-8"
