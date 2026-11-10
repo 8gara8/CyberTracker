@@ -1,18 +1,17 @@
 // Withholding an item on a reader dispute (SPEC §4.10): one name_removed correction per request (trigger
 // reader_report, the dispute id), the brief rewritten, "[withheld]" marks in later stored briefs. Victim
 // and attribution disputes withhold at once. Pure: every input is passed in. Ported from fixtures/src/
-// site.ts's withhold() and extended to attribution disputes (plan §1 L3). Owner: lane L3.
+// site.ts's withhold() and extended to attribution disputes (plan §1 L3); the masking itself is in
+// lib/withhold-mask.ts, which also binds the editions after a withhold. Owner: lane L3.
 
 import {
   computedOf, correctionId, markCorrected, nextCorrectionNumber, sortCorrections, sortDisputes, type ContentChanges,
 } from "./apply";
 import type { LoadedConfig } from "./config";
-import { longDate } from "./format";
-import { Brief, type ActorSeen } from "./schema/brief";
-import type { Item } from "./schema/item";
+import { Brief } from "./schema/brief";
 import type { Metrics } from "./schema/metrics";
 import type { ArchiveIndex, Correction, CorrectionsFile, Dispute } from "./schema/misc";
-import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "./vocab";
+import { dropActorItem, markRegions, rewriteItem } from "./withhold-mask";
 
 /** One item to withhold: what intake (scripts/recheck.ts) and dropPendingEditions() hand to publish. */
 export interface WithholdRequest {
@@ -54,71 +53,6 @@ export const WITHHOLD_TEXTS: Readonly<Record<WithholdRequest["kind"], { field: s
 
 /** What a name_removed correction stores as `before` (§4.10). */
 export const NAME_REMOVED_BEFORE = "[name removed]";
-
-/**
- * The item's own rewrite (§4.10): headline WITHHELD_HEADLINE, summary WITHHELD_TEXT, why_it_matters null,
- * and incident.victim null (victim) or attribution [] and actor_nexus null (attribution); `withheld` set
- * unless an earlier withhold set it. Then every Lead sentence and Taiwan Lens text that lists the item
- * becomes WITHHELD_MARK, and so does the title of each source only this item cites.
- */
-function rewriteItem(b: Brief, it: Item, r: WithholdRequest, correction: string): void {
-  it.headline = WITHHELD_HEADLINE;
-  it.summary = WITHHELD_TEXT.replace("{date}", longDate(r.since));
-  it.why_it_matters = null;
-  if (r.kind === "victim") {
-    if (it.incident) it.incident.victim = null;
-  } else {
-    it.attribution = [];
-    it.actor_nexus = null;
-  }
-  it.withheld ??= { correction_id: correction, since: r.since };
-
-  for (const l of b.lead) if (l.item_ids.includes(it.id)) l.text = WITHHELD_MARK;
-  const lens = b.taiwan_lens;
-  if (lens.item_ids.includes(it.id)) lens.analysis = WITHHELD_MARK;
-  for (const row of lens.rows) if (row.item_ids.includes(it.id)) row.text = WITHHELD_MARK;
-  if (lens.japan.item_ids.includes(it.id)) lens.japan.text = WITHHELD_MARK;
-
-  const others = new Set(b.items.filter((x) => x.id !== it.id).flatMap((x) => [
-    ...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? []),
-  ]));
-  const elsewhere = new Set([
-    ...b.elsewhere.map((e) => e.source_id), ...(b.angle?.source_id ? [b.angle.source_id] : []), ...(b.angle?.counterpoint_source_ids ?? []),
-    ...(b.week_in_review?.strongest_against.source_ids ?? []), ...lens.source_ids, ...lens.rows.flatMap((row) => row.source_ids), ...lens.japan.source_ids,
-  ]);
-  for (const s of b.sources) {
-    if (!it.source_ids.includes(s.id) || others.has(s.id) || elsewhere.has(s.id)) continue;
-    s.title = WITHHELD_MARK;
-    if (s.title_en !== null) s.title_en = WITHHELD_MARK;
-  }
-}
-
-/** Region row and raise reasons that list the item become WITHHELD_MARK (a reason embeds its headline, §5.11). */
-function markRegions(b: Brief, itemId: string): boolean {
-  let changed = false;
-  for (const row of b.regions.rows) {
-    if (row.item_ids.includes(itemId) && row.reason !== WITHHELD_MARK) {
-      row.reason = WITHHELD_MARK;
-      changed = true;
-    }
-    if (row.raised?.item_ids.includes(itemId) && row.raised.reason !== WITHHELD_MARK) {
-      row.raised.reason = WITHHELD_MARK;
-      changed = true;
-    }
-  }
-  return changed;
-}
-
-/** actors_seen after an attribution withhold: the item leaves its chips, empty chips go, nexus re-agreed. */
-function dropActorItem(actors: readonly ActorSeen[], items: readonly Item[], itemId: string): ActorSeen[] {
-  return actors.flatMap((a) => {
-    if (!a.item_ids.includes(itemId)) return [a];
-    const ids = a.item_ids.filter((x) => x !== itemId);
-    if (ids.length === 0) return [];
-    const nexuses = new Set(ids.map((x) => items.find((it) => it.id === x)?.actor_nexus ?? "unknown"));
-    return [{ ...a, item_ids: ids, nexus: nexuses.size === 1 ? [...nexuses][0]! : "unknown" }];
-  });
-}
 
 /** The metrics date a brief's Gap names (its word count is counted against that file, §4.12). */
 const gapDate = (b: Brief) => (b.gap.metrics_file ? /(\d{4}-\d{2}-\d{2})\.json$/.exec(b.gap.metrics_file)?.[1] ?? null : null);

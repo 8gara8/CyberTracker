@@ -70,6 +70,8 @@ export interface Notes {
   pendingNotPushed: string;
   /** Publish's PublishError("compose"): the composer found a fact missing (lib/apply.ts ComposeError). */
   notComposed: string;
+  /** The full edition masked N draft items that re-report a withheld item (ContentChanges.masked; N counts item ids). */
+  maskedRepeats(n: number): string;
 }
 
 /** Every stage note text; each ends with a full stop. */
@@ -117,6 +119,7 @@ export const NOTES: Notes = {
   failure: (code, facts) => whatHappened(code, facts),
   pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
   notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
+  maskedRepeats: (n) => `Withheld ${plural(n, "re-reported item")} under reader disputes.`,
 };
 
 /** StageRecord.note's limit (§4.8). */

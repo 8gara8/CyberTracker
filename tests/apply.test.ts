@@ -6,11 +6,12 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  ComposeError, applyDraft, claimReading, firstSeenOf, claimStatus, claimZone, cveBlockOf, releaseBlockOf, updateArchiveIndex, updateScoreboard,
-  type ApplyInput, type CveFacts, type SnapshotHashes,
+  ComposeError, applyDraft, claimReading, firstSeenOf, claimStatus, claimZone, cveBlockOf, linkDisputes, markCorrected, releaseBlockOf,
+  updateArchiveIndex, updateScoreboard, type ApplyInput, type CveFacts, type SnapshotHashes,
 } from "@/lib/apply";
 import type { LoadedConfig } from "@/lib/config";
 import { addDays } from "@/lib/dates";
+import { longDate } from "@/lib/format";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
 import { firstSeenBefore, readHistory } from "@/lib/run-inputs";
@@ -19,10 +20,13 @@ import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
 import { DraftBrief } from "@/lib/schema/draft-brief";
 import { InputsManifest, Metrics, type KevIndexFile } from "@/lib/schema/metrics";
-import { ArchiveIndex, CorrectionsFile, Evidence } from "@/lib/schema/misc";
+import { ArchiveIndex, CorrectionsFile, Evidence, type Correction, type Dispute } from "@/lib/schema/misc";
 import { ScoreboardFile, type Claim } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
 import { cveLookupFromDir, validateAll, validatePublished } from "@/lib/validate";
+import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
+import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS } from "@/lib/withhold";
+import { bindingWithholds, withheldRefs } from "@/lib/withhold-mask";
 import { CVE_RECORDS_DIR, editionRegionsInput, fixtureConfig } from "@/fixtures/src/inputs";
 import { SOURCES, EDITIONS, FIXTURES_DIR, KEV_DUE, KEV_ROWS, RECORD_IDS, cveRecord, type EditionName } from "@/fixtures/src/world";
 
@@ -319,6 +323,161 @@ describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }, () => {
+  const D = "2026-10-14";
+  const TRANSPORT = "inc-transport-jp-2026-10";
+  const CAMPAIGN = "camp-tw-semiconductor-2026-10";
+  const FLAW = "cve-2026-108917";
+  const HEALTH = "inc-health-us-2026-10";
+
+  /** The weekday world with one more name_removed correction, C-0003, and its dispute D-0002. */
+  function withWithhold(o: { item: string; edition: string; kind: "victim" | "attribution"; date?: string }): ApplyInput {
+    const i = world("weekday");
+    const text = WITHHOLD_TEXTS[o.kind];
+    const dispute: Dispute = {
+      id: "D-0002", received: "2026-10-13T22:00:00+08:00", issue_number: 9, item_id: o.item, edition_date: o.edition, kind: o.kind,
+      evidence_url: null, status: "open", resolved_on: null, correction_id: "C-0003",
+    };
+    const correction: Correction = {
+      id: "C-0003", date: o.date ?? D, item_id: o.item, edition_date: o.edition, type: "name_removed", field: text.field,
+      before: NAME_REMOVED_BEFORE, after: text.after, reason: text.reason, source_url: null, trigger: "reader_report", dispute_id: "D-0002",
+    };
+    const cf = structuredClone(GOLDEN_CORRECTIONS);
+    i.corrections = { schema_version: 1, corrections: [...cf.corrections, correction], disputes: [...cf.disputes, dispute] };
+    i.disputes = [...(i.disputes ?? []), dispute];
+    return i;
+  }
+  const withStatus = (i: ApplyInput, status: Dispute["status"]): ApplyInput => ({
+    ...i, disputes: i.disputes!.map((d) => (d.id === "D-0002" ? { ...d, status, resolved_on: D } : d)),
+  });
+
+  it("C18: bindingWithholds keeps name_removed corrections whose dispute is open or upheld; intake's statuses win", () => {
+    const i = withWithhold({ item: FLAW, edition: "2026-10-13", kind: "victim" });
+    expect(bindingWithholds(i.corrections, i.disputes)).toEqual([
+      { item_id: HEALTH, edition_date: "2026-10-12", kind: "victim", correction_id: "C-0001", since: "2026-10-13" },
+      { item_id: FLAW, edition_date: "2026-10-13", kind: "victim", correction_id: "C-0003", since: D },
+    ]);
+    expect(bindingWithholds(i.corrections, withStatus(i, "upheld").disputes).map((w) => w.correction_id)).toEqual(["C-0001", "C-0003"]);
+    for (const s of ["rejected", "withdrawn"] as const) {
+      expect(bindingWithholds(i.corrections, withStatus(i, s).disputes).map((w) => w.correction_id)).toEqual(["C-0001"]);
+      // Without intake's list, corrections.json's statuses decide.
+      const stored = { ...i.corrections!, disputes: [...withStatus(i, s).disputes!] };
+      expect(bindingWithholds(stored, null).map((w) => w.correction_id)).toEqual(["C-0001"]);
+    }
+    // A correction whose dispute neither list holds binds (the safe side), its kind from the field; a clarification never.
+    const orphan = { ...i.corrections!, corrections: i.corrections!.corrections.map((c) => (c.id === "C-0003" ? { ...c, field: "attribution" } : c)), disputes: [] };
+    expect(bindingWithholds(orphan, []).map((w) => [w.correction_id, w.kind])).toEqual([["C-0001", "victim"], ["C-0003", "attribution"]]);
+    expect(bindingWithholds(null, i.disputes)).toEqual([]);
+  });
+
+  it("C18: withheldRefs covers each withhold's own item and every stored item whose withheld names it", () => {
+    const i = withWithhold({ item: FLAW, edition: "2026-10-13", kind: "victim" });
+    const binding = bindingWithholds(i.corrections, i.disputes);
+    const later = { date: "2026-10-13", items: [{ ...golden(D).items[0]!, withheld: { correction_id: "C-0001", since: "2026-10-13" } }] };
+    const stale = { date: "2026-10-13", items: [{ ...golden(D).items[1]!, withheld: { correction_id: "C-0099", since: "2026-10-13" } }] };
+    const refs = withheldRefs(binding, [...i.history, later, stale]);
+    expect([...refs.keys()].sort()).toEqual([`2026-10-12/${HEALTH}`, `2026-10-13/${FLAW}`, `2026-10-13/${golden(D).items[0]!.id}`].sort());
+    expect(refs.get(`2026-10-13/${golden(D).items[0]!.id}`)!.map((w) => w.correction_id)).toEqual(["C-0001"]);
+  });
+
+  it("C18: a same-day withhold the full draft re-reports by id is masked as §4.10 masks it, and the edition passes validateAll", () => {
+    const i = withWithhold({ item: TRANSPORT, edition: D, kind: "victim" });
+    const out = applyDraft(i);
+    const want = weekdayExpected();
+    const b = out.brief!;
+    expect(out.masked).toEqual([{ item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "id" }]);
+    expect(b.items.find((x) => x.id === TRANSPORT)).toMatchObject({
+      headline: WITHHELD_HEADLINE, summary: WITHHELD_TEXT.replace("{date}", longDate(D)), why_it_matters: null,
+      incident: { victim: null }, withheld: { correction_id: "C-0003", since: D },
+    });
+    // The Japan block lists it, and s11 is cited by it alone: both read [withheld]. Nothing else changes.
+    expect(b.taiwan_lens.japan.text).toBe(WITHHELD_MARK);
+    expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
+    expect(b.items.filter((x) => x.id !== TRANSPORT)).toEqual(want.items.filter((x) => x.id !== TRANSPORT));
+    expect(b.lead).toEqual(want.lead);
+    expect(b.regions).toEqual(want.regions);
+    expect(b.corrections.map((c) => c.id)).toEqual(["C-0003"]);
+    expect(b.computed.word_count).toBeLessThan(want.computed.word_count);
+    expect(out.archiveIndex.editions.find((e) => e.date === D)!.corrected).toBe(true);
+
+    // In a copy of site-content (its 15 October brief too): the archive index as site-content holds it, with D now corrected.
+    const dir = siteCopy();
+    writeTree(dir, {
+      "briefs/2026-10-14.json": jsonText(b, Brief), "corrections.json": jsonText(i.corrections, CorrectionsFile),
+      "archive-index.json": jsonText({ ...GOLDEN_ARCHIVE, editions: markCorrected(GOLDEN_ARCHIVE.editions, i.corrections!.corrections) }, ArchiveIndex),
+    });
+    expect(validateAll(dir, { publishing: D, config: cfg }).errors).toEqual([]);
+    // Unmasked (its dispute rejected in intake's list), the same edition fails XREF_CORRECTION, as it did before.
+    const plain = applyDraft(withStatus(i, "rejected"));
+    expect(plain.masked).toEqual([]);
+    expect(plain.brief!.items).toEqual(want.items);
+    writeTree(dir, { "briefs/2026-10-14.json": jsonText(plain.brief, Brief) });
+    expect(validateAll(dir, { publishing: D, config: cfg }).errors.map((e) => e.code)).toEqual(["XREF_CORRECTION"]);
+  });
+
+  it("C18: an attribution withhold binds by URL: a later item citing a page the withheld item cited is masked, with its chip, Lead, Lens and region reason", () => {
+    const i = withWithhold({ item: "camp-tw-old-2026-10", edition: "2026-10-10", kind: "attribution", date: "2026-10-13" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    expect(i.archiveIndex!.urls[url]).toBeUndefined();
+    i.archiveIndex!.urls[url] = { first_cited: "2026-10-10", item_ids: ["2026-10-10/camp-tw-old-2026-10"], sha256: null, hashed_at: null, last_check: null };
+    const out = applyDraft(i);
+    const want = weekdayExpected();
+    const b = out.brief!;
+    expect(out.masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0003", kind: "attribution", match: "url" }]);
+    const it = b.items.find((x) => x.id === CAMPAIGN)!;
+    expect(it).toMatchObject({
+      headline: WITHHELD_HEADLINE, summary: WITHHELD_TEXT.replace("{date}", longDate("2026-10-13")), why_it_matters: null,
+      attribution: [], actor_nexus: null, withheld: { correction_id: "C-0003", since: "2026-10-13" },
+    });
+    expect(want.actors_seen.map((a) => a.item_ids)).toEqual([[CAMPAIGN]]);
+    expect(b.actors_seen).toEqual([]);
+    expect(b.lead.map((l) => l.text)).toEqual(want.lead.map((l) => (l.item_ids.includes(CAMPAIGN) ? WITHHELD_MARK : l.text)));
+    expect(b.taiwan_lens.analysis).toBe(WITHHELD_MARK);
+    expect(b.taiwan_lens.rows.map((r) => r.text)).toEqual(want.taiwan_lens.rows.map((r) => (r.item_ids.includes(CAMPAIGN) ? WITHHELD_MARK : r.text)));
+    // The TW row keeps its level; only the reason, which embeds the headline, is marked.
+    const tw = (x: Brief) => x.regions.rows.find((r) => r.code === "TW")!;
+    expect(tw(b)).toEqual({ ...tw(want), reason: WITHHELD_MARK });
+    expect(b.items.filter((x) => x.id !== CAMPAIGN)).toEqual(want.items.filter((x) => x.id !== CAMPAIGN));
+    const metrics = Metrics.parse(read(path.join(SITE, "metrics", `${D}.json`)));
+    expect(validatePublished(b, { metrics, config: cfg }).errors).toEqual([]);
+    // Withdrawn, the dispute binds nothing: the brief is the golden one.
+    const free = applyDraft(withStatus(i, "withdrawn"));
+    expect(free.masked).toEqual([]);
+    expect(free.brief).toEqual(want);
+  });
+
+  it("C18: an item an earlier edition masked carries the withhold on: the next item citing its page is masked under the same correction", () => {
+    const i = world("weekday");
+    const history = i.history.map((h) => (h.date !== "2026-10-13" ? h
+      : { ...h, items: h.items.map((it) => (it.id === FLAW ? { ...it, withheld: { correction_id: "C-0001", since: "2026-10-13" } } : it)) }));
+    const out = applyDraft({ ...i, history });
+    expect(out.masked).toEqual([{ item_id: FLAW, correction_id: "C-0001", kind: "victim", match: "url" }]);
+    const b = out.brief!;
+    expect(b.items.find((x) => x.id === FLAW)!.withheld).toEqual({ correction_id: "C-0001", since: "2026-10-13" });
+    expect(b.taiwan_lens.analysis).toBe(WITHHELD_MARK);
+    // The id alone binds only on the withheld item's own edition date: C1's world masks nothing.
+    expect(applyDraft(i).masked).toEqual([]);
+  });
+
+  it("C19: intake's list read before this morning's withhold: the dispute keeps the withhold's correction, and a draft correction does not answer it", () => {
+    const i = world("weekday");
+    // As intake read it: D-0001's withhold commit came after, so its correction_id is still null there.
+    i.disputes = i.disputes!.map((d) => ({ ...d, correction_id: null }));
+    i.draft = {
+      ...i.draft,
+      corrections: [{ item_id: HEALTH, edition_date: "2026-10-12", type: "update", field: "incident.status", after: "SAMPLE status.", reason: "SAMPLE reason.", source_id: null }],
+    };
+    const out = applyDraft(i);
+    const c = out.corrections!.corrections.find((x) => x.id === "C-0003")!;
+    expect([c.trigger, c.dispute_id]).toEqual(["recheck", null]);
+    expect(out.corrections!.disputes).toEqual(GOLDEN_CORRECTIONS.disputes);
+    expect(linkDisputes(i.disputes, GOLDEN_CORRECTIONS.corrections)).toEqual(GOLDEN_CORRECTIONS.disputes);
+    expect(i.disputes[0]!.correction_id).toBeNull();
+    // A dispute no correction names stays unanswered.
+    expect(linkDisputes(i.disputes, [])).toEqual(i.disputes);
   });
 });
 

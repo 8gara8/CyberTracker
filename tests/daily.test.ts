@@ -168,9 +168,7 @@ describe("daily.ts end to end", () => {
   it("D1 a 04:37 normal morning publishes four commits in order and exits 0", async () => {
     const h = harness({ start: "04:37" });
     okAgent(h);
-    const code = await run(h, ["--trigger", "schedule"]);
-    if (code !== 0) console.error(dailyLog(h));
-    expect(code).toBe(0);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
     const s = subjects(h);
     expect(s).toHaveLength(4);
     expect(s[0]).toMatch(new RegExp(`^status: ${D} · run \\d{8}-\\d{6} started$`));
@@ -427,6 +425,40 @@ describe("daily.ts end to end", () => {
     expect(stageOf(r, "publish").note).toContain("Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).");
     expect(fs.readFileSync(path.join(h.root, "logs", `${D}.daily.log`), "utf8")).toContain("The full edition could not be composed: No release date for rel-microsoft-2026-10");
     expect(summary(h).split("\n")[0]).toContain("(E_PUBLISH)");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D32 a same-day victim dispute on a data-only item the draft re-reports: the full edition withholds it too, the dispute stays linked, exit 0", async () => {
+    // Before a withhold bound later editions, the full brief re-reported the item unmasked: XREF_CORRECTION and E_PUBLISH.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-104935";
+    h.issues([correctionIssue({ number: 5, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const s = subjects(h);
+    expect(s.slice(1, 3)).toEqual([`brief: ${D} · data-only edition`, `correction: ${D} · withheld ${ITEM}`]);
+    expect(s.some((x) => x.startsWith(`brief: ${D} · full edition`))).toBe(true);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.edition).toBe("full");
+    expect(stored.items.find((x) => x.id === ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
+    expect(stored.lead.some((l) => l.item_ids.includes(ITEM))).toBe(true);
+    for (const l of stored.lead) if (l.item_ids.includes(ITEM)) expect(l.text).toBe(WITHHELD_MARK);
+    for (const row of stored.regions.rows) {
+      if (row.item_ids.includes(ITEM)) expect(row.reason).toBe(WITHHELD_MARK);
+      if (row.raised?.item_ids.includes(ITEM)) expect(row.raised.reason).toBe(WITHHELD_MARK);
+    }
+    expect(stored.corrections.map((c) => c.id)).toEqual(["C-0001"]);
+    // Intake's list predates the withhold commit; the edition still writes the dispute linked to its correction.
+    const cf = CorrectionsFile.parse(JSON.parse(h.remoteFile("content/corrections.json")!));
+    expect(cf.corrections).toMatchObject([{ id: "C-0001", date: D, item_id: ITEM, edition_date: D, type: "name_removed", dispute_id: "D-0001" }]);
+    expect(cf.disputes).toMatchObject([{ id: "D-0001", item_id: ITEM, kind: "victim", status: "open", correction_id: "C-0001" }]);
+    const r = statusOn(h)!.runs[0]!;
+    expect(r.outcome).toBe("published_full");
+    expect(r.error_code).toBeNull();
+    expect(stageOf(r, "recheck").note).toContain("Withheld 1 item on reader disputes.");
+    expect(stageOf(r, "publish").note).toContain("Withheld 1 re-reported item under reader disputes.");
+    expect(dailyLog(h)).toContain(`Withheld ${ITEM} in this edition: it re-reports the item C-0001 withholds (id match).`);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);
 

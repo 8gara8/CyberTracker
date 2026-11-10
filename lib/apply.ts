@@ -32,6 +32,7 @@ import type { Claim, ClaimState, ScoreboardEntry, ScoreboardFile } from "./schem
 import type { Recheck } from "./schema/status";
 import { normalizeUrl } from "./urls";
 import { KEV_ABSENCE_NOTE, type ClaimMetricPath, type RecheckFlag } from "./vocab";
+import { bindingWithholds, maskWithheld, type MaskedItem } from "./withhold-mask";
 
 /** The issue fields dropUnverified() reads; lib/rules/types.ts's ValidationIssue fits. */
 export interface SoftIssue {
@@ -216,6 +217,8 @@ export interface ContentChanges {
   archiveIndex: ArchiveIndex;
   /** Re-check flags a draft correction answered: publish fills RunRecord.recheck.flagged[].correction_id. */
   flagCorrections: { item_id: string; edition_date: string; flag: RecheckFlag; correction_id: string }[];
+  /** applyDraft() only: the draft items it withheld because they re-report a withheld item (lib/withhold-mask.ts). */
+  masked?: MaskedItem[];
 }
 
 export interface ApplyInput extends ComposeCommon {
@@ -244,7 +247,10 @@ export interface ApplyInput extends ComposeCommon {
  * The brief for D with every S and C field (§8.7 step 4); brief.late = lateOf(); Brief.parse()d. Also
  * returns scoreboard.json (always: each publish sets the zones and as_of, §4.9), corrections.json (null
  * unless the draft adds a correction), the archive index and the re-check flags the corrections answer.
- * Items withheld in the history are never touched here: a withhold is composeWithholds()'s job.
+ * Archived briefs are never touched here: a withhold is composeWithholds()'s job. But a withhold binds the
+ * editions after it: a draft item that re-reports an item withheld under an open or upheld victim or
+ * attribution dispute (its id on that item's edition date, or a cited URL whose archive-index item_ids
+ * hold it) is masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts).
  */
 export function applyDraft(i: ApplyInput): ContentChanges {
   const c = i.config;
@@ -289,6 +295,7 @@ export function applyDraft(i: ApplyInput): ContentChanges {
     sources,
     computed: emptyComputed(),
   };
+  const masked = maskWithheld(b, { binding: bindingWithholds(i.corrections, i.disputes), archiveIndex: i.archiveIndex, history: i.history });
   b.late = lateOf(b, c);
   b.computed = computedOf(b, m);
   const brief = Brief.parse(b);
@@ -299,6 +306,7 @@ export function applyDraft(i: ApplyInput): ContentChanges {
     corrections: corr.file,
     archiveIndex: updateArchiveIndex(i.archiveIndex, brief, i.snapshots, corr.all),
     flagCorrections: corr.flags,
+    masked,
   };
 }
 
@@ -847,6 +855,19 @@ export function sortDisputes(ds: readonly Dispute[]): Dispute[] {
   return [...ds].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
+/**
+ * Copies of the disputes, each with no correction_id given the first stored correction that names it
+ * (dispute_id). Intake's list is read before the run's withhold commit, so a dispute withheld this morning
+ * still has correction_id null there; without this a draft correction on the item would answer the
+ * withhold's dispute, and the edition would write the dispute back unlinked.
+ */
+export function linkDisputes(disputes: readonly Dispute[], corrections: readonly Pick<Correction, "id" | "dispute_id">[]): Dispute[] {
+  return disputes.map((d) => {
+    const c = d.correction_id === null ? corrections.find((x) => x.dispute_id === d.id) : undefined;
+    return c ? { ...structuredClone(d), correction_id: c.id } : structuredClone(d);
+  });
+}
+
 /** The archived value at a correction's dotted `field` (e.g. "cves.0.kev"), as text, cut to 300 characters. */
 export function beforeText(value: unknown): string {
   const text = typeof value === "string" ? value : value === undefined ? "" : JSON.stringify(value);
@@ -866,13 +887,14 @@ interface CorrectionsResult {
 /**
  * The draft's corrections as records (§4.10): ids C-NNNN after the highest, `date` D, `before` copied
  * from the archived item in the history (else the context's flagged `before`), `source_url` from the
- * cited source. A correction on an item with an open dispute not yet answered gets its `dispute_id` and
- * trigger reader_report, and the dispute becomes upheld (§8.9 step 5); else the trigger is recheck. A draft
- * correction already stored for D (a rerun) is not added twice.
+ * cited source. A correction on an item with an open dispute not yet answered (no correction_id, and no
+ * stored correction naming it: linkDisputes()) gets its `dispute_id` and trigger reader_report, and the
+ * dispute becomes upheld (§8.9 step 5); else the trigger is recheck. A draft correction already stored for
+ * D (a rerun) is not added twice.
  */
 function composeCorrections(i: ApplyInput, drafted: readonly DraftCorrection[], draftSources: readonly Pick<Source, "id" | "url">[]): CorrectionsResult {
   const existing = i.corrections?.corrections ?? [];
-  const disputes = structuredClone([...(i.disputes ?? i.corrections?.disputes ?? [])]) as Dispute[];
+  const disputes = linkDisputes(i.disputes ?? i.corrections?.disputes ?? [], existing);
   let next = nextCorrectionNumber(existing);
   const created: Correction[] = [];
   const answered: Correction[] = [];

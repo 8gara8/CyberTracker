@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { ComposeError, applyDraft, dropUnverified, type ApplyInput, type ComposeCommon, type ContentChanges, type GatedDraft, type SnapshotHashes } from "../lib/apply";
+import { ComposeError, applyDraft, dropUnverified, linkDisputes, type ApplyInput, type ComposeCommon, type ContentChanges, type GatedDraft, type SnapshotHashes } from "../lib/apply";
 import { heldLockLine } from "../lib/chat";
 import { loadCheckedConfig, type LoadedConfig } from "../lib/config";
 import { composeDataOnly, type DataOnlyInput } from "../lib/data-only";
@@ -37,6 +37,7 @@ import { contentDir } from "../lib/site";
 import { RegionsInputFile, cveLookupFromDir, packDatesOf, validateAll, type AllOptions, type AllResult, type DraftInputs } from "../lib/validate";
 import { PARTIAL_FEED_IDS, RUN_STAGES, type RunOutcome } from "../lib/vocab";
 import { composeWithholds, type WithholdInput, type WithholdRequest } from "../lib/withhold";
+import type { MaskedItem } from "../lib/withhold-mask";
 import { P3_LIMITS, realDeadline, type Clock } from "./lib/clock";
 import { cveFactsFor } from "./lib/cve-facts";
 import { ensureIdentity, git, GitError, porcelainPaths, SyncError, syncMain, type Git, type Layout as GitLayout } from "./lib/git";
@@ -163,6 +164,8 @@ export interface PublishResult {
   publishedAt: string;
   /** The last record as written to status/D.json (edition, data_only_published_at or full_published_at, recheck correction ids filled). */
   record: RunRecord;
+  /** publishFull() only: the draft items withheld because they re-report a withheld item (ContentChanges.masked). */
+  masked?: readonly MaskedItem[];
 }
 
 export interface PublishDeps {
@@ -680,12 +683,16 @@ export async function publishFull(o: PublishOptions & {
   const changes = composed(ctx, "full", () => (deps.applyDraft ?? applyDraft)(input));
   const brief = briefOf(changes, D);
   if (brief.edition !== o.edition) throw new Error(`publish: applyDraft returned a ${brief.edition} edition, not ${o.edition}`);
+  const masked = changes.masked ?? [];
+  for (const x of masked) ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match).`);
   const files: Files = new Map([...stagedFiles(ctx, D), ...changeFiles(changes)]);
   if (!changes.corrections && o.disputes) {
-    // Intake's updated disputes go in with the edition even when no correction changed.
+    // Intake's updated disputes go in with the edition even when no correction changed, linked to the
+    // corrections that answer them (a withhold this morning answered one after intake read the list).
     const cf = readCorrections(ctx.dir);
-    if (JSON.stringify(cf?.disputes ?? []) !== JSON.stringify(o.disputes)) {
-      files.set("corrections.json", jsonText({ schema_version: 1, corrections: cf?.corrections ?? [], disputes: o.disputes }, CorrectionsFile));
+    const disputes = linkDisputes(o.disputes, cf?.corrections ?? []);
+    if (JSON.stringify(cf?.disputes ?? []) !== JSON.stringify(disputes)) {
+      files.set("corrections.json", jsonText({ schema_version: 1, corrections: cf?.corrections ?? [], disputes }, CorrectionsFile));
     }
   }
   const record: RunRecord = {
@@ -694,7 +701,7 @@ export async function publishFull(o: PublishOptions & {
   files.set(statusRel(D), statusText(ctx.dir, D, [...o.records.slice(0, -1), record]));
   const title = commitTitle("full", { date: D, edition: o.edition, items: brief.items.length });
   const sha = await runPlan(ctx, { files, title, validate: { publishing: D, config: o.config } }, deps);
-  return { sha, publishedAt, record };
+  return { sha, publishedAt, record, masked };
 }
 
 /** The files of a withhold (§4.10): composeWithholds over every stored brief dated on or after the earliest request's edition. */

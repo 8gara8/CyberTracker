@@ -806,6 +806,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       setCur(res.record);
       state.full = x.edition;
       setStage(cur(), "publish", { status: "ok", ended: now() });
+      const masked = new Set((res.masked ?? []).map((m) => m.item_id)).size;
+      if (masked) addNote(cur(), "publish", NOTES.maskedRepeats(masked));
       if (dryRun) return;
       state.pushedBrief = true;
       const at = hhmm(Date.parse(res.publishedAt));
