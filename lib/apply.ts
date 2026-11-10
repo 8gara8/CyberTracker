@@ -33,7 +33,9 @@ import type { Claim, ClaimState, ScoreboardEntry, ScoreboardFile } from "./schem
 import type { Recheck } from "./schema/status";
 import { normalizeUrl } from "./urls";
 import { KEV_ABSENCE_NOTE, type ClaimMetricPath, type RecheckFlag } from "./vocab";
-import { adoptWithheldIds, bindingWithholds, carryWithheld, maskWithheld, replaceReReports, withholdsOn, type MaskedItem } from "./withhold-mask";
+import {
+  adoptWithheldIds, bindingWithholds, carryWithheld, maskWithheld, replaceReReports, withholdsOn, type HeldBrief, type MaskedItem,
+} from "./withhold-mask";
 
 /** The issue fields dropUnverified() reads; lib/rules/types.ts's ValidationIssue fits. */
 export interface SoftIssue {
@@ -200,6 +202,12 @@ export interface ComposeCommon {
    * it first_seen comes from `history`.
    */
   firstSeen?: ReadonlyMap<string, string>;
+  /**
+   * withheldBefore(content, D): every stored brief before D with its withheld items only, so a copy an earlier
+   * edition masked by URL under another id is a withheld reference however old (lib/withhold-mask.ts).
+   * Publish always passes it; without it the references come from `history`.
+   */
+  withheldBriefs?: readonly HeldBrief[];
   regionsBase: RegionsBase;
   /** As synced. */
   archiveIndex: ArchiveIndex | null;
@@ -275,7 +283,8 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   const sameDay = withholdsOn(i.corrections, i.date, i.disputes);
   // The stored brief D's withheld items are withheld references too: the archive index as synced still lists
   // D's items, so a forced rerun must count the items its first publish masked.
-  const held = i.stored && i.stored.date === i.date ? [...i.history, i.stored] : i.history;
+  const before: readonly HeldBrief[] = i.withheldBriefs ?? i.history;
+  const held = i.stored && i.stored.date === i.date ? [...before, i.stored] : before;
   const adoptInput = {
     sameDay, binding, stored: i.stored ?? null, archiveIndex: i.archiveIndex, history: held,
     firstSeen: i.firstSeen ?? firstSeenOf(i.history.filter((b) => b.date < i.date)),

@@ -183,6 +183,41 @@ describe("composeDataOnly", { timeout: 120_000 }, () => {
     expect(composeDataOnly({ ...w, corrections: rejected }).brief).toEqual(golden("2026-10-15"));
   });
 
+  it("C31: a page a 45-day-old copy masked by URL under another id cites masks the data-only item citing it", () => {
+    // The withheld item ran on 20 August; on 31 August, 45 days before D, a copy under another id cited the same
+    // record page and was masked by URL. The 30 days of history leave that copy out.
+    const D = "2026-10-15";
+    const w = dataOnlyWorld(D);
+    const id = "cve-2026-76519";
+    const OLD = "inc-health-old-2026-08";
+    const COPY = "inc-health-copy-2026-08";
+    const COPY_DATE = addDays(D, -45);
+    expect(COPY_DATE).toBe("2026-08-31");
+    const cf = w.corrections!;
+    const text = WITHHOLD_TEXTS.victim;
+    const corrections: CorrectionsFile = {
+      schema_version: 1,
+      corrections: [...cf.corrections, {
+        id: "C-0003", date: "2026-08-25", item_id: OLD, edition_date: "2026-08-20", type: "name_removed", field: text.field,
+        before: NAME_REMOVED_BEFORE, after: text.after, reason: text.reason, source_url: null, trigger: "reader_report", dispute_id: "D-0002",
+      }],
+      disputes: [...cf.disputes, {
+        id: "D-0002", received: "2026-08-25T09:00:00+08:00", issue_number: 9, item_id: OLD, edition_date: "2026-08-20", kind: "victim",
+        evidence_url: null, status: "open", resolved_on: null, correction_id: "C-0003",
+      }],
+    };
+    const url = normalizeUrl(golden(D).sources.find((s) => s.id === "s1")!.url);
+    const archiveIndex = structuredClone(w.archiveIndex!);
+    archiveIndex.urls[url] = { first_cited: "2026-08-20", item_ids: [`2026-08-20/${OLD}`, `${COPY_DATE}/${COPY}`], sha256: null, hashed_at: null, last_check: null };
+    const held = [{ date: COPY_DATE, items: [{ id: COPY, withheld: { correction_id: "C-0003", since: "2026-08-25" } }] }];
+    expect(w.history.some((h) => h.date === COPY_DATE)).toBe(false);
+    expect(composeDataOnly({ ...w, corrections, archiveIndex }).masked).toEqual([]);
+    const out = composeDataOnly({ ...w, corrections, archiveIndex, withheldBriefs: held });
+    expect(out.masked).toEqual([{ item_id: id, correction_id: "C-0003", kind: "victim", match: "url" }]);
+    expect(out.brief!.items.find((it) => it.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0003", since: "2026-08-25" } });
+    expect(validatePublished(out.brief!, { metrics: w.metrics, config: cfg }).errors).toEqual([]);
+  });
+
   it("C3: a home vendor's flaw is placed in its home region; an unknown publication date leaves the CVE out", () => {
     const w = dataOnlyWorld("2026-10-15");
     const tw = w.kevIndex.entries.find((r) => matchVendor(cfg, { kevVendorProject: r[2] })?.country === "TW" && r[4] !== null);

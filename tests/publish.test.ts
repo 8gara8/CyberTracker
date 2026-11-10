@@ -13,10 +13,13 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ComposeError, applyDraft, cveBlockOf, type ApplyInput, type ContentChanges, type GatedDraft } from "@/lib/apply";
 import { buildContext } from "@/lib/context";
+import { composeDataOnly, type DataOnlyInput } from "@/lib/data-only";
 import { loadCheckedConfig, type LoadedConfig } from "@/lib/config";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
-import { firstSeenBefore, kevIndexFor, metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "@/lib/run-inputs";
+import {
+  firstSeenBefore, kevIndexFor, metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast, withheldBefore,
+} from "@/lib/run-inputs";
 import { CandidatesFile, Pack } from "@/lib/schema/pack";
 import type { CveLookup, RegionsBase } from "@/lib/rules/types";
 import { Brief } from "@/lib/schema/brief";
@@ -854,10 +857,15 @@ describe("publish with the real composers (integration)", () => {
     const m = await morning();
     const { h, D } = m;
     const calls: ApplyInput[] = [];
+    const dataOnlyCalls: DataOnlyInput[] = [];
     const spy: PublishDeps = { applyDraft: (i) => { calls.push(i); return applyDraft(i); } };
     await inRoot(h, async () => {
       const r0 = testRecord(D, `${D}T04:37:02+08:00`);
-      const d = await publishDataOnly({ ...morningBase(m, [r0]), feedsStale: [], generatedAt: m.generatedAt });
+      const d = await publishDataOnly({ ...morningBase(m, [r0]), feedsStale: [], generatedAt: m.generatedAt }, {
+        composeDataOnly: (i) => { dataOnlyCalls.push(i); return composeDataOnly(i); },
+      });
+      // Withheld references come from every stored brief, as for first_seen (§0.4 row 128).
+      expect(dataOnlyCalls[0]!.withheldBriefs).toEqual(withheldBefore(path.join(h.root, "content"), D));
       expect(Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!)).edition).toBe("data_only");
       expect(validateAll(path.join(h.root, "content"), { publishing: D, config: m.config }).errors).toEqual([]);
       await expect(publishDataOnly({ ...morningBase(m, [d.record]), feedsStale: [], generatedAt: m.generatedAt })).rejects.toMatchObject({ code: "already published" });
@@ -868,6 +876,7 @@ describe("publish with the real composers (integration)", () => {
       expect(calls[0]!.dataOnlyPublishedAt).toBe(d.publishedAt);
       // first_seen comes from every stored brief, as XREF_FIRST_SEEN reads them.
       expect(calls[0]!.firstSeen).toEqual(firstSeenBefore(path.join(h.root, "content"), D));
+      expect(calls[0]!.withheldBriefs).toEqual(withheldBefore(path.join(h.root, "content"), D));
       const b = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
       expect(b).toMatchObject({ edition: "full", published_at: f.publishedAt, data_only_published_at: d.publishedAt });
       expect(b.items.map((x) => x.id)).toEqual(m.full.draft.items.map((x) => x.id));

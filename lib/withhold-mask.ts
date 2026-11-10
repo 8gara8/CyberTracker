@@ -55,6 +55,16 @@ export interface MaskedItem {
   draft_id?: string;
 }
 
+/**
+ * A stored brief as the withheld references read it: its date and the ids and `withheld` of its items. Publish
+ * passes withheldBefore() (lib/run-inputs.ts), every stored brief before D with its withheld items only, so a
+ * copy masked by URL under another id stays a withheld reference however old its brief (§0.4 row 128).
+ */
+export interface HeldBrief {
+  date: string;
+  items: readonly Pick<Item, "id" | "withheld">[];
+}
+
 /** Each name_removed correction with its dispute (intake's list first, then corrections.json's), or null. */
 function withholdsOf(corrections: CorrectionsFile | null, disputes: readonly Dispute[] | null | undefined) {
   const stored = corrections?.disputes ?? [];
@@ -93,7 +103,7 @@ export const itemRef = (date: string, itemId: string): string => `${date}/${item
  * every item of the given briefs whose `withheld` names a binding correction (a later brief the withhold
  * rewrote, or an item an earlier edition masked).
  */
-export function withheldRefs(binding: readonly BindingWithhold[], briefs: readonly Pick<Brief, "date" | "items">[]): Map<string, BindingWithhold[]> {
+export function withheldRefs(binding: readonly BindingWithhold[], briefs: readonly HeldBrief[]): Map<string, BindingWithhold[]> {
   const out = new Map<string, BindingWithhold[]>();
   const add = (ref: string, w: BindingWithhold) => {
     const list = out.get(ref) ?? [];
@@ -188,8 +198,9 @@ export interface MaskInput {
   /**
    * The stored briefs before the edition, and the stored brief of the edition's own date when a full edition
    * replaces it (their withheld items' references: a forced rerun must see the items its first publish masked).
+   * Every stored brief, not only the last days: a copy masked under another id is a reference by its own id.
    */
-  history: readonly Pick<Brief, "date" | "items">[];
+  history: readonly HeldBrief[];
 }
 
 /**
@@ -262,7 +273,8 @@ export interface AdoptInput {
   stored: Pick<Brief, "items"> | null;
   /** As synced: it holds the stored brief D's references. */
   archiveIndex: ArchiveIndex | null;
-  history: readonly Pick<Brief, "date" | "items">[];
+  /** As MaskInput.history. */
+  history: readonly HeldBrief[];
   /** Item id → its earliest stored brief before D (an id an earlier edition used is never renamed). */
   firstSeen: ReadonlyMap<string, string>;
 }

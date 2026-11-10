@@ -14,6 +14,7 @@ import { ArchiveIndex, CorrectionsFile } from "./schema/misc";
 import { CollectInputsFile, type Pack } from "./schema/pack";
 import { ScoreboardFile } from "./schema/scoreboard";
 import { StatusFile } from "./schema/status";
+import type { HeldBrief } from "./withhold-mask";
 
 // The reads the P3 stages share (publish, context, re-check, daily): content/ as synced, the files
 // runMetrics() staged in cache/staged/D/, and the regions base of SPEC §5.11. Pure reads: nothing here
@@ -190,6 +191,22 @@ export function firstSeenBefore(contentDir: string, date: string): Map<string, s
     const b = readBrief(contentDir, d);
     if (!b) continue;
     for (const item of b.items) if (!out.has(item.id)) out.set(item.id, d);
+  }
+  return out;
+}
+
+/**
+ * Every stored brief dated before D that holds a withheld item, oldest first, with those items only (id and
+ * `withheld`), over every brief in contentDir/briefs/ as firstSeenBefore() reads them, not only the 30 days of
+ * history: a copy an earlier edition masked by URL under another id stays a withheld reference however old
+ * (lib/withhold-mask.ts). A brief that is missing or does not parse is passed over.
+ */
+export function withheldBefore(contentDir: string, date: string): HeldBrief[] {
+  const out: HeldBrief[] = [];
+  for (const d of briefDatesBefore(contentDir, date)) {
+    const b = readBrief(contentDir, d);
+    const items = (b?.items ?? []).filter((it) => it.withheld !== null).map((it) => ({ id: it.id, withheld: it.withheld }));
+    if (items.length > 0) out.push({ date: d, items });
   }
   return out;
 }

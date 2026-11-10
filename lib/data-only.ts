@@ -141,7 +141,7 @@ export function composeDataOnly(i: DataOnlyInput): ContentChanges {
     computed: emptyComputed(),
   };
   // A withhold binds every later edition (§4.10): a new KEV entry with a withheld item's id is that item.
-  const masked = maskWithheld(b, { binding: bindingWithholds(i.corrections), archiveIndex: i.archiveIndex, history: i.history });
+  const masked = maskWithheld(b, { binding: bindingWithholds(i.corrections), archiveIndex: i.archiveIndex, history: i.withheldBriefs ?? i.history });
   b.late = lateOf(b, c);
   b.computed = computedOf(b, m);
   const brief = Brief.parse(b);

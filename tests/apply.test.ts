@@ -14,7 +14,7 @@ import { addDays } from "@/lib/dates";
 import { longDate } from "@/lib/format";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
-import { firstSeenBefore, readHistory, regionsBaseFor } from "@/lib/run-inputs";
+import { firstSeenBefore, readHistory, regionsBaseFor, withheldBefore } from "@/lib/run-inputs";
 import { draftFirstSeen, draftRegions } from "@/lib/rules/items";
 import { derive } from "@/lib/rules/shared";
 import type { CveLookup, RuleInput } from "@/lib/rules/types";
@@ -766,6 +766,41 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     // An old reference to another item still frees the page.
     i.archiveIndex!.urls[url]!.item_ids.unshift("2026-09-01/camp-tw-other-2026-09");
     expect(applyDraft(i).masked).toEqual([]);
+  });
+
+  it("C29: a copy an earlier edition masked by URL under another id stays a withheld reference however old: publish reads every stored brief's withheld items", () => {
+    // The withheld campaign ran on 15 August; on 30 August, 45 days before D and beyond the 30 days of history,
+    // a copy under another id cited its page and was masked by URL. The page lists both references.
+    const OLD = "camp-tw-old-2026-08";
+    const COPY = "camp-tw-copy-2026-08";
+    const COPY_DATE = addDays(D, -45);
+    expect(COPY_DATE).toBe("2026-08-30");
+    const i = withWithhold({ item: OLD, edition: "2026-08-15", kind: "attribution", date: "2026-08-25" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    i.archiveIndex!.urls[url] = {
+      first_cited: "2026-08-15", item_ids: [`2026-08-15/${OLD}`, `${COPY_DATE}/${COPY}`], sha256: null, hashed_at: null, last_check: null,
+    };
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-withheld-before-"));
+    tmpDirs.push(dir);
+    fs.cpSync(path.join(SITE, "briefs"), path.join(dir, "briefs"), { recursive: true });
+    const copy = { ...golden(D).items.find((it) => it.id === CAMPAIGN)!, id: COPY, first_seen: COPY_DATE, withheld: { correction_id: "C-0003", since: "2026-08-25" } };
+    fs.writeFileSync(path.join(dir, "briefs", `${COPY_DATE}.json`), jsonText(Brief.parse({ ...golden(D), date: COPY_DATE, items: [copy] }), Brief));
+    fs.writeFileSync(path.join(dir, "briefs", `${addDays(D, -46)}.json`), "not json\n");
+    const history = readHistory(dir, D, 30);
+    expect(history.some((h) => h.date === COPY_DATE)).toBe(false);
+    // Every stored brief before D with a withheld item, those items only, oldest first.
+    const held = withheldBefore(dir, D);
+    expect(held[0]).toEqual({ date: COPY_DATE, items: [{ id: COPY, withheld: { correction_id: "C-0003", since: "2026-08-25" } }] });
+    expect(held.map((b) => b.date)).toEqual([...held.map((b) => b.date)].sort());
+    expect(held.every((b) => b.date < D && b.items.length > 0 && b.items.every((it) => it.withheld !== null))).toBe(true);
+    expect(withheldBefore(dir, COPY_DATE)).toEqual([]);
+    expect(withheldBefore(path.join(dir, "missing"), D)).toEqual([]);
+    // The 30 days of history alone: the copy's reference looks unwithheld, and the campaign would print in the clear.
+    expect(applyDraft({ ...i, history }).masked).toEqual([]);
+    // As publish passes it: the copy's reference is withheld, so the page is the story's and the campaign is masked.
+    const out = applyDraft({ ...i, history, withheldBriefs: held });
+    expect(out.masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0003", kind: "attribution", match: "url" }]);
+    expect(out.brief!.items.find((it) => it.id === CAMPAIGN)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0003" } });
   });
 
   it("C19: intake's list read before this morning's withhold: the dispute keeps the withhold's correction, and a draft correction does not answer it", () => {
