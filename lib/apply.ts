@@ -184,8 +184,14 @@ export interface ComposeCommon {
   metrics: Metrics;
   /** kevIndexFor(). */
   kevIndex: KevIndexFile;
-  /** readHistory(content, D, 30), newest first (first_seen, regions). */
+  /** readHistory(content, D, 30), newest first (regions, corrections; first_seen when `firstSeen` is absent). */
   history: readonly Brief[];
+  /**
+   * firstSeenBefore(content, D): item id → its earliest stored brief before D, over every brief, so an item
+   * first seen more than 30 days ago keeps its date (XREF_FIRST_SEEN). Publish always passes it; without
+   * it first_seen comes from `history`.
+   */
+  firstSeen?: ReadonlyMap<string, string>;
   regionsBase: RegionsBase;
   /** As synced. */
   archiveIndex: ArchiveIndex | null;
@@ -252,7 +258,7 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   const releases = new Map<string, NonNullable<Candidate["release"]>>();
   for (const cand of i.context.candidates) if (cand.release && !releases.has(cand.release.release_id)) releases.set(cand.release.release_id, cand.release);
   const items = freezeItems(d.items, sources, {
-    config: c, date: i.date, history: i.history,
+    config: c, date: i.date, history: i.history, firstSeen: i.firstSeen,
     blocks: (it) => it.cve_ids.map((cve) => cveBlockOf(cve, it, sources, cveInputs)),
     release: (it) => releaseBlockOf(it, it.release_id ? releases.get(it.release_id) ?? null : null, sources, c, i.cveList),
   });
@@ -544,15 +550,17 @@ export function firstSeenOf(history: readonly Pick<Brief, "date" | "items">[]): 
 export interface FreezeInputs {
   config: LoadedConfig;
   date: string;
-  /** Earlier briefs (first_seen). */
+  /** Earlier briefs (first_seen when `firstSeen` is absent). */
   history: readonly Pick<Brief, "date" | "items">[];
+  /** ComposeCommon.firstSeen: item id → its earliest earlier brief over every stored brief. */
+  firstSeen?: ReadonlyMap<string, string>;
   blocks: (it: DraftItem) => BareCveBlock[];
   release: (it: DraftItem) => ReleaseBlock | null;
 }
 
 /** Frozen items (§4.6): the draft item plus every S field. */
 export function freezeItems(draftItems: readonly DraftItem[], sources: readonly Source[], x: FreezeInputs): Item[] {
-  const firstSeen = firstSeenOf(x.history.filter((b) => b.date < x.date));
+  const firstSeen = x.firstSeen ?? firstSeenOf(x.history.filter((b) => b.date < x.date));
   const bySource = new Map(sources.map((s) => [s.id, { publisher: s.publisher }]));
   return draftItems.map((it) => {
     const cves = x.blocks(it).map((b) => confirmBlock(b, it, sources, x.config));

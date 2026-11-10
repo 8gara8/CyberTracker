@@ -164,6 +164,35 @@ export function regionsBaseFor(o: { root: string; contentDir: string; date: stri
   return { date: o.date, history, signals, kevIndex, config: rc };
 }
 
+/** The dates of contentDir/briefs/YYYY-MM-DD.json files dated before `date`, oldest first. */
+function briefDatesBefore(contentDir: string, date: string): string[] {
+  let names: string[];
+  try {
+    names = fs.readdirSync(path.join(contentDir, "briefs"));
+  } catch {
+    return [];
+  }
+  return names
+    .map((n) => /^(\d{4}-\d{2}-\d{2})\.json$/.exec(n)?.[1])
+    .filter((d): d is string => d !== undefined && isValidDate(d) && d < date)
+    .sort();
+}
+
+/**
+ * Item id → the date of the earliest stored brief dated before D that holds it, over every brief in
+ * contentDir/briefs/, as XREF_FIRST_SEEN reads them (lib/validate.ts), not only the 30 days of history: an
+ * item first seen 40 days ago keeps that date. A brief that is missing or does not parse is passed over.
+ */
+export function firstSeenBefore(contentDir: string, date: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const d of briefDatesBefore(contentDir, date)) {
+    const b = readBrief(contentDir, d);
+    if (!b) continue;
+    for (const item of b.items) if (!out.has(item.id)) out.set(item.id, d);
+  }
+  return out;
+}
+
 /**
  * For each standing story some stored brief dated before D tags (an item's `standing_story`): the newest
  * such brief's date and the first item in it carrying the story (§4.15 `last_development`, `last_item_id`).
@@ -172,18 +201,7 @@ export function regionsBaseFor(o: { root: string; contentDir: string; date: stri
  */
 export function standingLast(contentDir: string, date: string): Record<string, { date: string; item_id: string }> {
   const out: Record<string, { date: string; item_id: string }> = {};
-  let names: string[];
-  try {
-    names = fs.readdirSync(path.join(contentDir, "briefs"));
-  } catch {
-    return out;
-  }
-  const dates = names
-    .map((n) => /^(\d{4}-\d{2}-\d{2})\.json$/.exec(n)?.[1])
-    .filter((d): d is string => d !== undefined && isValidDate(d) && d < date)
-    .sort()
-    .reverse();
-  for (const d of dates) {
+  for (const d of briefDatesBefore(contentDir, date).reverse()) {
     const b = readBrief(contentDir, d);
     if (!b) continue;
     for (const item of b.items) {

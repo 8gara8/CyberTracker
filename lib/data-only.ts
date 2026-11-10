@@ -103,7 +103,7 @@ export function composeDataOnly(i: DataOnlyInput): ContentChanges {
     };
   });
   const items = freezeItems(draftItems, sources, {
-    config: c, date: i.date, history: i.history, blocks: (it) => [blocks[draftItems.indexOf(it)]!], release: () => null,
+    config: c, date: i.date, history: i.history, firstSeen: i.firstSeen, blocks: (it) => [blocks[draftItems.indexOf(it)]!], release: () => null,
   });
   const board = updateScoreboard({ date: i.date, config: c, metrics: m, scoreboard: i.scoreboard, reports: [], sources: [] });
   const corrections = i.corrections?.corrections ?? [];

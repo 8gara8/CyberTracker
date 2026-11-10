@@ -16,7 +16,7 @@ import { buildContext } from "@/lib/context";
 import { loadCheckedConfig, type LoadedConfig } from "@/lib/config";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
-import { metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "@/lib/run-inputs";
+import { firstSeenBefore, metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "@/lib/run-inputs";
 import { CandidatesFile, Pack } from "@/lib/schema/pack";
 import type { CveLookup, RegionsBase } from "@/lib/rules/types";
 import { Brief } from "@/lib/schema/brief";
@@ -778,6 +778,8 @@ describe("publish with the real composers (integration)", () => {
       const f = await publishFull({ ...morningBase(m, [d.record]), force: false, ...m.full }, spy);
       expect(calls).toHaveLength(1);
       expect(calls[0]!.dataOnlyPublishedAt).toBe(d.publishedAt);
+      // first_seen comes from every stored brief, as XREF_FIRST_SEEN reads them.
+      expect(calls[0]!.firstSeen).toEqual(firstSeenBefore(path.join(h.root, "content"), D));
       const b = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
       expect(b).toMatchObject({ edition: "full", published_at: f.publishedAt, data_only_published_at: d.publishedAt });
       expect(b.items.map((x) => x.id)).toEqual(m.full.draft.items.map((x) => x.id));

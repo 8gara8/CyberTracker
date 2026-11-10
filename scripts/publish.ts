@@ -25,7 +25,7 @@ import { cachePaths } from "../lib/feeds/cache";
 import { jsonText, sha256Hex } from "../lib/json";
 import { regionsConfig } from "../lib/regions";
 import type { CveLookup, RegionsBase } from "../lib/rules/types";
-import { kevIndexFor, metricsFor, readArchiveIndex, readCorrections, readHistory, readScoreboard, regionsBaseFor } from "../lib/run-inputs";
+import { firstSeenBefore, kevIndexFor, metricsFor, readArchiveIndex, readCorrections, readHistory, readScoreboard, regionsBaseFor } from "../lib/run-inputs";
 import { Brief, type FeedStale } from "../lib/schema/brief";
 import { AgentContext } from "../lib/schema/context";
 import { STATE_FILES, STATE_SCHEMAS } from "../lib/schema/metrics";
@@ -551,6 +551,7 @@ function composeCommon(ctx: Ctx, o: { config: LoadedConfig; feedsStale: readonly
     metrics: mf.metrics,
     kevIndex,
     history: readHistory(ctx.dir, D, HISTORY_DAYS),
+    firstSeen: firstSeenBefore(ctx.dir, D),
     regionsBase: regionsBase ?? regionsBaseFor({ root: ctx.root, contentDir: ctx.dir, date: D, pack: readPack(ctx.root, D), config: o.config }),
     archiveIndex: readArchiveIndex(ctx.dir),
     scoreboard: readScoreboard(ctx.dir),

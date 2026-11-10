@@ -6,13 +6,14 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  ComposeError, applyDraft, claimReading, claimStatus, claimZone, cveBlockOf, releaseBlockOf, updateArchiveIndex, updateScoreboard,
+  ComposeError, applyDraft, claimReading, firstSeenOf, claimStatus, claimZone, cveBlockOf, releaseBlockOf, updateArchiveIndex, updateScoreboard,
   type ApplyInput, type CveFacts, type SnapshotHashes,
 } from "@/lib/apply";
 import type { LoadedConfig } from "@/lib/config";
 import { addDays } from "@/lib/dates";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
+import { firstSeenBefore, readHistory } from "@/lib/run-inputs";
 import type { CveLookup } from "@/lib/rules/types";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
@@ -282,6 +283,42 @@ describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
       }
     })();
     expect(err).toBeInstanceOf(ComposeError);
+  });
+});
+
+describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_000 }, () => {
+  it("C17: an item first seen more than 30 days before D keeps that date, as validateAll's XREF_FIRST_SEEN reads it", () => {
+    const i = world("weekday");
+    const D = i.date;
+    const id = i.draft.items[0]!.id;
+    const OLD = addDays(D, -40);
+    // A content folder holding site-content's briefs and one more, 40 days back, that holds the same item.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-first-seen-"));
+    try {
+      fs.cpSync(path.join(SITE, "briefs"), path.join(dir, "briefs"), { recursive: true });
+      const old = { ...golden(D), date: OLD, items: golden(D).items.filter((it) => it.id === id).map((it) => ({ ...it, first_seen: OLD })) };
+      fs.writeFileSync(path.join(dir, "briefs", `${OLD}.json`), jsonText(Brief.parse(old), Brief));
+      fs.writeFileSync(path.join(dir, "briefs", "notes.json"), "{}\n");
+      fs.writeFileSync(path.join(dir, "briefs", `${addDays(D, -41)}.json`), "not json\n");
+      const all = firstSeenBefore(dir, D);
+      expect(all.get(id)).toBe(OLD);
+      // The 30-day history alone misses it, which is what made the published first_seen D.
+      expect(firstSeenOf(readHistory(dir, D, 30)).get(id)).not.toBe(OLD);
+      // Only briefs before D count, and every item of them is listed with its earliest date.
+      expect([...all.values()].every((d) => d < D)).toBe(true);
+      expect(firstSeenBefore(dir, OLD).size).toBe(0);
+      expect(firstSeenBefore(path.join(dir, "missing"), D).size).toBe(0);
+
+      const withAll = applyDraft({ ...i, firstSeen: all }).brief!;
+      expect(withAll.items.find((it) => it.id === id)!.first_seen).toBe(OLD);
+      const without = applyDraft(i).brief!;
+      // Unchanged for the other items: the map agrees with the history wherever both know the id.
+      for (const it of withAll.items) {
+        if (it.id !== id) expect(it.first_seen, it.id).toBe(without.items.find((x) => x.id === it.id)!.first_seen);
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
