@@ -5,6 +5,8 @@
 // and writes the draft the prompt names from its config. The agent's environment is minimal by design, so
 // the config comes from $CLAUDE_CONFIG_DIR/fake-agent.json (FakeAgentConfig in tests/helpers/harness.ts):
 //   mode        "ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair" (default "ok")
+//   resumeMode  the mode of --resume calls (a repair round), default mode
+//   attemptModes  the modes of the first, second, ... --session-id calls (an attempt each), default mode
 //   draft       the JSON value written as the draft (ok: on --session-id; on --resume when no repair)
 //   invalidDraft  repair mode: written on --session-id in place of draft when given
 //   repair      the JSON value written on --resume
@@ -29,9 +31,14 @@ const configDir = process.env.CLAUDE_CONFIG_DIR ?? null;
 const cfgFile = configDir ? path.join(configDir, "fake-agent.json") : null;
 const cfg = cfgFile && fs.existsSync(cfgFile) ? JSON.parse(fs.readFileSync(cfgFile, "utf8")) : {};
 
+/** Counts the --session-id calls recorded so far, this one included (the attempt number). */
+let attemptNo = 0;
 if (configDir && fs.existsSync(configDir)) {
   const call = { argv: args, envKeys: Object.keys(process.env).sort(), cwd: process.cwd() };
-  fs.appendFileSync(path.join(configDir, "calls.jsonl"), `${JSON.stringify(call)}\n`);
+  const callsFile = path.join(configDir, "calls.jsonl");
+  fs.appendFileSync(callsFile, `${JSON.stringify(call)}\n`);
+  attemptNo = fs.readFileSync(callsFile, "utf8").split("\n").filter((l) => l.trim())
+    .filter((l) => JSON.parse(l).argv.includes("--session-id")).length;
 }
 
 if (!args.includes("-p") && (args.includes("--version") || args.includes("-v"))) {
@@ -43,7 +50,7 @@ const after = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] ?? n
 const prompt = after("-p") ?? "";
 const resume = after("--resume");
 const sessionId = resume ?? after("--session-id") ?? "00000000-0000-4000-8000-000000000000";
-const mode = cfg.mode ?? "ok";
+const mode = (resume ? cfg.resumeMode : cfg.attemptModes?.[attemptNo - 1]) || cfg.mode || "ok";
 const version = String(cfg.version ?? DEFAULT_VERSION).split(/\s+/)[0];
 
 const emit = (e) => process.stdout.write(`${JSON.stringify(e)}\n`);

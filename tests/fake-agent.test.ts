@@ -235,6 +235,27 @@ describe("FA4: repair mode", () => {
     await callFake(agentArgs(PROMPT, { resume: SID }), ok);
     expect(ok.draft()).toEqual(draft);
   });
+  it("FA4: resumeMode sets the mode of --resume calls; attemptModes the mode of each --session-id call in turn", async () => {
+    const invalid = { schema_version: 1, date: "2026-10-14", items: "not a list" };
+    const w = world({ mode: "repair", resumeMode: "limit", invalidDraft: invalid, repair: draft });
+    await callFake(agentArgs(PROMPT, { sessionId: SID }), w);
+    expect(w.draft()).toEqual(invalid);
+    const limited = await callFake(agentArgs(PROMPT, { resume: SID }), w);
+    expect(limited.code).toBe(1);
+    expect(parseTranscript(limited.stdout).limitHit).toBe(true);
+    expect(w.draft()).toEqual(invalid);
+
+    const a = world({ mode: "ok", attemptModes: ["repair", "nodraft"], invalidDraft: invalid, draft });
+    await callFake(agentArgs(PROMPT, { sessionId: SID }), a);
+    expect(a.draft()).toEqual(invalid);
+    fs.rmSync(path.join(a.repo, "drafts"), { recursive: true });
+    const second = parseTranscript((await callFake(agentArgs(PROMPT, { sessionId: SID }), a)).stdout);
+    expect(second.toolUses.Write ?? 0).toBe(0);
+    expect(a.draft()).toBeUndefined();
+    // Past the list: mode.
+    await callFake(agentArgs(PROMPT, { sessionId: SID }), a);
+    expect(a.draft()).toEqual(draft);
+  });
 });
 
 describe("FA5: touch and draftPath (plan A14, A22)", () => {

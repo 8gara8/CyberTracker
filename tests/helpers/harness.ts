@@ -44,6 +44,10 @@ export interface FakeAgentConfig {
    * repair: writes `invalidDraft ?? draft` (invalid) first, `repair` on --resume.
    */
   mode: "ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair";
+  /** The mode of --resume calls (a repair round); default `mode`. */
+  resumeMode?: "ok" | "nodraft" | "auth" | "mcp" | "limit";
+  /** The modes of the first, second, ... --session-id calls (one per attempt); default `mode`. */
+  attemptModes?: ("ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair")[];
   /** The draft JSON the fake writes (a parsed value, written as JSON). */
   draft?: unknown;
   /**
