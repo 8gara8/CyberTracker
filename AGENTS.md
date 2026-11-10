@@ -56,13 +56,19 @@ faster?
   out of `content/state/credit-candidates.json` (sessions 2c and 2d rebuilt it); §0.4 row 64. A Linux
   rebuild gave the same state hashes. Report: `docs/reports/2026-11-10-p2-backfill.md`. The 26-week
   Window shows no clear change against 2023 to 2024 (37% exploited at disclosure, median 17 days against
-  21) while the 13-week volume is 5.3 times the reference. Still to do on Kobol after the merge:
-  fast-forward the main checkout (rule 4; `package-lock.json` did not change, so no `npm ci`), then remove
-  the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics` (its 4.8G `cache/cvelistV5`
-  goes with it; P3 clones again if it needs one).
-- **P3 on `p3-pipeline`, started 2026-11-10:** the code is built in the cloud container; the Kobol parts
-  (the §9.4 flag check on CLI 2.1.316, `agent:check -- --all`, the transcript re-record and the dry runs)
-  wait for JL's keychain token (SPEC §9.6).
+  21) while the 13-week volume is 5.3 times the reference. Kobol housekeeping after the merge is done:
+  the main checkout was fast-forwarded to `cbf3a9b` (rule 4; `package-lock.json` did not change, so no
+  `npm ci`) and the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics` removed, its
+  4.8G `cache/cvelistV5` with it (P3 clones again if it needs one).
+- **P3 on `p3-pipeline`, draft PR #5:** built and tested in the cloud container on 2026-11-10: the
+  morning pipeline (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its
+  tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. On Kobol, `--help` of CLI
+  2.1.316 lists every §9.4 flag and `file -L` says arm64. Kobol checks next: JL stores the agent's token
+  (SPEC §9.6), most simply with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which
+  reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
+  transcript re-record and the dry runs of SPEC §10 P3, whose report
+  (`docs/reports/<date>-p3-dry-runs.md`) is written on Kobol. The PR stays a draft until those and an
+  independent review are in; marking it ready starts the Codex review.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -83,7 +89,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | | In progress |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks next |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
@@ -158,7 +164,10 @@ faster?
 | Job | How |
 |---|---|
 | Daily brief | The scheduled task "CyberTracker morning" (04:30, starting about 04:37; prompt `routine/TASK.md`) runs `scripts/daily.sh`, which runs `scripts/daily.ts`, then replies with `logs/DATE.summary.md` (from P5) |
-| Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning; add `--dry-run` to test (from P3) |
+| Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning (start by 10:00); add `--dry-run` to test, `--date D` for a past date (dry runs only), `--force` to replace today's full edition, `--data-only` to stop after the data-only edition, `--simulate-failure` to test the failure path. Never `npm run daily` for a real run: it is `tsx scripts/daily.ts`, kept for tests, and skips the fixed PATH, `TZ` and `caffeinate`. Exit 0 published, skipped or dry run, 1 failed, 2 usage, 3 data-only (SPEC §8.2; from P3) |
+| Publish by hand | `PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D` publishes a valid `drafts/D.json` as the full edition, validated against the run's logs, before 11:00 (`E_PUBLISH`'s next step); `--data-only` the data-only edition, `--state` the staged backfill state, `--force` replaces a full edition, `--dry-run` writes into `logs/dry-run/D/`. Refused while `logs/.lock` is held, off arm64 and after 11:00; exit 0 published, 1 refused or failed, 2 usage (SPEC §8.7; from P3) |
+| Re-check and links | `npm run recheck -- --date D` runs dispute intake then the 14-day flags (`--intake` or `--flags` for one; `--json` prints the result) and writes `logs/D.recheck.json`; it reads GitHub and never withholds; `--dry-run` writes nothing. `npm run links -- --date D` runs the post-publish link check and prints the results, editing no archive index (SPEC §8.9, §8.11; from P3) |
+| Agent context | `npm run context -- --date D` writes `drafts/context.json` as the morning builds it (`--deadline HH:MM`, default now + 30 min; `--out FILE`); exit 0 written, 1 error, 2 usage (SPEC §8.5; from P3) |
 | Checks before a push | `npm run check` (exactly what CI runs) |
 | Validate | `npm run validate -- drafts/D.json` (a draft needs its run inputs; the flags are in SPEC §8.6); `npm run validate:all` checks `content/`, `npm run validate:sample` the sample in `fixtures/site-content/` (from P1) |
 | Rebuild fixtures | `npm run fixtures:gen` writes every fixture from `fixtures/src/` and validates them; `npm run fixtures:check` compares without writing (from P1) |
@@ -169,7 +178,8 @@ faster?
 | Capture a feed fixture | After `sources:check`: `npm exec -- tsx fixtures/src/scrub-feed.ts <kind> cache/check/feeds/<file> fixtures/feeds/rss/<registry id>.xml` (kinds in SPEC §4.12; live captures go to `fixtures/feeds/live/`); it refuses a feed with an unknown XML namespace or a link in another scheme. Read the output before committing it; `tests/fixture-safety.test.ts` and `tests/captures.test.ts` check it (from P2) |
 | Metrics for a date | `npm run metrics -- --date D` stages `metrics/D.json`, its inputs manifest and the changed state in `cache/staged/D/`; `-- --recompute` checks a committed file reproduces from `cache/`; `--out DIR` writes elsewhere (from P2) |
 | Backfill | `npm run backfill -- --check-reference` (Appendix D from `fixtures/reference/`, offline; add `--commit 67c39b124fe4a56018212b4e6f62bd078058e76c --kev-commit e5b3a9b25050a8da26c96266c5bfe438ee0bdebc --cutoff 2026-11-06` to check the clone too); after `npm run collect -- --date D`, `npm run backfill -- --out content` builds `content/state/` and D's metrics (P2 only, before go-live); `-- --catch-up` and `-- --credits` rebuild state, with `--push` after go-live (from P3). Needs 10 GiB free for the CVE List clone in `cache/cvelistV5` (SPEC §5.9, §8.4) |
-| Agent sandbox | `npm run agent:check` (P3, with the keychain token) |
+| Agent sandbox | `npm run agent:check` runs the smoke tests; `-- --sandbox` adds the sandbox tests, `-- --canary` the planted-instruction test, `-- --all` all three, `-- --json` JSON instead of the table. Needs the keychain token; exit 0 every test passed, 1 a failure, 2 the CLI or token missing or a usage error (SPEC §8.12; from P3) |
+| Recover a morning | `docs/RUNBOOK.md`: every error code with its next step, where to look, the lock, `needs-review/`, token renewal (from P3) |
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
 
 ## 7. Memory
