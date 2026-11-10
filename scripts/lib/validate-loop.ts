@@ -105,8 +105,9 @@ interface Checked {
  * runs on the hard errors left, after io.writeDraft() of the gated draft, and is followed by one more check
  * and drop. Once a drop has removed the Angle, a later draft whose Angle is still null is validated as a
  * gated draft (validateGated), so round 2 can keep the drop. `softGates`: `checked` the items of the first
- * draft that parsed, `dropped` the items removed, `by_code` how many removals (items, the Angle, Scoreboard
- * entries) carried each SNAP_* code.
+ * draft that parsed, `dropped` the items removed and still missing from the final draft (each id once),
+ * `by_code` how many of those removals (items, the Angle, Scoreboard entries) carried each SNAP_* code;
+ * `drops` and the last io.writeDropped() hold the same final list (finalDrops).
  */
 export async function validateLoop(
   attempt: number,
@@ -217,23 +218,45 @@ export async function validateLoop(
     g = gate(v);
   }
 
-  // 5. The result.
+  // 5. The result. Only what the final draft lacks counts as dropped: round 2 can put back an item (or
+  // the Angle) that the first drop removed, and an id dropped twice counts once.
   const result = g.result;
   const ok = result.errors.length === 0 && g.gated !== null;
+  const final = dropped ? finalDrops(drops, g.gated) : drops;
+  if (dropped && JSON.stringify(final) !== JSON.stringify(drops)) io.writeDropped(structuredClone(final));
   const byCode: Record<string, number> = {};
   const count = (codes: readonly string[]) => {
     for (const c of codes) if (SNAP.has(c)) byCode[c] = (byCode[c] ?? 0) + 1;
   };
-  for (const it of drops.items) count(it.codes);
-  if (drops.angle) count(drops.angle.codes);
-  for (const e of drops.scoreboard_entries) count(e.codes);
+  for (const it of final.items) count(it.codes);
+  if (final.angle) count(final.angle.codes);
+  for (const e of final.scoreboard_entries) count(e.codes);
   return {
     ok,
     draft: ok ? g.gated : null,
     result,
     issues: [...result.errors, ...result.warnings],
     repairs,
-    softGates: { checked: checked ?? 0, dropped: drops.items.length, by_code: byCode },
-    drops: dropped ? drops : null,
+    softGates: { checked: checked ?? 0, dropped: final.items.length, by_code: byCode },
+    drops: dropped ? final : null,
+  };
+}
+
+/**
+ * The drops the final draft still shows: each dropped item id once (its latest report), less the ids the
+ * final gated draft holds again, and the Angle only while the final draft has none. Scoreboard entries
+ * stay as reported. With no final draft (it did not parse) every dropped id stays.
+ */
+function finalDrops(all: DropReport, gated: GatedDraft | null): DropReport {
+  const kept = new Set(gated ? gated.items.map((it) => it.id) : []);
+  const latest = new Map<string, DropReport["items"][number]>();
+  for (const it of all.items) {
+    latest.delete(it.id);
+    latest.set(it.id, it);
+  }
+  return {
+    items: [...latest.values()].filter((it) => !kept.has(it.id)),
+    angle: all.angle && (gated === null || gated.angle === null) ? all.angle : null,
+    scoreboard_entries: all.scoreboard_entries,
   };
 }

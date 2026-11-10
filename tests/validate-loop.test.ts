@@ -155,10 +155,28 @@ describe("validateLoop", () => {
     expect(f.calls.filter((c) => c === "writeDraft" || c.startsWith("repair"))).toEqual(["repair 1", "writeDraft", "repair 2"]);
     expect(f.written[0]!.items.map((it) => it.id)).not.toContain(I.taiwanVendor);
     expect(f.repairs.map((r) => [r.round, codes(r.issues)])).toEqual([[1, ["SNAP_NAME"]], [2, ["TAIWAN_LENS_REQUIRED"]]]);
-    expect(out.drops!.items.map((x) => x.id)).toEqual([I.taiwanVendor, I.aiConfirmed]);
-    expect(out.softGates).toEqual({ checked: 8, dropped: 2, by_code: { SNAP_NAME: 1, SNAP_NUMBER: 1 } });
+    // Round 2 put the Edimax item back with its name supported, so only the second drop counts.
     expect(out.draft!.items.map((it) => it.id)).toContain(I.taiwanVendor);
     expect(out.draft!.items.map((it) => it.id)).not.toContain(I.aiConfirmed);
+    expect(out.drops!.items.map((x) => [x.id, x.codes])).toEqual([[I.aiConfirmed, ["SNAP_NUMBER"]]]);
+    expect(out.softGates).toEqual({ checked: 8, dropped: 1, by_code: { SNAP_NUMBER: 1 } });
+    expect(f.droppedFiles.at(-1)).toEqual(out.drops);
+    // The run log keeps both drops as they happened.
+    expect(f.lines.filter((l) => l.includes("the soft pass dropped"))).toEqual([
+      `Attempt 1: the soft pass dropped 1 unverified item (${I.taiwanVendor}).`,
+      `Attempt 1: the soft pass dropped 1 unverified item (${I.aiConfirmed}).`,
+    ]);
+  });
+
+  it("V4 an id dropped in both rounds counts once", async () => {
+    const name = soft("SNAP_NAME");
+    const f = fake(name, [name, name]); // round 2 puts the Edimax item back, still unsupported
+    const out = await validateLoop(1, inputs, f.io, st());
+    expect(out.repairs).toBe(2);
+    expect(f.lines.filter((l) => l.includes("the soft pass dropped"))).toHaveLength(2);
+    expect(out.drops!.items.map((x) => x.id)).toEqual([I.taiwanVendor]);
+    expect(out.softGates).toMatchObject({ dropped: 1, by_code: { SNAP_NAME: 1 } });
+    expect(f.droppedFiles.at(-1)).toEqual(out.drops);
   });
 
   it("V4 fails when round 2 does not fix what the drop broke", async () => {
