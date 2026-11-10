@@ -3,7 +3,8 @@
 // bindingWithholds() lists those withholds from corrections.json, the context marks their items in
 // recent_items, and applyDraft() masks any draft item that re-reports one with maskWithheld(). An item
 // re-reports a withheld item when it has the withheld item's id on that item's own edition date, or when it
-// cites a URL whose archive-index item_ids hold a withheld item. rewriteItem(), markRegions() and
+// cites a URL whose archive-index item_ids are all withheld references (a page an unwithheld item also
+// cites, such as a vendor index, is not the withheld story's). rewriteItem(), markRegions() and
 // dropActorItem() rewrite one brief in place. Pure, and imports no composer, so lib/apply.ts and
 // lib/withhold.ts can both use it. Owner: lane L3.
 
@@ -173,7 +174,11 @@ export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
     for (const w of i.binding) if (w.edition_date === b.date && w.item_id === it.id) hits.set(w.correction_id, { w, match: "id" });
     for (const sid of it.source_ids) {
       const url = urlOf.get(sid);
-      for (const ref of (url && i.archiveIndex?.urls[url]?.item_ids) || []) {
+      // A page every stored citer of which is withheld is the story's own; one an unwithheld item also
+      // cites (a vendor index, a CVE record two stories share) says nothing about this item.
+      const cited = (url && i.archiveIndex?.urls[url]?.item_ids) || [];
+      if (cited.length === 0 || !cited.every((ref) => refs.has(ref))) continue;
+      for (const ref of cited) {
         for (const w of refs.get(ref) ?? []) if (!hits.has(w.correction_id)) hits.set(w.correction_id, { w, match: "url" });
       }
     }

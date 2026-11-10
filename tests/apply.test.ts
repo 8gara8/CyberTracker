@@ -462,6 +462,24 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(applyDraft(i).masked).toEqual([]);
   });
 
+  it("C21: a cited URL re-reports a withheld item only when every archive reference to it is withheld: a story page masks, a page an unrelated item also cites does not", () => {
+    const i = withWithhold({ item: "camp-tw-old-2026-10", edition: "2026-10-10", kind: "attribution", date: "2026-10-13" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    const entry = (item_ids: string[]) => ({ first_cited: "2026-10-10", item_ids, sha256: null, hashed_at: null, last_check: null });
+    // A story-specific page: only the withheld item cited it.
+    i.archiveIndex!.urls[url] = entry(["2026-10-10/camp-tw-old-2026-10"]);
+    expect(applyDraft(i).masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0003", kind: "attribution", match: "url" }]);
+    // A broad page (a vendor index, say) that an unwithheld item of 13 October also cites: not a re-report.
+    i.archiveIndex!.urls[url] = entry(["2026-10-10/camp-tw-old-2026-10", `2026-10-13/${FLAW}`]);
+    const out = applyDraft(i);
+    expect(out.masked).toEqual([]);
+    expect(out.brief).toEqual(weekdayExpected());
+    // An item an earlier edition masked under the same withhold is a withheld reference too.
+    const history = i.history.map((h) => (h.date !== "2026-10-13" ? h
+      : { ...h, items: h.items.map((it) => (it.id === FLAW ? { ...it, withheld: { correction_id: "C-0003", since: "2026-10-13" } } : it)) }));
+    expect(applyDraft({ ...i, history }).masked!.map((m) => [m.item_id, m.match])).toEqual(expect.arrayContaining([[CAMPAIGN, "url"]]));
+  });
+
   it("C19: intake's list read before this morning's withhold: the dispute keeps the withhold's correction, and a draft correction does not answer it", () => {
     const i = world("weekday");
     // As intake read it: D-0001's withhold commit came after, so its correction_id is still null there.
