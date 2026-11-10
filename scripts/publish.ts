@@ -704,10 +704,16 @@ export async function publishFull(o: PublishOptions & {
   return { sha, publishedAt, record, masked };
 }
 
-/** The files of a withhold (§4.10): composeWithholds over every stored brief dated on or after the earliest request's edition. */
+/**
+ * The files of a withhold (§4.10): composeWithholds over every stored brief dated on or after the earliest
+ * request's edition (their region reasons may list the item), and every earlier one that holds a requested
+ * item: an item keeps its id in every edition it appears in, so an earlier edition would keep the name.
+ */
 function withholdFiles(ctx: Ctx, config: LoadedConfig, requests: readonly WithholdRequest[], disputes: readonly Dispute[], deps: PublishDeps): Files {
   const from = [...requests.map((r) => r.edition_date)].sort()[0]!;
-  const briefs = briefDates(ctx.dir).filter((d) => d >= from).map((d) => readBriefAt(ctx.dir, d)).filter((b): b is Brief => b !== null);
+  const ids = new Set(requests.map((r) => r.item_id));
+  const briefs = briefDates(ctx.dir).map((d) => readBriefAt(ctx.dir, d))
+    .filter((b): b is Brief => b !== null && (b.date >= from || b.items.some((it) => ids.has(it.id))));
   const input: WithholdInput = {
     date: ctx.date, config, briefs, corrections: readCorrections(ctx.dir), disputes, archiveIndex: readArchiveIndex(ctx.dir),
     metricsFor: (d) => metricsFor(ctx.root, ctx.dir, d)?.metrics ?? null, requests,

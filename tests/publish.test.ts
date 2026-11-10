@@ -26,7 +26,7 @@ import { CorrectionsFile, type Evidence } from "@/lib/schema/misc";
 import { StatusFile, type RunRecord } from "@/lib/schema/status";
 import { cveLookupFromDir, packDatesOf, regionsInputFile, validateAll } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
-import type { WithholdRequest } from "@/lib/withhold";
+import { composeWithholds, type WithholdRequest } from "@/lib/withhold";
 import { collect } from "@/scripts/collect";
 import { MIN } from "@/scripts/lib/clock";
 import { cveFactsFor } from "@/scripts/lib/cve-facts";
@@ -364,6 +364,41 @@ describe("publish (§8.7)", () => {
     expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
     expect(read(contentFile(w, "archive-index.json"))).toBe(archive);
     expect(w.h.remoteLog()).toEqual([]);
+  }, T);
+
+  it("P18: a withhold rewrites every stored brief holding the item, editions before the disputed one included; validateAll refuses one that does not", async () => {
+    const w = world("2026-10-15");
+    const ITEM = "cve-2026-108917";
+    // The item is in both the 2026-10-13 and the 2026-10-14 briefs; the reader disputes the newest (§8.9 step 2).
+    const holding = [...treeBefore(w.D).keys()].filter((k) => k.startsWith("briefs/"))
+      .filter((rel) => Brief.parse(JSON.parse(read(contentFile(w, rel)))).items.some((it) => it.id === ITEM));
+    expect(holding).toEqual(["briefs/2026-10-13.json", "briefs/2026-10-14.json"]);
+    const dispute = { ...victimDispute({ id: "D-0002", issue: 5 }), item_id: ITEM, kind: "attribution" as const };
+    const request: WithholdRequest = { item_id: ITEM, edition_date: "2026-10-14", kind: "attribution", dispute_id: "D-0002", since: w.D };
+    const cf = CorrectionsFile.parse(JSON.parse(read(contentFile(w, "corrections.json"))));
+    const head = w.h.git("rev-parse", "HEAD");
+    await inRoot(w.h, async () => {
+      const o = { ...base(w, [rec(w)]), requests: [request], disputes: [...cf.disputes, dispute] };
+      // Given only the briefs from the disputed edition on, the 2026-10-13 copy keeps the attribution: XREF_CORRECTION.
+      const fromEdition: PublishDeps["composeWithholds"] = (i) => composeWithholds({ ...i, briefs: i.briefs.filter((b) => b.date >= request.edition_date) });
+      const err = await publishWithholds(o, { composeWithholds: fromEdition }).catch((e: unknown) => e);
+      expect([(err as PublishError).code, (err as PublishError).codes]).toEqual(["validation", ["XREF_CORRECTION"]]);
+      expect(w.logs).toContain("Validation: XREF_CORRECTION at corrections.json: corrections[2]");
+      expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+      // The real composer, so the briefs publish hands it are what is rewritten; runPlan's validateAll passes.
+      await publishWithholds(o, {});
+    });
+    const [c] = w.h.remoteLog();
+    expect(c!.files).toEqual(expect.arrayContaining(["content/briefs/2026-10-13.json", "content/briefs/2026-10-14.json"]));
+    const after = CorrectionsFile.parse(JSON.parse(w.h.remoteFile("content/corrections.json")!));
+    const correction = after.corrections.find((x) => x.dispute_id === "D-0002")!;
+    for (const rel of holding) {
+      const b = Brief.parse(JSON.parse(w.h.remoteFile(`content/${rel}`)!));
+      const it = b.items.find((x) => x.id === ITEM)!;
+      expect(it.withheld, rel).toEqual({ correction_id: correction.id, since: w.D });
+      expect([it.headline, it.attribution, it.actor_nexus], rel).toEqual([WITHHELD_HEADLINE, [], null]);
+      for (const r of b.regions.rows) if (r.item_ids.includes(ITEM)) expect(r.reason, rel).toBe(WITHHELD_MARK);
+    }
   }, T);
 
   it("P7: with staged files and GitHub one status commit ahead, publishDataOnly commits the staged files byte for byte", async () => {

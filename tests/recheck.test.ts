@@ -692,9 +692,10 @@ describe("the §8.9 rewrite end to end (I-R20, plan A16)", () => {
     const ITEM = "inc-transport-jp-2026-10";
     expect(r.withhold).toEqual([{ item_id: ITEM, edition_date: "2026-10-14", kind: "victim", dispute_id: "D-0002", since: D }]);
 
-    // What publishWithholds() hands the composer: every stored brief from the earliest edition_date on.
+    // What publishWithholds() hands the composer: every stored brief from the earliest edition_date on, and
+    // every earlier one holding the item.
     const cfg = fixtureConfig();
-    const briefs = briefsOf(w.content).map((b) => BriefSchema.parse(b)).filter((b) => b.date >= "2026-10-14");
+    const briefs = briefsOf(w.content).map((b) => BriefSchema.parse(b)).filter((b) => b.date >= "2026-10-14" || b.items.some((x) => x.id === ITEM));
     const metricsFor = (date: string) => {
       const file = path.join(w.content, "metrics", `${date}.json`);
       return fs.existsSync(file) ? Metrics.parse(readJson(file)) : null;

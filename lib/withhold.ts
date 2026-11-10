@@ -26,7 +26,10 @@ export interface WithholdRequest {
 export interface WithholdInput {
   date: string;
   config: LoadedConfig;
-  /** Every stored brief dated on or after the earliest request's edition_date (later briefs carry region reasons). */
+  /**
+   * Every stored brief dated on or after the earliest request's edition_date (later briefs carry region
+   * reasons), and every earlier one holding a requested item (the same id in an earlier edition).
+   */
   briefs: readonly Brief[];
   corrections: CorrectionsFile | null;
   /** The updated list; requests' disputes get correction_id. */

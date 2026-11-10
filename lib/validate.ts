@@ -766,26 +766,33 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
       } else if (!itemViews(target.file, c.edition_date, target.raw).some((v) => v.id === c.item_id)) {
         add(file, error("XREF_UNRESOLVED", `${p}.item_id`, `${c.id} targets ${c.item_id}, which is not an item in ${target.file}.`));
       } else if (c.type === "name_removed" && target.data) {
-        const idx = target.data.items.findIndex((it) => it.id === c.item_id);
-        const it = target.data.items[idx]!;
-        const where = `${target.file} items[${idx}]`;
         const kind = cf.disputes.find((d) => d.id === c.dispute_id)?.kind ?? null;
-        const problems: string[] = [];
-        if (it.withheld === null) problems.push("withheld is not set");
-        if (kind === "victim" && it.incident?.victim != null) problems.push("incident.victim is not null after a victim dispute");
-        if (kind === "attribution" && (it.attribution.length > 0 || it.actor_nexus !== null)) {
-          problems.push("attribution is not [] or actor_nexus is not null after an attribution dispute");
-        }
-        // A region reason embeds the item's headline (§5.11): every row and raise that lists it reads "[withheld]".
-        target.data.regions.rows.forEach((r, k) => {
-          if (r.item_ids.includes(c.item_id) && r.reason !== WITHHELD_MARK) problems.push(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
-          if (r.raised?.item_ids.includes(c.item_id) && r.raised.reason !== WITHHELD_MARK) {
-            problems.push(`regions.rows[${k}].raised.reason is not "${WITHHELD_MARK}"`);
+        // The target brief, and every earlier stored brief holding the item: an item keeps its id in every
+        // edition it appears in (§4.6), so an earlier edition left as it was would still show the name.
+        const holders = [...briefs].filter(([d, b]) => d <= c.edition_date && b.data?.items.some((it) => it.id === c.item_id))
+          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+        for (const [, held] of holders) {
+          const data = held.data!;
+          const idx = data.items.findIndex((it) => it.id === c.item_id);
+          const it = data.items[idx]!;
+          const where = `${held.file} items[${idx}]`;
+          const problems: string[] = [];
+          if (it.withheld === null) problems.push("withheld is not set");
+          if (kind === "victim" && it.incident?.victim != null) problems.push("incident.victim is not null after a victim dispute");
+          if (kind === "attribution" && (it.attribution.length > 0 || it.actor_nexus !== null)) {
+            problems.push("attribution is not [] or actor_nexus is not null after an attribution dispute");
           }
-        });
-        if (problems.length) {
-          add(file, error("XREF_CORRECTION", p, `${c.id} removes a name but ${where} is not rewritten: ${problems.join("; ")}.`,
-            "A name_removed correction rewrites the archived item as SPEC §4.10 says."));
+          // A region reason embeds the item's headline (§5.11): every row and raise that lists it reads "[withheld]".
+          data.regions.rows.forEach((r, k) => {
+            if (r.item_ids.includes(c.item_id) && r.reason !== WITHHELD_MARK) problems.push(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
+            if (r.raised?.item_ids.includes(c.item_id) && r.raised.reason !== WITHHELD_MARK) {
+              problems.push(`regions.rows[${k}].raised.reason is not "${WITHHELD_MARK}"`);
+            }
+          });
+          if (problems.length) {
+            add(file, error("XREF_CORRECTION", p, `${c.id} removes a name but ${where} is not rewritten: ${problems.join("; ")}.`,
+              "A name_removed correction rewrites the archived item as SPEC §4.10 says."));
+          }
         }
       }
       const prev = cf.corrections[i - 1];
