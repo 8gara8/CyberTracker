@@ -8,12 +8,28 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "@/lib/dates";
+import { jsonText } from "@/lib/json";
+import { Brief } from "@/lib/schema/brief";
+import { AgentContext } from "@/lib/schema/context";
+import { CorrectionsFile } from "@/lib/schema/misc";
 import { StatusFile, type RunRecord } from "@/lib/schema/status";
+import { validateAll } from "@/lib/validate";
+import { DISPUTE_FORM_OPTIONS, WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { attemptBudget, CONFIG, main, repairBudget, type Deps } from "@/scripts/daily";
 import { MIN } from "@/scripts/lib/clock";
+import { runPaths } from "@/scripts/lib/paths";
+import { runMetrics } from "@/scripts/metrics";
 import { scheduleFor } from "@/scripts/preflight";
-import { loadConfig } from "@/lib/config";
+import { publishWithholds } from "@/scripts/publish";
+import { loadCheckedConfig, loadConfig } from "@/lib/config";
 import { inRoot, makeHarness, PIPELINE_DATE, REPO, type Harness, type HarnessOptions } from "./helpers/harness";
+import { beforeEdition, siteBrief, testRecord, victimDispute, worldConfig } from "./helpers/publish-world";
+
+// D30 (A19) makes runMetrics fail once; every other case runs the real one through this pass-through mock.
+vi.mock("@/scripts/metrics", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/scripts/metrics")>();
+  return { ...actual, runMetrics: vi.fn(actual.runMetrics) };
+});
 
 const D = PIPELINE_DATE;
 const AGENT = path.join(REPO, "fixtures", "agent", "drafts");
@@ -71,12 +87,36 @@ const stageOf = (r: RunRecord, id: string) => r.stages.find((s) => s.id === id)!
 /** Agent calls only (the fake also records --version). */
 const agentRuns = (h: Harness) => h.agentCalls().filter((c) => c.argv[0] === "-p");
 
-/** Every case: no pushed commit touches a path outside content/. */
-function expectContentOnly(h: Harness): void {
+/** Every case: no pushed commit touches a path outside content/ (`except`: commits the test itself put on the remote). */
+function expectContentOnly(h: Harness, except: readonly string[] = []): void {
   for (const c of h.remoteLog()) {
+    if (except.includes(c.sha)) continue;
     for (const f of c.files) expect(f.startsWith("content/"), `${c.subject}: ${f}`).toBe(true);
   }
 }
+
+const runsJsonl = (h: Harness): Record<string, unknown>[] => {
+  const file = path.join(h.root, "logs", "runs.jsonl");
+  if (!fs.existsSync(file)) return [];
+  return fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l) as Record<string, unknown>);
+};
+
+/** A brief: commit made by hand and never pushed, as a run killed between its commit and its push leaves it. */
+function localBriefCommit(h: Harness, date: string, brief: Brief): string {
+  const file = path.join(h.root, "content", "briefs", `${date}.json`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, jsonText(brief, Brief));
+  h.git("add", "content");
+  h.git("commit", "-q", "-m", `brief: ${date} · data-only edition`);
+  return h.git("rev-parse", "HEAD");
+}
+
+/** A rendered correction issue, as GitHub's issue form writes it (fixtures/recheck/body-rendered.md). */
+const correctionIssue = (o: { number: number; itemId: string; edition: string; option: string; createdAt: string }) => ({
+  number: o.number, title: "Correction", labels: [{ name: "correction" }], state: "open", state_reason: null, comments: 0,
+  created_at: o.createdAt, updated_at: o.createdAt, closed_at: null,
+  body: `### Item id\n\n${o.itemId}\n\n### Edition date\n\n${o.edition}\n\n### What is wrong\n\n${o.option}\n\n### Evidence link\n\n_No response_`,
+});
 
 describe("daily.ts budgets", () => {
   it("D25 repairBudget is 6, 3 and 0 minutes at the hard stop less 20, 7 and 5 minutes; attemptBudget is 22 minutes at 04:58", () => {
@@ -377,6 +417,220 @@ describe("daily.ts end to end", () => {
     expect(r.full_published_at).toBeNull();
     expect(stageOf(r, "publish").status).toBe("failed");
     expect(summary(h).split("\n")[0]).toContain("(E_PUBLISH)");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D16 a 10:58 start with reject-briefs: the data-only stage fails and only status: commits land", async () => {
+    const h = harness({ start: "10:58" });
+    okAgent(h);
+    h.pushes("reject-briefs");
+    expect(await run(h, ["--trigger", "schedule"])).toBe(1);
+    const s = subjects(h);
+    expect(s).toHaveLength(2);
+    expect(s[0]).toMatch(/ started$/);
+    expect(s[1]).toMatch(/ ended: failed$/);
+    for (const x of s) expect(x).toMatch(/^status: /);
+    expect(briefOn(h)).toBeNull();
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("failed");
+    expect(r[0]!.error_code).toBe("E_PUBLISH");
+    expect(stageOf(r[0]!, "data_only")).toMatchObject({ status: "failed", note: "Data-only edition not published." });
+    expect(stageOf(r[0]!, "recheck")).toMatchObject({ status: "skipped", note: "Not run: under 6 minutes left before 11:00." });
+    for (const st of ["draft", "validate", "publish"]) expect(stageOf(r[0]!, st).note).toBe("Started after 05:30: no editorial pass today.");
+    expect(h.agentCalls()).toEqual([]);
+    expect(summary(h).split("\n")[0]).toBe(`**CyberTracker ${D} · failed** (E_PUBLISH)`);
+    expect(h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(h.git("rev-parse", "HEAD")).toBe(h.remoteLog().at(-1)!.sha);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D17 --dry-run on a feature branch with an uncommitted file: no commit or branch change, exit 0, the copy and its mirror", async () => {
+    const h = harness();
+    okAgent(h);
+    h.git("checkout", "-q", "-b", "feature");
+    const head = h.git("rev-parse", "HEAD");
+    fs.writeFileSync(path.join(h.root, "notes.txt"), "an uncommitted file\n");
+    expect(await run(h, ["--dry-run"])).toBe(0);
+    expect(h.remoteLog()).toEqual([]);
+    expect(h.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("feature");
+    expect(h.git("rev-parse", "HEAD")).toBe(head);
+    expect(h.git("status", "--porcelain")).toBe("?? notes.txt");
+    expect(fs.existsSync(path.join(h.root, "content", "briefs"))).toBe(false);
+    const P = runPaths(h.root, D);
+    const mirror = fs.readFileSync(P.statusMirror, "utf8");
+    expect(fs.readFileSync(path.join(P.dryRunCopy, "status", `${D}.json`), "utf8")).toBe(mirror);
+    const runs = StatusFile.parse(JSON.parse(mirror)).runs;
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({ trigger: "dry_run", outcome: "dry_run", error_code: null, edition: "full" });
+    expect(stageOf(runs[0]!, "preflight").note).toContain("Dry run: the branch and uncommitted files were left as they were.");
+    for (const st of ["deploy", "links"]) expect(stageOf(runs[0]!, st)).toMatchObject({ status: "skipped", note: "Not run in a dry run." });
+    const b = Brief.parse(JSON.parse(fs.readFileSync(path.join(P.dryRunCopy, "briefs", `${D}.json`), "utf8")));
+    expect(b.edition).toBe("full");
+    expect(b.data_only_published_at).not.toBeNull();
+    expect(b.data_only_published_at).toBe(runs[0]!.data_only_published_at);
+    const config = loadCheckedConfig({ root: h.root });
+    expect(validateAll(P.dryRunCopy, { publishing: D, config }).errors).toEqual([]);
+    expect(dailyLog(h)).toContain(`Dry run complete: drafts/${D}.json is valid.`);
+    expect(summary(h).split("\n")[0]).toBe(`**CyberTracker ${D} · dry run (full edition)**`);
+    expect(runsJsonl(h)).toMatchObject([{ trigger: "dry_run", outcome: "dry_run" }]);
+    expect(fs.existsSync(P.needsReview)).toBe(false);
+  }, TIMEOUT);
+
+  it("D18 --dry-run --simulate-failure: exit 0, dry_run, E_SIMULATED, the dry-run data-only chat format", async () => {
+    const h = harness();
+    okAgent(h);
+    expect(await run(h, ["--dry-run", "--simulate-failure"])).toBe(0);
+    expect(h.remoteLog()).toEqual([]);
+    const P = runPaths(h.root, D);
+    const runs = StatusFile.parse(JSON.parse(fs.readFileSync(P.statusMirror, "utf8"))).runs;
+    expect(runs.at(-1)).toMatchObject({ trigger: "dry_run", outcome: "dry_run", error_code: "E_SIMULATED", edition: "data_only" });
+    expect(stageOf(runs.at(-1)!, "validate")).toMatchObject({ status: "failed", note: "Simulated failure (--simulate-failure)." });
+    const lines = summary(h).split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · dry run (data-only edition)** (E_SIMULATED)`);
+    expect(lines).toContain(`Dry run: nothing was published; files in logs/dry-run/${D}/`);
+    const b = Brief.parse(JSON.parse(fs.readFileSync(path.join(P.dryRunCopy, "briefs", `${D}.json`), "utf8")));
+    expect(b.edition).toBe("data_only");
+    expect(validateAll(P.dryRunCopy, { publishing: D, config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expect(fs.existsSync(P.needsReview)).toBe(false);
+  }, TIMEOUT);
+
+  it("D19 a code commit on GitHub's main: one restart, both notes logged, code_commit the new HEAD; the parent returns the child's code and writes nothing (A2)", async () => {
+    const h = harness();
+    okAgent(h);
+    const sha = h.commitOnRemote({ "scripts/README.txt": "x\n" }, "code: test");
+    const sha7 = sha.slice(0, 7);
+    let restarts = 0;
+    const deps: Deps = { ...h.deps };
+    const restart = async (args: string[]) => {
+      restarts += 1;
+      process.env.CT_REEXEC = "1";
+      try {
+        return await main(args, { ...deps, restart: async () => { restarts += 1; return 99; } });
+      } finally {
+        delete process.env.CT_REEXEC;
+      }
+    };
+    expect(await inRoot(h, () => main(["--trigger", "schedule"], { ...deps, restart }))).toBe(0);
+    expect(restarts).toBe(1);
+    const log = dailyLog(h);
+    expect(log).toContain(`Restarting on the code synced from main (${sha7}).`);
+    expect(log).toContain(`Restarted on the code synced from main (${sha7}).`);
+    const ours = h.remoteLog().filter((c) => c.sha !== sha);
+    expect(h.remoteLog()[0]!.sha).toBe(sha);
+    expect(ours.map((c) => c.subject)).toHaveLength(4);
+    expect(ours.filter((c) => / started$/.test(c.subject))).toHaveLength(1);
+    expect(ours.filter((c) => / ended: /.test(c.subject))).toHaveLength(1);
+    const runs = statusOn(h)!.runs;
+    expect(runs).toHaveLength(1);
+    expect(runs[0]!.code_commit).toBe(sha);
+    expect(runs[0]!.outcome).toBe("published_full");
+    expect(stageOf(runs[0]!, "preflight").note).toContain(`Restarted on the code synced from main (${sha7}).`);
+    expect(runsJsonl(h)).toHaveLength(1);
+    expectContentOnly(h, [sha]);
+
+    // The parent alone: it returns whatever the child returned and leaves no summary, runs.jsonl line, record or lock.
+    const p = harness();
+    okAgent(p);
+    const psha = p.commitOnRemote({ "scripts/README.txt": "y\n" }, "code: test");
+    expect(await inRoot(p, () => main(["--trigger", "schedule"], { ...p.deps, restart: async () => 42 }))).toBe(42);
+    expect(p.remoteLog().map((c) => c.sha)).toEqual([psha]);
+    expect(runsJsonl(p)).toEqual([]);
+    expect(fs.existsSync(path.join(p.root, "logs", `${D}.summary.md`))).toBe(false);
+    expect(fs.existsSync(path.join(p.root, "logs", ".lock"))).toBe(false);
+    expect(dailyLog(p)).toContain(`Restarting on the code synced from main (${psha.slice(0, 7)}).`);
+    expect(p.agentCalls()).toEqual([]);
+  }, TIMEOUT);
+
+  it("D20 off main with a clean tree: main is checked out and the run publishes", async () => {
+    const h = harness();
+    okAgent(h);
+    h.git("checkout", "-q", "-b", "side");
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(h.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("main");
+    expect(dailyLog(h)).toContain("Checked out main.");
+    expect(subjects(h)).toHaveLength(4);
+    expect(briefOn(h)!.edition).toBe("full");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D21 a dirty path outside content/ gives E_GIT with no record and nothing pushed", async () => {
+    const h = harness();
+    okAgent(h);
+    fs.appendFileSync(path.join(h.root, "scripts", "README.txt"), "a local edit\n");
+    expect(await run(h, ["--trigger", "schedule"])).toBe(1);
+    expect(h.remoteLog()).toEqual([]);
+    expect(h.agentCalls()).toEqual([]);
+    expect(h.git("status", "--porcelain")).toBe(" M scripts/README.txt");
+    expect(summary(h).split("\n")[0]).toBe(`**CyberTracker ${D} · failed** (E_GIT)`);
+    expect(runsJsonl(h)).toMatchObject([{ outcome: "failed", error_code: "E_GIT" }]);
+    expect(dailyLog(h)).toContain("The working tree has changes outside content/: scripts/README.txt.");
+    expect(fs.existsSync(path.join(h.root, "logs", ".lock"))).toBe(false);
+  }, TIMEOUT);
+
+  it("D22 files left under content/ are restored and noted, and the run publishes", async () => {
+    const h = harness();
+    okAgent(h);
+    fs.appendFileSync(path.join(h.root, "content", "state", "days.json"), "\n");
+    fs.writeFileSync(path.join(h.root, "content", "stray.json"), "{}\n");
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(fs.existsSync(path.join(h.root, "content", "stray.json"))).toBe(false);
+    expect(fs.readFileSync(path.join(h.root, "content", "state", "days.json"), "utf8")).toBe(h.remoteFile("content/state/days.json"));
+    const r = statusOn(h)!.runs[0]!;
+    expect(stageOf(r, "preflight").note).toContain("Restored content/ left by an earlier run.");
+    expect(r.outcome).toBe("published_full");
+    expect(subjects(h)).toHaveLength(4);
+    expect(h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D23 a stale node_modules/.ct-lock-sha: the Notes line warns and the run publishes", async () => {
+    const h = harness();
+    okAgent(h);
+    h.writeLockSha(false);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const r = statusOn(h)!.runs[0]!;
+    expect(stageOf(r, "preflight").note).toContain("Dependencies changed since the last npm ci.");
+    expect(r.outcome).toBe("published_full");
+    const notes = summary(h).split("\n").find((l) => l.startsWith("Notes: "));
+    expect(notes).toContain("Dependencies changed since the last npm ci");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D24 a victim dispute served by the router: a correction: commit before the agent, the item withheld in the stored brief", async () => {
+    // Morning one publishes the full edition; the dispute arrives that evening; morning two withholds the item.
+    const h = harness();
+    okAgent(h);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const D2 = "2026-10-15";
+    const ITEM = "inc-transport-jp-2026-10";
+    h.issues([correctionIssue({ number: 4, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-14T13:00:00Z" })]);
+    h.fakeAgent({ mode: "nodraft" });
+    h.clock.set(at(D2, "04:37"));
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    const s = subjects(h).slice(4);
+    const withheld = s.indexOf(`correction: ${D2} · withheld ${ITEM}`);
+    expect(withheld).toBeGreaterThan(0);
+    expect(s.slice(0, 2)).toEqual([expect.stringMatching(new RegExp(`^status: ${D2} · run \\d{8}-\\d{6} started$`)), `brief: ${D2} · data-only edition`]);
+    // The retry record opens only after attempt 1's agent ended: the withhold came before it.
+    const retry = s.findIndex((x) => / retry \d{8}-\d{6} started$/.test(x));
+    expect(retry).toBeGreaterThan(withheld);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    const it = stored.items.find((x) => x.id === ITEM)!;
+    expect(it.withheld).toEqual({ correction_id: "C-0001", since: D2 });
+    expect(it.headline).toBe(WITHHELD_HEADLINE);
+    for (const row of stored.regions.rows) if (row.item_ids.includes(ITEM)) expect(row.reason).toBe(WITHHELD_MARK);
+    const cf = CorrectionsFile.parse(JSON.parse(h.remoteFile("content/corrections.json")!));
+    expect(cf.corrections).toMatchObject([{ id: "C-0001", date: D2, item_id: ITEM, edition_date: D, type: "name_removed", trigger: "reader_report", dispute_id: "D-0001" }]);
+    expect(cf.disputes).toMatchObject([{ id: "D-0001", issue_number: 4, item_id: ITEM, kind: "victim", correction_id: "C-0001" }]);
+    // The context the agent read already held the withheld headline.
+    const context = AgentContext.parse(JSON.parse(fs.readFileSync(path.join(h.root, "drafts", "context.json"), "utf8")));
+    expect(context.date).toBe(D2);
+    expect(context.recent_items.find((x) => x.id === ITEM)?.headline).toBe(WITHHELD_HEADLINE);
+    const runs = StatusFile.parse(JSON.parse(h.remoteFile(`content/status/${D2}.json`)!)).runs;
+    expect(stageOf(runs[0]!, "recheck").note).toContain("Withheld 1 item on reader disputes.");
+    expect(h.requests().some((r) => r.method === "GET" && r.url.startsWith("https://api.github.com/repos/8gara8/CyberTracker/issues?"))).toBe(true);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);
 });
