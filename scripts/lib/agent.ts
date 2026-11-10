@@ -13,7 +13,7 @@ import { parseTranscript, type Transcript } from "./transcript";
 
 // The sandboxed drafting agent (SPEC §9.4, §9.5): a headless `claude -p` started as a child process from
 // the repo root, with no shell, no git, no MCP, and writes only under drafts/. Every flag below is in the
-// `--help` of Claude Code 2.1.316, the pinned version (Appendix C):
+// `--help` of Claude Code 2.1.316, the pinned version (Appendix C; captured in fixtures/agent/cli-help-2.1.316.txt, A1):
 //   --restricted     removes the tools that run commands or code (and WebFetch unless --tools names it),
 //                    confines the file tools to the working directory, ignores user, project and local
 //                    settings files (--settings still applies)

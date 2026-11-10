@@ -43,6 +43,34 @@ function fakeWorld() {
   };
 }
 
+/**
+ * The Options section of `claude --help` for the pinned CLI, 2.1.316 (Appendix C), captured in P3. Two edits:
+ * the model and fallback-model entries are cut (no model identifier in the repo, SPEC §0.2), and its em and en
+ * dashes are plain hyphens. A CLI update PR captures it again and renames the file.
+ */
+const HELP_FILE = path.join(root, "fixtures", "agent", "cli-help-2.1.316.txt");
+
+/** Each option of a --help text by every name it has ("-p, --print" gives two), with the entry's whole text. */
+function helpOptions(help: string): Map<string, string> {
+  const entries = new Map<string, string>();
+  let names: string[] = [];
+  let text = "";
+  const flush = () => { for (const n of names) entries.set(n, text); };
+  for (const line of help.split("\n")) {
+    const m = /^ {2}(-[^\s,<[]+(?:, -[^\s,<[]+)*)/.exec(line);
+    if (m) {
+      flush();
+      names = m[1]!.split(", ");
+      text = line;
+    } else if (names.length) text += `\n${line}`;
+  }
+  flush();
+  return entries;
+}
+
+/** The quoted values of an option's "(choices: ...)" list. */
+const choicesOf = (entry: string): string[] => [...(/\(choices:([^)]*)\)/.exec(entry)?.[1] ?? "").split(/default:/)[0]!.matchAll(/"([^"]+)"/g)].map((m) => m[1]!);
+
 /** Names the shell and macOS add to every process, even with an empty environment (seen on Kobol). */
 const OS_ADDED = new Set(["PWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"]);
 
@@ -79,12 +107,33 @@ describe("A1: agentArgs (SPEC §9.4)", () => {
       expect(a.join(" ")).not.toMatch(/--model\b|--fallback-model\b|bypassPermissions|--dangerously|--bare\b|--add-dir/);
     }
   });
-  it("A1: every flag is in the pinned CLI's help (2.1.316, captured in P3)", () => {
+  it("A1: every flag is in the pinned CLI's help (fixtures/agent/cli-help-2.1.316.txt, captured in P3), each fixed value among its choices", () => {
     const flags = [...new Set(args.filter((a) => a.startsWith("-")))];
     expect(flags).toEqual([
       "-p", "--session-id", "--output-format", "--verbose", "--restricted", "--safe-mode", "--disable-slash-commands", "--tools",
       "--settings", "--strict-mcp-config", "--mcp-config", "--permission-mode", "--permission-prompts", "--allowedTools", "--disallowedTools",
     ]);
+    const help = helpOptions(fs.readFileSync(HELP_FILE, "utf8"));
+    const repair = agentArgs("P", { resume: SID });
+    for (const f of new Set([...flags, ...repair.filter((a) => a.startsWith("-"))])) expect(help.has(f), `${f} is not in the 2.1.316 help`).toBe(true);
+    const valueOf = (flag: string) => args[args.indexOf(flag) + 1]!;
+    for (const flag of ["--output-format", "--permission-mode", "--permission-prompts"]) {
+      expect(choicesOf(help.get(flag)!), flag).toContain(valueOf(flag));
+    }
+    expect(valueOf("--permission-mode")).toBe("dontAsk");
+  });
+  it("A1: the help capture is read as options, so a flag the version lacks fails", () => {
+    const help = helpOptions(fs.readFileSync(HELP_FILE, "utf8"));
+    expect(fs.readFileSync(HELP_FILE, "utf8").startsWith("Options:\n")).toBe(true);
+    expect(help.size).toBeGreaterThan(60);
+    expect(help.get("-p")).toBe(help.get("--print"));
+    expect(help.get("--allowedTools")).toBe(help.get("--allowed-tools"));
+    expect(help.has("--resume") && help.has("-r")).toBe(true);
+    expect(choicesOf(help.get("--permission-prompts")!)).toEqual(["host", "none"]);
+    expect(choicesOf(help.get("--permission-mode")!)).toEqual(["acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan"]);
+    for (const absent of ["--no-such-flag", "--permission-prompt", "--strict-mcp", "--mod" + "el", "--fallback-mod" + "el"]) expect(help.has(absent), absent).toBe(false);
+    // A description that mentions a flag in passing does not make it an option.
+    expect(help.has("--system-prompt-file")).toBe(false);
   });
 });
 
