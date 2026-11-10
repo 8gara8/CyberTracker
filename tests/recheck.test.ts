@@ -653,7 +653,9 @@ describe("the CLI and the run log", () => {
     out.length = 0;
     expect(await main(["--date", D, "--json"], { fetchImpl: issuesApi([ISSUES]).impl, fetch: w.fetch })).toBe(0);
     const log = readJson<Record<string, unknown>>(path.join(w.root, "logs", `${D}.recheck.json`));
-    expect(Object.keys(log)).toEqual(["intake", "flagged", "reports"]);
+    expect(Object.keys(log)).toEqual(["intake", "flagged", "shown", "reports"]);
+    expect(log.flagged).not.toBeNull();
+    expect(log.shown).toEqual(expect.any(Array)); // the flags the context shows (build-context reads them)
     expect(JSON.parse(out.join(""))).toEqual(log);
     // Intake never writes corrections.json and never withholds: publish does.
     expect(fs.readFileSync(path.join(w.content, "corrections.json"), "utf8")).toBe(before);
