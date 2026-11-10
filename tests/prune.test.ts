@@ -1,5 +1,5 @@
-// Pruning at the run's finish (scripts/lib/prune.ts; SPEC §9.8). PR1 of the plan, on a temporary root
-// laid out as the run leaves it.
+// Pruning at the run's finish (scripts/lib/prune.ts; SPEC §9.8). PN1 of the plan, renamed from PR1 so that
+// PR1 to PR7 stay the prompts tests, on a temporary root laid out as the run leaves it.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -30,7 +30,7 @@ function tree(files: string[]): string {
 const exists = (root: string, rel: string) => fs.existsSync(path.join(root, rel));
 
 describe("pruneRunFiles", () => {
-  it("PR1 removes logs, drafts, packs and dry-run copies older than 60 days by the date in the name", () => {
+  it("PN1 removes logs, drafts, packs and dry-run copies older than 60 days by the date in the name", () => {
     expect(KEEP_DAYS).toBe(60);
     const gone = [
       `logs/${OLD}.daily.log`, `logs/${OLD}.agent-1.jsonl`, `logs/${OLD}.agent-1-repair-1.jsonl`, `logs/${OLD}.agent-1.stderr`,
@@ -66,7 +66,7 @@ describe("pruneRunFiles", () => {
     expect(pruneRunFiles(root, TODAY)).toEqual({ removed: 0 });
   });
 
-  it("PR1 goes by the name, not the file's time, and removes a symlink without following it", () => {
+  it("PN1 goes by the name, not the file's time, and removes a symlink without following it", () => {
     const root = tree([`logs/${EDGE}.daily.log`, `logs/${OLD}.daily.log`, "outside/keep.txt"]);
     const past = new Date("2020-01-01T00:00:00Z");
     fs.utimesSync(path.join(root, `logs/${EDGE}.daily.log`), past, past);   // old mtime, recent name: kept
@@ -80,7 +80,7 @@ describe("pruneRunFiles", () => {
     expect(fs.readFileSync(path.join(root, "outside", "keep.txt"), "utf8")).toBe("x\n");
   });
 
-  it("PR1 keepDays, a malformed today, missing folders and dateInName", () => {
+  it("PN1 keepDays, a malformed today, missing folders and dateInName", () => {
     const root = tree([`logs/${TODAY}.daily.log`, `logs/${addDays(TODAY, -1)}.daily.log`, `packs/${addDays(TODAY, -7)}.json`]);
     expect(pruneRunFiles(root, "2026-13-01")).toEqual({ removed: 0 });
     expect(pruneRunFiles(root, "")).toEqual({ removed: 0 });
