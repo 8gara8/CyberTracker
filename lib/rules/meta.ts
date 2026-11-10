@@ -77,7 +77,11 @@ function checkWeekly(input: RuleInput): ValidationIssue[] {
   return out;
 }
 
-/** AI_UNASSESSED † (brief): `ai_role: "unassessed"` in a full or partial edition (or a draft), or any other `ai_role` in a data-only edition. */
+/**
+ * AI_UNASSESSED † (brief): `ai_role: "unassessed"` in a full or partial edition (or a draft), or any other `ai_role` in a
+ * data-only edition. A withheld item is exempt from the first: the full edition keeps a data-only item withheld that
+ * morning as stored, unread, when the draft leaves it out (lib/withhold-mask.ts carryWithheld()).
+ */
 function checkUnassessed(input: RuleInput): ValidationIssue[] {
   const dataOnly = isDataOnly(input);
   const out: ValidationIssue[] = [];
@@ -86,7 +90,7 @@ function checkUnassessed(input: RuleInput): ValidationIssue[] {
     if (dataOnly && it.ai_role !== "unassessed") {
       out.push(error("AI_UNASSESSED", `items[${i}].ai_role`,
         `ai_role is "${it.ai_role}" in a data-only edition, which no one has read; set it to "unassessed".`));
-    } else if (!dataOnly && it.ai_role === "unassessed") {
+    } else if (!dataOnly && it.ai_role === "unassessed" && !("withheld" in it && it.withheld)) {
       out.push(error("AI_UNASSESSED", `items[${i}].ai_role`,
         `ai_role "unassessed" is only for data-only editions; set it to "none", or to an AI-linked role a cited source states, with ai_confidence and ai_evidence.`,
         "Never guess an AI role: none unless a source says otherwise."));

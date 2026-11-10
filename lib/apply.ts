@@ -33,7 +33,7 @@ import type { Claim, ClaimState, ScoreboardEntry, ScoreboardFile } from "./schem
 import type { Recheck } from "./schema/status";
 import { normalizeUrl } from "./urls";
 import { KEV_ABSENCE_NOTE, type ClaimMetricPath, type RecheckFlag } from "./vocab";
-import { bindingWithholds, maskWithheld, type MaskedItem } from "./withhold-mask";
+import { adoptWithheldIds, bindingWithholds, carryWithheld, maskWithheld, withholdsOn, type MaskedItem } from "./withhold-mask";
 
 /** The issue fields dropUnverified() reads; lib/rules/types.ts's ValidationIssue fits. */
 export interface SoftIssue {
@@ -248,6 +248,11 @@ export interface ApplyInput extends ComposeCommon {
   inputs: InputsManifest | null;
   /** SHA-256 of metrics/D.json as committed: gap.metrics_sha256 (A5). */
   metricsSha256: string;
+  /**
+   * The stored briefs/D.json as synced (the data-only edition, or the full one a forced run replaces): a
+   * same-day withheld item the draft leaves out is kept from it (lib/withhold-mask.ts carryWithheld()).
+   */
+  stored?: Brief | null;
 }
 
 /**
@@ -257,12 +262,20 @@ export interface ApplyInput extends ComposeCommon {
  * Archived briefs are never touched here: a withhold is composeWithholds()'s job. But a withhold binds the
  * editions after it: a draft item that re-reports an item withheld under an open or upheld victim or
  * attribution dispute (its id, or a cited URL whose archive-index item_ids are all withheld references) is
- * masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts).
+ * masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts). A withhold made
+ * this morning names brief D itself, so its item stays in the edition whatever its dispute's status: a
+ * draft item re-reporting it under a new id takes its id, else the stored copy is kept.
  */
 export function applyDraft(i: ApplyInput): ContentChanges {
   const c = i.config;
   const m = i.metrics;
   const d = structuredClone(i.draft) as GatedDraft;
+  const binding = bindingWithholds(i.corrections, i.disputes);
+  const sameDay = withholdsOn(i.corrections, i.date, i.disputes);
+  const adopted = adoptWithheldIds(d, {
+    sameDay, binding, stored: i.stored ?? null, archiveIndex: i.archiveIndex, history: i.history,
+    firstSeen: i.firstSeen ?? firstSeenOf(i.history.filter((b) => b.date < i.date)),
+  });
   const sources = d.sources.map((s) => freezeSource(s, seenAsOf(i.evidence, s.url), c));
   const cveInputs: CveBlockInputs = {
     config: c, facts: i.facts, cveList: i.cveList, kevIndex: i.kevIndex, inputs: i.inputs,
@@ -270,11 +283,12 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   };
   const releases = new Map<string, NonNullable<Candidate["release"]>>();
   for (const cand of i.context.candidates) if (cand.release && !releases.has(cand.release.release_id)) releases.set(cand.release.release_id, cand.release);
-  const items = freezeItems(d.items, sources, {
+  const frozen = freezeItems(d.items, sources, {
     config: c, date: i.date, history: i.history, firstSeen: i.firstSeen,
     blocks: (it) => it.cve_ids.map((cve) => cveBlockOf(cve, it, sources, cveInputs)),
     release: (it) => releaseBlockOf(it, it.release_id ? releases.get(it.release_id) ?? null : null, sources, c, i.cveList),
   });
+  const { items, kept } = carryWithheld(frozen, sources, { sameDay, stored: i.stored ?? null });
   const board = updateScoreboard({ date: i.date, config: c, metrics: m, scoreboard: i.scoreboard, reports: d.scoreboard_entries, sources: d.sources });
   const corr = composeCorrections(i, d.corrections, d.sources);
 
@@ -302,7 +316,11 @@ export function applyDraft(i: ApplyInput): ContentChanges {
     sources,
     computed: emptyComputed(),
   };
-  const masked = maskWithheld(b, { binding: bindingWithholds(i.corrections, i.disputes), archiveIndex: i.archiveIndex, history: i.history });
+  const masked = maskWithheld(b, { binding, sameDay, archiveIndex: i.archiveIndex, history: i.history }).map((x): MaskedItem => {
+    const a = adopted.find((y) => y.item_id === x.item_id && y.correction_id === x.correction_id);
+    if (a) return { ...x, match: "url", draft_id: a.draft_id };
+    return kept.includes(x.item_id) && sameDay.some((w) => w.correction_id === x.correction_id) ? { ...x, match: "carried" } : x;
+  });
   b.late = lateOf(b, c);
   b.computed = computedOf(b, m);
   const brief = Brief.parse(b);

@@ -25,7 +25,7 @@ import { ScoreboardFile, type Claim } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
 import { cveLookupFromDir, validateAll, validatePublished } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
-import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS } from "@/lib/withhold";
+import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS, composeWithholds } from "@/lib/withhold";
 import { bindingWithholds, withheldRefs } from "@/lib/withhold-mask";
 import { CVE_RECORDS_DIR, editionRegionsInput, fixtureConfig } from "@/fixtures/src/inputs";
 import { SOURCES, EDITIONS, FIXTURES_DIR, KEV_DUE, KEV_ROWS, RECORD_IDS, cveRecord, type EditionName } from "@/fixtures/src/world";
@@ -410,12 +410,117 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
       "archive-index.json": jsonText({ ...GOLDEN_ARCHIVE, editions: markCorrected(GOLDEN_ARCHIVE.editions, i.corrections!.corrections) }, ArchiveIndex),
     });
     expect(validateAll(dir, { publishing: D, config: cfg }).errors).toEqual([]);
-    // Unmasked (its dispute rejected in intake's list), the same edition fails XREF_CORRECTION, as it did before.
-    const plain = applyDraft(withStatus(i, "rejected"));
-    expect(plain.masked).toEqual([]);
-    expect(plain.brief!.items).toEqual(want.items);
-    writeTree(dir, { "briefs/2026-10-14.json": jsonText(plain.brief, Brief) });
-    expect(validateAll(dir, { publishing: D, config: cfg }).errors.map((e) => e.code)).toEqual(["XREF_CORRECTION"]);
+    // Its dispute rejected in intake's list: the correction still names this edition, whose copy XREF_CORRECTION
+    // checks whatever the dispute's status, so the item is still masked and the edition still publishes.
+    const rejected = applyDraft(withStatus(i, "rejected"));
+    expect(rejected.masked).toEqual(out.masked);
+    expect(rejected.brief).toEqual(b);
+  });
+
+  /** The weekday world with C-0003 on 14 October's own transport item, and that edition as stored (withheld). */
+  function sameDay(o: { draft?: (d: ApplyInput["draft"]) => void; stored?: (b: Brief) => void } = {}): ApplyInput {
+    const i = withWithhold({ item: TRANSPORT, edition: D, kind: "victim" });
+    const stored = weekdayExpected();
+    o.stored?.(stored);
+    const ch = composeWithholds({
+      date: D, config: cfg, briefs: [stored], corrections: GOLDEN_CORRECTIONS, disputes: [...GOLDEN_CORRECTIONS.disputes, { ...i.disputes!.at(-1)!, correction_id: null }],
+      archiveIndex: null, metricsFor: () => i.metrics, requests: [{ item_id: TRANSPORT, edition_date: D, kind: "victim", dispute_id: "D-0002", since: D }],
+    });
+    i.stored = ch.rewritten[0]!;
+    // The stored edition's references in the archive index, as its publish left them.
+    for (const s of i.stored.sources) {
+      const u = normalizeUrl(s.url);
+      const refs = i.stored.items.filter((it) => it.source_ids.includes(s.id)).map((it) => `${D}/${it.id}`);
+      i.archiveIndex!.urls[u] ??= { first_cited: D, item_ids: [], sha256: null, hashed_at: null, last_check: null };
+      i.archiveIndex!.urls[u]!.item_ids.push(...refs.filter((r) => !i.archiveIndex!.urls[u]!.item_ids.includes(r)));
+    }
+    i.draft = structuredClone(i.draft);
+    o.draft?.(i.draft);
+    return i;
+  }
+  /** The draft without the transport item: the Japan block that cited it says nothing new. */
+  const dropTransport = (d: ApplyInput["draft"]) => {
+    d.items = d.items.filter((x) => x.id !== TRANSPORT);
+    d.taiwan_lens.japan = { text: null, item_ids: [], source_ids: [] };
+  };
+  /** validateAll of a copy of site-content holding the edition, its corrections and archive index. */
+  function validEdition(i: ApplyInput, out: ReturnType<typeof applyDraft>): string[] {
+    const dir = siteCopy();
+    writeTree(dir, {
+      "briefs/2026-10-14.json": jsonText(out.brief, Brief), "corrections.json": jsonText(i.corrections, CorrectionsFile),
+      "archive-index.json": jsonText({ ...GOLDEN_ARCHIVE, editions: markCorrected(GOLDEN_ARCHIVE.editions, i.corrections!.corrections) }, ArchiveIndex),
+    });
+    return validateAll(dir, { publishing: D, config: cfg }).errors.map((e) => `${e.code} ${e.path}`);
+  }
+
+  it("C23: a same-day withheld item the draft leaves out is carried over from the stored edition, masked, in display order, and the edition passes validateAll", () => {
+    const i = sameDay({ draft: dropTransport });
+    const out = applyDraft(i);
+    const b = out.brief!;
+    expect(out.masked).toEqual([{ item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried" }]);
+    const stored = i.stored!.items.find((x) => x.id === TRANSPORT)!;
+    // The draft still lists s11 (now cited by nothing it writes): the carried item cites that source again.
+    expect(b.items.find((x) => x.id === TRANSPORT)).toEqual(stored);
+    expect(b.items.map((x) => x.id)).toEqual(i.stored!.items.map((x) => x.id));
+    expect(b.sources).toHaveLength(i.draft.sources.length);
+    expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
+    // Regions come from the draft's items: the carried copy changes no level.
+    expect(b.regions.rows.map((r) => r.level)).toEqual(weekdayExpected().regions.rows.map((r) => r.level));
+    expect(validEdition(i, out)).toEqual([]);
+
+    // A source the draft does not cite is appended under the next id, frozen as stored.
+    const j = sameDay({ draft: dropTransport, stored: (sb) => { sb.sources.find((s) => s.id === "s11")!.url = "https://www.security-next.com/ct-sample/logistics-ransomware-claim-follow-up"; } });
+    const out2 = applyDraft(j);
+    const b2 = out2.brief!;
+    const last = b2.sources.at(-1)!;
+    expect(last).toEqual({ ...j.stored!.sources.find((s) => s.id === "s11")!, id: `s${j.draft.sources.length + 1}` });
+    expect(b2.items.find((x) => x.id === TRANSPORT)!.source_ids).toEqual([last.id]);
+    expect(validEdition(j, out2)).toEqual([]);
+  });
+
+  it("C23: a draft item that re-reports a same-day withheld item under a new id of the same kind takes its id and is masked", () => {
+    const NEW = "inc-transport-jp-logistics-2026-10";
+    const rename = (d: ApplyInput["draft"]) => {
+      d.items.find((x) => x.id === TRANSPORT)!.id = NEW;
+      d.taiwan_lens.japan.item_ids = [NEW];
+    };
+    const i = sameDay({ draft: rename });
+    const out = applyDraft(i);
+    expect(out.masked).toEqual([{ item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "url", draft_id: NEW }]);
+    // The same brief as when the draft kept the item's id.
+    expect(out.brief).toEqual(applyDraft(sameDay()).brief);
+    expect(validEdition(i, out)).toEqual([]);
+  });
+
+  it("C23: a re-report that cannot take the id (another kind, or an id earlier editions used) is masked under its own id, and the withheld item is carried over", () => {
+    const CAMP = "camp-transport-jp-2026-10";
+    const i = sameDay({
+      draft: (d) => {
+        const it = d.items.find((x) => x.id === TRANSPORT)!;
+        Object.assign(it, { id: CAMP, kind: "campaign" });
+        d.taiwan_lens.japan.item_ids = [CAMP];
+      },
+    });
+    const out = applyDraft(i);
+    // In the brief's item order: the carried incident ranks above the campaign.
+    expect(out.masked).toEqual([
+      { item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried" },
+      { item_id: CAMP, correction_id: "C-0003", kind: "victim", match: "url" },
+    ]);
+    const b = out.brief!;
+    expect(b.items.find((x) => x.id === CAMP)!.headline).toBe(WITHHELD_HEADLINE);
+    expect(b.items.find((x) => x.id === TRANSPORT)).toEqual(i.stored!.items.find((x) => x.id === TRANSPORT));
+    expect(validEdition(i, out)).toEqual([]);
+    // An id an earlier edition holds keeps its own story: never renamed.
+    const OLD = "inc-transport-jp-logistics-2026-10";
+    const j = sameDay({
+      draft: (d) => {
+        d.items.find((x) => x.id === TRANSPORT)!.id = OLD;
+        d.taiwan_lens.japan.item_ids = [OLD];
+      },
+    });
+    j.firstSeen = new Map([[OLD, "2026-10-09"]]);
+    expect(applyDraft(j).masked!.map((m) => [m.item_id, m.match])).toEqual([[OLD, "url"], [TRANSPORT, "carried"]]);
   });
 
   it("C18: an attribution withhold binds by URL: a later item citing a page the withheld item cited is masked, with its chip, Lead, Lens and region reason", () => {

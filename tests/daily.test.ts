@@ -547,6 +547,38 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D40 a same-day victim dispute on a data-only item the draft leaves out: the full edition keeps the item withheld, masks the draft item that cites its page, exit 0", async () => {
+    // Before W1, the draft's brief lacked the item C-0001 names in this edition: XREF_UNRESOLVED and E_PUBLISH.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-96951";
+    const PATCHES = "pt-microsoft-2026-10";
+    expect((DRAFT as { items: { id: string }[] }).items.map((x) => x.id)).not.toContain(ITEM);
+    h.issues([correctionIssue({ number: 7, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const s = subjects(h);
+    expect(s.slice(1, 3)).toEqual([`brief: ${D} · data-only edition`, `correction: ${D} · withheld ${ITEM}`]);
+    expect(s.some((x) => x.startsWith(`brief: ${D} · full edition`))).toBe(true);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.edition).toBe("full");
+    // The story appears masked under its own id, and the draft item citing its record page is masked too.
+    expect(stored.items.filter((x) => x.id === ITEM)).toHaveLength(1);
+    for (const id of [ITEM, PATCHES]) {
+      expect(stored.items.find((x) => x.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
+    }
+    expect(stored.corrections.map((c) => [c.id, c.item_id])).toEqual([["C-0001", ITEM]]);
+    const r = statusOn(h)!.runs[0]!;
+    expect(r.outcome).toBe("published_full");
+    expect(r.error_code).toBeNull();
+    expect(stageOf(r, "publish").note).toContain("Withheld 1 re-reported item under reader disputes.");
+    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
+    const log = dailyLog(h);
+    expect(log).toContain(`Kept ${ITEM} in this edition, withheld: C-0001 names it in this edition and the draft left it out.`);
+    expect(log).toContain(`Withheld ${PATCHES} in this edition: it re-reports the item C-0001 withholds (url match).`);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D33 a withhold on an earlier edition, then a full edition the same morning: the regions history the edition and its files read is the rewritten one", async () => {
     // Morning one (D-1) publishes its data-only edition; a victim dispute on one of its items arrives; morning two withholds it, then drafts.
     const D0 = "2026-10-13";

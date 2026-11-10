@@ -32,7 +32,9 @@ const aKind = (kind: string) => `${/^[aeiou]/.test(kind) ? "an" : "a"} ${kind}`;
 
 function checkCap(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
-  const n = itemsOf(input).length;
+  // A withheld item (§4.10) is the composer's placeholder, never the agent's: a same-day withhold can keep one the
+  // draft left out (lib/withhold-mask.ts carryWithheld()), so withheld items fall outside the cap. Drafts have none.
+  const n = itemsOf(input).filter((it) => !(it && "withheld" in it && it.withheld)).length;
   if (n > ITEMS_MAX) {
     out.push(error("ITEM_CAP", "items", `items has ${n} entries; the limit is ${ITEMS_MAX}. Cut at least ${n - ITEMS_MAX}, starting with the lowest-ranked Also-today rows.`));
   }
@@ -84,6 +86,10 @@ function checkTop3(input: RuleInput): ValidationIssue[] {
 
 // ── SEVERITY_NULL_FOR_NONTHREAT, SEVERITY_KIND ───────────────────────────────────────────────────
 
+/** A data-only item a full edition keeps withheld, unread (carryWithheld()): no one set its severity, so null stands. */
+const keptUnread = (it: object): boolean =>
+  "withheld" in it && !!it.withheld && "ai_role" in it && it.ai_role === "unassessed";
+
 function checkSeverityNull(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   itemsOf(input).forEach((it, i) => {
@@ -92,7 +98,7 @@ function checkSeverityNull(input: RuleInput): ValidationIssue[] {
     if (need === "none" && it.severity !== null) {
       out.push(error("SEVERITY_NULL_FOR_NONTHREAT", `items[${i}].severity`,
         `${AKind(it.kind)} item has no severity, but this one is "${it.severity}"; set severity to null${it.kind === "policy" ? " (set landmark true to rank a major policy item as elevated)" : ""}.`));
-    } else if (need === "required" && it.severity === null) {
+    } else if (need === "required" && it.severity === null && !keptUnread(it)) {
       out.push(error("SEVERITY_NULL_FOR_NONTHREAT", `items[${i}].severity`,
         `${AKind(it.kind)} item needs a severity (critical, high, elevated or watch), but it is null; set one from the severity definitions.`));
     }

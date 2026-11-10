@@ -868,8 +868,10 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       setCur(res.record);
       state.full = x.edition;
       setStage(cur(), "publish", { status: "ok", ended: now() });
-      const masked = new Set((res.masked ?? []).map((m) => m.item_id)).size;
+      const masked = new Set((res.masked ?? []).filter((m) => m.match !== "carried").map((m) => m.item_id)).size;
       if (masked) addNote(cur(), "publish", NOTES.maskedRepeats(masked));
+      const kept = new Set((res.masked ?? []).filter((m) => m.match === "carried").map((m) => m.item_id)).size;
+      if (kept) addNote(cur(), "publish", NOTES.keptWithheld(kept));
       if (dryRun) return;
       state.pushedBrief = true;
       const at = hhmm(Date.parse(res.publishedAt));

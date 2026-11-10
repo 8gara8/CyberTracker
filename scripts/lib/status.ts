@@ -72,6 +72,8 @@ export interface Notes {
   notComposed: string;
   /** The full edition masked N draft items that re-report a withheld item (ContentChanges.masked; N counts item ids). */
   maskedRepeats(n: number): string;
+  /** The full edition kept N items withheld this morning that the draft left out (MaskedItem match "carried"). */
+  keptWithheld(n: number): string;
 }
 
 /** Every stage note text; each ends with a full stop. */
@@ -120,6 +122,7 @@ export const NOTES: Notes = {
   pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
   notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
   maskedRepeats: (n) => `Withheld ${plural(n, "re-reported item")} under reader disputes.`,
+  keptWithheld: (n) => `Kept ${plural(n, "withheld item")} the draft left out, so its correction resolves.`,
 };
 
 /** StageRecord.note's limit (§4.8). */

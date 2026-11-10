@@ -603,7 +603,10 @@ function composed<T>(ctx: Ctx, edition: string, compose: () => T): T {
 /** The composer's masked items (§4.10), each logged. */
 function logMasked(ctx: Ctx, ch: ContentChanges): MaskedItem[] {
   const masked = ch.masked ?? [];
-  for (const x of masked) ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match).`);
+  for (const x of masked) {
+    if (x.match === "carried") ctx.log(`Kept ${x.item_id} in this edition, withheld: ${x.correction_id} names it in this edition and the draft left it out.`);
+    else ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match${x.draft_id ? `; the draft named it ${x.draft_id}` : ""}).`);
+  }
   return masked;
 }
 
@@ -682,6 +685,7 @@ export async function publishFull(o: PublishOptions & {
     cveList: o.cveList,
     snapshots: o.snapshots,
     dataOnlyPublishedAt: stored?.data_only_published_at ?? null,
+    stored,
     disputes: o.disputes,
     recheck: o.recheck,
     facts: cveFactsFor(ctx.root, D),

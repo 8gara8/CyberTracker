@@ -10,8 +10,12 @@
 // lib/withhold.ts can both use it. Owner: lane L3.
 
 import { longDate } from "./format";
+import { orderItems } from "./items";
+import { idProblem } from "./rules/ids";
 import type { ActorSeen, Brief } from "./schema/brief";
-import type { Item } from "./schema/item";
+import type { Source } from "./schema/common";
+import type { DraftBrief } from "./schema/draft-brief";
+import type { DraftItem, Item } from "./schema/item";
 import type { ArchiveIndex, CorrectionsFile, Dispute } from "./schema/misc";
 import { normalizeUrl } from "./urls";
 import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "./vocab";
@@ -33,13 +37,30 @@ export interface BindingWithhold {
   since: string;
 }
 
-/** An item of a new edition that applyDraft() masked under a binding withhold (ContentChanges.masked). */
+/** An item of a new edition that a composer withheld (ContentChanges.masked). */
 export interface MaskedItem {
   item_id: string;
   correction_id: string;
   kind: WithholdKind;
-  /** "id": a withheld item's id (any later edition); "url": a cited URL only withheld items cited. */
-  match: "id" | "url";
+  /**
+   * "id": a withheld item's id (any later edition); "url": a cited URL only withheld items cited;
+   * "carried": a same-day withheld item the draft left out, kept from the stored edition (carryWithheld()).
+   */
+  match: "id" | "url" | "carried";
+  /** A re-report that took the withheld item's id (adoptWithheldIds()): its id in the draft. */
+  draft_id?: string;
+}
+
+/** Each name_removed correction with its dispute (intake's list first, then corrections.json's), or null. */
+function withholdsOf(corrections: CorrectionsFile | null, disputes: readonly Dispute[] | null | undefined) {
+  const stored = corrections?.disputes ?? [];
+  return (corrections?.corrections ?? []).filter((c) => c.type === "name_removed").map((c) => {
+    const id = c.dispute_id;
+    const d = id === null ? null : disputes?.find((x) => x.id === id) ?? stored.find((x) => x.id === id) ?? null;
+    const kind: WithholdKind = d && (d.kind === "victim" || d.kind === "attribution") ? d.kind : c.field === "attribution" ? "attribution" : "victim";
+    const w: BindingWithhold = { item_id: c.item_id, edition_date: c.edition_date, kind, correction_id: c.id, since: c.date };
+    return { w, binds: !d || d.status === "open" || d.status === "upheld" };
+  });
 }
 
 /**
@@ -47,17 +68,17 @@ export interface MaskedItem {
  * updated list (intake's), whose statuses win; a dispute it lacks is looked up in corrections.json.
  */
 export function bindingWithholds(corrections: CorrectionsFile | null, disputes?: readonly Dispute[] | null): BindingWithhold[] {
-  const stored = corrections?.disputes ?? [];
-  const out: BindingWithhold[] = [];
-  for (const c of corrections?.corrections ?? []) {
-    if (c.type !== "name_removed") continue;
-    const id = c.dispute_id;
-    const d = id === null ? null : disputes?.find((x) => x.id === id) ?? stored.find((x) => x.id === id) ?? null;
-    if (d && d.status !== "open" && d.status !== "upheld") continue;
-    const kind: WithholdKind = d && (d.kind === "victim" || d.kind === "attribution") ? d.kind : c.field === "attribution" ? "attribution" : "victim";
-    out.push({ item_id: c.item_id, edition_date: c.edition_date, kind, correction_id: c.id, since: c.date });
-  }
-  return out;
+  return withholdsOf(corrections, disputes).filter((x) => x.binds).map((x) => x.w);
+}
+
+/**
+ * The withholds that name edition `date` itself: every name_removed correction whose edition_date is the
+ * date, whatever its dispute's status. A rejected dispute frees the editions after the one it named, never
+ * that one: XREF_CORRECTION checks the brief a correction names, so a full edition replacing the
+ * data-only one (or a forced rerun) must keep the item there, withheld (§4.10).
+ */
+export function withholdsOn(corrections: CorrectionsFile | null, date: string, disputes?: readonly Dispute[] | null): BindingWithhold[] {
+  return withholdsOf(corrections, disputes).map((x) => x.w).filter((w) => w.edition_date === date);
 }
 
 /** "YYYY-MM-DD/<item id>", the archive index's item reference (§4.10). */
@@ -153,6 +174,8 @@ export function dropActorItem(actors: readonly ActorSeen[], items: readonly Item
 
 export interface MaskInput {
   binding: readonly BindingWithhold[];
+  /** withholdsOn() the edition's date: their own items are masked by id whatever the dispute's status. */
+  sameDay?: readonly BindingWithhold[];
   /** As synced: before this edition's URLs are added. */
   archiveIndex: ArchiveIndex | null;
   /** The stored briefs before the edition (their withheld items' references). */
@@ -166,7 +189,7 @@ export interface MaskInput {
  * withhold of an archived brief leaves them.
  */
 export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
-  if (i.binding.length === 0) return [];
+  if (i.binding.length === 0 && !i.sameDay?.length) return [];
   const refs = withheldRefs(i.binding, i.history);
   // An item keeps its id in every edition it appears in (§0.4 row 100): the id of a withheld reference
   // dated on or before this edition is the withheld item, whatever the later copy cites.
@@ -176,6 +199,11 @@ export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
     const list = byId.get(ref.slice(11)) ?? [];
     for (const w of ws) if (!list.includes(w)) list.push(w);
     byId.set(ref.slice(11), list);
+  }
+  for (const w of i.sameDay ?? []) {
+    const list = byId.get(w.item_id) ?? [];
+    if (!list.some((x) => x.correction_id === w.correction_id)) list.push(w);
+    byId.set(w.item_id, list);
   }
   const urlOf = new Map(b.sources.map((s) => [s.id, normalizeUrl(s.url)] as const));
   const out: MaskedItem[] = [];
@@ -200,4 +228,115 @@ export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
     }
   }
   return out;
+}
+
+// ── The same-day withhold (§4.10) ────────────────────────────────────────────────────────────────
+// A withhold made this morning names the stored brief D (the data-only edition, or the full one a forced
+// run replaces). The full edition replaces that brief, so the item must stay in it, withheld, or the
+// correction no longer resolves (XREF_UNRESOLVED). applyDraft() first lets a draft item that re-reports the
+// item under another id take its id (adoptWithheldIds()), else keeps the stored, masked item
+// (carryWithheld()); maskWithheld() then masks it by id.
+
+/** The draft fields adoptWithheldIds() reads and renames in. */
+export type AdoptDraft = Pick<DraftBrief, "items" | "lead" | "taiwan_lens" | "region_raises" | "sources">;
+
+export interface AdoptInput {
+  /** withholdsOn() the edition's date. */
+  sameDay: readonly BindingWithhold[];
+  binding: readonly BindingWithhold[];
+  /** The stored brief D as synced, or null. */
+  stored: Pick<Brief, "items"> | null;
+  /** As synced: it holds the stored brief D's references. */
+  archiveIndex: ArchiveIndex | null;
+  history: readonly Pick<Brief, "date" | "items">[];
+  /** Item id → its earliest stored brief before D (an id an earlier edition used is never renamed). */
+  firstSeen: ReadonlyMap<string, string>;
+}
+
+/** A draft item that took a same-day withheld item's id. */
+export interface AdoptedId {
+  item_id: string;
+  draft_id: string;
+  correction_id: string;
+}
+
+/**
+ * For each same-day withhold whose item the draft lacks by id, the first draft item that re-reports it by
+ * URL (it cites a page whose archive-index references hold the withheld item's and are all withheld) takes
+ * the withheld item's id, in every item_ids list of the draft too, so the story appears once and the
+ * correction resolves. Only a new item (no earlier edition holds its id) of the stored item's kind whose
+ * fields fit that id (ID_FORMAT) is renamed. Changes the draft in place; returns the renames.
+ */
+export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
+  const out: AdoptedId[] = [];
+  if (o.sameDay.length === 0) return out;
+  const all = [...o.binding, ...o.sameDay.filter((w) => !o.binding.some((x) => x.correction_id === w.correction_id))];
+  const refs = withheldRefs(all, o.history);
+  const urlOf = new Map(d.sources.map((s) => [s.id, normalizeUrl(s.url)] as const));
+  const reReports = (it: DraftItem, own: string) => it.source_ids.some((sid) => {
+    const cited = o.archiveIndex?.urls[urlOf.get(sid) ?? ""]?.item_ids ?? [];
+    return cited.includes(own) && cited.every((ref) => refs.has(ref));
+  });
+  const renamed = new Set<string>();
+  for (const w of o.sameDay) {
+    if (d.items.some((it) => it.id === w.item_id)) continue;
+    const held = o.stored?.items.find((it) => it.id === w.item_id);
+    if (!held) continue;
+    const own = itemRef(w.edition_date, w.item_id);
+    const y = d.items.find((it) => !renamed.has(it.id) && it.kind === held.kind && !o.firstSeen.has(it.id)
+      && idProblem({ ...it, id: w.item_id }) === null && reReports(it, own));
+    if (!y) continue;
+    const from = y.id;
+    const swap = (ids: string[]) => ids.map((x) => (x === from ? w.item_id : x));
+    y.id = w.item_id;
+    for (const l of d.lead) l.item_ids = swap(l.item_ids);
+    d.taiwan_lens.item_ids = swap(d.taiwan_lens.item_ids);
+    for (const row of d.taiwan_lens.rows) row.item_ids = swap(row.item_ids);
+    d.taiwan_lens.japan.item_ids = swap(d.taiwan_lens.japan.item_ids);
+    for (const r of d.region_raises) r.item_ids = swap(r.item_ids);
+    renamed.add(w.item_id);
+    out.push({ item_id: w.item_id, draft_id: from, correction_id: w.correction_id });
+  }
+  return out;
+}
+
+/**
+ * For each same-day withhold whose item the frozen items still lack, the stored brief's copy (already
+ * masked) is kept, in display order (orderItems()). Its sources are this brief's own where the URL is the
+ * same, else appended under the next ids with their frozen fields, and every source id the item names
+ * follows. `sources` grows in place; returns the items and the ids kept. The region levels then count the
+ * kept item as the stored edition did, and maskWithheld() masks it again by id in the new brief.
+ */
+export function carryWithheld(items: readonly Item[], sources: Source[], o: { sameDay: readonly BindingWithhold[]; stored: Pick<Brief, "items" | "sources"> | null }): { items: Item[]; kept: string[] } {
+  const extra: Item[] = [];
+  for (const w of o.sameDay) {
+    if (items.some((it) => it.id === w.item_id) || extra.some((it) => it.id === w.item_id)) continue;
+    const held = o.stored?.items.find((it) => it.id === w.item_id);
+    if (!held || !o.stored) continue;
+    const storedSources = o.stored.sources;
+    const ids = new Map<string, string>();
+    const idOf = (sid: string): string => {
+      const known = ids.get(sid);
+      if (known) return known;
+      const src = storedSources.find((s) => s.id === sid);
+      let id = sid;
+      if (src) {
+        const same = sources.find((s) => normalizeUrl(s.url) === normalizeUrl(src.url));
+        id = same?.id ?? `s${sources.length + 1}`;
+        if (!same) sources.push({ ...structuredClone(src), id });
+      }
+      ids.set(sid, id);
+      return id;
+    };
+    const it = structuredClone(held);
+    it.source_ids = it.source_ids.map(idOf);
+    it.ai_evidence = it.ai_evidence.map((e) => ({ ...e, source_id: idOf(e.source_id) }));
+    it.attribution = it.attribution.map((a) => ({ ...a, source_id: idOf(a.source_id) }));
+    if (it.incident) it.incident.status_source_ids = it.incident.status_source_ids.map(idOf);
+    it.flaw_evidence = it.flaw_evidence.map((f) => ({ ...f, source_id: idOf(f.source_id) }));
+    if (it.exposure) it.exposure = { ...it.exposure, source_id: idOf(it.exposure.source_id) };
+    extra.push(it);
+  }
+  if (extra.length === 0) return { items: [...items], kept: [] };
+  return { items: orderItems([...items, ...extra]), kept: extra.map((it) => it.id) };
 }
