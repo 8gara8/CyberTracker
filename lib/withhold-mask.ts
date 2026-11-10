@@ -1,10 +1,11 @@
 // The SPEC §4.10 masking, shared by a withhold and by the editions after it. A withhold binds later
 // editions while its victim or attribution dispute is open or upheld (a spec gap, decided in the P3 build):
 // bindingWithholds() lists those withholds from corrections.json, the context marks their items in
-// recent_items, and applyDraft() masks any draft item that re-reports one with maskWithheld(). An item
-// re-reports a withheld item when it has the withheld item's id on that item's own edition date, or when it
-// cites a URL whose archive-index item_ids are all withheld references (a page an unwithheld item also
-// cites, such as a vendor index, is not the withheld story's). rewriteItem(), markRegions() and
+// recent_items, and applyDraft() and composeDataOnly() mask any item that re-reports one with
+// maskWithheld(). An item re-reports a withheld item when it has the id of a withheld reference (an item
+// keeps its id in every edition, so whatever the later copy cites), or when it cites a URL whose
+// archive-index item_ids are all withheld references (a page an unwithheld item also cites, such as a
+// vendor index, is not the withheld story's). rewriteItem(), markRegions() and
 // dropActorItem() rewrite one brief in place. Pure, and imports no composer, so lib/apply.ts and
 // lib/withhold.ts can both use it. Owner: lane L3.
 
@@ -37,7 +38,7 @@ export interface MaskedItem {
   item_id: string;
   correction_id: string;
   kind: WithholdKind;
-  /** "id": the withheld item's id on its own edition date; "url": a cited URL the withheld item cited. */
+  /** "id": a withheld item's id (any later edition); "url": a cited URL only withheld items cited. */
   match: "id" | "url";
 }
 
@@ -167,11 +168,20 @@ export interface MaskInput {
 export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
   if (i.binding.length === 0) return [];
   const refs = withheldRefs(i.binding, i.history);
+  // An item keeps its id in every edition it appears in (§0.4 row 100): the id of a withheld reference
+  // dated on or before this edition is the withheld item, whatever the later copy cites.
+  const byId = new Map<string, BindingWithhold[]>();
+  for (const [ref, ws] of refs) {
+    if (ref.slice(0, 10) > b.date) continue;
+    const list = byId.get(ref.slice(11)) ?? [];
+    for (const w of ws) if (!list.includes(w)) list.push(w);
+    byId.set(ref.slice(11), list);
+  }
   const urlOf = new Map(b.sources.map((s) => [s.id, normalizeUrl(s.url)] as const));
   const out: MaskedItem[] = [];
   for (const it of b.items) {
     const hits = new Map<string, { w: BindingWithhold; match: MaskedItem["match"] }>();
-    for (const w of i.binding) if (w.edition_date === b.date && w.item_id === it.id) hits.set(w.correction_id, { w, match: "id" });
+    for (const w of byId.get(it.id) ?? []) if (!hits.has(w.correction_id)) hits.set(w.correction_id, { w, match: "id" });
     for (const sid of it.source_ids) {
       const url = urlOf.get(sid);
       // A page every stored citer of which is withheld is the story's own; one an unwithheld item also

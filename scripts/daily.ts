@@ -498,6 +498,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         state.dataOnlyPublished = true;
         if (!dryRun) state.pushedBrief = true;
         setStage(cur(), "data_only", { status: "ok", ended: now() });
+        const masked = new Set((res.masked ?? []).map((m) => m.item_id)).size;
+        if (masked) addNote(cur(), "data_only", NOTES.maskedRepeats(masked));
         const at = hhmm(Date.parse(res.publishedAt));
         if (!dryRun && at > dataOnlyTarget) addNote(cur(), "data_only", NOTES.missedTarget("data_only", at, dataOnlyTarget));
       } catch (e) {

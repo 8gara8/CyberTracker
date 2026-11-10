@@ -29,6 +29,7 @@ import {
 import { contentDir, isSampleData } from "./site";
 import { normalizeUrl } from "./urls";
 import { WITHHELD_MARK } from "./vocab";
+import { bindingWithholds } from "./withhold-mask";
 
 export type { CveLookup, CveRecordInfo, RegionsBase, Rule, RuleInput, ValidationIssue } from "./rules/types";
 export { SAFETY_CODES } from "./rules/safety";
@@ -760,6 +761,10 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
   if (corrections?.data) {
     const cf = corrections.data;
     const file = corrections.file;
+    // A withhold whose stored dispute is open or upheld binds every later edition (§4.10): publish rewrites
+    // or masks each later copy of the item, so those are checked too. A rejected or withdrawn dispute binds
+    // nothing after its edition, so a later copy may stand.
+    const binding = new Set(bindingWithholds(cf).map((w) => w.correction_id));
     cf.corrections.forEach((c, i) => {
       const p = `corrections[${i}]`;
       const target = briefs.get(c.edition_date);
@@ -770,8 +775,9 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
       } else if (c.type === "name_removed" && target.data) {
         const kind = cf.disputes.find((d) => d.id === c.dispute_id)?.kind ?? null;
         // The target brief, and every earlier stored brief holding the item: an item keeps its id in every
-        // edition it appears in (§4.6), so an earlier edition left as it was would still show the name.
-        const holders = [...briefs].filter(([d, b]) => d <= c.edition_date && b.data?.items.some((it) => it.id === c.item_id))
+        // edition it appears in (§4.6), so an earlier edition left as it was would still show the name. While
+        // the withhold binds, every later brief holding the item too.
+        const holders = [...briefs].filter(([d, b]) => (d <= c.edition_date || binding.has(c.id)) && b.data?.items.some((it) => it.id === c.item_id))
           .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
         for (const [, held] of holders) {
           const data = held.data!;

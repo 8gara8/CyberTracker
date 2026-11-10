@@ -16,6 +16,8 @@ import { ArchiveIndex, CorrectionsFile } from "@/lib/schema/misc";
 import { ScoreboardFile } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
 import { cveLookupFromDir, validatePublished } from "@/lib/validate";
+import { WITHHELD_HEADLINE } from "@/lib/vocab";
+import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS } from "@/lib/withhold";
 import { CVE_RECORDS_DIR, fixtureConfig } from "@/fixtures/src/inputs";
 import { FIXTURES_DIR, KEV_DUE, KEV_ROWS, RECORD_IDS, cveRecord } from "@/fixtures/src/world";
 
@@ -152,6 +154,33 @@ describe("composeDataOnly", { timeout: 120_000 }, () => {
       expect(a[1] > b[1] || (a[1] === b[1] && pos(a[0]) > pos(b[0]))).toBe(true);
     }
     expect(composeDataOnly({ ...w, metrics }).brief!.items.map((it) => it.cves[0]!.cve_id)).toEqual(rows.map((r) => r[0]));
+  });
+
+  it("C22: an item a binding withhold covers by id is masked in the data-only edition too, and the brief passes validatePublished", () => {
+    const w = dataOnlyWorld("2026-10-15");
+    const id = "cve-2026-76519";
+    const cf = w.corrections!;
+    const text = WITHHOLD_TEXTS.victim;
+    const corrections: CorrectionsFile = {
+      schema_version: 1,
+      corrections: [...cf.corrections, {
+        id: "C-0003", date: "2026-10-14", item_id: id, edition_date: "2026-10-14", type: "name_removed", field: text.field,
+        before: NAME_REMOVED_BEFORE, after: text.after, reason: text.reason, source_url: null, trigger: "reader_report", dispute_id: "D-0002",
+      }],
+      disputes: [...cf.disputes, {
+        id: "D-0002", received: "2026-10-14T09:00:00+08:00", issue_number: 9, item_id: id, edition_date: "2026-10-14", kind: "victim",
+        evidence_url: null, status: "open", resolved_on: null, correction_id: "C-0003",
+      }],
+    };
+    const out = composeDataOnly({ ...w, corrections });
+    expect(out.masked).toEqual([{ item_id: id, correction_id: "C-0003", kind: "victim", match: "id" }]);
+    const b = out.brief!;
+    expect(b.items.find((it) => it.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0003", since: "2026-10-14" } });
+    expect(b.items.filter((it) => it.id !== id)).toEqual(golden("2026-10-15").items.filter((it) => it.id !== id));
+    expect(validatePublished(b, { metrics: w.metrics, config: cfg }).errors).toEqual([]);
+    // Rejected, it binds nothing.
+    const rejected = { ...corrections, disputes: corrections.disputes.map((d) => (d.id === "D-0002" ? { ...d, status: "rejected" as const, resolved_on: "2026-10-15" } : d)) };
+    expect(composeDataOnly({ ...w, corrections: rejected }).brief).toEqual(golden("2026-10-15"));
   });
 
   it("C3: a home vendor's flaw is placed in its home region; an unknown publication date leaves the CVE out", () => {

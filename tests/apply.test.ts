@@ -449,17 +449,27 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(free.brief).toEqual(want);
   });
 
-  it("C18: an item an earlier edition masked carries the withhold on: the next item citing its page is masked under the same correction", () => {
+  it("C18: an item an earlier edition masked carries the withhold on: the next item with its id is masked under the same correction", () => {
     const i = world("weekday");
     const history = i.history.map((h) => (h.date !== "2026-10-13" ? h
       : { ...h, items: h.items.map((it) => (it.id === FLAW ? { ...it, withheld: { correction_id: "C-0001", since: "2026-10-13" } } : it)) }));
     const out = applyDraft({ ...i, history });
-    expect(out.masked).toEqual([{ item_id: FLAW, correction_id: "C-0001", kind: "victim", match: "url" }]);
+    expect(out.masked).toEqual([{ item_id: FLAW, correction_id: "C-0001", kind: "victim", match: "id" }]);
     const b = out.brief!;
     expect(b.items.find((x) => x.id === FLAW)!.withheld).toEqual({ correction_id: "C-0001", since: "2026-10-13" });
     expect(b.taiwan_lens.analysis).toBe(WITHHELD_MARK);
-    // The id alone binds only on the withheld item's own edition date: C1's world masks nothing.
+    // No withheld id and no withheld page in the draft: C1's world masks nothing.
     expect(applyDraft(i).masked).toEqual([]);
+  });
+
+  it("C22: while the withhold binds, a later item with the withheld item's id is masked whatever it cites; a rejected dispute frees it", () => {
+    const i = withWithhold({ item: FLAW, edition: "2026-10-13", kind: "victim" });
+    // The re-report cites only pages no stored item cited.
+    for (const s of i.draft.sources) delete i.archiveIndex!.urls[normalizeUrl(s.url)];
+    const out = applyDraft(i);
+    expect(out.masked).toEqual([{ item_id: FLAW, correction_id: "C-0003", kind: "victim", match: "id" }]);
+    expect(out.brief!.items.find((x) => x.id === FLAW)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0003", since: D } });
+    expect(applyDraft(withStatus(i, "rejected")).masked).toEqual([]);
   });
 
   it("C21: a cited URL re-reports a withheld item only when every archive reference to it is withheld: a story page masks, a page an unrelated item also cites does not", () => {

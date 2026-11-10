@@ -19,6 +19,7 @@ import type { DraftSource } from "./schema/common";
 import type { DraftItem } from "./schema/item";
 import type { InputsManifest, KevIndexRow } from "./schema/metrics";
 import { TAIWAN_LENS_ROWS } from "./vocab";
+import { bindingWithholds, maskWithheld } from "./withhold-mask";
 
 /** At most this many new KEV entries become items (§4.5). */
 export const DATA_ONLY_MAX_ITEMS = 10;
@@ -72,7 +73,8 @@ export function dataOnlyRows(i: Pick<DataOnlyInput, "metrics" | "kevIndex" | "fa
  * The data-only brief (§4.5): one exploited_flaw item per new KEV CVE, each citing its cve.org record
  * page; lead [], angle null, regions with no raises, the Gap, the Lens script lines, the Scoreboard step
  * (§4.9: every publish sets the zones, so scoreboard.json is returned), the corrections dated D listed,
- * epss_movers from the metrics. brief.edition "data_only", data_only_published_at = publishedAt.
+ * epss_movers from the metrics. brief.edition "data_only", data_only_published_at = publishedAt. An item
+ * a binding withhold covers is masked as applyDraft() masks it (lib/withhold-mask.ts) and listed in `masked`.
  */
 export function composeDataOnly(i: DataOnlyInput): ContentChanges {
   const c = i.config;
@@ -138,6 +140,8 @@ export function composeDataOnly(i: DataOnlyInput): ContentChanges {
     sources,
     computed: emptyComputed(),
   };
+  // A withhold binds every later edition (§4.10): a new KEV entry with a withheld item's id is that item.
+  const masked = maskWithheld(b, { binding: bindingWithholds(i.corrections), archiveIndex: i.archiveIndex, history: i.history });
   b.late = lateOf(b, c);
   b.computed = computedOf(b, m);
   const brief = Brief.parse(b);
@@ -148,5 +152,6 @@ export function composeDataOnly(i: DataOnlyInput): ContentChanges {
     corrections: null,
     archiveIndex: updateArchiveIndex(i.archiveIndex, brief, {}, corrections),
     flagCorrections: [],
+    masked,
   };
 }

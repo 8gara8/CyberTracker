@@ -164,7 +164,7 @@ export interface PublishResult {
   publishedAt: string;
   /** The last record as written to status/D.json (edition, data_only_published_at or full_published_at, recheck correction ids filled). */
   record: RunRecord;
-  /** publishFull() only: the draft items withheld because they re-report a withheld item (ContentChanges.masked). */
+  /** The edition calls: the items withheld because they re-report a withheld item (ContentChanges.masked). */
   masked?: readonly MaskedItem[];
 }
 
@@ -600,6 +600,13 @@ function composed<T>(ctx: Ctx, edition: string, compose: () => T): T {
   }
 }
 
+/** The composer's masked items (§4.10), each logged. */
+function logMasked(ctx: Ctx, ch: ContentChanges): MaskedItem[] {
+  const masked = ch.masked ?? [];
+  for (const x of masked) ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match).`);
+  return masked;
+}
+
 function briefOf(ch: ContentChanges, date: string): Brief {
   if (!ch.brief || ch.brief.date !== date) throw new Error(`publish: the composer returned no brief for ${date}`);
   return ch.brief;
@@ -634,11 +641,12 @@ export async function publishDataOnly(o: PublishOptions & {
   };
   const changes = composed(ctx, "data-only", () => (deps.composeDataOnly ?? composeDataOnly)(input));
   const brief = briefOf(changes, D);
+  const masked = logMasked(ctx, changes);
   const record: RunRecord = { ...structuredClone(last), edition: brief.edition, data_only_published_at: publishedAt };
   const files: Files = new Map([...stagedFiles(ctx, D), ...changeFiles(changes)]);
   files.set(statusRel(D), statusText(ctx.dir, D, [...o.records.slice(0, -1), record]));
   const sha = await runPlan(ctx, { files, title: commitTitle("data_only", { date: D }), validate: { publishing: D, config: o.config } }, deps);
-  return { sha, publishedAt, record };
+  return { sha, publishedAt, record, masked };
 }
 
 export async function publishFull(o: PublishOptions & {
@@ -683,8 +691,7 @@ export async function publishFull(o: PublishOptions & {
   const changes = composed(ctx, "full", () => (deps.applyDraft ?? applyDraft)(input));
   const brief = briefOf(changes, D);
   if (brief.edition !== o.edition) throw new Error(`publish: applyDraft returned a ${brief.edition} edition, not ${o.edition}`);
-  const masked = changes.masked ?? [];
-  for (const x of masked) ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match).`);
+  const masked = logMasked(ctx, changes);
   const files: Files = new Map([...stagedFiles(ctx, D), ...changeFiles(changes)]);
   if (!changes.corrections && o.disputes) {
     // Intake's updated disputes go in with the edition even when no correction changed, linked to the

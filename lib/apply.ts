@@ -224,7 +224,7 @@ export interface ContentChanges {
   archiveIndex: ArchiveIndex;
   /** Re-check flags a draft correction answered: publish fills RunRecord.recheck.flagged[].correction_id. */
   flagCorrections: { item_id: string; edition_date: string; flag: RecheckFlag; correction_id: string }[];
-  /** applyDraft() only: the draft items it withheld because they re-report a withheld item (lib/withhold-mask.ts). */
+  /** applyDraft() and composeDataOnly(): the new items withheld because they re-report a withheld item (lib/withhold-mask.ts). */
   masked?: MaskedItem[];
 }
 
@@ -256,8 +256,8 @@ export interface ApplyInput extends ComposeCommon {
  * unless the draft adds a correction), the archive index and the re-check flags the corrections answer.
  * Archived briefs are never touched here: a withhold is composeWithholds()'s job. But a withhold binds the
  * editions after it: a draft item that re-reports an item withheld under an open or upheld victim or
- * attribution dispute (its id on that item's edition date, or a cited URL whose archive-index item_ids
- * hold it) is masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts).
+ * attribution dispute (its id, or a cited URL whose archive-index item_ids are all withheld references) is
+ * masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts).
  */
 export function applyDraft(i: ApplyInput): ContentChanges {
   const c = i.config;

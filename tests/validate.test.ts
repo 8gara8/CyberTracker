@@ -21,6 +21,7 @@ import type { StatusFile } from "@/lib/schema/status";
 import { publisherFor } from "@/lib/sources";
 import { validateAll, validateDraft, validatePublished, type AllResult, type ValidationResult } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
+import { composeWithholds } from "@/lib/withhold";
 import { WEEKDAY_ITEMS, editionDraft } from "@/fixtures/src/drafts";
 import { CLAIMS_FILE, draftInputs, fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR, SITE_EDITIONS, SITE_FAILED_DATE } from "@/fixtures/src/site";
@@ -269,6 +270,43 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
     expect(paths(r, "XREF_CORRECTION")).toEqual(["corrections.json: corrections[0]"]);
     expect(r.errors[0]!.message).toContain(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
+  });
+
+  it("XREF_CORRECTION: while its dispute is open or upheld, a withhold covers a later brief holding the item; once rejected, it does not", () => {
+    const FLAW = "cve-2026-108917";
+    const later = (dir: string, through: string, status: "open" | "rejected") => {
+      const briefs = DATES.filter((d) => d >= "2026-10-13" && d <= through).map((d) => sample(dir, d));
+      const cf = read<CorrectionsFile>(dir, "corrections.json");
+      const dispute = {
+        id: "D-0002", received: "2026-10-14T20:00:00+08:00", issue_number: 8, item_id: FLAW, edition_date: "2026-10-13",
+        kind: "victim" as const, evidence_url: null, status: "open" as const, resolved_on: null, correction_id: null,
+      };
+      const ch = composeWithholds({
+        date: "2026-10-15", config, briefs, corrections: cf, disputes: [...cf.disputes, dispute], archiveIndex: read<ArchiveIndex>(dir, "archive-index.json"),
+        metricsFor: (d) => read<Metrics>(dir, `metrics/${d}.json`),
+        requests: [{ item_id: FLAW, edition_date: "2026-10-13", kind: "victim", dispute_id: "D-0002", since: "2026-10-15" }],
+      });
+      for (const b of ch.rewritten) write(dir, `briefs/${b.date}.json`, b);
+      const out = ch.corrections!;
+      if (status === "rejected") out.disputes = out.disputes.map((d) => (d.id === "D-0002" ? { ...d, status: "rejected", resolved_on: "2026-10-15" } : d));
+      write(dir, "corrections.json", out);
+      write(dir, "archive-index.json", ch.archiveIndex);
+    };
+    // Every brief holding the item rewritten, as publishWithholds() writes it: valid.
+    const whole = copy();
+    later(whole, "2026-10-15", "open");
+    expect(all(whole).errors).toEqual([]);
+    // The 14 October brief still holds the item as first published: it would print the name again.
+    const open = copy();
+    later(open, "2026-10-13", "open");
+    const r = all(open);
+    expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
+    expect(paths(r, "XREF_CORRECTION")).toEqual(["corrections.json: corrections[2]"]);
+    expect(r.errors[0]!.message).toContain(`briefs/${WED}.json items[${itemIndex(sample(open, WED), FLAW)}] is not rewritten: withheld is not set`);
+    // Rejected, the withhold binds no later brief: the 14 October copy may stand.
+    const rejected = copy();
+    later(rejected, "2026-10-13", "rejected");
+    expect(all(rejected).errors).toEqual([]);
   });
 
   it("XREF_CORRECTION: correction ids repeated or with a gap", () => {
