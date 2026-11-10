@@ -24,7 +24,7 @@ import {
 } from "../lib/rules/words";
 import { countWords } from "../lib/text";
 import { normalizeUrl } from "../lib/urls";
-import { scriptText } from "../lib/page-text";
+import { cardKicker, cveTimeline, releaseLine, scriptText } from "../lib/page-text";
 import type { Brief } from "../lib/schema/brief";
 import type { DraftBrief } from "../lib/schema/draft-brief";
 import type { DraftSource } from "../lib/schema/common";
@@ -318,17 +318,31 @@ describe("pageWords()", () => {
     expect(() => (pageWords as (b: unknown, m: unknown) => number)(weekdayDraft(), null)).toThrow(/draft inputs/);
   });
 
-  it("drops the minimums on what a withholding rewrote (§4.10) in a published brief", () => {
+  it("drops the minimums on a WITHHELD_MARK text, and gives a withheld item (§4.10) no budget and no words in the total", () => {
     const inputs = draftInputs("weekday");
     const brief = asBrief(weekdayDraft(), inputs);
+    const open = pageWordCount(brief, inputs.metrics);
     brief.lead = [{ text: WITHHELD_MARK, item_ids: [I.criticalExploited], gap: false }];
-    brief.items[1] = { ...brief.items[1]!, summary: "Details withheld.", why_it_matters: null, withheld: { correction_id: "C-0001", since: "2026-10-20" } };
+    const before = pageWordCount(brief, inputs.metrics);
+    const held = brief.items[1]!;
+    brief.items[1] = { ...held, summary: "Details withheld.", why_it_matters: null, withheld: { correction_id: "C-0001", since: "2026-10-20" } };
     const f = wordFields(brief);
     expect(f.find((x) => x.path === "lead")!.withheld).toBe(true);
-    expect(f.find((x) => x.path === "items[1]")!.withheld).toBe(true);
+    expect(f.filter((x) => x.path.startsWith("items[1]"))).toEqual([]);
     const rule = wordRules[0]!;
     const out = rule.check({ draft: brief, mode: "published", derived: derive(brief, "published", inputs.config) } as RuleInput);
     expect(out.filter((x) => x.code === "WORDS_UNDER")).toEqual([]);
+    // Its headline, summary, kicker and timeline leave the total; whatever its text, nothing fails (§0.4 row 126).
+    const after = pageWordCount(brief, inputs.metrics);
+    const line = held.release ? releaseLine(held.release, brief.date) : held.cves[0] ? cveTimeline(held.cves[0], brief.date) : null;
+    const card = countWords(cardKicker(held)) + countWords(line);
+    expect(before.model - after.model).toBe(countWords(held.headline) + countWords(held.summary) + countWords(held.why_it_matters)
+      + countWords(held.incident?.impact ?? null) + countWords(held.exposure?.text ?? null));
+    expect(before.script - after.script).toBe(card);
+    expect(open.total).toBeGreaterThan(after.total);
+    brief.items[1] = { ...brief.items[1]!, summary: Array.from({ length: 80 }, () => "word").join(" ") };
+    expect(pageWords(brief, inputs.metrics)).toBe(after.total);
+    expect(rule.check({ draft: brief, mode: "published", derived: derive(brief, "published", inputs.config) } as RuleInput)).toEqual([]);
   });
 });
 

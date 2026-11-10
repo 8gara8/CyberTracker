@@ -34,22 +34,44 @@ export function itemHead(item: Pick<DraftItem, "kind">): HeadId {
 
 /**
  * orderItems() (§4.6, §4.12): all items sorted by compareItems(), the agent's order breaking ties (a
- * stable sort); the first TOP_STORY_COUNT are the top stories; the rest are grouped by head in HEADS
- * order, keeping that sorted order inside each head. ITEM_ORDER requires `items` to equal this.
+ * stable sort); the first `top` (TOP_STORY_COUNT) are the top stories; the rest are grouped by head in
+ * HEADS order, keeping that sorted order inside each head. A draft's `items` must equal this (ITEM_ORDER).
  */
-export function orderItems<T extends Rankable>(items: readonly T[]): T[] {
+export function orderItems<T extends Rankable>(items: readonly T[], top: number = TOP_STORY_COUNT): T[] {
   const sorted = items.map((item, i) => ({ item, i })).sort((a, b) => compareItems(a.item, b.item) || a.i - b.i).map((x) => x.item);
-  const top = sorted.slice(0, TOP_STORY_COUNT);
-  const rows = sorted.slice(TOP_STORY_COUNT);
-  return [...top, ...HEADS.flatMap((head) => rows.filter((item) => itemHead(item) === head))];
+  const rows = sorted.slice(top);
+  return [...sorted.slice(0, top), ...HEADS.flatMap((head) => rows.filter((item) => itemHead(item) === head))];
+}
+
+/** True for an item a withhold masked (§4.10): its `withheld` is set. A draft item never is. */
+export function isWithheld(item: object | null | undefined): boolean {
+  return !!item && "withheld" in item && (item as { withheld?: unknown }).withheld != null;
 }
 
 /**
- * The first item out of display order, for ITEM_ORDER's message: its index now, where it belongs, and
- * its id when it has one. Null when `items` is in display order.
+ * The display order of a brief's items (§4.12 "Display order"): a withheld item keeps its slot, whatever
+ * its rank (a withhold rewrites an archived item in place, a re-report masked by id or URL keeps the slot
+ * its draft gave it, and a composer puts a kept same-day item after every item that is not withheld), and
+ * the other items fill the other slots in orderItems() order, as many top stories as the first
+ * TOP_STORY_COUNT slots leave them. With no withheld item (every draft) it is orderItems().
+ */
+export function displayOrder<T extends Rankable>(items: readonly T[]): T[] {
+  const open = items.map((item, i) => ({ item, i })).filter((x) => !isWithheld(x.item));
+  if (open.length === items.length) return orderItems(items);
+  const ordered = orderItems(open.map((x) => x.item), open.filter((x) => x.i < TOP_STORY_COUNT).length);
+  const out = [...items];
+  open.forEach((x, k) => {
+    out[x.i] = ordered[k]!;
+  });
+  return out;
+}
+
+/**
+ * The first item out of display order (displayOrder()), for ITEM_ORDER's message: its index now, where
+ * it belongs, and its id when it has one. Null when `items` is in display order.
  */
 export function firstOutOfOrder<T extends Rankable & { id?: string }>(items: readonly T[]): { index: number; expected_index: number; id: string | null } | null {
-  const ordered = orderItems(items);
+  const ordered = displayOrder(items);
   for (let i = 0; i < items.length; i += 1) {
     if (ordered[i] !== items[i]) {
       return { index: i, expected_index: ordered.indexOf(items[i]!), id: items[i]!.id ?? null };

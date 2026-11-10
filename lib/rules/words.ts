@@ -9,7 +9,7 @@
 import type { LoadedConfig } from "../config";
 import { matchVendor } from "../config";
 import { KEV_ABSENCE_NOTE, AI_LINKED_ROLES, BANNED_WORDS, WITHHELD_MARK } from "../vocab";
-import { TOP_STORY_COUNT } from "../items";
+import { isWithheld, TOP_STORY_COUNT } from "../items";
 import { kevLineUnavailable, kevLines } from "../metrics/home-vendors";
 import { fmtInt } from "../metrics/stats";
 import { scriptText, type CardItem, type PageBrief, type ScriptOptions, type SummaryRow } from "../page-text";
@@ -42,20 +42,21 @@ export interface WordField {
   max: number | null;
   /** Counted in pageWords(). */
   total: boolean;
-  /** Exempt from `min`: a field a withholding rewrote (§4.10). */
+  /** Exempt from `min`: a WITHHELD_MARK text a withholding wrote (§4.10). */
   withheld: boolean;
 }
 
 /** QUOTE_MAX_25's limit for a quoted field or a quoted span in prose. */
 export const QUOTE_MAX = 25;
 
-const isWithheldItem = (it: AnyItem): boolean => "withheld" in it && it.withheld != null;
 const isMark = (t: string | null | undefined): boolean => typeof t === "string" && t.trim() === WITHHELD_MARK;
 
 /**
  * wordFields(brief): every budget of §4.12's word table, for a draft or a published Brief. Quoted
- * fields are QUOTE_MAX_25's (quotedFields()), not here. Fields a withholding rewrote (a withheld item, a
- * WITHHELD_MARK text) keep their maximums but lose their minimums.
+ * fields are QUOTE_MAX_25's (quotedFields()), not here. A withheld item (§4.10) has no budget and none of
+ * its fields count in the total: its text is the composer's fixed placeholder, so it never fails a word
+ * rule nor takes words from the page (§0.4 row 126). A WITHHELD_MARK text keeps its maximum but loses its
+ * minimum.
  */
 export function wordFields(b: AnyBrief): WordField[] {
   const out: WordField[] = [];
@@ -76,17 +77,17 @@ export function wordFields(b: AnyBrief): WordField[] {
   }
 
   (b.items ?? []).forEach((it, i) => {
+    if (isWithheld(it)) return;
     const p = `items[${i}]`;
-    const held = isWithheldItem(it);
-    add(`${p}.headline`, it.headline, true, null, null, { withheld: held });
+    add(`${p}.headline`, it.headline, true, null);
     if (i < TOP_STORY_COUNT) {
-      add(`${p}.summary`, it.summary, true, 55, null, { withheld: held });
-      add(`${p}.why_it_matters`, it.why_it_matters, true, 25, null, { withheld: held });
+      add(`${p}.summary`, it.summary, true, 55);
+      add(`${p}.why_it_matters`, it.why_it_matters, true, 25);
       const both = [it.summary, it.why_it_matters].filter((t): t is string => typeof t === "string").join(" ");
-      add(p, both, false, 70, 15, { label: `${p}.summary + why_it_matters`, withheld: held });
+      add(p, both, false, 70, 15, { label: `${p}.summary + why_it_matters` });
     } else {
-      add(`${p}.summary`, it.summary, true, 25, null, { withheld: held });
-      add(`${p}.why_it_matters`, it.why_it_matters, true, 25, null, { withheld: held });
+      add(`${p}.summary`, it.summary, true, 25);
+      add(`${p}.why_it_matters`, it.why_it_matters, true, 25);
     }
     add(`${p}.incident.impact`, it.incident?.impact, true, 12);
     add(`${p}.exposure.text`, it.exposure?.text, true, 20);

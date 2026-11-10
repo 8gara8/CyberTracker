@@ -21,8 +21,12 @@ import {
 
 // ── Inputs ───────────────────────────────────────────────────────────────────────────────────────
 
-/** What cardKicker(), cveTimeline() and releaseLine() read from an item. A published Item satisfies it. */
-export type CardItem = Pick<Item, "kind" | "severity" | "landmark" | "ai_role" | "ai_confidence" | "ai_claimant" | "regions" | "vendor" | "cves" | "release">;
+/**
+ * What cardKicker(), cveTimeline() and releaseLine() read from an item. A published Item satisfies it;
+ * `withheld` (absent on a draft's view) leaves the card's lines out of the count (itemParts()).
+ */
+export type CardItem = Pick<Item, "kind" | "severity" | "landmark" | "ai_role" | "ai_confidence" | "ai_claimant" | "regions" | "vendor" | "cves" | "release">
+  & { withheld?: Item["withheld"] };
 
 /** What regionSummary() reads from a region row. */
 export type SummaryRow = Pick<RegionRow, "code" | "level" | "change" | "reason">;
@@ -333,9 +337,14 @@ export interface ScriptOptions {
   gapOk?: boolean;
 }
 
-/** The items' script lines in page order: each top story, then the Also-today rows by head (§7). */
+/**
+ * The items' script lines in page order: each top story, then the Also-today rows by head (§7). A withheld
+ * item's card (§4.10) is the composer's placeholder and counts no words (§0.4 row 126); it still fills its
+ * slot, so the empty lines show only when a part has no item at all. P4's components mark no `data-words`
+ * on it.
+ */
 function itemParts(brief: Pick<PageBrief, "date" | "items">): (string | null)[] {
-  const card = (item: CardItem) => [cardKicker(item), cardLine(item, brief.date)];
+  const card = (item: CardItem) => (item.withheld ? [] : [cardKicker(item), cardLine(item, brief.date)]);
   const top = brief.items.slice(0, TOP_STORY_COUNT);
   const rows = rowsByHead(brief.items).flatMap((g) => g.items);
   return [

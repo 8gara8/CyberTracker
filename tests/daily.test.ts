@@ -615,6 +615,117 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  /**
+   * The pipeline draft without the Ivanti item: its Lead sentence names Microsoft alone, the US raise that cited it
+   * goes, and the landmark policy item becomes the third top story, with a why_it_matters and a 33-word summary
+   * (over the rows' 25).
+   */
+  const draftWithoutIvanti = (): { items: { id: string }[] } => {
+    type Item = { id: string; summary: string; why_it_matters: string | null };
+    const d = structuredClone(DRAFT) as { items: Item[]; lead: { text: string; item_ids: string[] }[]; region_raises: unknown[] };
+    d.items = d.items.filter((x) => x.id !== "cve-2026-104935");
+    const pol = d.items.findIndex((x) => x.id === "pol-tw-incident-reporting-2026-10");
+    const policy = d.items.splice(pol, 1)[0]!;
+    policy.summary = `${policy.summary} Operators would also have to say which systems were hit.`;
+    policy.why_it_matters = "Faster reports would give the government an earlier view of attacks on the island's power and water operators.";
+    d.items.splice(2, 0, policy);
+    d.lead[0] = { ...d.lead[0]!, text: "Microsoft fixed a flaw that attackers were already using, and CISA listed it as exploited on 13 October.", item_ids: ["pt-microsoft-2026-10"] };
+    d.region_raises = [];
+    return d;
+  };
+
+  it("D42 a same-day withhold on a Critical item of the full edition, then --force with a draft that leaves it out: the kept item sits after every draft item, exit 0", async () => {
+    // Before T1 the kept item ranked by its stored Critical severity, pushed the campaign (38-word summary) from the
+    // top stories into the rows, whose 25-word limit failed WORDS_OVER: E_PUBLISH, and the first full edition stood.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-104935";
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const first = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(first.items.find((x) => x.id === ITEM)!.severity).toBe("critical");
+    h.issues([correctionIssue({ number: 8, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T21:20:00Z" })]);
+    h.fakeAgent({ mode: "ok", draft: draftWithoutIvanti(), fetches: FETCHES });
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--force"])).toBe(0);
+    const second = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(second.published_at).not.toBe(first.published_at);
+    const kept = second.items.at(-1)!;
+    expect(kept).toMatchObject({ id: ITEM, severity: "critical", headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: D } });
+    // The draft's items keep the slots the draft gave them: the campaign is still a top story.
+    expect(second.items.slice(0, -1).map((x) => x.id)).toEqual((draftWithoutIvanti() as { items: { id: string }[] }).items.map((x) => x.id));
+    const r = statusOn(h)!.runs.at(-1)!;
+    expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
+    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  /** Plain filler words for the page-total case: no number, name, cue or banned word. */
+  const filler = (n: number): string => {
+    const words = "the cited pages give more detail on this item for readers who want it".split(" ");
+    const out = Array.from({ length: n }, (_, i) => words[i % words.length]!);
+    out[0] = out[0]![0]!.toUpperCase() + out[0]!.slice(1);
+    return `${out.join(" ")}.`;
+  };
+  type PadText = { text: string | null };
+  type PadDraft = {
+    items: { id: string; source_ids: string[]; why_it_matters: string | null }[];
+    taiwan_lens: { analysis: string; rows: PadText[]; japan: PadText };
+  };
+  /**
+   * The pipeline draft with `n` more counted words: the Taiwan Lens analysis to its 120, each written Lens row to its
+   * 30 and the Japan block to its 40, then a why_it_matters of up to 25 on each Also-today row. The patch batch no
+   * longer cites CVE-2026-96951's record page (s5), so no draft item re-reports the data-only item withheld below.
+   */
+  const paddedDraft = (n: number): PadDraft => {
+    const d = structuredClone(DRAFT) as PadDraft;
+    d.items.find((x) => x.id === "pt-microsoft-2026-10")!.source_ids = ["s4", "s6"];
+    let left = n;
+    const grow = (text: string, max: number): string => {
+      const k = Math.min(left, max - text.split(/\s+/).length);
+      if (k <= 0) return text;
+      left -= k;
+      return `${text} ${filler(k)}`;
+    };
+    const lens = d.taiwan_lens;
+    lens.analysis = grow(lens.analysis, 120);
+    for (const row of lens.rows) if (row.text !== null) row.text = grow(row.text, 30);
+    lens.japan.text = grow(lens.japan.text!, 40);
+    for (const it of d.items.slice(3)) {
+      if (left <= 0) break;
+      const k = Math.min(left, 25);
+      it.why_it_matters = filler(k);
+      left -= k;
+    }
+    expect(left).toBe(0);
+    return d;
+  };
+
+  it("D43 a draft at 1,295 counted words and a same-day withheld data-only item it leaves out: the kept item adds no words, exit 0", async () => {
+    // Before T1 the kept item's headline, summary, kicker and timeline counted toward the page total, so the edition
+    // went over the 1,300 cap: WORDS_OVER at (root), E_PUBLISH, and the data-only edition stood.
+    const ITEM = "cve-2026-96951";
+    const scratch = harness();
+    scratch.fakeAgent({ mode: "ok", draft: paddedDraft(0), fetches: FETCHES });
+    expect(await run(scratch, ["--trigger", "schedule"])).toBe(0);
+    const base = Brief.parse(JSON.parse(scratch.remoteFile(`content/briefs/${D}.json`)!)).computed.word_count;
+    const draft = paddedDraft(1295 - base);
+
+    const h = harness();
+    h.fakeAgent({ mode: "ok", draft, fetches: FETCHES });
+    h.issues([correctionIssue({ number: 7, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.edition).toBe("full");
+    expect(stored.items.at(-1)).toMatchObject({ id: ITEM, headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: D } });
+    expect(stored.computed.word_count).toBe(1295);
+    const r = statusOn(h)!.runs[0]!;
+    expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
+    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D33 a withhold on an earlier edition, then a full edition the same morning: the regions history the edition and its files read is the rewritten one", async () => {
     // Morning one (D-1) publishes its data-only edition; a victim dispute on one of its items arrives; morning two withholds it, then drafts.
     const D0 = "2026-10-13";

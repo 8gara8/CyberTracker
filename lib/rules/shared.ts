@@ -6,7 +6,7 @@
 // `scoreboard.entries`) the walkers read the right one and give its own path.
 
 import type { LoadedConfig } from "../config";
-import { orderItems } from "../items";
+import { displayOrder as itemDisplayOrder } from "../items";
 import type { Brief } from "../schema/brief";
 import type { Tier } from "../schema/common";
 import type { Finder } from "../schema/config";
@@ -363,10 +363,10 @@ export function derive(b: AnyBrief, mode: RuleMode, config: Pick<LoadedConfig, "
   return { sourcesById, publisherBySourceId, tierBySourceId, itemsById, publishersByItem, publishersByIndex, order: displayOrder(items) };
 }
 
-/** orderItems(), or the agent's order when an item has no known kind or severity (a best-effort run). */
+/** lib/items.ts displayOrder(), or the agent's order when an item has no known kind or severity (a best-effort run). */
 function displayOrder(items: readonly AnyItem[]): AnyItem[] {
   try {
-    return orderItems(items);
+    return itemDisplayOrder(items);
   } catch {
     return [...items];
   }

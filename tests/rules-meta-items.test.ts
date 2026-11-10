@@ -396,6 +396,29 @@ describe("ITEM_ORDER", () => {
     d.items.reverse();
     expect(codes(check(d))).toContain("ITEM_ORDER");
   });
+
+  it("leaves a withheld item's slot free in a published brief: kept after the rest, or masked in a top slot, whatever its severity (§0.4 row 126)", () => {
+    const withheld = { correction_id: "C-0001", since: "2026-10-14" };
+    const held = (x: DraftItem) => ({ ...x, withheld });
+    const order = (b: Record<string, unknown>) => only(checkPublished(b), "ITEM_ORDER");
+    // The Critical item kept after every other item: its stored severity no longer pulls it into the top stories.
+    const d = weekdayDraft();
+    const top = { ...structuredClone(d.items[0]!), id: `${d.items[0]!.id}-kept` };
+    expect(top.severity).toBe("critical");
+    const kept = published({ ...d, items: [...d.items, held(top)] });
+    expect(order(kept)).toEqual([]);
+    // The same item unwithheld at the end is out of order.
+    expect(order(published({ ...d, items: [...d.items, top] })).map((e) => e.path)).toEqual(["items[1]"]);
+    // A withheld item rewritten in place in a top slot keeps it, and the items around it still order among themselves:
+    // the other top stories by rank, the rows by head.
+    const inPlace = published({ ...d, items: [d.items[0]!, held(d.items[1]!), ...d.items.slice(2)] });
+    expect(order(inPlace)).toEqual([]);
+    const swapped = weekdayDraft();
+    [swapped.items[0], swapped.items[2]] = [swapped.items[2]!, swapped.items[0]!];
+    const e = order(published({ ...swapped, items: [swapped.items[0]!, held(swapped.items[1]!), ...swapped.items.slice(2)] }));
+    expect(e.map((x) => x.path)).toEqual(["items[0]"]);
+    expect(e[0]!.message).toContain("it belongs at items[2]");
+  });
 });
 
 describe("TOP3_WHY", () => {

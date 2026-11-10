@@ -5,7 +5,7 @@
 // run's regionsBase.
 
 import { at, isValidDate } from "../dates";
-import { firstOutOfOrder, orderItems, TOP_STORY_COUNT } from "../items";
+import { displayOrder, firstOutOfOrder, isWithheld, TOP_STORY_COUNT } from "../items";
 import { computeRegions, regionItems, type RegionItemInput } from "../regions";
 import type { Regions } from "../schema/brief";
 import type { Claim } from "../schema/scoreboard";
@@ -34,7 +34,7 @@ function checkCap(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   // A withheld item (§4.10) is the composer's placeholder, never the agent's: a same-day withhold can keep one the
   // draft left out (lib/withhold-mask.ts carryWithheld()), so withheld items fall outside the cap. Drafts have none.
-  const n = itemsOf(input).filter((it) => !(it && "withheld" in it && it.withheld)).length;
+  const n = itemsOf(input).filter((it) => !isWithheld(it)).length;
   if (n > ITEMS_MAX) {
     out.push(error("ITEM_CAP", "items", `items has ${n} entries; the limit is ${ITEMS_MAX}. Cut at least ${n - ITEMS_MAX}, starting with the lowest-ranked Also-today rows.`));
   }
@@ -55,7 +55,7 @@ function checkOrder(input: RuleInput): ValidationIssue[] {
   const first = firstOutOfOrder(items);
   if (!first) return [];
   const label = first.id ? ` (${first.id})` : "";
-  const expected = orderItems(items).map((it) => it.id);
+  const expected = displayOrder(items).map((it) => it.id);
   return [error("ITEM_ORDER", `items[${first.index}]`,
     `items[${first.index}]${label} is out of display order; it belongs at items[${first.expected_index}]. Reorder items as: ${list(expected)}.`,
     ORDER_HINT)];
@@ -68,7 +68,7 @@ function checkTop3(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   itemsOf(input).slice(0, TOP_STORY_COUNT).forEach((it, i) => {
     // A withheld item (§4.10) has why_it_matters null by design.
-    if (!it || ("withheld" in it && it.withheld)) return;
+    if (!it || isWithheld(it)) return;
     const p = `items[${i}].why_it_matters`;
     const why = it.why_it_matters;
     if (typeof why !== "string" || why.trim() === "") {
@@ -87,8 +87,7 @@ function checkTop3(input: RuleInput): ValidationIssue[] {
 // ── SEVERITY_NULL_FOR_NONTHREAT, SEVERITY_KIND ───────────────────────────────────────────────────
 
 /** A data-only item a full edition keeps withheld, unread (carryWithheld()): no one set its severity, so null stands. */
-const keptUnread = (it: object): boolean =>
-  "withheld" in it && !!it.withheld && "ai_role" in it && it.ai_role === "unassessed";
+const keptUnread = (it: object): boolean => isWithheld(it) && "ai_role" in it && it.ai_role === "unassessed";
 
 function checkSeverityNull(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];

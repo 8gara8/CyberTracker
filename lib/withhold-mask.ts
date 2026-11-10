@@ -315,7 +315,7 @@ export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
 
 /**
  * For each same-day withhold whose item the frozen items still lack, the stored brief's copy (already
- * masked) is kept, in display order (orderItems()). Its sources are this brief's own where the URL is the
+ * masked) is kept, after every frozen item (displayOrder() leaves a withheld item's slot free). Its sources are this brief's own where the URL is the
  * same, else appended under the next ids with their frozen fields, and every source id the item names
  * follows. `sources` grows in place; returns the items and the ids kept. The region levels then count the
  * kept item as the stored edition did, and maskWithheld() masks it again by id in the new brief.
@@ -351,5 +351,7 @@ export function carryWithheld(items: readonly Item[], sources: Source[], o: { sa
     extra.push(it);
   }
   if (extra.length === 0) return { items: [...items], kept: [] };
-  return { items: orderItems([...items, ...extra]), kept: extra.map((it) => it.id) };
+  // After every item of the draft: a kept item's slot is free (lib/items.ts displayOrder()), so it never takes a
+  // top story's slot from a draft item, which keeps the budgets the draft was validated with (§4.12).
+  return { items: [...items, ...orderItems(extra)], kept: extra.map((it) => it.id) };
 }

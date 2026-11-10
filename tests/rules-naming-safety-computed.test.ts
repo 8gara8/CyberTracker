@@ -253,6 +253,19 @@ describe("VICTIM_CLAIMED_UNNAMED", () => {
     expect(e[0]!.message).toMatch(/top story 3/);
   });
 
+  it("passes a withheld claimed incident in a top slot: its slot is free and its placeholder names nothing (§0.4 row 126)", () => {
+    const top = (fn: (b: Brief) => void) => only(runPublished(handBrief(fn)), "VICTIM_CLAIMED_UNNAMED");
+    const move = (b: Brief) => {
+      const [x] = b.items.splice(idx(b, I.claimedVictim), 1);
+      b.items.splice(2, 0, x!);
+    };
+    expect(paths(top(move))).toEqual(["items[2]"]);
+    expect(top((b) => {
+      move(b);
+      Object.assign(b.items[2]!, { summary: "Details withheld.", withheld: { correction_id: "C-0001", since: b.date } });
+    })).toEqual([]);
+  });
+
   it("fails a claimed incident above watch, and passes one at watch", () => {
     for (const sev of ["elevated", "high", "critical"] as const) {
       const e = claimed((d) => { item(d, I.claimedVictim).severity = sev; });

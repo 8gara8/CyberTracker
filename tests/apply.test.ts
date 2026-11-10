@@ -551,7 +551,7 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     return validateAll(dir, { publishing: D, config: cfg }).errors.map((e) => `${e.code} ${e.path}`);
   }
 
-  it("C23: a same-day withheld item the draft leaves out is carried over from the stored edition, masked, in display order, and the edition passes validateAll", () => {
+  it("C23: a same-day withheld item the draft leaves out is carried over from the stored edition, masked, after every draft item, and the edition passes validateAll", () => {
     const i = sameDay({ draft: dropTransport });
     const out = applyDraft(i);
     const b = out.brief!;
@@ -559,7 +559,8 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     const stored = i.stored!.items.find((x) => x.id === TRANSPORT)!;
     // The draft still lists s11 (now cited by nothing it writes): the carried item cites that source again.
     expect(b.items.find((x) => x.id === TRANSPORT)).toEqual(stored);
-    expect(b.items.map((x) => x.id)).toEqual(i.stored!.items.map((x) => x.id));
+    // Its slot is free (displayOrder()), so it follows the draft's items, which keep the slots the draft gave them.
+    expect(b.items.map((x) => x.id)).toEqual([...i.draft.items.map((x) => x.id), TRANSPORT]);
     expect(b.sources).toHaveLength(i.draft.sources.length);
     expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
     // Regions come from the draft's items: the carried copy changes no level.
@@ -600,10 +601,10 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
       },
     });
     const out = applyDraft(i);
-    // In the brief's item order: the carried incident ranks above the campaign.
+    // In the brief's item order: the carried incident follows every draft item.
     expect(out.masked).toEqual([
-      { item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried" },
       { item_id: CAMP, correction_id: "C-0003", kind: "victim", match: "url" },
+      { item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried" },
     ]);
     const b = out.brief!;
     expect(b.items.find((x) => x.id === CAMP)!.headline).toBe(WITHHELD_HEADLINE);
@@ -633,7 +634,7 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     });
     expect(i.draft.sources.find((s) => s.id === "s11")!.title).not.toBe(WITHHELD_MARK);
     const b = applyDraft(i).brief!;
-    expect(b.items.filter((x) => x.source_ids.includes("s11")).map((x) => [x.id, x.withheld?.correction_id])).toEqual([[TRANSPORT, "C-0003"], [CAMP, "C-0003"]]);
+    expect(b.items.filter((x) => x.source_ids.includes("s11")).map((x) => [x.id, x.withheld?.correction_id])).toEqual([[CAMP, "C-0003"], [TRANSPORT, "C-0003"]]);
     expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
     // The same-day item re-reported by id, beside a second draft item citing its page and masked by URL.
     const k = sameDay({
