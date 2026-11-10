@@ -141,9 +141,15 @@ export interface HarnessOptions {
 
 const shq = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
 const ID_ARGS = ["-c", `user.name=${TEST_IDENTITY.name}`, "-c", `user.email=${TEST_IDENTITY.email}`, "-c", "commit.gpgsign=false"];
+/**
+ * Every harness git call, and the clone's own config, turn push negotiation off: a machine's global
+ * push.negotiate=true makes each push to the bare remote print a negotiation failure. Global config is
+ * never changed.
+ */
+export const QUIET_PUSH_ARGS = ["-c", "push.negotiate=false"] as const;
 
 function gitRaw(cwd: string, args: readonly string[]): string {
-  return execFileSync("git", [...args], {
+  return execFileSync("git", [...QUIET_PUSH_ARGS, ...args], {
     cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024,
     env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
   });
@@ -353,6 +359,8 @@ export function makeHarness(o: HarnessOptions = {}): Harness {
     fs.mkdirSync(root);
     gitIn(root, ["init", "-q", "-b", "main"]);
     gitIn(root, ["config", "commit.gpgsign", "false"]);
+    // publish's own pushes from the clone read this, not the harness's -c.
+    gitIn(root, ["config", "push.negotiate", "false"]);
     gitIn(root, ["remote", "add", "origin", remote]);
     fs.copyFileSync(path.join(REPO, ".gitignore"), path.join(root, ".gitignore"));
     fs.cpSync(path.join(REPO, "config"), path.join(root, "config"), { recursive: true });

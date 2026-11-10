@@ -1,7 +1,7 @@
 // The shared P3 harness (tests/helpers/harness.ts, plan §4): the bare remote and its clone, the seed
 // commit, the pre-receive hook's modes, the router behind deps.fetchImpl and inRoot(). Every case makes
 // its own temporary folder and removes it. Nothing here reaches the network or runs an agent.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ import run from "@/config/run.json";
 import { at } from "@/lib/dates";
 import { sha256Hex } from "@/lib/json";
 import { siteUrl } from "@/lib/site";
-import { FAKE_CLAUDE, PIPELINE_DATE, REPO, inRoot, makeHarness, type Harness } from "./helpers/harness";
+import { FAKE_CLAUDE, PIPELINE_DATE, QUIET_PUSH_ARGS, REPO, inRoot, makeHarness, type Harness } from "./helpers/harness";
 
 const T = 120_000;
 const made: Harness[] = [];
@@ -72,6 +72,22 @@ describe("makeHarness: the remote, the clone and the seed", () => {
     expect(h.waits()).toEqual([8_000, 2_000]);
     expect(h.clock()).toBeGreaterThanOrEqual(at(PIPELINE_DATE, "04:37"));
     expect(h.clock()).toBeLessThan(at(PIPELINE_DATE, "04:37") + 60_000);
+  }, T);
+
+  it("HN13: pushes from the clone never negotiate, so a machine-wide push.negotiate=true prints nothing; global config is untouched", () => {
+    const h = harness();
+    expect(QUIET_PUSH_ARGS).toEqual(["-c", "push.negotiate=false"]);
+    expect(h.git("config", "--local", "push.negotiate")).toBe("false");
+    // A stand-in global config with push.negotiate=true, as the cloud container has; a push to an empty
+    // remote is where git prints its negotiation failure. The clone's own setting wins.
+    const globalConfig = path.join(h.base, "global.gitconfig");
+    fs.writeFileSync(globalConfig, "[push]\n\tnegotiate = true\n");
+    const empty = path.join(h.base, "empty.git");
+    execFileSync("git", ["init", "-q", "--bare", "-b", "main", empty]);
+    const r = spawnSync("git", ["push", "-q", empty, "main"], { cwd: h.root, encoding: "utf8", env: { ...process.env, GIT_CONFIG_GLOBAL: globalConfig } });
+    expect(r.status).toBe(0);
+    expect(r.stderr).not.toMatch(/negotiat|acknowledgments/);
+    expect(fs.readFileSync(globalConfig, "utf8")).toBe("[push]\n\tnegotiate = true\n");
   }, T);
 
   it("HN2: one seed commit by ct-test, left out of remoteLog(); content/ holds only state/", async () => {

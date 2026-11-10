@@ -17,6 +17,7 @@ import { ensureClone, readClone } from "@/scripts/lib/cvelist-clone";
 import type { GitSource } from "@/scripts/lib/git-source";
 import { REFERENCE_INPUTS } from "@/scripts/lib/appendix-d";
 import { FIXTURE_CLONE_DIR, FIXTURE_COMMIT_TIME, makeCloneRepo } from "./helpers/fixture-clone";
+import { QUIET_PUSH_ARGS } from "./helpers/harness";
 
 const REPO = path.resolve(__dirname, "..");
 const GiB = 1024 ** 3;
@@ -59,8 +60,9 @@ const write = (file: string, data: string | Buffer) => {
   fs.writeFileSync(file, data);
 };
 const read = (file: string) => fs.readFileSync(file, "utf8");
+/** git with the test identity and push negotiation off (a global push.negotiate=true prints noise on every push). */
 const sh = (cwd: string, ...args: string[]) =>
-  execFileSync("git", ["-c", "user.name=ct-test", "-c", "user.email=ct-test@example.invalid", ...args], { cwd, encoding: "utf8", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } }).trim();
+  execFileSync("git", ["-c", "user.name=ct-test", "-c", "user.email=ct-test@example.invalid", ...QUIET_PUSH_ARGS, ...args], { cwd, encoding: "utf8", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } }).trim();
 
 interface Root {
   root: string;
@@ -450,6 +452,8 @@ describe("--push (SPEC §8.4, §8.7)", () => {
     const remote = path.join(remoteBase, "remote.git");
     sh(remoteBase, "init", "-q", "--bare", "-b", "main", remote);
     sh(r.root, "remote", "add", "origin", remote);
+    // backfill --push runs its own git in the clone, which reads this rather than sh()'s -c.
+    sh(r.root, "config", "push.negotiate", "false");
     sh(r.root, "push", "-q", "-u", "origin", "main");
     return { ...r, remote, remoteGit: (...args) => sh(remote, ...args) };
   }
