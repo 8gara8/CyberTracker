@@ -621,16 +621,17 @@ export async function recheckItems(o: {
   const archive = readArchiveIndex(o.contentDir);
   const skipped: RecheckResult["skipped"] = [];
 
+  const failed = (["kev", "cvelist"] as const).filter((f) => !o.feedsOk[f]);
+  if (failed.length) log(`recheck: flags from ${failed.join(" and ")} skipped: the feed failed.`);
   let kev: KevCatalogIndex | null = null;
   if (o.feedsOk.kev) {
     const catalog = todaysKev(root, D);
     if (catalog) kev = new Map(catalog.vulnerabilities.map((v) => [v.cveID, v]));
-    else log("recheck: the KEV catalog collect read today is not in the cache; KEV flags skipped.");
+    else log("recheck: flags from kev skipped: the catalog collect read today is not in the cache.");
   }
   if (!kev) skipped.push("kev");
   const useRecords = o.feedsOk.cvelist;
   if (!useRecords) skipped.push("cvelist");
-  if (skipped.length) log(`recheck: flags from ${skipped.join(" and ")} skipped: the feed failed.`);
 
   // The items checked, newest edition first.
   const checked: { brief: Brief; item: Item }[] = [];
@@ -845,11 +846,15 @@ function decode(body: Buffer, contentType: string | null): string {
   return new TextDecoder("utf-8").decode(body);
 }
 
-/** §8.11 step 4, by status: 200 to 399 ok; 404, 410 and a host that does not resolve broken; anything else unknown. */
+/**
+ * §8.11 step 4, by the status after redirects: 200 to 399 ok; 404, 410 and a host that does not resolve
+ * broken; anything else unknown. A redirect fetchFeed would not follow (more than 5, an invalid Location, a
+ * hop off https) is unknown, whatever its status.
+ */
 export function linkResultOf(r: Pick<FetchResult, "ok" | "status" | "error">): "ok" | "unknown" | "broken" {
   if (r.ok) return "ok";
-  if (r.status !== null && r.status >= 200 && r.status < 400) return "ok";
   if (r.status === 404 || r.status === 410 || r.error === "dns") return "broken";
+  if (r.error !== "redirects" && r.status !== null && r.status >= 200 && r.status < 400) return "ok";
   return "unknown";
 }
 
