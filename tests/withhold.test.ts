@@ -165,7 +165,7 @@ describe("composeWithholds", { timeout: 120_000 }, () => {
     expect(composeWithholds(input([MONDAY.brief!, golden("2026-10-11")], [victimRequest])).rewritten.map((b) => b.date)).toEqual(["2026-10-12"]);
   });
 
-  it("C7: two withholds on one day whose items share a source mask its title; one withheld item beside an unwithheld citer leaves it", () => {
+  it("C29: two withholds on one day whose items share a source mask its title; one withheld item beside an unwithheld citer leaves it", () => {
     const b = structuredClone(MONDAY.brief!);
     const breach = b.items.find((it) => it.id === BREACH)!;
     const sid = breach.source_ids[0]!;

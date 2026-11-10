@@ -236,7 +236,7 @@ describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
     expect(JSON.stringify(i.draft)).toBe(before);
   });
 
-  it("C22: every CVE and release block in site-content is what cveBlockOf() and releaseBlockOf() compose from the sample's facts", () => {
+  it("C27: every CVE and release block in site-content is what cveBlockOf() and releaseBlockOf() compose from the sample's facts", () => {
     const records = cveLookupFromDir(CVE_RECORDS_DIR);
     const releases = new Map<string, NonNullable<AgentContext["candidates"][number]["release"]>>();
     for (const name of ["quiet", "monday", "weekday"] as const) {
@@ -364,7 +364,7 @@ describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_
   it.each([
     { campaign: 20, transport: 40 },
     { campaign: 40, transport: 20 },
-  ])("C21: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
+  ])("C28: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
     const CAMPAIGN = "camp-tw-semiconductor-2026-10";
     const TRANSPORT = "inc-transport-jp-2026-10";
     const FLAW_13 = "cve-2026-108917";

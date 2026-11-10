@@ -19,7 +19,7 @@
 // (lib/apply.ts freezeItems(), cveBlockOf() and releaseBlockOf(), as applyDraft() and composeDataOnly() call
 // them), from the fixture CVE records, the day's KEV rows and inputs manifest and the edition context's
 // release candidates, so a sample CVE or release block cannot drift from what publish composes (§0.4 row
-// 79; tests/apply.test.ts C22). The rest of each brief is computed here the way the rules check it:
+// 79; tests/apply.test.ts C27). The rest of each brief is computed here the way the rules check it:
 // publisherFor() for the source fields, computeRegions() over the earlier briefs, kevLines() and the
 // metrics headline for the Lens and the Gap, pageWords() for computed.word_count. The metrics come from fixtures/src/inputs.ts
 // (metricsFor()); each metrics/inputs/D.json manifest lists rows that add up to its figures, with invented
