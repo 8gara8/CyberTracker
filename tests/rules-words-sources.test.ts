@@ -5,12 +5,14 @@
 // Blocked-URL cases use bare blocked hosts or reserved example domains, never a usable exploit, paste or
 // scanner URL.
 
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { invalidDraft } from "../fixtures/src/build";
 import { MONDAY_ITEMS, WEEKDAY_ITEMS, WEEKDAY_SOURCE_KEYS, editionDraft, mondayDraft, weekdayDraft } from "../fixtures/src/drafts";
 import { dropSources, wordsSourcesCases } from "../fixtures/src/invalid/words-sources";
 import { draftInputs, fixtureConfig } from "../fixtures/src/inputs";
-import { sourceIds, type EditionName } from "../fixtures/src/world";
+import { FIXTURES_DIR, sourceIds, type EditionName } from "../fixtures/src/world";
 import { RULES } from "../lib/rules";
 import { derive } from "../lib/rules/shared";
 import {
@@ -773,6 +775,33 @@ describe("SOURCE_CRITICAL_TWO and SOURCE_SYNDICATED", () => {
     d.items[0]!.source_ids = [S["bc-ivanti"], id];
     d.items[0]!.flaw_evidence = [];
     expect(codesOf(check(d, C))).toEqual(["SOURCE_CRITICAL_TWO items[0].source_ids"]);
+  });
+
+  it("a withhold's masked titles never fold: a withheld Critical item keeps the publishers it was published with (published mode)", () => {
+    const b = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, "site-content", "briefs", "2026-10-14.json"), "utf8")) as Brief;
+    const it0 = b.items[0]!;
+    expect(it0.severity).toBe("critical");
+    const own = b.sources.filter((s) => it0.source_ids.includes(s.id));
+    expect(own.length).toBeGreaterThanOrEqual(2);
+    const config = fixtureConfig();
+    const groups = (x: Brief) => derive(x, "published", config).publishersByIndex[0]!.groups.length;
+    const before = groups(b);
+    const run = (x: Brief) => sourceRules.filter((r) => r.codes.some((c) => C.includes(c)))
+      .flatMap((r) => r.check({ draft: x, mode: "published", config, derived: derive(x, "published", config) } as unknown as RuleInput));
+    expect(run(b)).toEqual([]);
+    for (const s of own) {
+      s.title = WITHHELD_MARK;
+      if (s.title_en !== null) s.title_en = WITHHELD_MARK;
+    }
+    expect(groups(b)).toBe(before);
+    expect(run(b)).toEqual([]);
+    // Real titles alike still fold as copies of one story.
+    for (const s of own) {
+      s.title = "SAMPLE: Ivanti Connect Secure flaw exploited in attacks";
+      s.title_en = null;
+    }
+    expect(groups(b)).toBe(1);
+    expect(run(b).map((x) => x.code)).toEqual(["SOURCE_SYNDICATED"]);
   });
 
   it("ignores items below Critical", () => {
