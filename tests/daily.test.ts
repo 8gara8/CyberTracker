@@ -378,6 +378,25 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D34 --data-only --force after a full edition is skipped as already published: exit 0, one status: commit, the edition untouched", async () => {
+    const h = harness();
+    okAgent(h);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const before = h.remoteFile(`content/briefs/${D}.json`);
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--data-only", "--force"])).toBe(0);
+    const s = subjects(h);
+    expect(s).toHaveLength(5);
+    expect(s[4]).toMatch(/ ended: skipped$/);
+    const last = statusOn(h)!.runs.at(-1)!;
+    expect(last).toMatchObject({ outcome: "skipped", error_code: null });
+    expect(stageOf(last, "preflight").note).toMatch(/^The full edition was already published at \d\d:\d\d\.$/);
+    expect(h.remoteFile(`content/briefs/${D}.json`)).toBe(before);
+    expect(runsJsonl(h).at(-1)).toMatchObject({ outcome: "skipped", error_code: null });
+    expect(fs.existsSync(path.join(h.root, "needs-review", D))).toBe(false);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D13 rejected pushes at the start give E_PUSH and nothing else is tried", async () => {
     const h = harness();
     okAgent(h);

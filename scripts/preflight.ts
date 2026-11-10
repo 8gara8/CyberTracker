@@ -297,16 +297,17 @@ export type IdempotencyState = "new" | "resume" | "skip_published" | "skip_late"
  * too_late) skips whatever is there, --force or not: skip_late with the tooLate note. Otherwise none:
  * new. A data-only edition: resume (the data_only stage's dataOnlyUpSince note is daily.ts's, at stage
  * 4; --force changes nothing). A full or partial one: skip_published with the alreadyPublished note
- * (its published_at); with --force, replace, but only while the clock is normal, since after the hard
- * stop no full edition can be drafted, so it stays skip_published. The replaced note belongs to the
+ * (its published_at); with --force, replace, but only while the clock is normal and the run drafts
+ * (not --data-only), since after the hard stop no full edition can be drafted and a data-only edition
+ * never replaces a full one (§8.2 --force), so it stays skip_published. The replaced note belongs to the
  * publish stage, once the new edition is out.
  */
-export function idempotency(o: { contentDir: string; date: string; clock: ClockState; force: boolean }): { state: IdempotencyState; existing: Brief | null; note: string | null } {
+export function idempotency(o: { contentDir: string; date: string; clock: ClockState; force: boolean; dataOnly?: boolean }): { state: IdempotencyState; existing: Brief | null; note: string | null } {
   const existing = readBrief(o.contentDir, o.date);
   if (o.clock === "too_late") return { state: "skip_late", existing, note: NOTES.tooLate(run.schedule.publish_until) };
   if (!existing) return { state: "new", existing, note: null };
   if (existing.edition === "data_only") return { state: "resume", existing, note: null };
-  if (o.force && o.clock === "normal") return { state: "replace", existing, note: null };
+  if (o.force && o.clock === "normal" && !o.dataOnly) return { state: "replace", existing, note: null };
   return { state: "skip_published", existing, note: NOTES.alreadyPublished(taipeiTime(existing.published_at)) };
 }
 

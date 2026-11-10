@@ -439,6 +439,9 @@ describe("steps 5 (dependencies), 6 and 7", () => {
     expect(run("2026-10-13", "normal", true).state).toBe("replace");
     // After the hard stop no full edition can be drafted, so --force cannot replace: still skipped.
     expect(run("2026-10-14", "after_hard_stop", true)).toMatchObject({ state: "skip_published", note: NOTES.alreadyPublished("05:07") });
+    // --data-only --force drafts nothing, and a data-only edition never replaces a full one: still skipped.
+    expect(idempotency({ ...at10("2026-10-14"), clock: "normal", force: true, dataOnly: true })).toMatchObject({ state: "skip_published", note: NOTES.alreadyPublished("05:07") });
+    expect(idempotency({ ...at10("2026-10-15"), clock: "normal", force: true, dataOnly: true }).state).toBe("resume");
     // Too late skips whatever GitHub holds, --force or not.
     for (const date of ["2026-10-16", "2026-10-15", "2026-10-14"]) {
       for (const force of [false, true]) {

@@ -936,7 +936,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     const preNotes = [staleNote, ...gp.notes, depsChanged(root) ? NOTES.depsChanged : null].filter((n): n is string => n !== null);
 
     // Step 6, and the skip decided at once (A1): a skipped run makes exactly one status commit, in finish.
-    idem = idempotency({ contentDir: P.content, date: D, clock, force: a.force });
+    idem = idempotency({ contentDir: P.content, date: D, clock, force: a.force, dataOnly: a.dataOnly });
     const newRecord = () => newRunRecord({
       runId: runIdFor(start), trigger, attempt: 1, startedAt: start, codeCommit, dataCutoffUtc: dataCutoffFor(D),
     });
