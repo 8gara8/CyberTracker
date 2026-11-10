@@ -66,7 +66,37 @@ export type CommitArgs = {
 
 /** §8.7's commit subjects: dates, counts, run ids, outcomes and item ids only, never model text. */
 export function commitTitle<K extends keyof CommitArgs>(kind: K, args: CommitArgs[K]): string {
-  throw new Error("P3 stub: commitTitle (lane L2)");
+  const a = args as CommitArgs[keyof CommitArgs];
+  const date = "date" in a ? a.date : a.cutoff;
+  if (!isValidDate(date)) throw new Error(`commitTitle: not a valid date: ${JSON.stringify(date)}`);
+  switch (kind) {
+    case "data_only":
+      return `brief: ${date} · data-only edition`;
+    case "full": {
+      const f = a as CommitArgs["full"];
+      if (!Number.isInteger(f.items) || f.items < 0) throw new Error(`commitTitle: bad item count ${f.items}`);
+      return `brief: ${date} · ${f.edition} edition, ${f.items} ${f.items === 1 ? "item" : "items"}`;
+    }
+    case "withhold": {
+      const w = a as CommitArgs["withhold"];
+      if (w.itemIds.length === 0) throw new Error("commitTitle: a withhold names at least one item");
+      return `correction: ${date} · withheld ${w.itemIds.join(", ")}`;
+    }
+    case "status_started":
+      return `status: ${date} · run ${(a as CommitArgs["status_started"]).runId} started`;
+    case "status_ended": {
+      const e = a as CommitArgs["status_ended"];
+      return `status: ${date} · run ${e.runId} ended: ${e.outcome}`;
+    }
+    case "status_retry": {
+      const r = a as CommitArgs["status_retry"];
+      return `status: ${date} · run ${r.runId} ended: ${r.outcome}; retry ${r.retryId} started`;
+    }
+    case "state":
+      return `state: ${date} · ${(a as CommitArgs["state"]).mode}`;
+    default:
+      throw new Error(`commitTitle: unknown kind ${String(kind)}`);
+  }
 }
 
 /** Every commit subject publish makes (§8.7 test 6). */
