@@ -24,7 +24,8 @@
 // metrics headline for the Lens and the Gap, pageWords() for computed.word_count. The metrics come from fixtures/src/inputs.ts
 // (metricsFor()); each metrics/inputs/D.json manifest lists rows that add up to its figures, with invented
 // CVE ids in the CVE-YYYY-99NNNN and CVE-2026-98NNNN ranges (the real KEV rows only for the home vendors).
-// The data-only headlines, summaries and CVE titles are placeholders for lib/data-only.ts's templates.
+// The data-only headlines and summaries are the text lib/data-only.ts's templates give (tests/data-only.test.ts
+// C3); their CVE titles come from cveBlockOf() like every other block.
 
 import { createHash } from "node:crypto";
 import type { z } from "zod";
