@@ -21,7 +21,7 @@ import { GitError, git, isClean, porcelainPaths, syncMain as defaultSyncMain, ty
 import { NOTES } from "./lib/status";
 import {
   CONTENT_LAYOUT, PublishError, dropPendingEditions as defaultDropPendingEditions, pushPending as defaultPushPending,
-  type dropPendingEditions, type pushPending,
+  type Sleep, type dropPendingEditions, type pushPending,
 } from "./publish";
 
 export type PreflightCode = "E_ARCH" | "E_NODE" | "E_CONFIG" | "E_NET" | "E_GIT" | "E_CLOCK";
@@ -192,6 +192,8 @@ export interface GitPrep {
  */
 export async function prepareGit(o: {
   root: string; repo?: string; config: LoadedConfig; dryRun: boolean; now: Clock; reexec: boolean; log: (line: string) => void;
+  /** The push retries' wait, passed to dropPendingEditions and pushPending (default realSleep). */
+  sleep?: Sleep;
 }, fns: { dropPendingEditions?: typeof dropPendingEditions; pushPending?: typeof pushPending; syncMain?: typeof syncMain } = {}): Promise<GitPrep> {
   const drop = fns.dropPendingEditions ?? defaultDropPendingEditions;
   const push = fns.pushPending ?? defaultPushPending;
@@ -244,7 +246,7 @@ export async function prepareGit(o: {
 
     let dropped: Awaited<ReturnType<typeof dropPendingEditions>>;
     try {
-      dropped = await drop(g, { root: o.root, config: o.config, now: o.now, repo: o.repo, log: o.log });
+      dropped = await drop(g, { root: o.root, config: o.config, now: o.now, repo: o.repo, log: o.log, sleep: o.sleep });
     } catch (e) {
       if (e instanceof PublishError) throw new PreflightFail("E_GIT", `Unpushed edition commits could not be dropped (${e.code}).`);
       throw e;
@@ -257,7 +259,7 @@ export async function prepareGit(o: {
 
     let pushed = 0;
     try {
-      pushed = (await push(g)).pushed;
+      pushed = (await push(g, { sleep: o.sleep })).pushed;
     } catch (e) {
       if (!(e instanceof PublishError)) throw e;
       note(NOTES.pendingNotPushed);

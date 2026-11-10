@@ -60,7 +60,7 @@ import {
   checkCliAndToken, checkNetwork, checkPlatform, clockRule, depsChanged, idempotency, loadRunConfig, prepareGit, PreflightFail, scheduleFor,
   type ClockState, type IdempotencyState, type Schedule,
 } from "./preflight";
-import { publishDataOnly, publishFull, publishStatus, publishWithholds, type PublishOptions, type StatusEvent } from "./publish";
+import { publishDataOnly, publishFull, publishStatus, publishWithholds, type PublishOptions, type Sleep, type StatusEvent } from "./publish";
 import { applyLinkResults, checkLinks, intakeDisputes, recheckItems, writeRecheckLog, type IntakeResult, type LinkResult, type LinksOutcome } from "./recheck";
 
 // ── Exports (plan §3.1) ──────────────────────────────────────────────────────────────────────────────
@@ -95,6 +95,8 @@ export interface Deps {
   restart?: (argv: string[]) => Promise<number>;
   /** Default process.arch (plan G5). */
   arch?: string;
+  /** Publish's push retry waits (2, 4 and 8 s); default a real timer, tests pass an instant one. */
+  sleep?: Sleep;
 }
 
 /** The watchdog's error class: its name is all fallbackChat() shows. */
@@ -355,6 +357,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
   };
   const base = (deadline: number): PublishOptions => ({
     root, date: D, deadline, now, dryRun, freshCopy: takeFresh(), repo: deps.repo, config: config!, records: state.records, log: line,
+    sleep: deps.sleep,
   });
   const facts = (o: Partial<WhatFacts> = {}): WhatFacts => {
     const last = state.records.at(-1);
@@ -910,7 +913,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     await checkNetwork(fetchImpl);
 
     // Step 5.
-    const gp = await prepareGit({ root, repo: deps.repo, config, dryRun, now, reexec: env.CT_REEXEC === "1", log: line });
+    const gp = await prepareGit({ root, repo: deps.repo, config, dryRun, now, reexec: env.CT_REEXEC === "1", log: line, sleep: deps.sleep });
     if (gp.restartSha7) {
       line(LINES.restarting(gp.restartSha7));
       clearWatchdog();

@@ -49,7 +49,7 @@ const briefJson = (date: string, edition: string, publishedAt: string) =>
   `${JSON.stringify({ schema_version: 1, date, edition, published_at: publishedAt }, null, 2)}\n`;
 
 describe("makeHarness: the remote, the clone and the seed", () => {
-  it("HN1: a bare remote on main and a clean clone of it as root", () => {
+  it("HN1: a bare remote on main and a clean clone of it as root", async () => {
     const h = harness();
     expect(h.date).toBe(PIPELINE_DATE);
     expect(h.remote).toBe(path.join(h.base, "remote.git"));
@@ -63,6 +63,13 @@ describe("makeHarness: the remote, the clone and the seed", () => {
     expect(h.git("rev-parse", "HEAD")).toBe(execFileSync("git", ["rev-parse", "main"], { cwd: h.remote, encoding: "utf8" }).trim());
     expect(h.deps.repo).toBe(h.remote);
     expect(h.deps.arch).toBe("arm64");
+    // publish's push retry waits are instant here and recorded in order.
+    expect(h.waits()).toEqual([]);
+    const t0 = Date.now();
+    await h.deps.sleep(8_000);
+    await h.deps.sleep(2_000);
+    expect(Date.now() - t0).toBeLessThan(1_000);
+    expect(h.waits()).toEqual([8_000, 2_000]);
     expect(h.clock()).toBeGreaterThanOrEqual(at(PIPELINE_DATE, "04:37"));
     expect(h.clock()).toBeLessThan(at(PIPELINE_DATE, "04:37") + 60_000);
   }, T);

@@ -17,6 +17,7 @@ import { sha256Hex } from "@/lib/json";
 import { siteUrl } from "@/lib/site";
 import { testClock, type Clock, type TestClock } from "@/scripts/lib/clock";
 import type { EditionMeta } from "@/scripts/lib/deploy";
+import type { Sleep } from "@/scripts/publish";
 
 /** The fixture morning the pipeline tests run (collect and metrics work in-process on fixtures/feeds for it). */
 export const PIPELINE_DATE = "2026-10-14";
@@ -94,7 +95,10 @@ export interface Harness {
    * CT_CLAUDE_CONFIG_DIR=claudeDir, CT_DEPLOY_WAIT_MS=0, NODE_ENV=test; CT_CONTENT_DIR and CT_REEXEC unset.
    */
   env: Record<string, string>;
-  deps: { now: Clock; fetchImpl: typeof fetch; readToken: () => Promise<string | null>; repo: string; arch: "arm64" };
+  /** sleep: publish's push retry waits, instant here, each wait recorded for waits(). */
+  deps: { now: Clock; fetchImpl: typeof fetch; readToken: () => Promise<string | null>; repo: string; arch: "arm64"; sleep: Sleep };
+  /** The push retry waits deps.sleep was asked for, in ms, oldest first. */
+  waits(): number[];
   /** git in root, with the test identity; stdout with its end trimmed. Throws on a non-zero exit. */
   git(...args: string[]): string;
   /** Commits on remote main after the seed, oldest first. */
@@ -202,6 +206,10 @@ export function makeHarness(o: HarnessOptions = {}): Harness {
   let siteMode: EditionMeta | null | "from-remote" = "from-remote";
   let seedSha = "";
   const seen: { method: string; url: string }[] = [];
+  const waits: number[] = [];
+  const sleep: Sleep = async (ms) => {
+    waits.push(ms);
+  };
 
   const remoteFile = (p: string): string | null => {
     try {
@@ -260,7 +268,8 @@ export function makeHarness(o: HarnessOptions = {}): Harness {
       CT_DEPLOY_WAIT_MS: "0",
       NODE_ENV: "test",
     },
-    deps: { now: clock, fetchImpl, readToken: async () => token, repo: remote, arch: "arm64" },
+    deps: { now: clock, fetchImpl, readToken: async () => token, repo: remote, arch: "arm64", sleep },
+    waits: () => [...waits],
     git: (...args) => gitIn(root, [...ID_ARGS, ...args]),
     remoteLog() {
       const out = gitIn(remote, ["log", "--reverse", "--format=%H%x1f%s", `${seedSha}..main`]);

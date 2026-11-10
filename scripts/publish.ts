@@ -144,7 +144,16 @@ export interface PublishOptions {
   /** This run's records, oldest first; the last is the current one. Written onto status/D.json by run_id (replace in place, else append). */
   records: readonly RunRecord[];
   log?: (line: string) => void;
+  /** The push retries' wait (default realSleep); tests pass an instant one. */
+  sleep?: Sleep;
 }
+
+/** Waits `ms` milliseconds. */
+export type Sleep = (ms: number) => Promise<void>;
+/** The production wait: a real timer. */
+export const realSleep: Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/** §8.7 step 8: the waits before the second, third and fourth push. */
+export const PUSH_RETRY_MS: readonly number[] = [2_000, 4_000, 8_000];
 
 export interface PublishResult {
   /** null in a dry run */
@@ -221,6 +230,7 @@ interface Ctx {
   dryRun: boolean;
   edition: boolean;
   log: (line: string) => void;
+  sleep: Sleep;
 }
 
 interface Plan {
@@ -229,7 +239,7 @@ interface Plan {
   validate: AllOptions;
 }
 
-type OpenOptions = Pick<PublishOptions, "root" | "date" | "deadline" | "now" | "dryRun" | "freshCopy" | "repo" | "config" | "log">;
+type OpenOptions = Pick<PublishOptions, "root" | "date" | "deadline" | "now" | "dryRun" | "freshCopy" | "repo" | "config" | "log" | "sleep">;
 
 /** Step 1: this checkout is the content repository's main, with its content folder at <root>/content. */
 async function checkTarget(g: Git, root: string, config: LoadedConfig, repo?: string): Promise<void> {
@@ -277,9 +287,10 @@ function dryRunDir(root: string, date: string, fresh: boolean): string {
 async function open(o: OpenOptions, edition: boolean): Promise<Ctx> {
   const root = path.resolve(o.root);
   const log = o.log ?? (() => {});
+  const sleep = o.sleep ?? realSleep;
   if (!isValidDate(o.date)) throw new Error(`publish: not a valid date: ${JSON.stringify(o.date)}`);
   if (o.dryRun) {
-    return { root, dir: dryRunDir(root, o.date, !!o.freshCopy), g: null, free: null, date: o.date, dryRun: true, edition, log };
+    return { root, dir: dryRunDir(root, o.date, !!o.freshCopy), g: null, free: null, date: o.date, dryRun: true, edition, log, sleep };
   }
   let deadline = o.deadline;
   if (edition) {
@@ -290,7 +301,7 @@ async function open(o: OpenOptions, edition: boolean): Promise<Ctx> {
   const g = git(root, { deadline: realDeadline(o.now, deadline) });
   await checkTarget(g, root, o.config, o.repo);
   await syncMain(g, CONTENT_LAYOUT);
-  return { root, dir: path.join(root, "content"), g, free: git(root), date: o.date, dryRun: false, edition, log };
+  return { root, dir: path.join(root, "content"), g, free: git(root), date: o.date, dryRun: false, edition, log, sleep };
 }
 
 interface Written {
@@ -338,12 +349,13 @@ async function confirm(free: Git, sha: string): Promise<boolean> {
 }
 
 /**
- * Step 8: push within g's deadline, retrying at 2, 4 and 8 s. A non-fast-forward rejection fetches and
- * rebases once when the incoming commits touch none of `paths`, then `revalidate()` runs and the push is
- * tried again. A rebase that fails is aborted with the deadline-free handle.
+ * Step 8: push within g's deadline, retrying after PUSH_RETRY_MS (2, 4 and 8 s, waited through `sleep`).
+ * A non-fast-forward rejection fetches and rebases once when the incoming commits touch none of `paths`,
+ * then `revalidate()` runs and the push is tried again. A rebase that fails is aborted with the
+ * deadline-free handle.
  */
-async function pushLoop(g: Git, free: Git, paths: ReadonlySet<string>, revalidate: () => void): Promise<void> {
-  const delays = [2_000, 4_000, 8_000];
+async function pushLoop(g: Git, free: Git, paths: ReadonlySet<string>, revalidate: () => void, sleep: Sleep): Promise<void> {
+  const delays = PUSH_RETRY_MS;
   let rebased = false;
   let attempt = 0;
   for (;;) {
@@ -367,7 +379,7 @@ async function pushLoop(g: Git, free: Git, paths: ReadonlySet<string>, revalidat
       }
       const wait = delays[attempt++];
       if (wait === undefined || (g.deadline !== null && Date.now() + wait >= g.deadline)) throw e;
-      await new Promise((r) => setTimeout(r, wait));
+      await sleep(wait);
     }
   }
 }
@@ -410,7 +422,7 @@ async function land(ctx: Ctx, plan: Plan, written: readonly Written[], deps: Pub
 
   let pushError: unknown = null;
   try {
-    await pushLoop(g, free, new Set(repoPaths), () => check(ctx, plan.validate, deps));
+    await pushLoop(g, free, new Set(repoPaths), () => check(ctx, plan.validate, deps), ctx.sleep);
   } catch (e) {
     pushError = e;
     ctx.log(`Push of ${sha7(sha)} failed: ${(e as Error).message.slice(0, 200)}`);
@@ -785,8 +797,11 @@ async function localCommits(g: Git): Promise<LocalCommit[]> {
   });
 }
 
-/** Pushes local status and withhold commits GitHub lacks (after 11:00 too). A brief: among them: PublishError("pending edition"), nothing pushed. */
-export async function pushPending(g: Git): Promise<{ pushed: number }> {
+/**
+ * Pushes local status and withhold commits GitHub lacks (after 11:00 too). A brief: among them:
+ * PublishError("pending edition"), nothing pushed. `o.sleep` is the retries' wait (default realSleep).
+ */
+export async function pushPending(g: Git, o: { sleep?: Sleep } = {}): Promise<{ pushed: number }> {
   const free = git(g.cwd);
   await g(["fetch", "origin", "main"], P3_LIMITS.gitMs);
   const local = await localCommits(g);
@@ -796,7 +811,7 @@ export async function pushPending(g: Git): Promise<{ pushed: number }> {
   if (ahead === 0) return { pushed: 0 };
   const paths = new Set(lines(await g(["diff", "--name-only", "origin/main...HEAD"])));
   try {
-    await pushLoop(g, free, paths, () => {});
+    await pushLoop(g, free, paths, () => {}, o.sleep ?? realSleep);
   } catch (e) {
     if (e instanceof SyncError) throw e;
     throw new PublishError("push");
@@ -829,7 +844,7 @@ function mergeDisputes(base: readonly Dispute[], changed: readonly Dispute[], co
 
 /** §8.7's table. `failed` lists the withhold item ids that failed validation (noted for the next intake). */
 export async function dropPendingEditions(g: Git, o: {
-  root: string; config: LoadedConfig; now: Clock; repo?: string; log?: (line: string) => void;
+  root: string; config: LoadedConfig; now: Clock; repo?: string; log?: (line: string) => void; sleep?: Sleep;
 }, deps: PublishDeps = {}): Promise<{ dropped: number; remade: number; failed: string[] }> {
   const root = path.resolve(o.root);
   const log = o.log ?? (() => {});
@@ -876,7 +891,7 @@ export async function dropPendingEditions(g: Git, o: {
   const todo = requests.filter((r) => !done.has(`${r.edition_date}/${r.item_id}`));
   if (todo.length === 0 || date === null) return { dropped, remade: 0, failed: [] };
 
-  const ctx: Ctx = { root, dir: content, g, free: git(root), date, dryRun: false, edition: false, log };
+  const ctx: Ctx = { root, dir: content, g, free: git(root), date, dryRun: false, edition: false, log, sleep: o.sleep ?? realSleep };
   const disputesNow = () => {
     const cf = readCorrections(content);
     return mergeDisputes(cf?.disputes ?? [], [...changed.values()], new Set((cf?.corrections ?? []).map((c) => c.id)));
@@ -1027,8 +1042,8 @@ function failureLine(e: unknown): string {
   return `Publish failed: ${e instanceof Error ? e.message.slice(0, 300) : String(e)}`;
 }
 
-/** The CLI. deps.arch defaults to process.arch; exit 0 published, 1 refused or failed, 2 usage. */
-export async function main(argv: string[], deps: { arch?: string; now?: Clock; repo?: string } = {}): Promise<number> {
+/** The CLI. deps.arch defaults to process.arch, deps.sleep to realSleep; exit 0 published, 1 refused or failed, 2 usage. */
+export async function main(argv: string[], deps: { arch?: string; now?: Clock; repo?: string; sleep?: Sleep } = {}): Promise<number> {
   const err = (line: string) => void process.stderr.write(`${line}\n`);
   const out = (line: string) => void process.stdout.write(`${line}\n`);
   let a: CliArgs;
@@ -1058,9 +1073,9 @@ export async function main(argv: string[], deps: { arch?: string; now?: Clock; r
       return 1;
     }
     const D = a.date;
-    const base = { root, date: D, now, dryRun: a.dryRun, freshCopy: a.dryRun, repo: deps.repo, config, log: out };
+    const base = { root, date: D, now, dryRun: a.dryRun, freshCopy: a.dryRun, repo: deps.repo, config, log: out, sleep: deps.sleep };
     if (!a.dryRun) {
-      const r = await dropPendingEditions(git(root), { root, config, now, repo: deps.repo, log: out });
+      const r = await dropPendingEditions(git(root), { root, config, now, repo: deps.repo, log: out, sleep: deps.sleep });
       if (r.dropped) out(`Dropped ${r.dropped} unpushed commit(s); ${r.remade} withhold(s) made again${r.failed.length ? `, ${r.failed.join(", ")} left for the next intake` : ""}.`);
       await syncMain(git(root), CONTENT_LAYOUT);
     }

@@ -39,7 +39,7 @@ import { git, SyncError } from "@/scripts/lib/git";
 import { runPaths } from "@/scripts/lib/paths";
 import {
   COMMIT_RE, NOT_ARM64, PublishError, dropPendingEditions, main, originMatches, publishDataOnly, publishFull, publishState, publishStatus,
-  publishWithholds, pushPending, tooLateLine, type PublishDeps, type PublishOptions, type StatusEvent,
+  PUSH_RETRY_MS, publishWithholds, pushPending, tooLateLine, type PublishDeps, type PublishOptions, type StatusEvent,
 } from "@/scripts/publish";
 import { REPO, inRoot, makeHarness, type Harness } from "./helpers/harness";
 import { transcriptJsonl } from "./helpers/pipeline-world";
@@ -74,10 +74,11 @@ function world(D: string, start = "04:37"): World {
 
 const rec = (w: World, hhmmss = "04:37:02", over: Partial<RunRecord> = {}) => testRecord(w.D, `${w.D}T${hhmmss}+08:00`, over);
 
+/** The push retries wait through the harness's instant sleep, unless `over` says otherwise (P16). */
 function base(w: World, records: readonly RunRecord[], over: Partial<PublishOptions> = {}): PublishOptions {
   return {
     root: w.h.root, date: w.D, deadline: w.h.clock() + 60_000, now: w.h.clock, dryRun: false, repo: w.h.remote, config: w.config, records,
-    log: (l) => w.logs.push(l), ...over,
+    log: (l) => w.logs.push(l), sleep: w.h.deps.sleep, ...over,
   };
 }
 
@@ -290,9 +291,9 @@ describe("publish (§8.7)", () => {
       expect(w.h.git("log", "-1", "--format=%s")).toBe(`status: ${D} · run 20261015-043702 started`);
       expect(w.h.remoteLog()).toEqual([]);
       w.h.pushes("accept");
-      await expect(pushPending(git(w.h.root))).resolves.toEqual({ pushed: 1 });
+      await expect(pushPending(git(w.h.root), { sleep: w.h.deps.sleep })).resolves.toEqual({ pushed: 1 });
       expect(subjects(w.h)).toEqual([`status: ${D} · run 20261015-043702 started`]);
-      await expect(pushPending(git(w.h.root))).resolves.toEqual({ pushed: 0 });
+      await expect(pushPending(git(w.h.root), { sleep: w.h.deps.sleep })).resolves.toEqual({ pushed: 0 });
 
       w.h.pushes("reject");
       await expect(withhold(w, [r0], { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
@@ -308,6 +309,33 @@ describe("publish (§8.7)", () => {
       `status: ${D} · run 20261015-043702 ended: failed`,
     ]);
     expect(w.h.git("rev-parse", "HEAD")).toBe(w.h.remoteLog().at(-1)!.sha);
+  }, T);
+
+  it("P16: the push retries wait 2, 4 and 8 s, in that order, through o.sleep; without one they are real waits", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    expect(PUSH_RETRY_MS).toEqual([2_000, 4_000, 8_000]);
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      w.h.pushes("reject");
+      // Four pushes, three waits, then the commit stays local.
+      await expect(status(w, [r0], { kind: "started" })).rejects.toMatchObject({ code: "push" });
+      expect(w.h.waits()).toEqual([2_000, 4_000, 8_000]);
+      expect(w.logs.filter((l) => l.startsWith("Push of "))).toHaveLength(1);
+      // pushPending and dropPendingEditions take the same wait.
+      const seen: number[] = [];
+      await expect(pushPending(git(w.h.root), { sleep: async (ms) => void seen.push(ms) })).rejects.toMatchObject({ code: "push" });
+      expect(seen).toEqual([2_000, 4_000, 8_000]);
+      // No sleep given: realSleep, so the first retry really waits 2 s (the 4 s one would pass the 5 s deadline).
+      const closed: RunRecord = { ...r0, outcome: "failed", error_code: "E_PUSH", finished_at: `${D}T04:40:00+08:00` };
+      const t0 = Date.now();
+      await expect(status(w, [closed], { kind: "ended", outcome: "failed" }, { sleep: undefined, deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      expect(Date.now() - t0).toBeGreaterThanOrEqual(2_000);
+      expect(w.h.waits()).toEqual([2_000, 4_000, 8_000]);
+      w.h.pushes("accept");
+      await expect(pushPending(git(w.h.root), { sleep: w.h.deps.sleep })).resolves.toEqual({ pushed: 2 });
+    });
+    expect(subjects(w.h)).toEqual([`status: ${D} · run 20261015-043702 started`, `status: ${D} · run 20261015-043702 ended: failed`]);
   }, T);
 
   it("P7: with staged files and GitHub one status commit ahead, publishDataOnly commits the staged files byte for byte", async () => {
