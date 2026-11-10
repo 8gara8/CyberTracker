@@ -366,13 +366,16 @@ export function cveLookupFromDir(dir: string): CveLookup {
 /**
  * logs/D.regions-input.json and fixtures/regions-input/<name>.json: the validator's regionsBase without
  * its config (§8.2 step 6.2), which the reader rebuilds from config/ (regionsConfig()). History briefs
- * keep only the fields computeRegions() reads; other keys are dropped on reading.
+ * keep only the fields computeRegions() reads; other keys are dropped on reading. `firstSeen` is the
+ * base's first_seen map (firstSeenBefore(), item id → date), so the validate and publish CLIs give
+ * today's items the first_seen the morning's loop gave them; a file without it falls back to the history.
  */
 export const RegionsInputFile = z.object({
   date: z.string().refine(isValidDate, { error: "Expected a date as YYYY-MM-DD" }),
   history: z.array(z.object({ date: Brief.shape.date, items: Brief.shape.items, sources: Brief.shape.sources, regions: Brief.shape.regions })),
   signals: z.array(RegionSignal),
   kevIndex: z.object({ entries: z.array(KevIndexRow) }),
+  firstSeen: z.record(z.string(), Brief.shape.date).optional(),
 });
 export type RegionsInputFile = z.infer<typeof RegionsInputFile>;
 
@@ -383,6 +386,7 @@ export function regionsInputFile(base: RegionsBase): RegionsInputFile {
     history: base.history.map((h) => ({ date: h.date, items: [...h.items], sources: [...h.sources], regions: h.regions })),
     signals: [...base.signals],
     kevIndex: { entries: [...base.kevIndex.entries] },
+    ...(base.firstSeen ? { firstSeen: { ...base.firstSeen } } : {}),
   };
 }
 

@@ -941,5 +941,10 @@
         "unknown"
       ]
     ]
+  },
+  "firstSeen": {
+    "inc-health-us-2026-10": "2026-10-12",
+    "camp-prc-state-claim-2026-10": "2026-10-12",
+    "pol-jp-active-cyber-defence-2026-10": "2026-10-12"
   }
 }

@@ -14,8 +14,11 @@ import { addDays } from "@/lib/dates";
 import { longDate } from "@/lib/format";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
-import { firstSeenBefore, readHistory } from "@/lib/run-inputs";
-import type { CveLookup } from "@/lib/rules/types";
+import { firstSeenBefore, readHistory, regionsBaseFor } from "@/lib/run-inputs";
+import { draftFirstSeen, draftRegions } from "@/lib/rules/items";
+import { derive } from "@/lib/rules/shared";
+import type { CveLookup, RuleInput } from "@/lib/rules/types";
+import { draftView } from "@/lib/rules/words";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
 import { DraftBrief } from "@/lib/schema/draft-brief";
@@ -23,7 +26,7 @@ import { InputsManifest, Metrics, type KevIndexFile } from "@/lib/schema/metrics
 import { ArchiveIndex, CorrectionsFile, Evidence, type Correction, type Dispute } from "@/lib/schema/misc";
 import { ScoreboardFile, type Claim } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
-import { cveLookupFromDir, validateAll, validatePublished } from "@/lib/validate";
+import { RegionsInputFile, cveLookupFromDir, regionsInputFile, validateAll, validateDraft, validatePublished } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS } from "@/lib/withhold";
 import { bindingWithholds, withheldRefs } from "@/lib/withhold-mask";
@@ -322,6 +325,70 @@ describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_
       }
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // An item first seen 20 days before D is outside recent_items (14 days) and the regions history (7
+  // days) but inside the composers' 30-day fallback; one first seen 40 days back is outside all three.
+  it.each([
+    { campaign: 20, transport: 40 },
+    { campaign: 40, transport: 20 },
+  ])("C18: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
+    const CAMPAIGN = "camp-tw-semiconductor-2026-10";
+    const TRANSPORT = "inc-transport-jp-2026-10";
+    const FLAW_13 = "cve-2026-108917";
+    const i = world("weekday");
+    const D = i.date;
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ct-first-seen-draft-"));
+    try {
+      const dir = path.join(root, "content");
+      fs.cpSync(SITE, dir, { recursive: true });
+      const back = { [CAMPAIGN]: addDays(D, -o.campaign), [TRANSPORT]: addDays(D, -o.transport) };
+      for (const [id, date] of Object.entries(back)) {
+        const old = { ...golden(D), date, items: golden(D).items.filter((it) => it.id === id).map((it) => ({ ...it, first_seen: date })) };
+        fs.writeFileSync(path.join(dir, "briefs", `${date}.json`), jsonText(Brief.parse(old), Brief));
+      }
+      // The campaign rule at critical, and a TW raise citing the campaign: the draft check fails it only
+      // when it counts the campaign as new today.
+      const base0 = regionsBaseFor({ root, contentDir: dir, date: D, pack: null, config: cfg });
+      const rc = structuredClone(base0.config);
+      rc.regions.rules = rc.regions.rules.map((r) => (r.id === "campaign-target" ? { ...r, level: "critical" as const } : r));
+      const base = { ...base0, config: rc };
+      const draft = DraftBrief.parse(structuredClone(i.draft));
+      draft.region_raises = [{ region: "TW", reason: "SAMPLE reason.", trigger_class: "campaign_target", item_ids: [CAMPAIGN] }];
+
+      // The run's regions input carries publish's first_seen map, through the file the CLIs read back.
+      const all = firstSeenBefore(dir, D);
+      expect(base.firstSeen).toEqual(Object.fromEntries(all));
+      expect(RegionsInputFile.parse(JSON.parse(jsonText(regionsInputFile(base)))).firstSeen).toEqual(Object.fromEntries(all));
+
+      // Publish: firstSeenBefore() over every stored brief, as composeCommon() passes it.
+      const brief = applyDraft({ ...i, draft, history: readHistory(dir, D, 30), firstSeen: all, regionsBase: base }).brief!;
+      const shown = (id: string) => brief.items.find((it) => it.id === id)!.first_seen;
+      expect([shown(CAMPAIGN), shown(TRANSPORT)]).toEqual([back[CAMPAIGN], back[TRANSPORT]]);
+
+      // Draft mode, from the same run inputs; the context's recent_items reach back 14 days only.
+      const input: RuleInput = {
+        draft, mode: "draft", date: D, fileDate: null, metrics: i.metrics, config: cfg, derived: derive(draft, "draft", cfg),
+        context: i.context, evidence: i.evidence, cveList: i.cveList, regionsBase: base, packDates: null, crossFile: null,
+      };
+      expect(i.context.recent_items.every((r) => r.date >= addDays(D, -14))).toBe(true);
+      for (const id of draft.items.map((it) => it.id)) expect(draftFirstSeen(input, id), id).toBe(shown(id));
+      // A base without the map (a hand-built one) reads only its 7-day history, never recent_items.
+      const { firstSeen: _map, ...bare } = base;
+      expect(draftFirstSeen({ date: D, regionsBase: bare }, CAMPAIGN)).toBe(D);
+      expect(draftFirstSeen({ date: D, regionsBase: bare }, FLAW_13)).toBe("2026-10-13");
+      const levels = (rows: readonly { code: string; computed_level: string }[]) => rows.map((r) => [r.code, r.computed_level]);
+      expect(levels(draftRegions(input)!.rows)).toEqual(levels(brief.regions.rows));
+      expect(brief.regions.rows.find((r) => r.code === "TW")).toMatchObject({ computed_level: "baseline", level: "elevated" });
+      const r = validateDraft(draft, { context: i.context, evidence: i.evidence, metrics: i.metrics, config: cfg, cveList: i.cveList, regionsBase: base, packDates: null });
+      expect(r.errors.filter((e) => e.code === "REGION_RAISE")).toEqual([]);
+      // The provisional page view (WORDS_OVER) shows the region rows publish builds.
+      const rows = (xs: readonly { code: string; level: string; change: string; reason: string }[]) => xs.map((x) => [x.code, x.level, x.change, x.reason]);
+      expect(rows(draftView(draft, { metrics: i.metrics, config: cfg, context: i.context, cveList: i.cveList, regionsBase: base }).regions.rows))
+        .toEqual(rows(brief.regions.rows));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
     }
   });
 });
