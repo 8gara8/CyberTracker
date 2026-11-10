@@ -447,7 +447,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       if (flood) addNote(cur(), "metrics", NOTES.floodStops(flood[1]!));
     }
     const mf = state.mf;
-    const regionsBase: RegionsBase = regionsBaseFor({ root, contentDir: P.content, date: D, pack, config: cfg });
+    const baseOfRegions = (): RegionsBase => regionsBaseFor({ root, contentDir: P.content, date: D, pack, config: cfg });
+    let regionsBase = baseOfRegions();
 
     // 4. The data-only edition.
     const dataOnlyTarget = cfg.run.schedule.data_only_target;
@@ -505,6 +506,9 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
           } catch (e) {
             line(errorText(e));
           }
+          // The history stage 3 read predates the withhold: region reasons embed headlines (§5.11), so the
+          // validator, the full edition and logs/D.regions-input.json read the rewritten briefs.
+          regionsBase = baseOfRegions();
         }
       }
       let recheckFailed = false;

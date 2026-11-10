@@ -462,6 +462,35 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D33 a withhold on an earlier edition, then a full edition the same morning: the regions history the edition and its files read is the rewritten one", async () => {
+    // Morning one (D-1) publishes its data-only edition; a victim dispute on one of its items arrives; morning two withholds it, then drafts.
+    const D0 = "2026-10-13";
+    const h = harness({ date: D0 });
+    h.fakeAgent({ mode: "nodraft" });
+    expect(await run(h, ["--trigger", "schedule", "--data-only"])).toBe(3);
+    const earlier = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D0}.json`)!));
+    const item = earlier.items[0]!;
+    h.issues([correctionIssue({ number: 6, itemId: item.id, edition: D0, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T13:00:00Z" })]);
+    okAgent(h);
+    h.clock.set(at(D, "04:37"));
+    vi.mocked(applyDraft).mockClear();
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(subjects(h)).toContain(`correction: ${D} · withheld ${item.id}`);
+    expect(briefOn(h)!.edition).toBe("full");
+    // Stage 3 read the history before the withhold; the full edition must not compose from that copy.
+    const input = vi.mocked(applyDraft).mock.calls.at(-1)![0];
+    const copies = input.regionsBase.history.flatMap((b) => b.items.filter((x) => x.id === item.id));
+    expect(copies.length).toBeGreaterThan(0);
+    for (const x of copies) expect(x.headline).toBe(WITHHELD_HEADLINE);
+    // The publish CLI's full mode reads logs/D.regions-input.json: it holds the rewritten history too.
+    for (const f of [`logs/${D}.regions-input.json`, `logs/${D}.context.json`]) {
+      expect(fs.readFileSync(path.join(h.root, f), "utf8"), f).not.toContain(item.headline);
+    }
+    expect(h.remoteFile(`content/briefs/${D}.json`)).not.toContain(item.headline);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D15 rejected brief commits after the data-only commit give E_PUBLISH; the final status commit lands and records data_only", async () => {
     const h = harness();
     h.fakeAgent({ mode: "ok", draft: DRAFT, fetches: FETCHES, touch: [path.join(h.base, "reject-briefs")] });
