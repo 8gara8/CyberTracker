@@ -24,6 +24,7 @@ import { validateAll } from "@/lib/validate";
 import { DISPUTE_FORM_OPTIONS, DISPUTE_KINDS, WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { composeWithholds } from "@/lib/withhold";
 import { fixtureConfig } from "@/fixtures/src/inputs";
+import { RECHECK_DAYS } from "@/fixtures/src/site";
 import {
   FORM_LABELS, INTAKE_LIMITS, intakeDisputes, intakeSince, intakeUrl, main, MAX_WITHHOLDS, NO_RESPONSE, parseDisputeForm,
   RECHECK_LIMITS, recheckItems, writeRecheckLog,
@@ -663,6 +664,22 @@ describe("the CLI and the run log", () => {
     expect(readJson(file)).toEqual({ intake: null, flagged: null, reports: [], links: null });
     expect(fs.readdirSync(path.dirname(file))).toEqual([`${D}.recheck.json`]);
     expect(RECHECK_LIMITS.days).toBe(14);
+  });
+});
+
+describe("the sample's re-check window", () => {
+  it("R21 every site-content status record checks D − 14 to D − 1, as recheckItems does (fixtures/src/site.ts RECHECK_DAYS)", () => {
+    expect(RECHECK_DAYS).toBe(RECHECK_LIMITS.days);
+    let seen = 0;
+    for (const f of fs.readdirSync(path.join(SITE, "status")).sort()) {
+      const s = readJson<StatusFile>(path.join(SITE, "status", f));
+      for (const r of s.runs) {
+        if (!r.recheck) continue;
+        seen += 1;
+        expect([r.recheck.from, r.recheck.to], `${f} ${r.run_id}`).toEqual([addDays(s.date, -RECHECK_LIMITS.days), addDays(s.date, -1)]);
+      }
+    }
+    expect(seen).toBeGreaterThan(5);
   });
 });
 

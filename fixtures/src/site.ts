@@ -208,10 +208,13 @@ function runRecord(t: SiteTimes, p: RunPlan, attempt = 1): RunRecord {
     deploy: p.shows
       ? { triggered: true, ready_at: deploy.ended_at, shows_date: p.shows.date, shows_edition: p.shows.edition }
       : { triggered: false, ready_at: null, shows_date: "2026-10-15", shows_edition: "data_only" },
-    recheck: p.checks ? { from: addDays(t.date, -7), to: addDays(t.date, -1), items_checked: 9, flagged: [] } : null,
+    recheck: p.checks ? { from: addDays(t.date, -RECHECK_DAYS), to: addDays(t.date, -1), items_checked: 9, flagged: [] } : null,
     links: p.checks && links.ended_at ? { checked_at: links.ended_at, checked: 31, ok: 31, unknown: 0, broken: [] } : null,
   };
 }
+
+/** SPEC §8.9's re-check window, D − 14 to D − 1 (scripts/recheck.ts RECHECK_LIMITS.days; tests/recheck.test.ts checks they agree). */
+export const RECHECK_DAYS = 14;
 
 const ok = (end: string): StagePlan => ["ok", end];
 const skip = (note?: string): StagePlan => ["skipped", null, note];

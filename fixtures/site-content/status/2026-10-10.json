@@ -542,7 +542,7 @@
         "shows_edition": "data_only"
       },
       "recheck": {
-        "from": "2026-10-03",
+        "from": "2026-09-26",
         "to": "2026-10-09",
         "items_checked": 9,
         "flagged": []
