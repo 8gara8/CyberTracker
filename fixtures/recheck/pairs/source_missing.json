@@ -1,0 +1,14 @@
+{
+  "flag": "source_missing",
+  "edition_date": "2026-10-14",
+  "item_id": "cve-2026-104935",
+  "cve_id": "CVE-2026-104935",
+  "source_id": "s2",
+  "url": "https://www.ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935",
+  "last_check": {
+    "date": "2026-10-15",
+    "result": "broken",
+    "http": 404
+  },
+  "detail": "s2 returned 404 on 2026-10-15."
+}

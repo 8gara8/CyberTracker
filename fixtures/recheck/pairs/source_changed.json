@@ -1,0 +1,14 @@
+{
+  "flag": "source_changed",
+  "edition_date": "2026-10-14",
+  "item_id": "cve-2026-104935",
+  "cve_id": "CVE-2026-104935",
+  "source_id": "s1",
+  "url": "https://www.cve.org/CVERecord?id=CVE-2026-104935",
+  "last_check": {
+    "date": "2026-10-15",
+    "result": "changed",
+    "http": 200
+  },
+  "detail": "s1 (tier 1) changed since it was cited."
+}
