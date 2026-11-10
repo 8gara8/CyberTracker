@@ -16,10 +16,11 @@ import type { RegionsBase } from "./rules/types";
 import type { Brief } from "./schema/brief";
 import { AgentContext } from "./schema/context";
 import type { Metrics } from "./schema/metrics";
-import type { CorrectionsFile } from "./schema/misc";
+import type { CorrectionsFile, Dispute } from "./schema/misc";
 import type { CandidatesFile, Pack } from "./schema/pack";
 import type { ScoreboardFile, Threshold } from "./schema/scoreboard";
-import { BANNED_WORDS, PARTIAL_FEED_IDS } from "./vocab";
+import { BANNED_WORDS, PARTIAL_FEED_IDS, WITHHELD_HEADLINE } from "./vocab";
+import { bindingWithholds, itemRef, withheldRefs } from "./withhold-mask";
 
 /** The context's size limit (§8.5): past it, after every trim, buildContext() throws ContextTooLarge. */
 export const CONTEXT_MAX_BYTES = 250 * 1024;
@@ -48,6 +49,8 @@ export interface ContextInput {
   /** readHistory(content, D, 14) */
   history: readonly Brief[];
   corrections: CorrectionsFile | null;
+  /** Intake's updated disputes, whose statuses decide which withholds still bind; absent or null: corrections' own. */
+  disputes?: readonly Dispute[] | null;
   scoreboard: ScoreboardFile | null;
   /** regions_preview = regionsPreviewRows(previewRegions(regionsBase)) */
   regionsBase: RegionsBase;
@@ -157,6 +160,8 @@ function assemble(i: ContextInput): AgentContext {
   const partialFeeds = i.pack.feeds.filter((f) => PARTIAL_FEEDS.has(f.id));
   const yesterday = i.history.find((h) => h.date === addDays(i.date, -1)) ?? null;
   const states = new Map((i.scoreboard?.claims ?? []).map((c) => [c.id, c] as const));
+  // A withhold binds later editions (lib/withhold-mask.ts): its items are marked, with the withheld headline only.
+  const held = withheldRefs(bindingWithholds(i.corrections, i.disputes), i.history);
 
   return {
     date: i.date,
@@ -202,10 +207,14 @@ function assemble(i: ContextInput): AgentContext {
       .sort((a, c) => (a.date < c.date ? 1 : a.date > c.date ? -1 : 0))
       .flatMap((h) => {
         const urlOf = new Map(h.sources.map((s) => [s.id, s.url] as const));
-        return h.items.map((it) => ({
-          date: h.date, id: it.id, kind: it.kind, headline: it.headline, severity: it.severity,
-          source_urls: [...new Set(it.source_ids.map((id) => urlOf.get(id)).filter((u): u is string => !!u && u.length <= RECENT_URL_MAX))],
-        }));
+        return h.items.map((it) => {
+          const w = held.get(itemRef(h.date, it.id))?.[0];
+          return {
+            date: h.date, id: it.id, kind: it.kind, headline: w ? WITHHELD_HEADLINE : it.headline, severity: it.severity,
+            source_urls: [...new Set(it.source_ids.map((id) => urlOf.get(id)).filter((u): u is string => !!u && u.length <= RECENT_URL_MAX))],
+            ...(w ? { withheld: true as const, dispute_kind: w.kind } : {}),
+          };
+        });
       }),
     yesterday: yesterday
       ? { date: yesterday.date, edition: yesterday.edition, lead: yesterday.lead.map((l) => l.text), item_ids: yesterday.items.map((it) => it.id) }

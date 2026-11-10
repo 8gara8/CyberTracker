@@ -68,6 +68,8 @@ word DONE.
 - **Cite only what you saw:** URLs from the pack, from search results or from a page you opened. Never
   invent or rebuild a URL, and use no archive or redirect wrappers.
 - **Victims, attribution, dangerous material, quotes and voice** follow `STYLE.md` §8 to §10.
+- **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
+  none of its sources: publish withholds any item that repeats it or cites them.
 - **Numbers** in prose come only from cited sources or the context's `quotable` values, verbatim, with
   their denominators and dates. The Gap headline is never rewritten.
 - **The Anthropic line** is set by script on every item that names Anthropic, Claude or an Anthropic

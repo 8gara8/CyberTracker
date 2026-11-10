@@ -1,7 +1,7 @@
 // The agent context (SPEC §4.15, §8.5; plan §2.5 L4): buildContext() on the fixture morning (collect and
 // metrics in-process in a temporary root, tests/helpers/pipeline-world.ts), the trims in order on synthetic
 // oversized inputs, ContextTooLarge, what is never trimmed, the CLI's bytes and the standing stories' last
-// development (plan A15). Offline.
+// development (plan A15), and the withheld marks on recent items (a withhold binds later editions). Offline.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -15,7 +15,8 @@ import { previewRegions, regionsPreviewRows } from "@/lib/regions";
 import { readCorrections, readScoreboard, standingLast } from "@/lib/run-inputs";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
-import { BANNED_WORDS } from "@/lib/vocab";
+import type { Correction, CorrectionsFile, Dispute } from "@/lib/schema/misc";
+import { BANNED_WORDS, WITHHELD_HEADLINE } from "@/lib/vocab";
 import { main } from "@/scripts/build-context";
 import { REPO } from "./helpers/harness";
 import { buildPipelineWorld, type PipelineWorld } from "./helpers/pipeline-world";
@@ -262,5 +263,91 @@ describe("standing stories (plan A15)", () => {
     } finally {
       fs.rmSync(content, { recursive: true, force: true });
     }
+  });
+});
+
+describe("withheld recent items (a withhold binds later editions, §4.10)", () => {
+  const ITEM = TEMPLATE.items[4]!.id;
+  const CAMPAIGN = TEMPLATE.items[2]!.id;
+  const FLAW = TEMPLATE.items[3]!.id;
+  const d1 = () => addDays(w.date, -1);
+  const d2 = () => addDays(w.date, -2);
+  const dispute = (id: string, item: string, date: string, kind: Dispute["kind"], status: Dispute["status"], correction: string): Dispute => ({
+    id, received: `${date}T21:00:00+08:00`, issue_number: Number(id.slice(2)), item_id: item, edition_date: date, kind, evidence_url: null,
+    status, resolved_on: status === "open" ? null : d1(), correction_id: correction,
+  });
+  const removed = (id: string, item: string, date: string, field: string, disputeId: string): Correction => ({
+    id, date: addDays(date, 1), item_id: item, edition_date: date, type: "name_removed", field, before: "[name removed]",
+    after: "withheld while a dispute is reviewed", reason: "SAMPLE.", source_url: null, trigger: "reader_report", dispute_id: disputeId,
+  });
+
+  /** d2 holds ITEM (victim, open), CAMPAIGN (attribution, upheld) and FLAW (victim, rejected); d1 repeats ITEM with `withheld` set. */
+  function world(): { history: Brief[]; corrections: CorrectionsFile } {
+    const older = briefOn(d2());
+    older.items = older.items.map((it) => (it.id === ITEM ? { ...it, headline: "SAMPLE original headline naming a party", withheld: { correction_id: "C-0001", since: d1() } } : it));
+    const newer = briefOn(d1());
+    newer.items = newer.items.map((it) => (it.id === ITEM ? { ...it, headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: d1() } } : it));
+    return {
+      history: [newer, older],
+      corrections: {
+        schema_version: 1,
+        corrections: [
+          removed("C-0001", ITEM, d2(), "incident.victim", "D-0001"),
+          removed("C-0002", CAMPAIGN, d2(), "attribution", "D-0002"),
+          removed("C-0003", FLAW, d2(), "incident.victim", "D-0003"),
+        ],
+        disputes: [
+          dispute("D-0001", ITEM, d2(), "victim", "open", "C-0001"),
+          dispute("D-0002", CAMPAIGN, d2(), "attribution", "upheld", "C-0002"),
+          dispute("D-0003", FLAW, d2(), "victim", "rejected", "C-0003"),
+        ],
+      },
+    };
+  }
+  const entry = (c: AgentContext, date: string, id: string) => c.recent_items.find((r) => r.date === date && r.id === id)!;
+
+  it("X8 marks each item an open or upheld victim or attribution dispute withholds, with the withheld headline and never the stored text", () => {
+    const { history, corrections } = world();
+    const r = buildContext({ ...input, history, corrections });
+    const c = r.context;
+    expect(entry(c, d2(), ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" });
+    expect(entry(c, d1(), ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" });
+    expect(entry(c, d2(), CAMPAIGN)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "attribution" });
+    // A rejected dispute no longer binds: the item reads as stored, with no marks; so does every other item.
+    const tpl = (id: string) => TEMPLATE.items.find((it) => it.id === id)!;
+    expect(entry(c, d2(), FLAW)).toEqual({
+      date: d2(), id: FLAW, kind: tpl(FLAW).kind, headline: tpl(FLAW).headline, severity: tpl(FLAW).severity,
+      source_urls: tpl(FLAW).source_ids.map((id) => TEMPLATE.sources.find((s) => s.id === id)!.url),
+    });
+    const marked = c.recent_items.filter((x) => x.withheld).map((x) => `${x.date}/${x.id}`);
+    expect(marked.sort()).toEqual([`${d1()}/${ITEM}`, `${d2()}/${CAMPAIGN}`, `${d2()}/${ITEM}`].sort());
+    for (const x of c.recent_items) if (!x.withheld) expect(Object.keys(x)).not.toContain("dispute_kind");
+    // The marked item keeps its source URLs (the agent must leave them out too); the stored headline is never printed.
+    expect(entry(c, d2(), ITEM).source_urls.length).toBeGreaterThan(0);
+    expect(r.text).not.toContain("SAMPLE original headline naming a party");
+    expect(AgentContext.parse(JSON.parse(r.text))).toEqual(c);
+  });
+
+  it("X8 the run's dispute statuses (intake's list) win over corrections.json's", () => {
+    const { history, corrections } = world();
+    const disputes = corrections.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "withdrawn" as const } : d.id === "D-0003" ? { ...d, status: "open" as const } : d));
+    const c = buildContext({ ...input, history, corrections, disputes }).context;
+    expect(entry(c, d2(), ITEM).withheld).toBeUndefined();
+    expect(entry(c, d2(), ITEM).headline).toBe("SAMPLE original headline naming a party");
+    expect(entry(c, d2(), FLAW)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" });
+    // With no corrections file nothing is marked.
+    expect(buildContext({ ...input, history, corrections: null }).context.recent_items.filter((x) => x.withheld)).toEqual([]);
+  });
+
+  it("X8 the schema takes withheld and dispute_kind only together", () => {
+    const { history, corrections } = world();
+    const c = buildContext({ ...input, history, corrections }).context;
+    const k = c.recent_items.findIndex((x) => x.withheld);
+    const broken = structuredClone(c);
+    delete broken.recent_items[k]!.dispute_kind;
+    expect(AgentContext.safeParse(broken).success).toBe(false);
+    const other = structuredClone(c);
+    other.recent_items[c.recent_items.findIndex((x) => !x.withheld)]!.dispute_kind = "victim";
+    expect(AgentContext.safeParse(other).success).toBe(false);
   });
 });

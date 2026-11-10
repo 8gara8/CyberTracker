@@ -101,6 +101,11 @@ export const AgentContext = z.strictObject({
     headline: z.string().min(1),
     severity: Severity.nullable(),
     source_urls: z.array(z.string().min(1)),
+    withheld: z.literal(true).optional()
+      .describe("Present on an item withheld while a reader dispute is open or upheld (SPEC §4.10): do not report it or its sources again"),
+    dispute_kind: z.enum(["victim", "attribution"]).optional().describe("With withheld: what the reader disputed"),
+  }).refine((r) => (r.withheld === undefined) === (r.dispute_kind === undefined), {
+    error: "withheld and dispute_kind come together", path: ["dispute_kind"],
   })).describe("Last 14 days of editions"),
   yesterday: z.strictObject({
     date: IsoDate,
