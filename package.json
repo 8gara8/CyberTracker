@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "node -e \"const f=require('node:fs'),c=require('node:crypto');f.writeFileSync('node_modules/.ct-lock-sha',c.createHash('sha256').update(f.readFileSync('package-lock.json')).digest('hex'))\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run schema:check && npm run fixtures:check && npm run validate:sample && npm run validate:all",
@@ -18,6 +19,11 @@
     "sources:check": "tsx scripts/collect.ts --check-feeds",
     "metrics": "tsx scripts/metrics.ts",
     "backfill": "tsx scripts/backfill.ts",
+    "context": "tsx scripts/build-context.ts",
+    "daily": "tsx scripts/daily.ts",
+    "publish": "tsx scripts/publish.ts",
+    "recheck": "tsx scripts/recheck.ts",
+    "links": "tsx scripts/recheck.ts --links",
     "chat": "tsx scripts/chat.ts",
     "agent:check": "tsx scripts/agent-check.ts"
   },
