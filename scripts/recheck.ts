@@ -19,6 +19,7 @@ import { parseKev } from "../lib/feeds/kev";
 import type { KevCatalog, KevEntry } from "../lib/feeds/types";
 import { htmlText, textSha256 } from "../lib/html-text";
 import { jsonText } from "../lib/json";
+import { exploitLinkProblem } from "../lib/rules/safety";
 import { sourceIdFields } from "../lib/rules/shared";
 import { readArchiveIndex, readBrief, readCorrections, readHistory, readStatus } from "../lib/run-inputs";
 import type { Brief } from "../lib/schema/brief";
@@ -102,13 +103,17 @@ function formBlocks(body: string): Partial<Record<FieldKey, string>> | null {
   return out;
 }
 
-/** An evidence link as §8.9 keeps it: https, at most 500 characters, not blocked, normalised; else null. */
+/**
+ * An evidence link as §8.9 keeps it: https, at most 500 characters, not blocked, normalised; else null. A reader's
+ * link is checked as a tier 3 page too (NO_EXPLOIT_LINK's path test, on any host), because it goes into the
+ * agent's context and the public corrections.json: a path holding an exploit word gives null.
+ */
 function evidenceUrl(value: string | undefined, tiers: Pick<SourceTiersFile, "github">): string | null {
   if (value === undefined || value === NO_RESPONSE) return null;
   if (value.length > EVIDENCE_MAX || /\s/.test(value) || !/^https:/i.test(value) || !isHttpsUrl(value)) return null;
-  if (blockedReason(value, tiers) !== null) return null;
+  if (blockedReason(value, tiers) !== null || exploitLinkProblem(value, 3, tiers) !== null) return null;
   const normal = normalizeUrl(value);
-  if (normal.length > EVIDENCE_MAX || !isHttpsUrl(normal) || blockedReason(normal, tiers) !== null) return null;
+  if (normal.length > EVIDENCE_MAX || !isHttpsUrl(normal) || blockedReason(normal, tiers) !== null || exploitLinkProblem(normal, 3, tiers) !== null) return null;
   return normal;
 }
 
@@ -849,7 +854,7 @@ function decode(body: Buffer, contentType: string | null): string {
 /**
  * §8.11 step 4, by the status after redirects: 200 to 399 ok; 404, 410 and a host that does not resolve
  * broken; anything else unknown. A redirect fetchFeed would not follow (more than 5, an invalid Location, a
- * hop off https) is unknown, whatever its status.
+ * hop off https, a hop into a blocked URL) is unknown, whatever its status.
  */
 export function linkResultOf(r: Pick<FetchResult, "ok" | "status" | "error">): "ok" | "unknown" | "broken" {
   if (r.ok) return "ok";
@@ -895,6 +900,8 @@ export async function checkLinks(o: {
       acceptLanguage: SNAPSHOT_HEADERS.acceptLanguage,
       userAgent: o.config.run.user_agent,
       deadline: realDeadline(o.now, stop),
+      // A redirect into a blocked URL is not followed: the link is unknown, and the blocked page is never read.
+      refuseRedirect: (hop) => blockedReason(hop, o.config.sourceTiers),
     });
     if (r.error === "timeout" && o.now() >= stop) return; // cut by the stop: not reached
     let result: LinkResult["result"] = linkResultOf(r);
@@ -950,13 +957,18 @@ export function applyLinkResults(ix: ArchiveIndex, date: string, results: readon
 
 // ── The run log ──────────────────────────────────────────────────────────────────────────────────
 
-/** logs/D.recheck.json: intake and flags (§8.9). `links` (an addition) is written when the CLI's --links ran. */
+/**
+ * logs/D.recheck.json: intake and flags (§8.9). `shown` (an addition) is the context's flag list after
+ * suppression, what the agent was shown, so the build-context CLI rebuilds exactly the orchestrator's context
+ * (§8.5); written when given. `links` (an addition) is written when the link check ran.
+ */
 export function writeRecheckLog(root: string, date: string, x: {
-  intake: IntakeResult | null; flagged: Recheck | null; reports: AgentContext["corrections"]["reports"]; links?: LinksOutcome | null;
+  intake: IntakeResult | null; flagged: Recheck | null; shown?: AgentContext["corrections"]["flagged"] | null;
+  reports: AgentContext["corrections"]["reports"]; links?: LinksOutcome | null;
 }): void {
   const file = runPaths(root, date).recheck;
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const out: Record<string, unknown> = { intake: x.intake, flagged: x.flagged, reports: x.reports };
+  const out: Record<string, unknown> = { intake: x.intake, flagged: x.flagged, ...(x.shown !== undefined ? { shown: x.shown } : {}), reports: x.reports };
   if (x.links !== undefined) out.links = x.links;
   const tmp = `${file}.tmp-${process.pid}`;
   fs.writeFileSync(tmp, jsonText(out));
@@ -1043,8 +1055,9 @@ export async function main(argv: string[] = process.argv.slice(2), deps: { now?:
       lines.push(`Links: ${links.record.checked} checked, ${links.record.ok} ok, ${links.record.unknown} unknown, ${links.record.broken.length - changed} broken, ${changed} changed, ${links.notReached} not reached.`);
     }
     const reports = intake?.reports ?? [];
-    const out = { intake, flagged: flagged?.record ?? null, reports, ...(doLinks ? { links } : {}) };
-    if (!dryRun) writeRecheckLog(root, date, { intake, flagged: flagged?.record ?? null, reports, ...(doLinks ? { links } : {}) });
+    const shown = flagged ? flagged.shown : null;
+    const out = { intake, flagged: flagged?.record ?? null, shown, reports, ...(doLinks ? { links } : {}) };
+    if (!dryRun) writeRecheckLog(root, date, { intake, flagged: flagged?.record ?? null, shown, reports, ...(doLinks ? { links } : {}) });
     process.stdout.write(values.json ? jsonText(out) : `${lines.join("\n")}\n`);
     return intake && !intake.ok ? 1 : 0;
   } catch (e) {

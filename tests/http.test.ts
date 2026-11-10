@@ -124,6 +124,24 @@ describe("fetchFeed: redirects", () => {
     expect(calls).toBe(6);
   });
 
+  it("asks refuseRedirect about every hop and stops before a refused one, which is never requested", async () => {
+    const asked: string[] = [];
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      seen.push(url);
+      const n = Number(new URL(url).searchParams.get("n") ?? "0");
+      return new Response(null, { status: 301, headers: { location: n === 1 ? "https://refused.example.net/x" : `https://example.org/hop?n=${n + 1}` } });
+    });
+    const refuseRedirect = (u: string) => {
+      asked.push(u);
+      return u.includes("refused.example.net") ? "sample reason" : null;
+    };
+    const r = await fetchFeed("https://example.org/hop?n=0", { ...opts, retryDelayMs: 0, refuseRedirect });
+    expect(r).toMatchObject({ ok: false, status: 301, error: "redirects", detail: "a redirect to a refused URL (sample reason)", finalUrl: "https://refused.example.net/x", attempts: 1 });
+    expect(asked).toEqual(["https://example.org/hop?n=1", "https://refused.example.net/x"]);
+    expect(seen).toEqual(["https://example.org/hop?n=0", "https://example.org/hop?n=1"]);
+  });
+
   it("answers after 5 redirects", async () => {
     vi.stubGlobal("fetch", async (url: string) => {
       const n = Number(new URL(url).searchParams.get("n") ?? "0");

@@ -5,7 +5,7 @@
 // and writes the draft the prompt names from its config. The agent's environment is minimal by design, so
 // the config comes from $CLAUDE_CONFIG_DIR/fake-agent.json (FakeAgentConfig in tests/helpers/harness.ts):
 //   mode        "ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair" (default "ok")
-//   resumeMode  the mode of --resume calls (a repair round), default mode
+//   resumeMode  the mode of --resume calls (a repair round), default mode ("mcp", "auth" or "limit": a repair the run must stop on)
 //   attemptModes  the modes of the first, second, ... --session-id calls (an attempt each), default mode
 //   draft       the JSON value written as the draft (ok: on --session-id; on --resume when no repair)
 //   invalidDraft  repair mode: written on --session-id in place of draft when given

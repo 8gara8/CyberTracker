@@ -103,7 +103,8 @@ function decode(body: Buffer, contentType: string | null): string {
 }
 
 /**
- * One round: GET via fetchFeed (SNAPSHOT_HEADERS, run.json user_agent), BLOCKED_HOSTS skipped, HTML only,
+ * One round: GET via fetchFeed (SNAPSHOT_HEADERS, run.json user_agent), BLOCKED_HOSTS skipped (a redirect
+ * into one too, which fails the URL with `redirects` before that hop is requested), HTML only,
  * 6 at a time, no request started at or after `deadline` (Date.now() ms: pass realDeadline()). Each URL is
  * requested exactly as the draft stores it; normalizeUrl() is used only for keys and file names (plan A13).
  * Writes each snapshot file. `skipped`: a blocked host, a URL that is not http(s), a repeat of a normalised
@@ -154,6 +155,8 @@ export async function snapshotUrls(o: {
       maxBytes: SNAPSHOT_LIMITS.maxBytes,
       truncate: true,
       deadline: o.deadline,
+      // A redirect into a blocked host ends the fetch before that hop (§4.12 step 1: BLOCKED_HOSTS are never fetched).
+      refuseRedirect: (hop) => blockedEntry(hop)?.reason ?? null,
     });
     if (!r.ok || !r.body || r.status === null) {
       log(`snapshot: ${url} not read (${r.error ?? "network"}${r.status ? `, HTTP ${r.status}` : ""}).`);

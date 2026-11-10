@@ -193,6 +193,11 @@ describe("daily.ts end to end", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]!.argv).toContain("--session-id");
     expect(calls[0]!.envKeys).not.toContain("CT_FIXTURE_FEEDS");
+    // logs/D.recheck.json carries the flags the agent was shown, so the build-context CLI rebuilds its context (§8.5).
+    const recheckLog = JSON.parse(fs.readFileSync(path.join(h.root, "logs", `${D}.recheck.json`), "utf8")) as Record<string, unknown>;
+    const contextLog = JSON.parse(fs.readFileSync(path.join(h.root, "logs", `${D}.context.json`), "utf8")) as { corrections: { flagged: unknown } };
+    expect(Object.keys(recheckLog)).toEqual(["intake", "flagged", "shown", "reports", "links"]);
+    expect(recheckLog.shown).toEqual(contextLog.corrections.flagged);
     const runsJsonl = fs.readFileSync(path.join(h.root, "logs", "runs.jsonl"), "utf8").trim().split("\n");
     expect(runsJsonl).toHaveLength(1);
     expect(JSON.parse(runsJsonl[0]!)).toMatchObject({ date: D, trigger: "schedule", outcome: "published_full", edition: "full", attempts: 1, repairs: 0, error_code: null });
@@ -306,8 +311,10 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
-  it("D36 a repair round stopped by the usage limit or the sandbox ends the attempt with that code: no retry, nothing published past the data-only edition", async () => {
-    for (const [resumeMode, code] of [["limit", "E_LIMIT"], ["mcp", "E_SANDBOX"]] as const) {
+  it("D36 a repair round stopped by the usage limit, the sandbox or a lost sign-in ends the attempt with that code: no second repair, no retry, nothing published past the data-only edition", async () => {
+    // Before the repair call was checked, the run validated the unchanged draft again, spent its second round and
+    // retried: E_VALIDATION twice, with nothing saying the sandbox broke.
+    for (const [resumeMode, code] of [["limit", "E_LIMIT"], ["mcp", "E_SANDBOX"], ["auth", "E_AUTH"]] as const) {
       const h = harness();
       h.fakeAgent({ mode: "repair", resumeMode, invalidDraft: INVALID, repair: DRAFT, fetches: FETCHES });
       expect(await run(h, ["--trigger", "schedule"]), code).toBe(3);
@@ -320,8 +327,14 @@ describe("daily.ts end to end", () => {
       const calls = agentRuns(h);
       expect(calls).toHaveLength(2);
       expect(calls[1]!.argv).toContain("--resume");
-      expect(dailyLog(h)).toContain("Attempt 1: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
-      expect(dailyLog(h)).toContain("No retry: the error is not retryable.");
+      const log = dailyLog(h);
+      expect(log).toContain("Attempt 1: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+      // The stopped repair call gets its own agent line; a sandbox breach kills it, so it reads "agent was stopped".
+      expect(log).toMatch(resumeMode === "mcp" ? /Attempt 1: repair 1: agent was stopped · / : /Attempt 1: repair 1: agent (exited|was stopped)/);
+      expect(log).not.toContain("repair 2");
+      expect(log).not.toContain("Attempt 2");
+      expect(log).toContain("No retry: the error is not retryable.");
+      if (resumeMode === "limit") expect(r[0]!.budgets.usage).toEqual({ window: "five_hour", utilization: 1 });
       expect(summary(h).split("\n")[0]).toContain(`(${code})`);
       expect(briefOn(h)!.edition).toBe("data_only");
       expectContentOnly(h);

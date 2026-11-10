@@ -215,7 +215,12 @@ function agentStop(r: AgentRun): "E_SANDBOX" | "E_AUTH" | "E_LIMIT" | null {
   return null;
 }
 
-/** Thrown out of a repair round (validateLoop's io.repair) whose agent call agentStop() stopped. */
+/**
+ * Thrown out of a repair round (validateLoop's io.repair) whose agent call agentStop() stopped: its init broke
+ * the sandbox, or it was signed out or hit the usage limit. No later repair can fix that, so §8.2 stage 6's
+ * checks hold for repairs too: the validate loop stops there and the run fails with the same code as the first
+ * call would, with no retry.
+ */
 class RepairStopped extends Error {
   constructor(readonly code: "E_SANDBOX" | "E_AUTH" | "E_LIMIT") {
     super(`a repair round's agent call was stopped (${code})`);
@@ -552,7 +557,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       }
       setStage(cur(), "recheck", { status: recheckFailed ? "failed" : "ok", ended: now() });
       try {
-        writeRecheckLog(root, D, { intake, flagged: cur().recheck, reports: intake?.reports ?? [] });
+        writeRecheckLog(root, D, { intake, flagged: cur().recheck, shown, reports: intake?.reports ?? [] });
       } catch (e) {
         line(errorText(e));
       }
@@ -618,7 +623,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       state.linkResults = lk.results;
       setStage(cur(), "links", { status: "ok", ended: now(), note: lk.notReached > 0 ? NOTES.notReached(lk.notReached) : undefined });
       try {
-        writeRecheckLog(root, D, { intake, flagged: cur().recheck, reports: intake?.reports ?? [], links: lk });
+        writeRecheckLog(root, D, { intake, flagged: cur().recheck, shown, reports: intake?.reports ?? [], links: lk });
       } catch (e) {
         line(errorText(e));
       }
@@ -779,15 +784,22 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         repair: async (k, issues) => {
           const vars = repairVars({ root, date: D, context: built.context, fetchBudget: fetchBudgetLeft(x.budgetFetches, transcripts), issues });
           const t1 = now();
+          const tr = repairBudget(sch.hardStop, t1);
           const r = await runAgent(renderTemplate(readRoutine("REPAIR.md"), vars), agentCfg, {
-            resume: ar.sessionId, timeoutMs: repairBudget(sch.hardStop, now()), transcriptFile: agentTranscript(P, attempt, k),
+            resume: ar.sessionId, timeoutMs: tr, transcriptFile: agentTranscript(P, attempt, k),
           });
           agentMs += now() - t1;
           transcripts.push(r.transcript);
           attemptTranscripts.push(r.transcript);
           roundsRun = k;
           const stop = agentStop(r);
-          if (stop) throw new RepairStopped(stop);
+          if (stop) {
+            line(LINES.agent({
+              attempt, repair: k, exitCode: r.run.code, timedOutMin: r.run.timedOut ? Math.round(tr / MIN) : null, turns: r.transcript.numTurns ?? 0,
+              tools: r.transcript.toolUses, fetches: r.transcript.toolUses.WebFetch ?? 0, budget: x.budgetFetches, isError: r.transcript.isError === true,
+            }));
+            throw new RepairStopped(stop);
+          }
         },
         repairBudgetMs: () => repairBudget(sch.hardStop, now()),
         log: line,

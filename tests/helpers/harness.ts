@@ -44,7 +44,7 @@ export interface FakeAgentConfig {
    * repair: writes `invalidDraft ?? draft` (invalid) first, `repair` on --resume.
    */
   mode: "ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair";
-  /** The mode of --resume calls (a repair round); default `mode`. */
+  /** The mode of --resume calls (a repair round); default `mode`. "mcp", "auth" or "limit": a repair the run must stop on. */
   resumeMode?: "ok" | "nodraft" | "auth" | "mcp" | "limit";
   /** The modes of the first, second, ... --session-id calls (one per attempt); default `mode`. */
   attemptModes?: ("ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair")[];

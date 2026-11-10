@@ -8,6 +8,7 @@ import { secretsIn } from "@/lib/rules/safety";
 import type { ValidationIssue } from "@/lib/rules/types";
 import { AgentContext } from "@/lib/schema/context";
 import { PROMPT_VARS, REPAIR_VARS, STYLE_FILE, promptVars, renderTemplate, repairIssues, repairVars } from "@/scripts/lib/agent";
+import { MODEL_FAMILIES, MODEL_FLAG_SOURCE, MODEL_ID_SOURCE, MODEL_SAMPLES } from "./helpers/model-names";
 
 const root = path.join(__dirname, "..");
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
@@ -98,8 +99,8 @@ describe("PR4: routine/TASK.md", () => {
 
 describe("PR5: no date, model name or secret in any routine file", () => {
   const files = routineFiles();
-  const families = ["op" + "us", "son" + "net", "hai" + "ku"];
-  const modelRe = new RegExp(`\\b(?:${families.join("|")})\\b|claude-\\d|--mod${"el"}\\b|--fallback-mod${"el"}\\b`, "i");
+  // Every family name as a bare word too (the CLI's aliases), besides the full identifiers and the flags (tests/helpers/model-names.ts).
+  const modelRe = new RegExp(`\\b(?:${MODEL_FAMILIES.join("|")})\\b|${MODEL_ID_SOURCE}|${MODEL_FLAG_SOURCE}`, "i");
   const months = "January|February|March|April|May|June|July|August|September|October|November|December";
   const dateRes = [
     /\b(?:19|20)\d{2}-\d{2}-\d{2}\b/,
@@ -124,8 +125,8 @@ describe("PR5: no date, model name or secret in any routine file", () => {
     });
   }
   it("PR5: the scan itself catches what it looks for", () => {
-    expect("use claude-" + families[1] + "-9").toMatch(modelRe);
-    expect("--mod" + "el x").toMatch(modelRe);
+    for (const f of MODEL_FAMILIES) expect(`Use ${f[0]!.toUpperCase()}${f.slice(1)} here.`, f).toMatch(modelRe);
+    for (const sample of MODEL_SAMPLES) expect(`run ${sample}`, sample).toMatch(modelRe);
     expect(dateRes.some((re) => re.test("on 2026-10-14"))).toBe(true);
     expect(dateRes.some((re) => re.test("on 14 October 2026"))).toBe(true);
     expect(secretsIn("gh" + "p_" + "a".repeat(36))).not.toEqual([]);

@@ -355,6 +355,17 @@ describe("the correction form parser (R8 to R11)", () => {
     expect(at("https://WWW.Ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935/?utm_source=x")?.evidence_url)
       .toBe("https://ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935");
   });
+
+  it("R11 an evidence link whose path holds an exploit word is dropped on any host, so it never reaches the context or corrections.json", () => {
+    const at = (evidence: string) => parseDisputeForm(formBody("cve-2026-104935", "2026-10-14", DISPUTE_FORM_OPTIONS.fact, evidence), briefs);
+    // Built here, not in fixtures: a reader's link is checked as a tier 3 page, whatever its host.
+    expect(at("https://example.net/ct-sample/cve-2026-104935-poc")).toMatchObject({ kind: "fact", evidence_url: null });
+    expect(at("https://example.net/ct-sample/PoC/notes")?.evidence_url).toBeNull();
+    expect(at("https://www.ivanti.com/ct-sample/exploit")?.evidence_url).toBeNull();
+    expect(at("https://www.ivanti.com/ct-sample/payload_notes")?.evidence_url).toBeNull();
+    // A word that only contains one of them is fine.
+    expect(at("https://www.ivanti.com/ct-sample/exploitation-status")?.evidence_url).toBe("https://ivanti.com/ct-sample/exploitation-status");
+  });
 });
 
 // ── Intake: R12 to R19 ───────────────────────────────────────────────────────────────────────────
@@ -642,7 +653,9 @@ describe("the CLI and the run log", () => {
     out.length = 0;
     expect(await main(["--date", D, "--json"], { fetchImpl: issuesApi([ISSUES]).impl, fetch: w.fetch })).toBe(0);
     const log = readJson<Record<string, unknown>>(path.join(w.root, "logs", `${D}.recheck.json`));
-    expect(Object.keys(log)).toEqual(["intake", "flagged", "reports"]);
+    expect(Object.keys(log)).toEqual(["intake", "flagged", "shown", "reports"]);
+    expect(log.flagged).not.toBeNull();
+    expect(log.shown).toEqual(expect.any(Array)); // the flags the context shows (build-context reads them)
     expect(JSON.parse(out.join(""))).toEqual(log);
     // Intake never writes corrections.json and never withholds: publish does.
     expect(fs.readFileSync(path.join(w.content, "corrections.json"), "utf8")).toBe(before);
@@ -655,13 +668,18 @@ describe("the CLI and the run log", () => {
     expect(JSON.parse(out.join(""))).toMatchObject({ intake: null, reports: [] });
   });
 
-  it("writeRecheckLog writes the three keys, and links when given", () => {
+  it("writeRecheckLog writes the three keys, and shown and links when given", () => {
     const w = world();
     writeRecheckLog(w.root, D, { intake: null, flagged: { from: addDays(D, -14), to: addDays(D, -1), items_checked: 0, flagged: [] }, reports: [] });
     const file = path.join(w.root, "logs", `${D}.recheck.json`);
     expect(readJson(file)).toEqual({ intake: null, flagged: { from: "2026-10-02", to: "2026-10-15", items_checked: 0, flagged: [] }, reports: [] });
     writeRecheckLog(w.root, D, { intake: null, flagged: null, reports: [], links: null });
     expect(readJson(file)).toEqual({ intake: null, flagged: null, reports: [], links: null });
+    // `shown`, the context's flag list, goes between flagged and reports when given (the build-context CLI reads it).
+    const shown = [{ date: addDays(D, -3), item_id: "cve-2026-104935", check: "cvss_changed" as const, before: "9.1", after: "9.8", evidence_url: null }];
+    writeRecheckLog(w.root, D, { intake: null, flagged: null, shown, reports: [] });
+    expect(Object.keys(readJson(file) as object)).toEqual(["intake", "flagged", "shown", "reports"]);
+    expect((readJson(file) as { shown: unknown }).shown).toEqual(shown);
     expect(fs.readdirSync(path.dirname(file))).toEqual([`${D}.recheck.json`]);
     expect(RECHECK_LIMITS.days).toBe(14);
   });

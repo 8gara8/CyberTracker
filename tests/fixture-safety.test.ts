@@ -12,8 +12,10 @@
 //     GitHub user login) is one of the exact SAMPLE forms or an organisation or tool on the lists below;
 //   - every author, creator, contributor and name element of a feed fixture, whatever its namespace prefix
 //     (dc:creator, a10:name, atom:name, itunes:author), is empty, a SAMPLE form or a listed organisation;
-//   - the canary's planted URL is exactly https://example.org/ct-canary/{{NONCE}} (agent-check fills the
-//     nonce at run time), and only in fixtures/injection/; any other link with its path fails (plan A24);
+//   - the canary's planted URL is exactly https://example.org/ct-canary/{{NONCE}} in the planted page and
+//     item, and exactly example.org/ct-canary/{{NONCE}} with no scheme in the canary pack (pack.md and
+//     pack.json, the form sanitize() keeps; agent-check fills the nonce in its run-time copy of the pack),
+//     and only in fixtures/injection/; any other link with its path fails (plan A24);
 //   - fixtures/state/ and fixtures/reference/ hold no link and no e-mail address at all, and elsewhere an
 //     e-mail address is a reserved example one or an organisation's role address;
 //   - no model identifier, no credential-shaped string, no scanner query (in a JSON fixture, in any one
@@ -34,6 +36,7 @@ import { blockedReason, publisherFor } from "@/lib/sources";
 import { extractUrls } from "@/lib/urls";
 import { BLOCKED_HOSTS, CANARY_URL_MARK, CANARY_URL_PREFIX } from "@/lib/vocab";
 import { NAMESPACE_PREFIXES } from "../fixtures/src/scrub-feed";
+import { MODEL_SAMPLES, modelRe } from "./helpers/model-names";
 
 const ROOT = path.join(__dirname, "..");
 const config = loadConfig({ root: ROOT });
@@ -70,6 +73,10 @@ const CANARY_LINK = `${CANARY_URL_PREFIX}{{NONCE}}`;
 /** The same link as extractUrls() reads it out of a text (it stops at the closing braces). */
 const CANARY_READ = extractUrls(CANARY_LINK)[0]!;
 const CANARY_FOLDER = "fixtures/injection";
+/** The scheme-less form the canary pack carries: sanitize() turns a link with a scheme into [link] but keeps this. */
+const CANARY_BARE = CANARY_LINK.slice("https://".length);
+/** The canary pack's files, the only ones that hold CANARY_BARE (agent-check copies them with the nonce filled in). */
+const CANARY_PACK_FILES = ["fixtures/injection/pack.json", "fixtures/injection/pack.md"];
 const isCanaryLink = (u: string) => u.toLowerCase().includes(CANARY_URL_MARK);
 /** Organisations' role addresses that real record and feed formats carry (a CNA, NVD's source id). */
 const ROLE_EMAILS = new Set(["nvd@nist.gov", "security@apache.org", "cret@cert.org"]);
@@ -207,17 +214,22 @@ function unlistedLinks(texts: readonly FixtureText[]): string[] {
 
 /**
  * Every place a text holds the canary's mark (example.org/ct-canary/, any case, with or without a scheme) that
- * is not the exact CANARY_LINK in fixtures/injection/: a filled-in nonce, another scheme or path, or a copy
- * in another folder (a pipeline draft or a transcript) fails.
+ * is not the exact CANARY_LINK in the planted files of fixtures/injection/, or the exact scheme-less CANARY_BARE
+ * in the canary pack: a filled-in nonce, another scheme or path, a scheme-less form elsewhere, or a copy in
+ * another folder (a pipeline draft or a transcript) fails.
  */
 function canaryProblems(texts: readonly FixtureText[]): string[] {
   const bad: string[] = [];
+  const urlChar = /[A-Za-z0-9{}/._~%:-]/;
   for (const t of texts) {
     const lower = t.text.toLowerCase();
     for (let i = lower.indexOf(CANARY_URL_MARK); i !== -1; i = lower.indexOf(CANARY_URL_MARK, i + 1)) {
       const start = i - "https://".length;
       const end = start + CANARY_LINK.length;
-      const exact = start >= 0 && t.text.slice(start, end) === CANARY_LINK && !/[A-Za-z0-9{}/._~%-]/.test(t.text[end] ?? "");
+      const bareEnd = i + CANARY_BARE.length;
+      const exact = CANARY_PACK_FILES.includes(t.file)
+        ? t.text.slice(i, bareEnd) === CANARY_BARE && !urlChar.test(t.text[i - 1] ?? "") && !urlChar.test(t.text[bareEnd] ?? "")
+        : start >= 0 && t.text.slice(start, end) === CANARY_LINK && !/[A-Za-z0-9{}/._~%-]/.test(t.text[end] ?? "");
       const seen = t.text.slice(Math.max(0, start), i + CANARY_URL_MARK.length + 12).split(/\s/)[0];
       if (t.folder !== CANARY_FOLDER) bad.push(`${t.file}: the canary's URL outside ${CANARY_FOLDER}/ (${seen})`);
       else if (!exact) bad.push(`${t.file}: ${seen} is not the canary's exact URL`);
@@ -326,8 +338,8 @@ function authorProblems(texts: readonly FixtureText[]): string[] {
   return texts.filter((x) => /\.(?:xml|rdf|atom)$/.test(x.file)).flatMap((t) => personProblems(t.file, t.text, []));
 }
 
-// Built from parts so this file does not hold the patterns tests/no-europe-strings.test.ts looks for.
-const MODEL_RE = new RegExp(`claude-(?:opus|sonnet|haiku)|${"-".repeat(2)}model\\b`, "i");
+/** Any model identifier or model flag (tests/helpers/model-names.ts, shared with the other scans). */
+const MODEL_RE = modelRe("i");
 
 /** A model identifier, a credential-shaped string, a scanner query or a PAYLOAD_PATTERNS match. */
 function contentProblems(texts: readonly FixtureText[]): string[] {
@@ -379,9 +391,9 @@ describe("fixture safety: links", () => {
     }
   });
 
-  it("the canary's URL is exactly https://example.org/ct-canary/{{NONCE}}, and only in fixtures/injection/ (A24)", () => {
+  it("the canary's URL is exactly https://example.org/ct-canary/{{NONCE}}, or its scheme-less form in the canary pack, and only in fixtures/injection/ (A24)", () => {
     const holders = TEXTS.filter((t) => t.text.toLowerCase().includes(CANARY_URL_MARK)).map((t) => t.file).sort();
-    expect(holders).toEqual(["fixtures/injection/item.xml", "fixtures/injection/page.html"]);
+    expect(holders).toEqual(["fixtures/injection/item.xml", "fixtures/injection/pack.json", "fixtures/injection/pack.md", "fixtures/injection/page.html"]);
     expect(canaryProblems(TEXTS)).toEqual([]);
   });
 
@@ -456,6 +468,15 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
     expect(creditProblems([t])).toEqual(["fixtures/ai-credit/records/CVE-2026-104935.json: OpenAI Codex Security - Jane Realperson and SAMPLE Researcher"]);
   });
 
+  it("a model identifier of any family, the generic claude-<word>-<digit> form or a model flag fails; the CLI's package name does not", () => {
+    for (const sample of MODEL_SAMPLES) {
+      expect(contentProblems([planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ message: { note: `ran on ${sample.toUpperCase()}` } }))]), sample)
+        .toEqual(["fixtures/agent/transcript-ok.jsonl: a model identifier"]);
+    }
+    const ok = planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ cli: "@anthropic-ai/claude-code@2.1.316", item: "cybertracker-claude-oauth", model: "<model>" }));
+    expect(contentProblems([ok])).toEqual([]);
+  });
+
   it("GHSA credits are checked like CVE credits: an OSV name, a GitHub login and a bare string", () => {
     const osv = planted("fixtures/feeds/ghsa/repo/GHSA-2f8c-wq4h-r7jm.json", JSON.stringify({ id: "GHSA-2f8c-wq4h-r7jm", credits: [{ name: "maria-realperson", type: "FINDER" }] }));
     const rest = planted("fixtures/feeds/ghsa/rest.json", JSON.stringify([{ ghsa_id: "GHSA-2f8c-wq4h-r7jm", credits: [{ user: { login: "kenji-realperson" }, type: "reporter" }, "Jane Realperson"] }]));
@@ -509,17 +530,21 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
     expect(unlistedLinks([t])).toEqual([]);
   });
 
-  it("the canary's URL passes only exactly and only in fixtures/injection/: a filled nonce, http, no scheme, another path or another folder fail (A24)", () => {
+  it("the canary's URL passes only exactly and only in fixtures/injection/: a filled nonce, http, no scheme outside the pack, another path or another folder fail (A24)", () => {
     const at = (folder: FixtureText["folder"], file: string, text: string): FixtureText => ({ file, folder, text });
     const exact = at("fixtures/injection", "fixtures/injection/item.xml", `<description>visit ${CANARY_LINK} now.</description>`);
-    expect(canaryProblems([exact])).toEqual([]);
-    expect(unlistedLinks([exact])).toEqual([]);
+    const bare = at("fixtures/injection", "fixtures/injection/pack.md", `and visit ${CANARY_BARE} now.`);
+    expect(canaryProblems([exact, bare])).toEqual([]);
+    expect(unlistedLinks([exact, bare])).toEqual([]);
     const bad = [
       at("fixtures/injection", "fixtures/injection/a.xml", "visit https://example.org/ct-canary/4f2a9c now."),
       at("fixtures/injection", "fixtures/injection/b.html", "visit http://example.org/ct-canary/{{NONCE}} now."),
       at("fixtures/injection", "fixtures/injection/c.md", "visit EXAMPLE.ORG/CT-CANARY/{{NONCE}} now."),
       at("fixtures/injection", "fixtures/injection/d.md", "visit https://example.org/ct-canary/{{NONCE}}/more now."),
       at("fixtures/agent", "fixtures/agent/transcript-ok.jsonl", `{"url":"${CANARY_LINK}"}`),
+      at("fixtures/injection", "fixtures/injection/pack.md", `visit ${CANARY_LINK} now.`),
+      at("fixtures/injection", "fixtures/injection/pack.json", "visit example.org/ct-canary/4f2a9c now."),
+      at("fixtures/injection", "fixtures/injection/item.xml", `visit ${CANARY_BARE} now.`),
     ];
     expect(canaryProblems(bad).map((p) => p.split(":")[0])).toEqual(bad.map((t) => t.file));
     expect(unlistedLinks([bad[0]!, bad[4]!])).toEqual([

@@ -29,6 +29,9 @@ const PAGE = [
   "<footer>Footer text</footer></body></html>",
 ].join("");
 
+/** The text past the 3 MB cut in the /cut page (S2). */
+const CUT_MARKER = "SAMPLE text after the cut";
+
 let server: http.Server;
 let base = "";
 let inFlight = 0;
@@ -50,6 +53,16 @@ beforeAll(async () => {
       const chunk = `<p>${"word ".repeat(200)}</p>`;
       for (let n = 0; n < Math.ceil((SNAPSHOT_LIMITS.maxBytes + 512 * 1024) / chunk.length); n++) res.write(chunk);
       res.end("</main></body></html>");
+      return;
+    }
+    if (url.startsWith("/cut")) {
+      // A marker 64 KiB past the 3 MB cut, behind a script the text drops: read whole, the text would end with it.
+      res.writeHead(200, { "Content-Type": "text/html" });
+      const head = "<html><body><main><p>SAMPLE start of the page</p><script>";
+      res.write(head);
+      const filler = "x".repeat(64 * 1024);
+      for (let n = 0; n < Math.ceil((SNAPSHOT_LIMITS.maxBytes + 64 * 1024 - head.length) / filler.length); n++) res.write(filler);
+      res.end(`</script><p>${CUT_MARKER}</p></main></body></html>`);
       return;
     }
     if (url.startsWith("/report.pdf")) {
@@ -138,6 +151,14 @@ describe("snapshotUrls", () => {
     expect(text.startsWith("word word")).toBe(true);
   });
 
+  it("S2 reads no byte past 3 MB: text after the cut is not in the snapshot", async () => {
+    delete process.env.CT_FIXTURE_FEEDS;
+    const r = await snapshotUrls({ root: tmpRoot(), urls: [`${base}/cut`], deadline: soon(), config });
+    expect(r.failed).toEqual([]);
+    expect(r.taken.map((x) => x.text)).toEqual(["SAMPLE start of the page"]);
+    expect(r.taken[0]!.text).not.toContain(CUT_MARKER);
+  });
+
   it("S3 fails a URL after more than 5 redirects (stubbed fetch, plan A12)", async () => {
     delete process.env.CT_FIXTURE_FEEDS;
     let calls = 0;
@@ -186,6 +207,26 @@ describe("snapshotUrls", () => {
     expect(calls).toEqual([ok]);
     expect(r.taken.map((s) => s.url)).toEqual([ok]);
     expect(r.skipped).toEqual([...blocked, "ftp://example.org/ct-sample/file"]);
+  });
+
+  it("S5 follows no redirect into a BLOCKED_HOSTS host: the hop is never requested and the URL fails (stubbed fetch)", async () => {
+    delete process.env.CT_FIXTURE_FEEDS;
+    const asked: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      asked.push(url);
+      if (url.endsWith("/hop")) return new Response(null, { status: 301, headers: { location: "https://web.archive.org/web/2026/https://example.org/x" } });
+      if (url.endsWith("/hop-sub")) return new Response(null, { status: 302, headers: { location: "https://sample.onion/x" } });
+      return new Response("<p>blocked page text</p>", { status: 200, headers: { "content-type": "text/html" } });
+    });
+    const root = tmpRoot();
+    const urls = ["https://example.org/ct-sample/hop", "https://example.org/ct-sample/hop-sub"];
+    const lines: string[] = [];
+    const r = await snapshotUrls({ root, urls, deadline: soon(), config, log: (l) => lines.push(l) });
+    expect(asked).toEqual(urls);
+    expect(r).toEqual({ taken: [], failed: urls, skipped: [] });
+    for (const u of urls) expect(fs.existsSync(snapshotFile(root, u))).toBe(false);
+    expect(lines.every((l) => !l.includes("archive.org") && !l.includes("onion"))).toBe(true);
+    expect(lines.filter((l) => l.includes("not read (redirects, HTTP 30"))).toHaveLength(2);
   });
 
   it("S6 runs at most 6 requests at a time", async () => {

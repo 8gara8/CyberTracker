@@ -238,6 +238,17 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(paths(r, "XREF_STATUS")).toEqual([`status/${WED}.json: runs[0].full_published_at`, `status/${SITE_FAILED_DATE}.json: runs[0].edition`]);
   });
 
+  it("NO_EXPLOIT_LINK: a dispute's evidence link on a blocked host or with an exploit word in its path", () => {
+    for (const [url, says] of [["https://example.net/ct-sample/cve-2026-104935-poc", 'path holds "poc"'], ["https://bit.ly/ct-sample", "link shortener"]] as const) {
+      const dir = copy();
+      edit<CorrectionsFile>(dir, "corrections.json", (c) => { c.disputes[0]!.evidence_url = url; });
+      const r = all(dir);
+      expect(codes(r.errors), url).toEqual(["NO_EXPLOIT_LINK"]);
+      expect(paths(r, "NO_EXPLOIT_LINK")).toEqual(["corrections.json: disputes[0].evidence_url"]);
+      expect(r.errors[0]!.message).toContain(says);
+    }
+  });
+
   it("XREF_CORRECTION: a name_removed correction whose archived item still names the victim", () => {
     const dir = copy();
     editBrief(dir, "2026-10-12", (b) => { b.items[0]!.incident!.victim = "Example Health Group"; });
