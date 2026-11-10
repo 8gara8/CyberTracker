@@ -22,6 +22,7 @@ import { publisherFor } from "@/lib/sources";
 import { validateAll, validateDraft, validatePublished, type AllResult, type ValidationResult } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { composeWithholds } from "@/lib/withhold";
+import { bindingWithholds } from "@/lib/withhold-mask";
 import { WEEKDAY_ITEMS, editionDraft } from "@/fixtures/src/drafts";
 import { CLAIMS_FILE, draftInputs, fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR, SITE_EDITIONS, SITE_FAILED_DATE } from "@/fixtures/src/site";
@@ -307,6 +308,29 @@ describe("validateAll() on a changed copy of the sample", () => {
     const rejected = copy();
     later(rejected, "2026-10-13", "rejected");
     expect(all(rejected).errors).toEqual([]);
+  });
+
+  it("XREF_CORRECTION: a new dispute on an item whose first dispute was rejected gets a second withhold, valid and binding again", () => {
+    // Intake gives the new dispute a withhold of its own (scripts/recheck.ts): C-0001 binds nothing once D-0001 is rejected.
+    const HEALTH = "inc-health-us-2026-10";
+    const dir = copy();
+    const cf = read<CorrectionsFile>(dir, "corrections.json");
+    const disputes = [
+      ...cf.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "rejected" as const, resolved_on: "2026-10-14" } : d)),
+      { ...cf.disputes[0]!, id: "D-0002", issue_number: cf.disputes[0]!.issue_number + 1, received: "2026-10-15T09:00:00+08:00", correction_id: null },
+    ];
+    const ch = composeWithholds({
+      date: "2026-10-16", config, briefs: DATES.map((d) => sample(dir, d)), corrections: cf, disputes, archiveIndex: read<ArchiveIndex>(dir, "archive-index.json"),
+      metricsFor: (d) => read<Metrics>(dir, `metrics/${d}.json`),
+      requests: [{ item_id: HEALTH, edition_date: "2026-10-12", kind: "victim", dispute_id: "D-0002", since: "2026-10-16" }],
+    });
+    for (const b of ch.rewritten) write(dir, `briefs/${b.date}.json`, b);
+    write(dir, "corrections.json", ch.corrections!);
+    write(dir, "archive-index.json", ch.archiveIndex);
+    expect(ch.corrections!.corrections.map((c) => [c.id, c.dispute_id])).toEqual([["C-0001", "D-0001"], ["C-0002", null], ["C-0003", "D-0002"]]);
+    expect(ch.corrections!.disputes.map((d) => [d.id, d.correction_id])).toEqual([["D-0001", "C-0001"], ["D-0002", "C-0003"]]);
+    expect(bindingWithholds(ch.corrections).map((w) => w.correction_id)).toEqual(["C-0003"]);
+    expect(all(dir).errors).toEqual([]);
   });
 
   it("XREF_CORRECTION: correction ids repeated or with a gap", () => {

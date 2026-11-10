@@ -629,6 +629,19 @@ describe("withholds, failures, pages, closures and since (R13 to R19)", () => {
     expect(r.withhold).toEqual([]);
     expect(r.disputes.find((d) => d.issue_number === 11)).toMatchObject({ id: "D-0002", status: "open", correction_id: "C-0001" });
   });
+
+  it("R19 a stored correction whose own dispute was rejected answers no new dispute: the new one is withheld again", async () => {
+    // C-0001 no longer binds later editions once D-0001 is rejected, so reusing it would leave the new dispute open
+    // with nothing withholding the name (§4.10).
+    const w = world();
+    editJson<CorrectionsFile>(path.join(w.content, "corrections.json"), (c) => {
+      c.disputes = c.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "rejected", resolved_on: "2026-10-14" } : d));
+    });
+    const body = formBody("inc-health-us-2026-10", "2026-10-12", DISPUTE_FORM_OPTIONS.victim, null);
+    const r = await intake(w, issuesApi([[issue(11, body, "2026-10-15T01:00:00Z")]]).impl);
+    expect(r.withhold).toEqual([{ item_id: "inc-health-us-2026-10", edition_date: "2026-10-12", kind: "victim", dispute_id: "D-0002", since: D }]);
+    expect(r.disputes.find((d) => d.issue_number === 11)).toMatchObject({ id: "D-0002", status: "open", correction_id: null });
+  });
 });
 
 describe("the CLI and the run log", () => {

@@ -34,6 +34,7 @@ import { blockedReason } from "../lib/sources";
 import { isHttpsUrl, normalizeUrl } from "../lib/urls";
 import { DISPUTE_FORM_OPTIONS, DISPUTE_KINDS, RECHECK_FLAGS, type DisputeKind, type RecheckFlag } from "../lib/vocab";
 import type { WithholdRequest } from "../lib/withhold";
+import { bindingWithholds } from "../lib/withhold-mask";
 import { realDeadline, type Clock } from "./lib/clock";
 import { readCveById, type FeedCtx } from "./lib/feeds";
 import { runPaths } from "./lib/paths";
@@ -315,8 +316,8 @@ function closeStatus(e: IssueEntry): Dispute["status"] | null {
  * New issue numbers become open disputes (D-NNNN, received = created_at in Taipei); an open dispute whose
  * issue closed `not_planned` becomes rejected, `completed` upheld, resolved_on D. Withhold requests: every
  * open or upheld victim or attribution dispute without a correction, oldest first, at most 10 (one per
- * item, edition and kind; one already answered by a stored name_removed correction gets that correction's
- * id instead). Reports: open fact and link disputes, and rejected victim or attribution disputes on items
+ * item, edition and kind; one already answered by a stored name_removed correction that still binds gets
+ * that correction's id instead). Reports: open fact and link disputes, and rejected victim or attribution disputes on items
  * still withheld with no `update` correction since. When the read fails (`ok: false`), the stored list
  * still gives withholds and reports.
  */
@@ -375,10 +376,13 @@ export async function intakeDisputes(o: {
     }
   }
 
-  // Withholds (§8.9 step 4, §4.10).
+  // Withholds (§8.9 step 4, §4.10). A stored correction answers a new dispute only while it still binds (its own
+  // dispute open or upheld): one whose dispute was rejected or withdrawn withholds no later edition, so the new
+  // dispute gets a withhold of its own.
   const withhold: WithholdRequest[] = [];
   let waiting = 0;
   const keys = new Set<string>();
+  const binds = new Set(bindingWithholds(stored, disputes).map((x) => x.correction_id));
   for (const d of disputes) {
     if ((d.kind !== "victim" && d.kind !== "attribution") || (d.status !== "open" && d.status !== "upheld") || d.correction_id !== null) continue;
     const edition = d.edition_date ?? index.datesFor(d.item_id).at(-1) ?? null;
@@ -387,7 +391,7 @@ export async function intakeDisputes(o: {
       continue;
     }
     const kind = d.kind;
-    const answered = corrections.find((c) => c.type === "name_removed" && c.item_id === d.item_id && c.edition_date === edition && withholdField(c.field, kind));
+    const answered = corrections.find((c) => c.type === "name_removed" && binds.has(c.id) && c.item_id === d.item_id && c.edition_date === edition && withholdField(c.field, kind));
     if (answered) {
       d.correction_id = answered.id;
       continue;
