@@ -1,7 +1,8 @@
 // The re-check (SPEC §8.9; plan §2.6, named tests R1 to R19): the correction form parser on real rendered
 // bodies, the dispute intake through an injected fetch, and the 14-day flags against the sample content
 // with one frozen-against-current pair per flag (fixtures/recheck/). No test reaches GitHub or any feed:
-// intake answers come from fixture lists and record reads from a fake fetchFeed.
+// intake answers come from fixture lists and record reads from a fake fetchFeed. I-R20 (plan A16, the
+// integration lane's) runs a victim dispute from intake through composeWithholds and validateAll.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,13 +13,17 @@ import { loadConfig } from "@/lib/config";
 import { addDays, taipeiTimestamp } from "@/lib/dates";
 import { cachePaths } from "@/lib/feeds/cache";
 import type { fetchFeed, FetchResult } from "@/lib/feeds/http";
-import { sha256Hex } from "@/lib/json";
-import type { Brief } from "@/lib/schema/brief";
-import type { CorrectionsFile, Dispute } from "@/lib/schema/misc";
+import { jsonText, sha256Hex } from "@/lib/json";
+import { Brief as BriefSchema, type Brief } from "@/lib/schema/brief";
+import { Metrics } from "@/lib/schema/metrics";
+import { ArchiveIndex, CorrectionsFile as CorrectionsSchema, type CorrectionsFile, type Dispute } from "@/lib/schema/misc";
 import { CollectInputsFile } from "@/lib/schema/pack";
 import type { StatusFile } from "@/lib/schema/status";
 import { normalizeUrl } from "@/lib/urls";
-import { DISPUTE_FORM_OPTIONS, DISPUTE_KINDS } from "@/lib/vocab";
+import { validateAll } from "@/lib/validate";
+import { DISPUTE_FORM_OPTIONS, DISPUTE_KINDS, WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
+import { composeWithholds } from "@/lib/withhold";
+import { fixtureConfig } from "@/fixtures/src/inputs";
 import {
   FORM_LABELS, INTAKE_LIMITS, intakeDisputes, intakeSince, intakeUrl, main, MAX_WITHHOLDS, NO_RESPONSE, parseDisputeForm,
   RECHECK_LIMITS, recheckItems, writeRecheckLog,
@@ -658,5 +663,46 @@ describe("the CLI and the run log", () => {
     expect(readJson(file)).toEqual({ intake: null, flagged: null, reports: [], links: null });
     expect(fs.readdirSync(path.dirname(file))).toEqual([`${D}.recheck.json`]);
     expect(RECHECK_LIMITS.days).toBe(14);
+  });
+});
+
+describe("the §8.9 rewrite end to end (I-R20, plan A16)", () => {
+  it("I-R20 a victim dispute from intake, withheld by composeWithholds in a copy of site-content, passes validateAll", async () => {
+    const w = world();
+    const victim = ISSUES.find((i) => i.number === 4)!;
+    const r = await intake(w, issuesApi([[victim]]).impl);
+    expect(r.ok).toBe(true);
+    const ITEM = "inc-transport-jp-2026-10";
+    expect(r.withhold).toEqual([{ item_id: ITEM, edition_date: "2026-10-14", kind: "victim", dispute_id: "D-0002", since: D }]);
+
+    // What publishWithholds() hands the composer: every stored brief from the earliest edition_date on.
+    const cfg = fixtureConfig();
+    const briefs = briefsOf(w.content).map((b) => BriefSchema.parse(b)).filter((b) => b.date >= "2026-10-14");
+    const metricsFor = (date: string) => {
+      const file = path.join(w.content, "metrics", `${date}.json`);
+      return fs.existsSync(file) ? Metrics.parse(readJson(file)) : null;
+    };
+    const ch = composeWithholds({
+      date: D, config: cfg, briefs, corrections: CorrectionsSchema.parse(readJson(path.join(w.content, "corrections.json"))), disputes: r.disputes,
+      archiveIndex: ArchiveIndex.parse(readJson(path.join(w.content, "archive-index.json"))), metricsFor, requests: r.withhold,
+    });
+    expect(ch.brief).toBeNull();
+    expect(ch.rewritten.map((b) => b.date)).toContain("2026-10-14");
+    for (const b of ch.rewritten) write(path.join(w.content, "briefs", `${b.date}.json`), jsonText(b, BriefSchema));
+    write(path.join(w.content, "corrections.json"), jsonText(ch.corrections!, CorrectionsSchema));
+    write(path.join(w.content, "archive-index.json"), jsonText(ch.archiveIndex, ArchiveIndex));
+
+    const all = validateAll(w.content, { config: cfg });
+    expect(all.errors).toEqual([]);
+    const stored = BriefSchema.parse(readJson(path.join(w.content, "briefs", "2026-10-14.json")));
+    const it2 = stored.items.find((x) => x.id === ITEM)!;
+    const correction = ch.corrections!.corrections.find((c) => c.dispute_id === "D-0002")!;
+    expect(correction).toMatchObject({ id: "C-0003", date: D, item_id: ITEM, edition_date: "2026-10-14", type: "name_removed", field: "incident.victim", trigger: "reader_report" });
+    expect(it2.withheld).toEqual({ correction_id: correction.id, since: D });
+    expect(it2.headline).toBe(WITHHELD_HEADLINE);
+    expect(it2.incident?.victim ?? null).toBeNull();
+    for (const row of stored.regions.rows) if (row.item_ids.includes(ITEM)) expect(row.reason).toBe(WITHHELD_MARK);
+    expect(ch.corrections!.disputes.find((d) => d.id === "D-0002")!.correction_id).toBe(correction.id);
+    expect(ch.archiveIndex.editions.find((e) => e.date === "2026-10-14")!.corrected).toBe(true);
   });
 });
