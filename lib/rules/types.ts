@@ -86,8 +86,14 @@ export interface CveLookup {
   get(cveId: string): CveRecordInfo | undefined;
 }
 
-/** §5.11's RegionsInput without today's items and raises: what REGION_RAISE recomputes the levels from. */
-export type RegionsBase = Omit<RegionsInput, "items" | "raises">;
+/**
+ * §5.11's RegionsInput without today's items and raises: what REGION_RAISE recomputes the levels from.
+ * `firstSeen` is firstSeenBefore(content, D) as a record (item id → its earliest stored brief before D,
+ * over every brief): the first_seen publish's composers give today's items, so the draft-mode region rows
+ * (REGION_RAISE, the provisional page count) read the same dates. regionsBaseFor() always sets it; a
+ * base without it (a hand-built one) falls back to its history.
+ */
+export type RegionsBase = Omit<RegionsInput, "items" | "raises"> & { firstSeen?: Readonly<Record<string, string>> };
 
 /**
  * A source's publisher as the rules read it (§4.12 "Tier lookup", "Archived briefs"). Draft mode:

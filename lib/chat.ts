@@ -93,6 +93,16 @@ export function nextStepFor(code: string, date: string): string {
   return NEXT_STEP[isErrorCode(code) ? code : "E_INTERNAL"].replaceAll("{date}", date);
 }
 
+/**
+ * E_PUBLISH's lines after PublishError("compose") (§0.4 row 102): the publish stage of the record that
+ * carries the code holds STAGE_NOTES.notComposed. Publishing the same draft again fails the same way, so
+ * the next step edits the draft first, then publishes by hand. `{date}` as in NEXT_STEP.
+ */
+export const NOT_COMPOSED = {
+  what: "The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed.",
+  nextStep: `in ${CHECKOUT}, edit drafts/{date}.json to fix or drop the item whose block logs/{date}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}`,
+} as const;
+
 /** What WHAT_HAPPENED's templates are filled from: the run records (chatInputFor() builds it). */
 export interface WhatFacts {
   date: string;
@@ -163,6 +173,8 @@ export const STAGE_NOTES = {
   floodStops: (date: string) => `Flood counts stop at ${date}: run npm run backfill -- --catch-up --push.`,
   /** preflight step 5. */
   depsChanged: "Dependencies changed since the last npm ci.",
+  /** data_only, publish: publish's PublishError("compose"); on the publish stage it selects NOT_COMPOSED. */
+  notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
 } as const;
 
 const NOTE_RES = {
@@ -173,6 +185,7 @@ const NOTE_RES = {
   replaced: /Replaced the (\d\d:\d\d) edition \(--force\)/i,
   floodStops: /Flood counts stop at (\d{4}-\d{2}-\d{2})/,
   depsChanged: /Dependencies changed since the last npm ci/,
+  notComposed: /Not composed: a release or CVE block lacks its date, page or record facts/,
 } as const;
 
 /** The Notes line's entries (§8.8), each in the spec's words. */
@@ -386,7 +399,8 @@ export function chatInputFor(src: ChatSource): ChatInput {
     return { kind: "skipped", date, reason, briefUrl: brief ? `${site}/brief/${date}` : null, dryRun };
   }
 
-  const code = [...runs].reverse().find((r) => r.error_code !== null)?.error_code ?? src.code ?? null;
+  const coded = [...runs].reverse().find((r) => r.error_code !== null) ?? null;
+  const code = coded?.error_code ?? src.code ?? null;
   const { attempts, repairs } = runCounts(runs);
   const errorIssues = (src.issues ?? []).filter((i) => i.severity !== "warning");
   const agentSeconds = last?.budgets.agent_seconds ?? 0;
@@ -399,6 +413,11 @@ export function chatInputFor(src: ChatSource): ChatInput {
     hardStop: schedule.hard_stop,
     publishUntil: schedule.publish_until,
   };
+  // E_PUBLISH from a draft the composer could not freeze: only the publish stage's note says so (a
+  // data-only stage that was not composed leaves the full edition's own failure as it was).
+  const notComposed = code === "E_PUBLISH" && coded !== null && NOTE_RES.notComposed.test(stage(coded, "publish")?.note ?? "");
+  const what = (c: string) => (notComposed ? NOT_COMPOSED.what : whatHappened(c, facts));
+  const next = (c: string) => (notComposed ? NOT_COMPOSED.nextStep.replaceAll("{date}", date) : nextStepFor(c, date));
 
   let left: Edition | null = null;
   if (last && dryRun) left = last.edition;
@@ -409,16 +428,16 @@ export function chatInputFor(src: ChatSource): ChatInput {
     return { kind: "published", brief, runs, notes: orderNotes([...rebuiltNotes(date, brief, runs, "published", dryRun), ...(src.notes ?? [])]), dryRun };
   }
   if (brief && left === "data_only") {
-    let what: string;
-    if (code) what = whatHappened(code, facts);
+    let said: string;
+    if (code) said = what(code);
     else {
       const noted = NOTE_RES.dataOnlyRequested.exec(notes) ?? NOTE_RES.startedAfterHardStop.exec(notes);
-      what = noted?.[0]
+      said = noted?.[0]
         ?? (last && taipeiTime(last.started_at) > schedule.hard_stop ? STAGE_NOTES.startedAfterHardStop(schedule.hard_stop) : STAGE_NOTES.dataOnlyRequested);
     }
     const kev = src.metrics?.date === date ? src.metrics.kev : null;
     return {
-      kind: "data_only", brief, runs, code, what, nextStep: code ? nextStepFor(code, date) : null,
+      kind: "data_only", brief, runs, code, what: said, nextStep: code ? next(code) : null,
       notes: orderNotes([...rebuiltNotes(date, brief, runs, "data_only", dryRun), ...(src.notes ?? [])]), dryRun,
       kevNew: kev ? kev.new_since_last_edition.cve_ids.length : null,
     };
@@ -435,10 +454,10 @@ export function chatInputFor(src: ChatSource): ChatInput {
     kind: "failed",
     date,
     code: failCode,
-    what: unfinished ? "The run left no end record; it may have been stopped before it finished." : whatHappened(failCode, facts),
+    what: unfinished ? "The run left no end record; it may have been stopped before it finished." : what(failCode),
     errors,
     siteShows: src.siteShows ?? null,
-    nextStep: nextStepFor(failCode, date),
+    nextStep: next(failCode),
     runs,
     needsReview: src.needsReview ?? !dryRun,
     notes: orderNotes([...rebuiltNotes(date, brief, runs, "failed", dryRun), ...(src.notes ?? [])]),

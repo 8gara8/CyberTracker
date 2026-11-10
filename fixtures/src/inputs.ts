@@ -285,12 +285,20 @@ function kevIndexFor(name: EditionName) {
   return { entries: KEV_ROWS.filter((r) => r[1] <= through).map((r) => [...r] as typeof r) };
 }
 
+/**
+ * The regions input. `firstSeen` is firstSeenBefore() over the editions before this one (PREVIOUS, the
+ * stored briefs the context's recent_items list): each id's earliest edition date.
+ */
 function buildRegionsInput(name: EditionName): RegionsInputFile {
   const t = EDITIONS[name];
   const cfg = fixtureConfig();
   const kevIndex = kevIndexFor(name);
   const signals = collectSignals(parts(name).pack, null, kevIndex, regionsConfig(cfg), t.date);
-  return RegionsInputFile.parse(regionsInputFile({ date: t.date, history: [], signals, kevIndex, config: regionsConfig(cfg) }));
+  const firstSeen: Record<string, string> = {};
+  for (const d of PREVIOUS[name].map((n) => editionDraft(n)).sort((a, b) => a.date.localeCompare(b.date))) {
+    for (const it of d.items) if (!(it.id in firstSeen)) firstSeen[it.id] = d.date;
+  }
+  return RegionsInputFile.parse(regionsInputFile({ date: t.date, history: [], signals, kevIndex, config: regionsConfig(cfg), firstSeen }));
 }
 
 // ── Context ──────────────────────────────────────────────────────────────────────────────────────

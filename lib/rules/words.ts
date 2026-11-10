@@ -21,6 +21,7 @@ import type { DraftBrief } from "../schema/draft-brief";
 import type { CveBlock, DraftItem, ReleaseBlock } from "../schema/item";
 import type { Metrics } from "../schema/metrics";
 import { countWords, numbersIn } from "../text";
+import { draftFirstSeen } from "./items";
 import { entriesOf, isBrief, proseFields, quotedFields, raisesOf } from "./shared";
 import { defineRule, error, plural, type AnyBrief, type AnyItem, type CveLookup, type RegionsBase, type Rule, type ValidationIssue } from "./types";
 
@@ -138,8 +139,8 @@ const earliest = (dates: readonly string[]): string | null => (dates.length ? [.
 /**
  * The provisional Brief view of a draft that scriptText() reads (§4.12 word table, last line). Region
  * rows come from computeRegions() on the draft's items and raises with `regionsBase` (else the context's
- * regions_preview); `first_seen` is the earliest date `context.recent_items` holds the id, else the
- * draft's date. Each item's vendor, first CVE block and release are rebuilt the way publish builds them
+ * regions_preview); `first_seen` is draftFirstSeen() (lib/rules/items.ts): the base's first_seen map,
+ * as publish gives it, else the draft's date. Each item's vendor, first CVE block and release are rebuilt the way publish builds them
  * (§4.6), from the CVE List, the KEV index rows in `regionsBase`, the context's candidates and the item's
  * own `flaw_evidence`. The Gap and the Lens KEV lines come from `metrics`. `published_at`, `late` and
  * `reading_minutes` are placeholders: the count depends only on their presence, except "(late)", which a
@@ -229,8 +230,7 @@ export function draftView(draft: DraftBrief, inputs: DraftViewInputs): PageBrief
 function draftRegionRows(draft: DraftBrief, inputs: Pick<DraftViewInputs, "context" | "regionsBase">): SummaryRow[] {
   const { context, regionsBase } = inputs;
   if (regionsBase) {
-    const firstSeen = (id: string) => [draft.date, ...(context?.recent_items ?? []).filter((r) => r.id === id).map((r) => r.date)].sort()[0]!;
-    const items = regionItems(draft.items.map((it) => ({ ...it, first_seen: firstSeen(it.id) })), draft.sources, regionsBase.config);
+    const items = regionItems(draft.items.map((it) => ({ ...it, first_seen: draftFirstSeen({ date: draft.date, regionsBase }, it.id) })), draft.sources, regionsBase.config);
     return computeRegions({ ...regionsBase, items, raises: draft.region_raises }).rows;
   }
   const preview = context?.regions_preview ?? [];

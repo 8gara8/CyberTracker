@@ -68,7 +68,10 @@ export interface Notes {
   failure(code: string, facts: WhatFacts): string;
   /** Preflight step 5 (an addition to G9): pushPending() refused or failed; the commits stay local for the next run. */
   pendingNotPushed: string;
-  /** Publish's PublishError("compose"): the composer found a fact missing (lib/apply.ts ComposeError). */
+  /**
+   * Publish's PublishError("compose"): the composer found a fact missing (lib/apply.ts ComposeError).
+   * lib/chat.ts STAGE_NOTES.notComposed: on the publish stage it gives E_PUBLISH the NOT_COMPOSED lines.
+   */
   notComposed: string;
   /** The full edition masked N draft items that re-report a withheld item (ContentChanges.masked; N counts item ids). */
   maskedRepeats(n: number): string;
@@ -120,7 +123,7 @@ export const NOTES: Notes = {
   },
   failure: (code, facts) => whatHappened(code, facts),
   pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
-  notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
+  notComposed: STAGE_NOTES.notComposed,
   maskedRepeats: (n) => `Withheld ${plural(n, "re-reported item")} under reader disputes.`,
   keptWithheld: (n) => `Kept ${plural(n, "withheld item")} the draft left out, so its correction resolves.`,
 };
@@ -141,6 +144,7 @@ export const CHAT_READ_NOTES: readonly RegExp[] = [
   /^Replaced the \d\d:\d\d edition \(--force\)\.$/,
   /^Flood counts stop at \d{4}-\d{2}-\d{2}: run npm run backfill -- --catch-up --push\.$/,
   /^Dependencies changed since the last npm ci\.$/,
+  /^Not composed: a release or CVE block lacks its date, page or record facts \(see the daily log\)\.$/,
 ];
 
 const isChatRead = (note: string) => CHAT_READ_NOTES.some((re) => re.test(note));

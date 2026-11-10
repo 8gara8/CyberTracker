@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ComposeError, applyDraft } from "@/lib/apply";
+import { NOT_COMPOSED, nextStepFor } from "@/lib/chat";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
 import { Brief } from "@/lib/schema/brief";
@@ -510,6 +511,11 @@ describe("daily.ts end to end", () => {
     expect(stageOf(r, "publish").note).toContain("Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).");
     expect(fs.readFileSync(path.join(h.root, "logs", `${D}.daily.log`), "utf8")).toContain("The full edition could not be composed: No release date for rel-microsoft-2026-10");
     expect(summary(h).split("\n")[0]).toContain("(E_PUBLISH)");
+    // Publishing the same draft again fails the same way: the chat edition says to edit it first.
+    expect(summary(h)).toContain(`\nWhat happened: ${NOT_COMPOSED.what}\n`);
+    expect(summary(h)).toContain(`\nNext step: ${NOT_COMPOSED.nextStep.replaceAll("{date}", D)}\n`);
+    expect(summary(h)).not.toContain(nextStepFor("E_PUBLISH", D));
+    expect(fs.existsSync(path.join(h.root, "drafts", `${D}.json`))).toBe(true);
     expectContentOnly(h);
   }, TIMEOUT);
 

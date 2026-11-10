@@ -179,10 +179,19 @@ function checkLens(input: RuleInput): ValidationIssue[] {
 
 // ── REGION_RAISE ─────────────────────────────────────────────────────────────────────────────────
 
-/** A draft item's first_seen (§4.6): the earliest earlier edition holding its id (recent_items, history), else today. */
-export function draftFirstSeen(input: Pick<RuleInput, "date" | "context" | "regionsBase">, id: string): string {
+/**
+ * A draft item's first_seen (§4.6), as publish gives it: the base's `firstSeen` map (firstSeenBefore(),
+ * every stored brief before D), else today. Read from the run inputs only, never the context. A base
+ * without the map falls back to its history (the earliest history brief holding the id, or the
+ * first_seen stored there when earlier).
+ */
+export function draftFirstSeen(input: Pick<RuleInput, "date" | "regionsBase">, id: string): string {
+  const map = input.regionsBase?.firstSeen;
+  if (map) {
+    const d = Object.hasOwn(map, id) ? map[id] : undefined;
+    return d !== undefined && d < input.date ? d : input.date;
+  }
   const dates: string[] = [];
-  for (const r of input.context?.recent_items ?? []) if (r.id === id && r.date < input.date) dates.push(r.date);
   for (const h of input.regionsBase?.history ?? []) {
     if (h.date >= input.date) continue;
     for (const it of h.items) if (it.id === id) dates.push(it.first_seen && it.first_seen < h.date ? it.first_seen : h.date);

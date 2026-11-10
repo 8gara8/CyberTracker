@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  ComposeError, applyDraft, claimReading, firstSeenOf, claimStatus, claimZone, cveBlockOf, linkDisputes, markCorrected, releaseBlockOf,
+  ComposeError, applyDraft, claimReading, confirmBlock, findersVersionOf, firstSeenOf, claimStatus, claimZone, cveBlockOf, linkDisputes, markCorrected, releaseBlockOf,
   updateArchiveIndex, updateScoreboard, type ApplyInput, type CveFacts, type SnapshotHashes,
 } from "@/lib/apply";
 import type { LoadedConfig } from "@/lib/config";
@@ -14,8 +14,11 @@ import { addDays } from "@/lib/dates";
 import { longDate } from "@/lib/format";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
-import { firstSeenBefore, readHistory } from "@/lib/run-inputs";
-import type { CveLookup } from "@/lib/rules/types";
+import { firstSeenBefore, readHistory, regionsBaseFor } from "@/lib/run-inputs";
+import { draftFirstSeen, draftRegions } from "@/lib/rules/items";
+import { derive } from "@/lib/rules/shared";
+import type { CveLookup, RuleInput } from "@/lib/rules/types";
+import { draftView } from "@/lib/rules/words";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
 import { DraftBrief } from "@/lib/schema/draft-brief";
@@ -23,7 +26,7 @@ import { InputsManifest, Metrics, type KevIndexFile } from "@/lib/schema/metrics
 import { ArchiveIndex, CorrectionsFile, Evidence, type Correction, type Dispute } from "@/lib/schema/misc";
 import { ScoreboardFile, type Claim } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
-import { cveLookupFromDir, validateAll, validatePublished } from "@/lib/validate";
+import { RegionsInputFile, cveLookupFromDir, regionsInputFile, validateAll, validateDraft, validatePublished } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { NAME_REMOVED_BEFORE, WITHHOLD_TEXTS, composeWithholds } from "@/lib/withhold";
 import { bindingWithholds, withheldRefs } from "@/lib/withhold-mask";
@@ -134,12 +137,11 @@ function world(name: "weekday" | "monday", history: readonly Brief[] = BRIEFS): 
   };
 }
 
-/** A6's release title: the vendor source's title, where site.ts hard-codes the release's own name. */
+/** A6's release title: the vendor source's title, which site.ts now takes from releaseBlockOf() too. */
 const MSRC_TITLE = SOURCES["msrc-october"].title;
 function weekdayExpected(): Brief {
   const b = golden("2026-10-14");
-  expect(b.items[1]!.release!.title).toBe("October 2026 Security Update");
-  b.items[1]!.release!.title = MSRC_TITLE;
+  expect(b.items[1]!.release!.title).toBe(MSRC_TITLE);
   return b;
 }
 
@@ -150,7 +152,7 @@ function writeTree(dir: string, files: Record<string, string>): void {
 describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
   const weekday = applyDraft(world("weekday"));
 
-  it("C1: the weekday world equals site-content's 2026-10-14 brief (release title per A6)", () => {
+  it("C1: the weekday world equals site-content's 2026-10-14 brief", () => {
     expect(weekday.brief).toEqual(weekdayExpected());
     expect(weekday.rewritten).toEqual([]);
     expect(weekday.corrections).toBeNull();
@@ -232,6 +234,38 @@ describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
     expect(jsonText(a.scoreboard, ScoreboardFile)).toBe(jsonText(b.scoreboard, ScoreboardFile));
     expect(jsonText(a.archiveIndex, ArchiveIndex)).toBe(jsonText(b.archiveIndex, ArchiveIndex));
     expect(JSON.stringify(i.draft)).toBe(before);
+  });
+
+  it("C22: every CVE and release block in site-content is what cveBlockOf() and releaseBlockOf() compose from the sample's facts", () => {
+    const records = cveLookupFromDir(CVE_RECORDS_DIR);
+    const releases = new Map<string, NonNullable<AgentContext["candidates"][number]["release"]>>();
+    for (const name of ["quiet", "monday", "weekday"] as const) {
+      const ctx = AgentContext.parse(read(path.join(FIXTURES_DIR, "context", `${name}.json`)));
+      for (const c of ctx.candidates) if (c.release) releases.set(`${ctx.date}/${c.release.release_id}`, c.release);
+    }
+    let cves = 0;
+    let rels = 0;
+    for (const b of BRIEFS) {
+      const m = Metrics.parse(read(path.join(SITE, "metrics", `${b.date}.json`)));
+      const version = m.kev!.catalog_version;
+      const x = {
+        config: cfg, facts: siteFacts(version), cveList: records, kevIndex: kevIndexAt(version),
+        inputs: InputsManifest.parse(read(path.join(SITE, "metrics", "inputs", `${b.date}.json`))),
+        findersVersion: findersVersionOf(m, cfg), capturedAt: b.published_at,
+      };
+      for (const it of b.items) {
+        const where = `${b.date}/${it.id}`;
+        expect(it.cves.map((c) => c.cve_id), where).toEqual(it.cve_ids);
+        it.cves.forEach((block, k) => {
+          expect(block, `${where} ${block.cve_id}`).toEqual(confirmBlock(cveBlockOf(it.cve_ids[k]!, it, b.sources, x), it, b.sources, cfg));
+          cves++;
+        });
+        const cand = it.release_id ? releases.get(`${b.date}/${it.release_id}`) ?? null : null;
+        expect(it.release, where).toEqual(releaseBlockOf(it, cand, b.sources, cfg, records));
+        if (it.release) rels++;
+      }
+    }
+    expect([cves, rels]).toEqual([15, 1]);
   });
 
   it("C16: the Microsoft release block comes from the vendor source and the candidate's counts", () => {
@@ -322,6 +356,70 @@ describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_
       }
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // An item first seen 20 days before D is outside recent_items (14 days) and the regions history (7
+  // days) but inside the composers' 30-day fallback; one first seen 40 days back is outside all three.
+  it.each([
+    { campaign: 20, transport: 40 },
+    { campaign: 40, transport: 20 },
+  ])("C21: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
+    const CAMPAIGN = "camp-tw-semiconductor-2026-10";
+    const TRANSPORT = "inc-transport-jp-2026-10";
+    const FLAW_13 = "cve-2026-108917";
+    const i = world("weekday");
+    const D = i.date;
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ct-first-seen-draft-"));
+    try {
+      const dir = path.join(root, "content");
+      fs.cpSync(SITE, dir, { recursive: true });
+      const back = { [CAMPAIGN]: addDays(D, -o.campaign), [TRANSPORT]: addDays(D, -o.transport) };
+      for (const [id, date] of Object.entries(back)) {
+        const old = { ...golden(D), date, items: golden(D).items.filter((it) => it.id === id).map((it) => ({ ...it, first_seen: date })) };
+        fs.writeFileSync(path.join(dir, "briefs", `${date}.json`), jsonText(Brief.parse(old), Brief));
+      }
+      // The campaign rule at critical, and a TW raise citing the campaign: the draft check fails it only
+      // when it counts the campaign as new today.
+      const base0 = regionsBaseFor({ root, contentDir: dir, date: D, pack: null, config: cfg });
+      const rc = structuredClone(base0.config);
+      rc.regions.rules = rc.regions.rules.map((r) => (r.id === "campaign-target" ? { ...r, level: "critical" as const } : r));
+      const base = { ...base0, config: rc };
+      const draft = DraftBrief.parse(structuredClone(i.draft));
+      draft.region_raises = [{ region: "TW", reason: "SAMPLE reason.", trigger_class: "campaign_target", item_ids: [CAMPAIGN] }];
+
+      // The run's regions input carries publish's first_seen map, through the file the CLIs read back.
+      const all = firstSeenBefore(dir, D);
+      expect(base.firstSeen).toEqual(Object.fromEntries(all));
+      expect(RegionsInputFile.parse(JSON.parse(jsonText(regionsInputFile(base)))).firstSeen).toEqual(Object.fromEntries(all));
+
+      // Publish: firstSeenBefore() over every stored brief, as composeCommon() passes it.
+      const brief = applyDraft({ ...i, draft, history: readHistory(dir, D, 30), firstSeen: all, regionsBase: base }).brief!;
+      const shown = (id: string) => brief.items.find((it) => it.id === id)!.first_seen;
+      expect([shown(CAMPAIGN), shown(TRANSPORT)]).toEqual([back[CAMPAIGN], back[TRANSPORT]]);
+
+      // Draft mode, from the same run inputs; the context's recent_items reach back 14 days only.
+      const input: RuleInput = {
+        draft, mode: "draft", date: D, fileDate: null, metrics: i.metrics, config: cfg, derived: derive(draft, "draft", cfg),
+        context: i.context, evidence: i.evidence, cveList: i.cveList, regionsBase: base, packDates: null, crossFile: null,
+      };
+      expect(i.context.recent_items.every((r) => r.date >= addDays(D, -14))).toBe(true);
+      for (const id of draft.items.map((it) => it.id)) expect(draftFirstSeen(input, id), id).toBe(shown(id));
+      // A base without the map (a hand-built one) reads only its 7-day history, never recent_items.
+      const { firstSeen: _map, ...bare } = base;
+      expect(draftFirstSeen({ date: D, regionsBase: bare }, CAMPAIGN)).toBe(D);
+      expect(draftFirstSeen({ date: D, regionsBase: bare }, FLAW_13)).toBe("2026-10-13");
+      const levels = (rows: readonly { code: string; computed_level: string }[]) => rows.map((r) => [r.code, r.computed_level]);
+      expect(levels(draftRegions(input)!.rows)).toEqual(levels(brief.regions.rows));
+      expect(brief.regions.rows.find((r) => r.code === "TW")).toMatchObject({ computed_level: "baseline", level: "elevated" });
+      const r = validateDraft(draft, { context: i.context, evidence: i.evidence, metrics: i.metrics, config: cfg, cveList: i.cveList, regionsBase: base, packDates: null });
+      expect(r.errors.filter((e) => e.code === "REGION_RAISE")).toEqual([]);
+      // The provisional page view (WORDS_OVER) shows the region rows publish builds.
+      const rows = (xs: readonly { code: string; level: string; change: string; reason: string }[]) => xs.map((x) => [x.code, x.level, x.change, x.reason]);
+      expect(rows(draftView(draft, { metrics: i.metrics, config: cfg, context: i.context, cveList: i.cveList, regionsBase: base }).regions.rows))
+        .toEqual(rows(brief.regions.rows));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
     }
   });
 });

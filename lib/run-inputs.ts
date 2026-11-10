@@ -152,8 +152,9 @@ function cachedKevCatalog(root: string, date: string): KevCatalog | null {
 /**
  * The regions base for D (§5.11): history over maxLookbackDays (the briefs dated D − N_max to D − 1 that
  * exist, any edition), signals from collectSignals(pack, the cached KEV catalog, kevIndex), kevIndex
- * (kevIndexFor(), else no entries) and regionsConfig(config). What the validator, publish and the
- * regions-input file all use.
+ * (kevIndexFor(), else no entries), regionsConfig(config), and `firstSeen`, firstSeenBefore() as a
+ * record, so the draft-mode region rows give today's items the first_seen publish gives them. What the
+ * validator, publish and the regions-input file all use.
  */
 export function regionsBaseFor(o: { root: string; contentDir: string; date: string; pack: Pack | null; config: LoadedConfig }): RegionsBase {
   const rc = regionsConfig(o.config);
@@ -161,7 +162,7 @@ export function regionsBaseFor(o: { root: string; contentDir: string; date: stri
     .map((b) => ({ date: b.date, items: b.items, sources: b.sources, regions: b.regions }));
   const kevIndex = { entries: kevIndexFor(o.root, o.contentDir, o.date)?.entries ?? [] };
   const signals = collectSignals(o.pack, cachedKevCatalog(o.root, o.date), kevIndex, rc, o.date);
-  return { date: o.date, history, signals, kevIndex, config: rc };
+  return { date: o.date, history, signals, kevIndex, config: rc, firstSeen: Object.fromEntries(firstSeenBefore(o.contentDir, o.date)) };
 }
 
 /** The dates of contentDir/briefs/YYYY-MM-DD.json files dated before `date`, oldest first. */
