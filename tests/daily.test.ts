@@ -582,6 +582,33 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D41 D40's morning, then --force: the replacing edition still withholds the kept item and the draft item its first edition masked by URL", async () => {
+    // The synced archive index still lists the first full edition's references, so the masked patch batch's pages
+    // name an item of brief D: before the fix the rerun printed it in the clear.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-96951";
+    const PATCHES = "pt-microsoft-2026-10";
+    h.issues([correctionIssue({ number: 7, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const first = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--force"])).toBe(0);
+    const second = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(second.published_at).not.toBe(first.published_at);
+    for (const id of [ITEM, PATCHES]) {
+      expect(second.items.find((x) => x.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
+    }
+    expect(second.items.filter((x) => x.id === ITEM)).toHaveLength(1);
+    const patches = second.items.find((x) => x.id === PATCHES)!;
+    expect(second.sources.filter((s) => patches.source_ids.includes(s.id)).map((s) => s.title)).toEqual(patches.source_ids.map(() => WITHHELD_MARK));
+    const r = statusOn(h)!.runs.at(-1)!;
+    expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
+    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D33 a withhold on an earlier edition, then a full edition the same morning: the regions history the edition and its files read is the rewritten one", async () => {
     // Morning one (D-1) publishes its data-only edition; a victim dispute on one of its items arrives; morning two withholds it, then drafts.
     const D0 = "2026-10-13";
