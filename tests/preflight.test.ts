@@ -374,7 +374,7 @@ describe("PF5 prepareGit on the harness", () => {
       expect(originMatches(url, { configRepo: "8gara8/CyberTracker" }), url).toBe(true);
     }
     for (const url of [
-      "https://github.com/8gara8/EuropeTracker.git", "https://gitlab.com/8gara8/CyberTracker.git", "https://github.com.evil.example/8gara8/CyberTracker",
+      "https://github.com/8gara8/OtherTracker.git", "https://gitlab.com/8gara8/CyberTracker.git", "https://github.com.evil.example/8gara8/CyberTracker",
       "https://github.com/8gara8/CyberTracker/extra", "/srv/git/CyberTracker.git", "",
     ]) {
       expect(originMatches(url, { configRepo: "8gara8/CyberTracker" }), url).toBe(false);

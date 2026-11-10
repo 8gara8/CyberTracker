@@ -117,7 +117,7 @@ describe("stage notes", () => {
     for (const t of texts) {
       expect(t, t).toMatch(/\.$/);
       expect(t.length, t).toBeLessThanOrEqual(NOTE_MAX);
-      expect(t, t).not.toMatch(/—/);
+      expect(t, t).not.toMatch(/\u2014/);
       expect(splitNotes(t), t).toEqual([t]);
     }
     expect(splitNotes(texts.slice(0, 6).join(" "))).toEqual(texts.slice(0, 6));
