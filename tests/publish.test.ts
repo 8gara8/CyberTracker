@@ -11,12 +11,12 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ComposeError, applyDraft, type ApplyInput, type ContentChanges, type GatedDraft } from "@/lib/apply";
+import { ComposeError, applyDraft, cveBlockOf, type ApplyInput, type ContentChanges, type GatedDraft } from "@/lib/apply";
 import { buildContext } from "@/lib/context";
 import { loadCheckedConfig, type LoadedConfig } from "@/lib/config";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
-import { firstSeenBefore, metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "@/lib/run-inputs";
+import { firstSeenBefore, kevIndexFor, metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "@/lib/run-inputs";
 import { CandidatesFile, Pack } from "@/lib/schema/pack";
 import type { CveLookup, RegionsBase } from "@/lib/rules/types";
 import { Brief } from "@/lib/schema/brief";
@@ -665,7 +665,7 @@ describe("cveFactsFor (A5)", () => {
     made.push(h);
     const D = h.date;
     const catalog = JSON.parse(read(path.join(REPO, "fixtures", "feeds", "kev", "known_exploited_vulnerabilities.json"))) as {
-      catalogVersion: string; vulnerabilities: { cveID: string; dateAdded: string; dueDate: string; knownRansomwareCampaignUse: string }[];
+      catalogVersion: string; vulnerabilities: { cveID: string; vulnerabilityName: string; dateAdded: string; dueDate: string; knownRansomwareCampaignUse: string }[];
     };
     const row = catalog.vulnerabilities[0]!;
     await inRoot(h, async () => {
@@ -675,11 +675,30 @@ describe("cveFactsFor (A5)", () => {
       expect(facts.kev(row.cveID)).toEqual({
         dateAdded: row.dateAdded, dueDate: row.dueDate, catalogVersion: catalog.catalogVersion,
         ransomware: row.knownRansomwareCampaignUse.toLowerCase() === "known" ? "known" : "unknown",
+        vulnerabilityName: row.vulnerabilityName,
       });
       for (const v of catalog.vulnerabilities.slice(0, 20)) expect(facts.kev(v.cveID)?.dueDate, v.cveID).toBe(v.dueDate);
       expect(facts.kev("CVE-2026-0000001")).toBeNull();
       expect(facts.record("../x")).toBeNull();
       expect(facts.ghsaIds("CVE-2026-0000001")).toEqual([]);
+    });
+  }, T);
+
+  it("CF3: the production facts reach the frozen block: KEV's vulnerabilityName is the title", async () => {
+    const h = makeHarness();
+    made.push(h);
+    const D = h.date;
+    const catalog = JSON.parse(read(path.join(REPO, "fixtures", "feeds", "kev", "known_exploited_vulnerabilities.json"))) as {
+      vulnerabilities: { cveID: string; vulnerabilityName: string }[];
+    };
+    await inRoot(h, async () => {
+      await collect({ date: D, deadline: h.clock() + 300_000, root: h.root, deps: { now: h.clock } });
+      const facts = cveFactsFor(h.root, D);
+      const config = worldConfig(h);
+      const kevIndex = kevIndexFor(h.root, path.join(h.root, "content"), D)!;
+      const x = { config, facts, cveList: cveLookupFromDir(runPaths(h.root, D).cveRecords), kevIndex, inputs: null, findersVersion: 2, capturedAt: `${D}T04:45:00+08:00` };
+      const listed = catalog.vulnerabilities.find((v) => v.cveID === "CVE-2026-104935")!;
+      expect(cveBlockOf(listed.cveID, { flaw_evidence: [] }, [], x).title).toBe(listed.vulnerabilityName);
     });
   }, T);
 });
