@@ -40,11 +40,16 @@ export interface FakeAgentConfig {
    * not an error. auth: an assistant message with error "authentication_failed", then is_error true, exit
    * 0. mcp: init lists mcp__probe__x, then sleeps until killed. limit: a rate_limit_event with
    * rate_limit_info { status: "rejected", rateLimitType: "five_hour", utilization: 1 }, then is_error true.
-   * repair: writes `draft` (invalid) first, `repair` on --resume.
+   * repair: writes `invalidDraft ?? draft` (invalid) first, `repair` on --resume.
    */
   mode: "ok" | "nodraft" | "auth" | "mcp" | "limit" | "repair";
   /** The draft JSON the fake writes (a parsed value, written as JSON). */
   draft?: unknown;
+  /**
+   * repair mode only: the invalid first draft, written on --session-id in place of `draft` when given
+   * (plan §2.2 has repair mode write `draft` first; this name, from the S0 task text, says the same more plainly).
+   */
+  invalidDraft?: unknown;
   /** The draft written on --resume. */
   repair?: unknown;
   /** URLs reported as WebFetch calls, each with a non-error tool_result. */

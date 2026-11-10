@@ -248,6 +248,10 @@ describe("the fake agent's files, inRoot and dispose", () => {
     });
     h.fakeAgent({ mode: "nodraft", touch: [path.join(h.base, "reject-pushes")], draftPath: path.join(h.root, "drafts", "x.json"), delayMs: 5 });
     expect(JSON.parse(fs.readFileSync(path.join(h.claudeDir, "fake-agent.json"), "utf8")).mode).toBe("nodraft");
+    h.fakeAgent({ mode: "repair", invalidDraft: { date: "not a date" }, repair: { date: h.date } });
+    expect(JSON.parse(fs.readFileSync(path.join(h.claudeDir, "fake-agent.json"), "utf8"))).toEqual({
+      mode: "repair", invalidDraft: { date: "not a date" }, repair: { date: h.date },
+    });
     const call = { argv: ["-p", "--output-format", "stream-json"], envKeys: ["HOME", "PATH"], cwd: h.root };
     fs.writeFileSync(path.join(h.claudeDir, "calls.jsonl"), `${JSON.stringify(call)}\n${JSON.stringify({ ...call, argv: ["--version"] })}\n`);
     expect(h.agentCalls()).toEqual([call, { ...call, argv: ["--version"] }]);
