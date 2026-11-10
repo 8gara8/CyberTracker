@@ -228,3 +228,51 @@ describe("fetchBudget", () => {
     expect(fetchBudget(10).capMs).toBe(10);
   });
 });
+
+// P3 step S0, plan amendment A11: snapshots send a browser-like Accept-Language (SPEC §4.12 step 1).
+describe("fetchFeed: Accept-Language (H-AL)", () => {
+  let echo: http.Server;
+  let echoBase = "";
+  const seen: (string | undefined)[] = [];
+
+  beforeAll(async () => {
+    echo = http.createServer((req, res) => {
+      const lang = req.headers["accept-language"];
+      seen.push(typeof lang === "string" ? lang : undefined);
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.end(typeof lang === "string" ? lang : "(none)");
+    });
+    await new Promise<void>((r) => echo.listen(0, "127.0.0.1", () => r()));
+    echoBase = `http://127.0.0.1:${(echo.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    echo.closeAllConnections();
+    await new Promise<void>((r) => echo.close(() => r()));
+  });
+
+  it("H-AL: sends Accept-Language only when the option is set; fixture mode ignores it", async () => {
+    const withLang = await fetchFeed(`${echoBase}/lang`, { ...opts, acceptLanguage: "en-US,en;q=0.9" });
+    expect(withLang).toMatchObject({ ok: true, status: 200 });
+    expect(withLang.body?.toString()).toBe("en-US,en;q=0.9");
+    // Without the option fetchFeed adds no Accept-Language; Node's fetch then sends its own default ("*").
+    const without = await fetchFeed(`${echoBase}/lang`, opts);
+    expect(["(none)", "*"]).toContain(without.body?.toString());
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe("en-US,en;q=0.9");
+    expect([undefined, "*"]).toContain(seen[1]);
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ct-http-al-"));
+    try {
+      fs.writeFileSync(path.join(dir, "page.html"), "<p>saved</p>");
+      fs.writeFileSync(path.join(dir, "index.json"), JSON.stringify({ "https://example.org/ct-sample/page": { file: "page.html", content_type: "text/html" } }));
+      vi.stubEnv("CT_FIXTURE_FEEDS", dir);
+      const saved = await fetchFeed("https://example.org/ct-sample/page", { acceptLanguage: "en-US,en;q=0.9" });
+      expect(saved).toMatchObject({ ok: true, status: 200, contentType: "text/html" });
+      expect(saved.body?.toString()).toBe("<p>saved</p>");
+      expect(seen).toHaveLength(2);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

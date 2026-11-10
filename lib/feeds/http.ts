@@ -14,6 +14,8 @@ export interface FetchOptions {
   timeoutMs?: number;
   maxBytes?: number;
   accept?: string;
+  /** Sent as Accept-Language only when set (snapshots send a browser-like one, §4.12; plan A11). Fixture mode ignores headers. P3 S0. */
+  acceptLanguage?: string;
   userAgent?: string;
   /** Retry once after this delay on a timeout, network error or 5xx. 0 turns the retry off. */
   retryDelayMs?: number;
@@ -152,7 +154,11 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
         method: "GET",
         redirect: "manual",
         signal,
-        headers: { "User-Agent": opts.userAgent ?? userAgent(), Accept: opts.accept ?? "*/*" },
+        headers: {
+          "User-Agent": opts.userAgent ?? userAgent(),
+          Accept: opts.accept ?? "*/*",
+          ...(opts.acceptLanguage ? { "Accept-Language": opts.acceptLanguage } : {}),
+        },
       });
     } catch (e) {
       return { ok: false, status: null, finalUrl: current, body: null, contentType: null, error: classifyError(e), detail: String((e as Error).cause ?? (e as Error).message).slice(0, 300) };
