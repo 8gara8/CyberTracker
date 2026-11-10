@@ -267,6 +267,13 @@ describe("A7: cliVersion", () => {
     expect(await cliVersion(script("hangs", "sleep 20"), 300)).toEqual({ ok: false, version: null });
     expect(Date.now() - t0).toBeLessThan(10_000);
   }, 20_000);
+  it("A7: an explicit config dir is the one the CLI sees", async () => {
+    const other = path.join(w.base, "other-config");
+    fs.mkdirSync(other, { recursive: true });
+    fs.writeFileSync(path.join(other, "fake-agent.json"), JSON.stringify({ mode: "ok", version: "4.0.0 (Claude Code)" }));
+    expect(await cliVersion(w.bin, undefined, other)).toEqual({ ok: true, version: "4.0.0 (Claude Code)" });
+    expect(fs.readFileSync(path.join(other, "calls.jsonl"), "utf8")).toContain('"--version"');
+  });
   it("A7: runs with the agent's environment but never the token", async () => {
     const saved = process.env.CT_CLAUDE_CONFIG_DIR;
     process.env.CT_CLAUDE_CONFIG_DIR = w.cfg.configDir;

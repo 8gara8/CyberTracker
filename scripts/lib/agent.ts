@@ -181,10 +181,13 @@ export async function runAgent(prompt: string, cfg: AgentConfig, opts: {
 /**
  * `<bin> --version` within timeoutMs (default 30 s): ok when it exits 0; version is the first line of its
  * output, null when it is not ok. The environment is the agent's without the token, so the check starts
- * the CLI exactly as runAgent does and never reads JL's own config.
+ * the CLI exactly as runAgent does and never reads JL's own config. configDir defaults to agentConfig's
+ * (CT_CLAUDE_CONFIG_DIR, else the Kobol default).
  */
-export async function cliVersion(bin: string, timeoutMs: number = P3_LIMITS.cliVersionMs): Promise<{ ok: boolean; version: string | null }> {
-  const full = agentEnv({ configDir: agentConfig("", "").configDir, token: "" });
+export async function cliVersion(
+  bin: string, timeoutMs: number = P3_LIMITS.cliVersionMs, configDir: string = agentConfig("", "").configDir,
+): Promise<{ ok: boolean; version: string | null }> {
+  const full = agentEnv({ configDir, token: "" });
   const env = Object.fromEntries(Object.entries(full).filter(([k]) => k !== "CLAUDE_CODE_OAUTH_TOKEN"));
   const r = await run(bin, ["--version"], { timeoutMs, env, killGraceMs: 1_000 });
   const ok = r.code === 0 && !r.timedOut;

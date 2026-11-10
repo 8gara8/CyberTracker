@@ -451,7 +451,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: AgentCh
   const root = path.resolve(deps.root ?? process.cwd());
   const env = deps.env ?? process.env;
   const base = agentConfig(root, "", env);
-  const v = await cliVersion(base.bin);
+  const v = await cliVersion(base.bin, undefined, base.configDir);
   if (!v.ok) {
     console.error(`The agent CLI did not answer --version at ${base.bin}; install it as SPEC §9.4 says.`);
     return 2;
