@@ -138,7 +138,7 @@ describe("commitTitle", () => {
         const got = commitTitle(kind, args);
         expect(got).toBe(title);
         expect(got).toMatch(COMMIT_RE);
-        expect(got).not.toMatch(/—/);
+        expect(got).not.toMatch(/\u2014/);
       }
     }
   });
