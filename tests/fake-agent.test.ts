@@ -14,7 +14,8 @@ const SID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 const TOKEN = "fake-token-value-not-real-0001";
 const PROMPT = "Write `drafts/2026-10-14.json` as the schema says, then reply DONE.";
 
-const base = fs.mkdtempSync(path.join(os.tmpdir(), "ct-fake-agent-"));
+// realpath: on macOS os.tmpdir() is a symlink into /private, and the fake agent reports real paths.
+const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "ct-fake-agent-")));
 afterAll(() => fs.rmSync(base, { recursive: true, force: true }));
 let worlds = 0;
 

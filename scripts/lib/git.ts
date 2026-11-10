@@ -113,6 +113,8 @@ export async function syncMain(g: Git, layout: Layout): Promise<{ ahead: number;
   const other = (await g(["diff", "--name-only", "origin/main...HEAD"])).split("\n").filter((f) => f && !layout(f));
   if (other.length) throw new SyncError(`main has ${ahead} local commit(s) touching ${other.slice(0, 3).join(", ")}, outside the content layout.`);
   const before = await g(["rev-parse", "HEAD"]);
+  // A rebase writes commits, so it needs a committer identity, which a fresh machine may lack.
+  await ensureIdentity(g);
   try {
     await g(["rebase", "origin/main"]);
   } catch (e) {
