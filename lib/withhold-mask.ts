@@ -111,7 +111,8 @@ export function withheldRefs(binding: readonly BindingWithhold[], briefs: readon
  * The item's own rewrite (§4.10): headline WITHHELD_HEADLINE, summary WITHHELD_TEXT, why_it_matters null,
  * and incident.victim null (victim) or attribution [] and actor_nexus null (attribution); `withheld` set
  * unless an earlier withhold set it. Then every Lead sentence and Taiwan Lens text that lists the item
- * becomes WITHHELD_MARK, and so does the title of each source only this item cites.
+ * becomes WITHHELD_MARK, and so does the title of each source no item but withheld ones (this one among
+ * them) cites, and nothing else in the brief (Elsewhere, the Angle, the Lens, the Week in review) cites.
  */
 export function rewriteItem(b: Brief, it: Item, w: { kind: WithholdKind; since: string }, correction: string): void {
   it.headline = WITHHELD_HEADLINE;
@@ -131,7 +132,9 @@ export function rewriteItem(b: Brief, it: Item, w: { kind: WithholdKind; since: 
   for (const row of lens.rows) if (row.item_ids.includes(it.id)) row.text = WITHHELD_MARK;
   if (lens.japan.item_ids.includes(it.id)) lens.japan.text = WITHHELD_MARK;
 
-  const others = new Set(b.items.filter((x) => x.id !== it.id).flatMap((x) => [
+  // A source that only withheld items cite is masked too: two withheld items sharing a page (two withholds on one
+  // day, a re-report masked by URL beside the item kept or masked by id) must not leave its title for each other.
+  const others = new Set(b.items.filter((x) => x.id !== it.id && !x.withheld).flatMap((x) => [
     ...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? []),
   ]));
   const elsewhere = new Set([

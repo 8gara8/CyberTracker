@@ -164,4 +164,25 @@ describe("composeWithholds", { timeout: 120_000 }, () => {
     // A brief neither holding nor listing the item is not rewritten.
     expect(composeWithholds(input([MONDAY.brief!, golden("2026-10-11")], [victimRequest])).rewritten.map((b) => b.date)).toEqual(["2026-10-12"]);
   });
+
+  it("C7: two withholds on one day whose items share a source mask its title; one withheld item beside an unwithheld citer leaves it", () => {
+    const b = structuredClone(MONDAY.brief!);
+    const breach = b.items.find((it) => it.id === BREACH)!;
+    const sid = breach.source_ids[0]!;
+    const other = b.items.find((it) => it.id !== BREACH && !it.source_ids.includes(sid) && it.incident === null)!;
+    other.source_ids.push(sid);
+    const title = b.sources.find((s) => s.id === sid)!.title;
+    expect(title).not.toBe(WITHHELD_MARK);
+    // Only the breach withheld: the other item still cites the page, so its title stays (§4.10).
+    const one = composeWithholds(input([b], [victimRequest]));
+    expect(one.rewritten[0]!.sources.find((s) => s.id === sid)!.title).toBe(title);
+    // Both withheld the same morning, in either order: no unwithheld item cites it, so it reads [withheld].
+    const d2: Dispute = { ...D1, id: "D-0002", issue_number: 4, item_id: other.id, kind: "victim" };
+    const second: WithholdRequest = { ...victimRequest, item_id: other.id, dispute_id: "D-0002" };
+    for (const requests of [[victimRequest, second], [second, victimRequest]]) {
+      const both = composeWithholds(input([b], requests, [D1, d2])).rewritten[0]!;
+      expect(both.items.filter((it) => it.source_ids.includes(sid)).every((it) => it.withheld !== null)).toBe(true);
+      expect(both.sources.find((s) => s.id === sid)!.title).toBe(WITHHELD_MARK);
+    }
+  });
 });

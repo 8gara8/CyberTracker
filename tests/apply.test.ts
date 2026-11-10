@@ -523,6 +523,40 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(applyDraft(j).masked!.map((m) => [m.item_id, m.match])).toEqual([[OLD, "url"], [TRANSPORT, "carried"]]);
   });
 
+  it("C24: a source only withheld items cite reads [withheld], even when two of them share it; one an unwithheld item cites keeps its title", () => {
+    // The carried item and the draft's campaign masked by URL both cite s11, the story's page: neither may leave
+    // its title (the stored edition showed [withheld]) in the clear for the other.
+    const CAMP = "camp-transport-jp-2026-10";
+    const i = sameDay({
+      draft: (d) => {
+        Object.assign(d.items.find((x) => x.id === TRANSPORT)!, { id: CAMP, kind: "campaign" });
+        d.taiwan_lens.japan.item_ids = [CAMP];
+      },
+    });
+    expect(i.draft.sources.find((s) => s.id === "s11")!.title).not.toBe(WITHHELD_MARK);
+    const b = applyDraft(i).brief!;
+    expect(b.items.filter((x) => x.source_ids.includes("s11")).map((x) => [x.id, x.withheld?.correction_id])).toEqual([[TRANSPORT, "C-0003"], [CAMP, "C-0003"]]);
+    expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
+    // The same-day item re-reported by id, beside a second draft item citing its page and masked by URL.
+    const k = sameDay({
+      draft: (d) => {
+        const copy = { ...structuredClone(d.items.find((x) => x.id === TRANSPORT)!), id: CAMP, kind: "campaign" as const };
+        d.items.push(copy);
+      },
+    });
+    const kb = applyDraft(k).brief!;
+    expect(kb.items.filter((x) => x.source_ids.includes("s11")).every((x) => x.withheld !== null)).toBe(true);
+    expect(kb.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
+    // A page an unwithheld item also cites (and cited before, so it is no re-report) keeps its title (§4.10).
+    const shared = sameDay();
+    const other = shared.draft.items.find((x) => x.id !== TRANSPORT && !x.source_ids.includes("s11"))!;
+    other.source_ids.push("s11");
+    shared.archiveIndex!.urls[normalizeUrl(shared.draft.sources.find((s) => s.id === "s11")!.url)]!.item_ids.unshift(`2026-10-13/${FLAW}`);
+    const sb = applyDraft(shared).brief!;
+    expect(sb.items.find((x) => x.id === other.id)!.withheld).toBeNull();
+    expect(sb.sources.find((s) => s.id === "s11")!.title).toBe(shared.draft.sources.find((s) => s.id === "s11")!.title);
+  });
+
   it("C18: an attribution withhold binds by URL: a later item citing a page the withheld item cited is masked, with its chip, Lead, Lens and region reason", () => {
     const i = withWithhold({ item: "camp-tw-old-2026-10", edition: "2026-10-10", kind: "attribution", date: "2026-10-13" });
     const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
