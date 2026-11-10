@@ -6,13 +6,14 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  applyDraft, claimReading, claimStatus, claimZone, cveBlockOf, releaseBlockOf, updateArchiveIndex, updateScoreboard,
+  ComposeError, applyDraft, claimReading, claimStatus, claimZone, cveBlockOf, releaseBlockOf, updateArchiveIndex, updateScoreboard,
   type ApplyInput, type CveFacts, type SnapshotHashes,
 } from "@/lib/apply";
 import type { LoadedConfig } from "@/lib/config";
 import { addDays } from "@/lib/dates";
 import { jsonText, sha256Hex } from "@/lib/json";
 import { regionsConfig } from "@/lib/regions";
+import type { CveLookup } from "@/lib/rules/types";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
 import { DraftBrief } from "@/lib/schema/draft-brief";
@@ -252,6 +253,35 @@ describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
     });
     expect(releaseBlockOf({ ...item, release_id: null }, cand, weekday.brief!.sources, cfg)).toBeNull();
     expect(releaseBlockOf(item, null, weekday.brief!.sources, cfg)).toBeNull();
+  });
+
+  it("C16: with no dated vendor source and no bundled record, releaseBlockOf throws ComposeError, and applyDraft passes it on", () => {
+    const i = world("weekday");
+    const item = i.draft.items.find((it) => it.kind === "patch_batch")!;
+    const cand = i.context.candidates.find((c) => c.release?.release_id === item.release_id)!.release!;
+    const pressOnly = { ...item, source_ids: item.source_ids.filter((sid) => weekday.brief!.sources.find((s) => s.id === sid)!.publisher !== "vendor:microsoft") };
+    // No date: the vendor source is gone and no record of the bundle is known.
+    const noDate = () => releaseBlockOf(pressOnly, cand, weekday.brief!.sources, cfg, null);
+    expect(noDate).toThrow(ComposeError);
+    expect(noDate).toThrow(`No release date for ${cand.release_id}: no vendor source with a date and no bundled record`);
+    // No page: an empty bundle (no exploited CVE, no item CVE) with no vendor source, even when the date would come from a record.
+    const dated: CveLookup = { get: () => ({ state: "PUBLISHED", date_published: "2026-10-13" }) as ReturnType<CveLookup["get"]> };
+    expect(() => releaseBlockOf({ ...pressOnly, cve_ids: [] }, { ...cand, exploited_cve_ids: [] }, weekday.brief!.sources, cfg, dated)).toThrow(ComposeError);
+    // The vendor source without a published_at and no record: no date either.
+    const undated = weekday.brief!.sources.map((s) => (s.publisher === "vendor:microsoft" ? { ...s, published_at: null } : s));
+    expect(() => releaseBlockOf(item, cand, undated, cfg, null)).toThrow(/^No release date/);
+    // applyDraft lets ComposeError through unchanged, for publish to report as PublishError("compose").
+    const undatedDraft = { ...i.draft, sources: i.draft.sources.map((s) => (s.url === SOURCES["msrc-october"].url ? { ...s, published_at: null } : s)) };
+    expect(undatedDraft.sources.filter((s) => s.published_at === null && s.url === SOURCES["msrc-october"].url)).toHaveLength(1);
+    const err = (() => {
+      try {
+        applyDraft({ ...i, draft: undatedDraft, cveList: { get: () => undefined } });
+        return null;
+      } catch (e) {
+        return e;
+      }
+    })();
+    expect(err).toBeInstanceOf(ComposeError);
   });
 });
 

@@ -11,7 +11,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyDraft, type ApplyInput, type ContentChanges, type GatedDraft } from "@/lib/apply";
+import { ComposeError, applyDraft, type ApplyInput, type ContentChanges, type GatedDraft } from "@/lib/apply";
 import { buildContext } from "@/lib/context";
 import { loadCheckedConfig, type LoadedConfig } from "@/lib/config";
 import { at } from "@/lib/dates";
@@ -336,6 +336,34 @@ describe("publish (§8.7)", () => {
       await expect(pushPending(git(w.h.root), { sleep: w.h.deps.sleep })).resolves.toEqual({ pushed: 2 });
     });
     expect(subjects(w.h)).toEqual([`status: ${D} · run 20261015-043702 started`, `status: ${D} · run 20261015-043702 ended: failed`]);
+  }, T);
+
+  it("P17: a ComposeError from either composer is PublishError(\"compose\"), logged, with nothing written or pushed", async () => {
+    const w = world("2026-10-15");
+    const head = w.h.git("rev-parse", "HEAD");
+    const archive = read(contentFile(w, "archive-index.json"));
+    const noDate = () => { throw new ComposeError("No release date for rel-microsoft-2026-10: no vendor source with a date and no bundled record"); };
+    await inRoot(w.h, async () => {
+      const err = await dataOnly(w, [rec(w)], {}, { ...composers(w), composeDataOnly: noDate }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(PublishError);
+      expect([(err as PublishError).code, (err as PublishError).message, (err as PublishError).codes]).toEqual(["compose", "compose", []]);
+      const full2 = publishFull({
+        ...base(w, [rec(w)]), force: false, edition: "full", draft: { generated_at: `${w.D}T05:04:00+08:00` } as unknown as GatedDraft,
+        context: {} as AgentContext, evidence: {} as Evidence, cveList: NO_CVES, regionsBase: {} as RegionsBase, snapshots: {},
+        feedsStale: [], disputes: null, recheck: null,
+      }, { ...composers(w), applyDraft: noDate });
+      await expect(full2).rejects.toMatchObject({ code: "compose" });
+      // Any other throw is not a compose failure and passes through unchanged.
+      await expect(dataOnly(w, [rec(w)], {}, { ...composers(w), composeDataOnly: () => { throw new TypeError("a bug"); } })).rejects.toBeInstanceOf(TypeError);
+    });
+    expect(w.logs.filter((l) => l.includes("could not be composed"))).toEqual([
+      "The data-only edition could not be composed: No release date for rel-microsoft-2026-10: no vendor source with a date and no bundled record",
+      "The full edition could not be composed: No release date for rel-microsoft-2026-10: no vendor source with a date and no bundled record",
+    ]);
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(read(contentFile(w, "archive-index.json"))).toBe(archive);
+    expect(w.h.remoteLog()).toEqual([]);
   }, T);
 
   it("P7: with staged files and GitHub one status commit ahead, publishDataOnly commits the staged files byte for byte", async () => {

@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { applyDraft, dropUnverified, type ApplyInput, type ComposeCommon, type ContentChanges, type GatedDraft, type SnapshotHashes } from "../lib/apply";
+import { ComposeError, applyDraft, dropUnverified, type ApplyInput, type ComposeCommon, type ContentChanges, type GatedDraft, type SnapshotHashes } from "../lib/apply";
 import { heldLockLine } from "../lib/chat";
 import { loadCheckedConfig, type LoadedConfig } from "../lib/config";
 import { composeDataOnly, type DataOnlyInput } from "../lib/data-only";
@@ -45,7 +45,8 @@ import { runPaths } from "./lib/paths";
 import { readSnapshot, snapshotHashes, type Snapshot } from "./lib/snapshot";
 import { GatedDraftSchema, validateGated } from "./lib/validate-loop";
 
-export type PublishCode = "wrong repository" | "too late" | "already published" | "validation" | "push" | "pending edition";
+/** "compose": the composer could not build the edition (lib/apply.ts ComposeError), nothing written. */
+export type PublishCode = "wrong repository" | "too late" | "already published" | "validation" | "push" | "pending edition" | "compose";
 
 /** A code-only error: message === code; `codes` holds rule codes only (validation), never messages. */
 export class PublishError extends Error {
@@ -584,6 +585,17 @@ function changeFiles(ch: ContentChanges): Files {
   return out;
 }
 
+/** Runs a composer; a ComposeError is logged and becomes PublishError("compose") before anything is written. */
+function composed<T>(ctx: Ctx, edition: string, compose: () => T): T {
+  try {
+    return compose();
+  } catch (e) {
+    if (!(e instanceof ComposeError)) throw e;
+    ctx.log(`The ${edition} edition could not be composed: ${e.message.slice(0, 200)}`);
+    throw new PublishError("compose");
+  }
+}
+
 function briefOf(ch: ContentChanges, date: string): Brief {
   if (!ch.brief || ch.brief.date !== date) throw new Error(`publish: the composer returned no brief for ${date}`);
   return ch.brief;
@@ -616,7 +628,7 @@ export async function publishDataOnly(o: PublishOptions & {
   const input: DataOnlyInput = {
     ...common, cveList: cveListOrNull(ctx.root, D), facts: cveFactsFor(ctx.root, D), inputs: mf.inputs, metricsSha256: sha256Hex(mf.text),
   };
-  const changes = (deps.composeDataOnly ?? composeDataOnly)(input);
+  const changes = composed(ctx, "data-only", () => (deps.composeDataOnly ?? composeDataOnly)(input));
   const brief = briefOf(changes, D);
   const record: RunRecord = { ...structuredClone(last), edition: brief.edition, data_only_published_at: publishedAt };
   const files: Files = new Map([...stagedFiles(ctx, D), ...changeFiles(changes)]);
@@ -664,7 +676,7 @@ export async function publishFull(o: PublishOptions & {
     inputs: mf.inputs,
     metricsSha256: sha256Hex(mf.text),
   };
-  const changes = (deps.applyDraft ?? applyDraft)(input);
+  const changes = composed(ctx, "full", () => (deps.applyDraft ?? applyDraft)(input));
   const brief = briefOf(changes, D);
   if (brief.edition !== o.edition) throw new Error(`publish: applyDraft returned a ${brief.edition} edition, not ${o.edition}`);
   const files: Files = new Map([...stagedFiles(ctx, D), ...changeFiles(changes)]);

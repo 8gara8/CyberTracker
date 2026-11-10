@@ -60,7 +60,7 @@ import {
   checkCliAndToken, checkNetwork, checkPlatform, clockRule, depsChanged, idempotency, loadRunConfig, prepareGit, PreflightFail, scheduleFor,
   type ClockState, type IdempotencyState, type Schedule,
 } from "./preflight";
-import { publishDataOnly, publishFull, publishStatus, publishWithholds, type PublishOptions, type Sleep, type StatusEvent } from "./publish";
+import { PublishError, publishDataOnly, publishFull, publishStatus, publishWithholds, type PublishOptions, type Sleep, type StatusEvent } from "./publish";
 import { applyLinkResults, checkLinks, intakeDisputes, recheckItems, writeRecheckLog, type IntakeResult, type LinkResult, type LinksOutcome } from "./recheck";
 
 // ── Exports (plan §3.1) ──────────────────────────────────────────────────────────────────────────────
@@ -475,6 +475,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       } catch (e) {
         line(errorText(e));
         setStage(cur(), "data_only", { status: "failed", ended: now(), note: NOTES.dataOnlyFailed });
+        if (e instanceof PublishError && e.code === "compose") addNote(cur(), "data_only", NOTES.notComposed);
       }
     }
 
@@ -815,6 +816,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     } catch (e) {
       line(errorText(e));
       fail("E_PUBLISH", "publish");
+      if (e instanceof PublishError && e.code === "compose") addNote(cur(), "publish", NOTES.notComposed);
     }
   };
 

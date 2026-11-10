@@ -42,6 +42,19 @@ export interface SoftIssue {
 /** A draft after the soft pass: the Angle may have been dropped (§4.5 stores it as null). */
 export type GatedDraft = Omit<DraftBrief, "angle"> & { angle: DraftAngle | null };
 
+/**
+ * A draft the composer cannot freeze into an edition because a fact §4.6 needs has no source: a release
+ * with no date or page, or a CVE with no publication date or assigner. Validation makes these rare (a
+ * patch batch whose sources are all press and whose release lists no CVE the morning fetched is the one
+ * known path); publish reports one as PublishError("compose"), never as an uncaught throw.
+ */
+export class ComposeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ComposeError";
+  }
+}
+
 /** The soft-gate codes (§4.12 "Snapshot soft gates"). */
 export const SNAP_CODES = ["SNAP_NUMBER", "SNAP_NAME", "SNAP_QUOTE", "SNAP_MISSING"] as const;
 export type SnapCode = (typeof SNAP_CODES)[number];
@@ -386,7 +399,7 @@ function cleanText(text: string | null | undefined, max: number, fallback: strin
 /**
  * One CVE block (§4.6), from the raw record in `facts` (else the CVE List entry, else the KEV index row
  * alone), the KEV catalog, EPSS and GHSA facts, the manifest rows (A5) and the item's checked flaw
- * evidence. Throws when no source gives the record's publication date and assigner.
+ * evidence. Throws ComposeError when no source gives the record's publication date and assigner.
  */
 export function cveBlockOf(
   cve: string, item: Pick<DraftItem, "flaw_evidence">, sources: readonly Pick<Source, "id" | "url">[], x: CveBlockInputs,
@@ -401,7 +414,7 @@ export function cveBlockOf(
 
   const datePublished = mf?.date_published[0]?.value ?? rec?.date_published ?? info?.date_published ?? row?.[4] ?? null;
   const assigner = rec?.assigner ?? info?.assigner ?? row?.[5] ?? null;
-  if (!datePublished || !assigner) throw new Error(`No CVE record facts for ${id}: its publication date or assigner is unknown`);
+  if (!datePublished || !assigner) throw new ComposeError(`No CVE record facts for ${id}: its publication date or assigner is unknown`);
   const updated = rec
     ? (rec.date_updated && notAfter(rec.updated_at, x.capturedAt) ? rec.date_updated : null)
     : info?.date_updated ?? null;
@@ -483,7 +496,7 @@ export function confirmBlock(b: BareCveBlock, item: Pick<Item, "flaw_evidence" |
  * "<vendor name> security updates, YYYY-MM" and source_url the first bundled record's record_url. The
  * counts come from the candidate's release (total, critical, exploited). Null when the item has no release.
  * `records` (optional, added by L3) gives the bundle's publication dates; applyDraft passes the CVE List.
- * The bundle is the release's exploited CVEs, else the item's. Throws when no date can be found.
+ * The bundle is the release's exploited CVEs, else the item's. Throws ComposeError when no date or page can be found.
  */
 export function releaseBlockOf(
   item: DraftItem, release: Candidate["release"], sources: readonly Source[], config: LoadedConfig, records: CveLookup | null = null,
@@ -498,8 +511,8 @@ export function releaseBlockOf(
   const bundle = release.exploited_cve_ids.length > 0 ? release.exploited_cve_ids : item.cve_ids;
   const newestRecord = bundle.map((cve) => records?.get(cve)?.date_published ?? null).filter(nonNull).sort().at(-1) ?? null;
   const date = src?.published_at ? utcDateOf(src.published_at) : newestRecord;
-  if (!date) throw new Error(`No release date for ${release.release_id}: no vendor source with a date and no bundled record`);
-  if (!src && bundle.length === 0) throw new Error(`No release page for ${release.release_id}: no vendor source and no bundled record`);
+  if (!date) throw new ComposeError(`No release date for ${release.release_id}: no vendor source with a date and no bundled record`);
+  if (!src && bundle.length === 0) throw new ComposeError(`No release page for ${release.release_id}: no vendor source and no bundled record`);
   return {
     release_id: release.release_id,
     vendor,

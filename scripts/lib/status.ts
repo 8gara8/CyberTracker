@@ -68,6 +68,8 @@ export interface Notes {
   failure(code: string, facts: WhatFacts): string;
   /** Preflight step 5 (an addition to G9): pushPending() refused or failed; the commits stay local for the next run. */
   pendingNotPushed: string;
+  /** Publish's PublishError("compose"): the composer found a fact missing (lib/apply.ts ComposeError). */
+  notComposed: string;
 }
 
 /** Every stage note text; each ends with a full stop. */
@@ -114,6 +116,7 @@ export const NOTES: Notes = {
   },
   failure: (code, facts) => whatHappened(code, facts),
   pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
+  notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
 };
 
 /** StageRecord.note's limit (§4.8). */

@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ComposeError, applyDraft } from "@/lib/apply";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
 import { Brief } from "@/lib/schema/brief";
@@ -30,6 +31,11 @@ import { beforeEdition, siteBrief, testRecord, victimDispute, worldConfig } from
 vi.mock("@/scripts/metrics", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/scripts/metrics")>();
   return { ...actual, runMetrics: vi.fn(actual.runMetrics) };
+});
+// D31 makes applyDraft throw ComposeError once; every other case runs the real one.
+vi.mock("@/lib/apply", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/apply")>();
+  return { ...actual, applyDraft: vi.fn(actual.applyDraft) };
 });
 
 const D = PIPELINE_DATE;
@@ -399,6 +405,28 @@ describe("daily.ts end to end", () => {
     expect(summary(h).split("\n")[0]).toContain("(E_PUBLISH)");
     expect(summary(h)).toContain("status not saved");
     expect(fs.existsSync(path.join(h.root, "needs-review", D, `${D}.json`))).toBe(true);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D31 a draft the composer cannot freeze (ComposeError) gives E_PUBLISH with the not-composed note; the data-only edition stands, exit 3", async () => {
+    const h = harness();
+    okAgent(h);
+    vi.mocked(applyDraft).mockImplementationOnce(() => {
+      throw new ComposeError("No release date for rel-microsoft-2026-10: no vendor source with a date and no bundled record");
+    });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    expect(vi.mocked(applyDraft)).toHaveBeenCalled();
+    const s = subjects(h);
+    expect(s[1]).toBe(`brief: ${D} · data-only edition`);
+    expect(s.filter((x) => x.startsWith("brief: "))).toHaveLength(1);
+    expect(s.at(-1)).toMatch(/ ended: published_data_only$/);
+    expect(briefOn(h)!.edition).toBe("data_only");
+    const r = statusOn(h)!.runs[0]!;
+    expect(r.error_code).toBe("E_PUBLISH");
+    expect(stageOf(r, "publish").status).toBe("failed");
+    expect(stageOf(r, "publish").note).toContain("Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).");
+    expect(fs.readFileSync(path.join(h.root, "logs", `${D}.daily.log`), "utf8")).toContain("The full edition could not be composed: No release date for rel-microsoft-2026-10");
+    expect(summary(h).split("\n")[0]).toContain("(E_PUBLISH)");
     expectContentOnly(h);
   }, TIMEOUT);
 
