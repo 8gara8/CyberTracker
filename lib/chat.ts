@@ -115,6 +115,19 @@ export const NOT_VALID = {
   nextStep: `read the Validation lines in logs/{date}.daily.log: if they name only briefs/{date}.json, fix drafts/{date}.json, then in ${CHECKOUT} run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`,
 } as const;
 
+/** The hand publish command E_PUBLISH's next steps give (NEXT_STEP, NOT_COMPOSED, NOT_VALID), `{date}` filled. */
+const publishCommand = (date: string) => `npm run publish -- --date ${date}`;
+
+/**
+ * E_PUBLISH's next step when brief D as committed is a full or partial edition (§0.4 row 132): a failed
+ * --force run left the earlier edition standing, and publish replaces one only with --force (§8.7), so
+ * the hand command takes it. With brief D a data-only edition, or no brief, the step is as given.
+ */
+export function withForce(nextStep: string, date: string, stored: Pick<Brief, "edition"> | null): string {
+  if (!stored || stored.edition === "data_only") return nextStep;
+  return nextStep.replaceAll(publishCommand(date), `${publishCommand(date)} --force`);
+}
+
 /** What WHAT_HAPPENED's templates are filled from: the run records (chatInputFor() builds it). */
 export interface WhatFacts {
   date: string;
@@ -430,11 +443,15 @@ export function chatInputFor(src: ChatSource): ChatInput {
   };
   // E_PUBLISH from a draft the composer could not freeze, or whose edition failed whole-tree validation: only
   // the publish stage's note says so (a data-only stage that was not composed leaves the full edition's own
-  // failure as it was). A push failure keeps E_PUBLISH's own lines.
+  // failure as it was). A push failure keeps E_PUBLISH's own lines. After a failed --force run the earlier
+  // full edition stands, so the hand publish command takes --force (withForce()).
   const publishNote = code === "E_PUBLISH" && coded !== null ? stage(coded, "publish")?.note ?? "" : "";
   const special = NOTE_RES.notComposed.test(publishNote) ? NOT_COMPOSED : NOTE_RES.notValid.test(publishNote) ? NOT_VALID : null;
   const what = (c: string) => (special ? special.what : whatHappened(c, facts));
-  const next = (c: string) => (special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date));
+  const next = (c: string) => {
+    const step = special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date);
+    return c === "E_PUBLISH" ? withForce(step, date, brief) : step;
+  };
 
   let left: Edition | null = null;
   if (last && dryRun) left = last.edition;

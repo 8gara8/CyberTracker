@@ -578,6 +578,30 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D45 a --force rerun whose full edition fails whole-tree validation: the earlier full edition stands and the hand publish command takes --force, exit 1", async () => {
+    // Before the review of the third fix pass the next step gave the command without --force, which publish refuses
+    // while a full edition of D stands ("already published").
+    const h = harness();
+    okAgent(h);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const first = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    const actual = await vi.importActual<typeof import("@/lib/apply")>("@/lib/apply");
+    vi.mocked(applyDraft).mockImplementationOnce((i) => {
+      const ch = actual.applyDraft(i);
+      ch.brief!.computed.word_count += 1;
+      return ch;
+    });
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--force"])).toBe(1);
+    expect(Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!)).published_at).toBe(first.published_at);
+    const r = statusOn(h)!.runs.at(-1)!;
+    expect([r.outcome, r.error_code]).toEqual(["failed", "E_PUBLISH"]);
+    const cmd = `npm run publish -- --date ${D}`;
+    expect(summary(h)).toContain(`\nNext step: ${NOT_VALID.nextStep.replaceAll("{date}", D).replaceAll(cmd, `${cmd} --force`)}\n`);
+    expect(summary(h)).toContain(`${cmd} --force before 11:00`);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D40 a same-day victim dispute on a data-only item the draft re-reports as another kind: the kept item takes the re-report's slot, the story shows once, exit 0", async () => {
     // Before W1, the draft's brief lacked the item C-0001 names in this edition: XREF_UNRESOLVED and E_PUBLISH. Before
     // T2 the edition kept the item at the end and masked the patch batch, which cites its record page, in place: the

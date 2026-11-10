@@ -540,6 +540,42 @@ describe("chat edition: data-only format", () => {
     expect(chatInputFor({ date: D, brief: b, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
   });
 
+  it("gives a failed --force run's E_PUBLISH lines a hand publish command with --force: the earlier full edition stands, and publish replaces it only so", () => {
+    // Before the review of the third fix pass the command lacked --force, so publish refused it ("already published").
+    const D = "2026-11-12";
+    const full = brief(D);
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const failedForce = (publishNote: string) => [
+      record(D, { data_only_published_at: full.data_only_published_at, full_published_at: full.published_at }),
+      record(D, {
+        trigger: "manual", started_at: at(D, "06:02:00"), outcome: "failed", edition: "full", error_code: "E_PUBLISH",
+        stage: { publish: { status: "failed", note: publishNote } },
+      }),
+    ];
+    const cmd = `npm run publish -- --date ${D}`;
+    for (const [note, step] of [
+      [what, nextStepFor("E_PUBLISH", D)],
+      [`${what} ${STAGE_NOTES.notComposed}`, NOT_COMPOSED.nextStep.replaceAll("{date}", D)],
+      [`${what} ${STAGE_NOTES.notValid}`, NOT_VALID.nextStep.replaceAll("{date}", D)],
+    ] as const) {
+      expect(step).toContain(`${cmd} before 11:00`);
+      const input = chatInputFor({ date: D, brief: full, runs: failedForce(note) });
+      expect(input).toMatchObject({ kind: "failed", code: "E_PUBLISH", nextStep: step.replaceAll(cmd, `${cmd} --force`) });
+      expect(render(input)).toContain(`${cmd} --force before 11:00`);
+    }
+    // A data-only edition standing (or none) needs no --force: publish replaces a data-only edition as it is.
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const dataOnly = [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: `${what} ${STAGE_NOTES.notValid}` } },
+    })];
+    expect(chatInputFor({ date: D, brief: b, runs: dataOnly })).toMatchObject({ nextStep: NOT_VALID.nextStep.replaceAll("{date}", D) });
+    expect(render(chatInputFor({ date: D, brief: null, runs: dataOnly }))).not.toContain("--force");
+    // Another code's next step is never changed.
+    const agent = [record(D, { trigger: "manual", outcome: "failed", edition: "full", error_code: "E_AGENT" })];
+    expect(chatInputFor({ date: D, brief: full, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
+  });
+
   it("keeps the metrics KEV count when the data-only brief holds no items", () => {
     const D = "2026-11-12";
     const b = dataOnlyBrief(D, []);
