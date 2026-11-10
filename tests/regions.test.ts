@@ -8,7 +8,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
+  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
   publisherCount, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
   type RegionsConfig,
 } from "@/lib/regions";
@@ -17,6 +17,7 @@ import {
   type KevIndexRow, type Pack, type RegionSignal, type Regions, type Source,
 } from "@/lib/schema";
 import { LEVELLED_REGIONS, REGION_RULE_TYPES, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import { D6_JP, D6_TW } from "./helpers/d6";
 
 const DATE = "2026-11-08";
 const SEED_REGIONS = RegionsFile.parse(JSON.parse(fs.readFileSync(path.join(__dirname, "../config/regions.json"), "utf8")));
@@ -432,7 +433,7 @@ const PACK: Pick<Pack, "items" | "records"> = {
     },
     {
       id: "p0003", feed_id: "jpcert-at", outlet: "JPCERT/CC", publisher: "jpcert", tier: 1, language: "ja", region: "JP", coverage: ["japan"],
-      title: "VPN 製品の脆弱性を悪用する攻撃に関する注意喚起", snippet: "注意喚起", url: "https://jpcert.or.jp/at/2026/at260031.html",
+      title: "VPN 製品の脆弱性を悪用する攻撃に関する注意喚起", snippet: "注意喚起。悪用する攻撃が確認されています。", url: "https://jpcert.or.jp/at/2026/at260031.html",
       published_at: "2026-11-06T01:00:00Z", cve_ids: ["CVE-2026-60010"], alert: true, flags: [], score: 8,
     },
   ],
@@ -484,11 +485,91 @@ describe("collectSignals", () => {
     expect(collectSignals(null, long, null, CONFIG, DATE)[0]!.title.length).toBeLessThanOrEqual(200);
   });
 
+  it("alertRegions() needs both an agency publisher and an alert-pattern URL (ruling R36)", () => {
+    expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "jpcert", CONFIG)).toEqual(["JP"]);
+    expect(alertRegions("https://WWW.JPCERT.OR.JP/at/2026/at260031.html?utm_source=rss", "jpcert", CONFIG)).toEqual(["JP"]);
+    expect(alertRegions("https://www.jpcert.or.jp/wr/2026/wr264101.html", "jpcert", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "bleepingcomputer", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-012/", "anssi", CONFIG)).toEqual(["EU"]);
+    expect(alertRegions("https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-0812/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://cisa.gov/news-events/directives/ed-26-03", "cisa", CONFIG)).toEqual(["US"]);
+  });
+
+  it("gives a JP agency_alert for a JPCERT /at/ record, and none for a newsroom item quoting the alert URL", () => {
+    const alertUrl = "https://www.jpcert.or.jp/at/2026/at260031.html";
+    const pack: Pick<Pack, "items" | "records"> = {
+      items: [{
+        id: "p0001", feed_id: "bleepingcomputer", outlet: "BleepingComputer", publisher: "bleepingcomputer", tier: 2, language: "en", region: "GLOBAL",
+        coverage: ["exploits"], title: "JPCERT warns of VPN attacks", snippet: `The alert is at ${alertUrl} for readers.`,
+        url: "https://www.bleepingcomputer.com/news/security/ct-sample-jpcert-warns/", published_at: "2026-11-07T02:00:00Z", cve_ids: [], alert: false,
+        flags: [], score: 30,
+      }],
+      records: [{
+        id: "r0001", source: "jpcert", record_id: "at260031", url: alertUrl, advisory_urls: [], title: "VPN 製品の脆弱性に関する注意喚起",
+        text: "注意喚起", date: "2026-11-07", vendor: null, product: null, cve_ids: ["CVE-2026-60010"], facts: { alert: true }, flags: [],
+      }],
+    };
+    const s = collectSignals(pack, null, null, CONFIG, DATE);
+    expect(s.map((x) => [x.id, x.type, x.region, x.date, x.publisher, x.url])).toEqual([
+      ["sig-20261108-1", "agency_alert", "JP", "2026-11-07", "jpcert", "https://jpcert.or.jp/at/2026/at260031.html"],
+    ]);
+    const r = previewRegions({ date: DATE, history: [], signals: s, kevIndex: { entries: [] }, config: CONFIG });
+    expect(row(r, "JP")).toMatchObject({ level: "high", rule_id: "agency-alert" });
+    // Without the record, the newsroom item alone raises nothing.
+    expect(collectSignals({ items: pack.items, records: [] }, null, null, CONFIG, DATE)).toEqual([]);
+  });
+
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {
-    for (const t of ["exploited in the wild", "Actively Exploited", "is being exploited", "exploitation has been observed", "悪用", "攻撃が確認", "遭利用", "已被利用", "攻擊活動"]) {
+    for (const t of [
+      "exploited in the wild", "Actively Exploited", "is being exploited", "exploitation has been observed",
+      "本脆弱性を悪用する攻撃が確認されています", "悪用が確認されています", "攻撃に悪用されていることを確認しています",
+      "遭利用", "已被利用", "攻擊活動",
+    ]) {
       expect(CERT_EXPLOITATION_RE.test(t), t).toBe(true);
     }
     expect(CERT_EXPLOITATION_RE.test("A flaw that could allow code execution")).toBe(false);
+  });
+
+  // V12 (Kobol, 2026-11-09): bare 悪用 matched JVNDB and JPCERT boilerplate that reports no exploitation.
+  it("matches Japanese only when 悪用 or 攻撃 is confirmed in an affirmative form in the same sentence (C1)", () => {
+    for (const t of [
+      "悪用が確認されており、対策を急いでください", "本脆弱性を悪用した攻撃を確認しております",
+      "攻撃が確認されました。", "ベンダーは悪用を確認しました", "悪用された事例が確認された。", "攻撃を確認した",
+      "SAMPLE 注意喚起 本脆弱性を悪用する攻撃を確認しています。詳細は架空です。",
+    ]) {
+      expect(CERT_EXPLOITATION_RE.test(t), t).toBe(true);
+    }
+    for (const t of [
+      // Bare words and the conditional boilerplate V12 found.
+      "悪用", "攻撃", "攻撃が確認", "悪用を確認", "容易に悪用可能", "悪用が困難", "悪用された場合、任意のコードが実行される可能性があります",
+      "悪用されると、情報が漏えいする可能性があります",
+      // Negative and request forms.
+      "現時点で悪用は確認されていません", "本脆弱性の悪用を確認していません", "悪用は確認されていない", "悪用の有無を確認してください",
+      "現時点で本脆弱性を悪用した攻撃は確認されておりません", "当社では攻撃を確認しておりません",
+      // Conditional forms of an affirmative ending.
+      "悪用が確認された場合は直ちに連絡してください", "攻撃を確認したら報告してください", "攻撃の影響を確認した上で対策を実施してください",
+      // An affirmative 確認 of a negated clause: no exploitation was found.
+      "悪用されていないことを確認しています", "悪用の痕跡がないことを確認しました", "攻撃を受けていないことを確認した",
+      "悪用された形跡が無いことを確認しました", "攻撃がなかったのを確認しました",
+      // The first 確認 after the word decides; a later one in the sentence does not count.
+      "悪用は確認されていませんが、修正版の公開を確認しました",
+      // A sentence boundary ends the reach.
+      "悪用に注意してください。修正版の公開を確認しました",
+      // More than 40 characters between the word and 確認.
+      `悪用${"あ".repeat(41)}確認されています`,
+    ]) {
+      expect(CERT_EXPLOITATION_RE.test(t), t).toBe(false);
+    }
+    expect(CERT_EXPLOITATION_RE.test(`悪用${"あ".repeat(40)}確認されています`)).toBe(true);
+
+    // A JPCERT alert whose title only names attacks gives its agency_alert, and no cert_exploitation.
+    const titleOnly = { items: [{ ...PACK.items[2]!, snippet: "注意喚起" }], records: [] };
+    expect(collectSignals(titleOnly, null, null, CONFIG, DATE).map((x) => x.type)).toEqual(["agency_alert"]);
+    const boilerplate = {
+      items: [],
+      records: [{ ...PACK.records[0]!, title: "SAMPLE 製品の脆弱性", text: "本脆弱性は容易に悪用可能です。悪用された場合、任意のコードが実行される可能性があります。" }],
+    };
+    expect(collectSignals(boilerplate, null, null, CONFIG, DATE)).toEqual([]);
   });
 });
 
@@ -511,21 +592,14 @@ describe("previewRegions", () => {
 // ── Appendix D.6: the home-vendor rule alone, replayed ───────────────────────────────────────────
 
 describe("Appendix D.6 replay", () => {
-  // KEV additions for Taiwanese and Japanese vendors, 2025-01-01 to 2026-11-06: date, vendor, lags in days.
-  const TW: [string, string, number[]][] = [
-    ["2025-02-11", "Zyxel", [7, 7]], ["2025-03-19", "Edimax", [15]], ["2025-05-07", "GeoVision", [173, 324]], ["2025-05-15", "DrayTek", [139]],
-    ["2025-06-02", "ASUS", [1488, 630]], ["2025-06-25", "D-Link", [521]], ["2025-08-05", "D-Link", [1798, 1798, 980]], ["2025-12-08", "D-Link", [1198]],
-    ["2025-12-17", "ASUS", [0]], ["2025-12-22", "Digiever", [322]], ["2026-02-17", "TeamT5", [554]], ["2026-04-24", "D-Link", [395]],
-    ["2026-09-21", "Zyxel", [97]],
-  ];
-  const JP: [string, string, number[]][] = [
-    ["2025-03-03", "Hitachi Vantara", [700, 700]], ["2025-08-18", "Trend Micro", [13]], ["2025-10-14", "SKYSEA", [3049]], ["2025-10-22", "Motex", [2]],
-    ["2026-02-24", "Soliton Systems", [11]], ["2026-05-21", "Trend Micro", [0]],
-  ];
+  // KEV additions for Taiwanese and Japanese vendors, 2025-01-01 to 2026-11-06: date, vendor, lags in days
+  // (tests/helpers/d6.ts, shared with the Appendix D check).
+  const TW = D6_TW;
+  const JP = D6_JP;
   const catalog: KevCatalogEntry[] = [];
   const index: KevIndexRow[] = [];
   let n = 0;
-  for (const [date, vendorProject, lags] of [...TW, ...JP, ["2025-06-02", "Microsoft", [3]] as [string, string, number[]]]) {
+  for (const [date, vendorProject, lags] of [...TW, ...JP, ["2025-06-02", "Microsoft", [3]] as const]) {
     for (const lag of lags) {
       n += 1;
       const cve = `CVE-${date.slice(0, 4)}-${90000 + n}`;

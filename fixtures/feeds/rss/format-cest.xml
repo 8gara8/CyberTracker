@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE feed with named zones</title>
+<link>https://www.example.com/ct-sample/cest</link>
+<description>SAMPLE: dates written with CEST and CET.</description>
+<item>
+<title>SAMPLE security advisory in summer time</title>
+<link>https://www.example.com/ct-sample/cest-1</link>
+<pubDate>Tue, 13 Oct 2026 16:36:26 CEST</pubDate>
+</item>
+<item>
+<title>SAMPLE security advisory in winter time</title>
+<link>https://www.example.com/ct-sample/cet-1</link>
+<pubDate>Tue, 03 Nov 2026 10:00:00 CET</pubDate>
+</item>
+</channel>
+</rss>

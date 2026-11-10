@@ -1,6 +1,7 @@
 // The valid draft-side fixtures (SPEC §4.12 "Fixtures and tests"): every file parses with its schema and
 // matches the builder, the weekday draft has the eight item shapes, the Monday and quiet drafts their own,
-// each draft validates cleanly against its own inputs, and `fixtures/src/build.ts --check` passes.
+// each draft validates cleanly against its own inputs, and `fixtures/src/build.ts --check` passes. The
+// binary outputs (P2's two delta zips) are compared byte for byte and must parse as zips.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -18,7 +19,9 @@ import { publisherFor } from "@/lib/sources";
 import { numbersIn } from "@/lib/text";
 import { normalizeUrl } from "@/lib/urls";
 import { RegionsInputFile, cveLookupFromDir, validateDraft } from "@/lib/validate";
-import { FIXTURE_DIRS, allOutputs, compareOutputs, inputPath, jsonText, main, validDraftPath, writeOutputs } from "@/fixtures/src/build";
+import { parseDeltaZip } from "@/lib/feeds/zip";
+import { FIXTURE_DIRS, allOutputs, compareOutputs, inputPath, isBinaryOutput, jsonText, main, textOutputs, validDraftPath, writeOutputs } from "@/fixtures/src/build";
+import { EOD_ZIP_PATH, HOURLY_ZIP_PATH } from "@/fixtures/src/feeds";
 import { WEEKDAY_ITEMS, editionDraft, mondayDraft, quietDraft, weekdayDraft } from "@/fixtures/src/drafts";
 import {
   CVE_RECORDS_DIR, draftInputs, editionContext, editionEvidence, editionMetrics, editionPack, editionRegionsInput, fixtureConfig,
@@ -65,10 +68,24 @@ describe("valid fixture files", () => {
     }
     // Built from parts so this file does not hold the patterns tests/no-europe-strings.test.ts looks for.
     const modelRe = new RegExp(`claude-(?:opus|sonnet|haiku)|${"-".repeat(2)}model\\b`);
-    for (const o of allOutputs()) {
+    for (const o of textOutputs(allOutputs())) {
       expect(o.text, o.path).not.toMatch(/\u2014/);
       expect(o.text, o.path).not.toMatch(modelRe);
     }
+  });
+
+  it("writes every binary output as a stored-method zip that parseDeltaZip() reads, and every other output as text", () => {
+    const outputs = allOutputs();
+    const binary = outputs.filter(isBinaryOutput);
+    expect(binary.map((o) => o.path).sort()).toEqual([EOD_ZIP_PATH, HOURLY_ZIP_PATH].sort());
+    for (const o of binary) {
+      expect(o.path.endsWith(".zip"), o.path).toBe(true);
+      expect(o.bytes.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])), o.path).toBe(true);
+      const z = parseDeltaZip(o.bytes);
+      expect(z.records.length, o.path).toBeGreaterThan(0);
+      expect(z.names.every((n) => /^deltaCves\/CVE-\d{4}-\d{4,}\.json$/.test(n)), o.path).toBe(true);
+    }
+    for (const o of textOutputs(outputs)) expect(o.path.endsWith(".zip"), o.path).toBe(false);
   });
 
   it("hands out deep copies", () => {

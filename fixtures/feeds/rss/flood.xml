@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE flood feed</title>
+<link>https://www.example.com/ct-sample/flood</link>
+<description>SAMPLE: 40 items from one feed (the 30-per-feed cap).</description>
+<item>
+<title>SAMPLE flood item 1: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-1</link>
+<pubDate>Tue, 13 Oct 2026 00:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 2: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-2</link>
+<pubDate>Tue, 13 Oct 2026 01:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 3: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-3</link>
+<pubDate>Tue, 13 Oct 2026 01:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 4: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-4</link>
+<pubDate>Tue, 13 Oct 2026 02:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 5: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-5</link>
+<pubDate>Tue, 13 Oct 2026 02:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 6: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-6</link>
+<pubDate>Tue, 13 Oct 2026 03:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 7: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-7</link>
+<pubDate>Tue, 13 Oct 2026 03:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 8: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-8</link>
+<pubDate>Tue, 13 Oct 2026 04:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 9: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-9</link>
+<pubDate>Tue, 13 Oct 2026 04:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 10: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-10</link>
+<pubDate>Tue, 13 Oct 2026 05:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 11: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-11</link>
+<pubDate>Tue, 13 Oct 2026 05:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 12: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-12</link>
+<pubDate>Tue, 13 Oct 2026 06:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 13: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-13</link>
+<pubDate>Tue, 13 Oct 2026 06:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 14: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-14</link>
+<pubDate>Tue, 13 Oct 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 15: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-15</link>
+<pubDate>Tue, 13 Oct 2026 07:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 16: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-16</link>
+<pubDate>Tue, 13 Oct 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 17: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-17</link>
+<pubDate>Tue, 13 Oct 2026 08:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 18: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-18</link>
+<pubDate>Tue, 13 Oct 2026 09:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 19: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-19</link>
+<pubDate>Tue, 13 Oct 2026 09:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 20: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-20</link>
+<pubDate>Tue, 13 Oct 2026 10:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 21: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-21</link>
+<pubDate>Tue, 13 Oct 2026 10:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 22: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-22</link>
+<pubDate>Tue, 13 Oct 2026 11:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 23: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-23</link>
+<pubDate>Tue, 13 Oct 2026 11:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 24: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-24</link>
+<pubDate>Tue, 13 Oct 2026 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 25: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-25</link>
+<pubDate>Tue, 13 Oct 2026 12:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 26: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-26</link>
+<pubDate>Tue, 13 Oct 2026 13:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 27: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-27</link>
+<pubDate>Tue, 13 Oct 2026 13:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 28: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-28</link>
+<pubDate>Tue, 13 Oct 2026 14:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 29: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-29</link>
+<pubDate>Tue, 13 Oct 2026 14:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 30: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-30</link>
+<pubDate>Tue, 13 Oct 2026 15:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 31: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-31</link>
+<pubDate>Tue, 13 Oct 2026 15:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 32: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-32</link>
+<pubDate>Tue, 13 Oct 2026 16:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 33: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-33</link>
+<pubDate>Tue, 13 Oct 2026 16:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 34: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-34</link>
+<pubDate>Tue, 13 Oct 2026 17:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 35: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-35</link>
+<pubDate>Tue, 13 Oct 2026 17:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 36: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-36</link>
+<pubDate>Tue, 13 Oct 2026 18:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 37: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-37</link>
+<pubDate>Tue, 13 Oct 2026 18:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 38: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-38</link>
+<pubDate>Tue, 13 Oct 2026 19:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 39: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-39</link>
+<pubDate>Tue, 13 Oct 2026 19:30:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE flood item 40: a vulnerability notice</title>
+<link>https://www.example.com/ct-sample/flood-40</link>
+<pubDate>Tue, 13 Oct 2026 20:00:00 +0000</pubDate>
+</item>
+</channel>
+</rss>

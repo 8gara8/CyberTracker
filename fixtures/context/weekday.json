@@ -381,13 +381,13 @@
       {
         "key": "ai_credited.w13.total",
         "label": "AI-credited records, 13 weeks",
-        "display": "451",
+        "display": "502",
         "as_of": "2026-10-12"
       },
       {
         "key": "ai_credited.w13.ex_anthropic",
         "label": "AI-credited records excluding Anthropic, 13 weeks",
-        "display": "173",
+        "display": "224",
         "as_of": "2026-10-12"
       },
       {
@@ -996,6 +996,7 @@
         "ncsc.govt.nz",
         "twcert.org.tw",
         "moda.gov.tw",
+        "acs.gov.tw",
         "nics.nat.gov.tw",
         "nsb.gov.tw",
         "mjib.gov.tw",
@@ -1027,10 +1028,13 @@
         "cac.gov.cn",
         "mandiant.com",
         "cloud.google.com/blog/topics/threat-intelligence",
+        "cloudblog.withgoogle.com/topics/threat-intelligence",
         "blog.google/threat-analysis-group",
         "googleprojectzero.blogspot.com",
         "projectzero.google",
         "security.googleblog.com",
+        "feeds.feedburner.com/googleonlinesecurityblog",
+        "blog.google/security",
         "deepmind.google",
         "microsoft.com/en-us/security/blog",
         "unit42.paloaltonetworks.com",

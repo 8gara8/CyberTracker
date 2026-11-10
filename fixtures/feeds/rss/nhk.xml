@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:nhknews="http://news.web.nhk/rss/rss2.0/modules/nhknews/" version="2.0">
+  <channel>
+    <title>SAMPLE title 1</title>
+    <description>SAMPLE text 8</description>
+    <link>https://www.example.com/ct-sample/item-1</link>
+    <item>
+      <title>SAMPLE title 2</title>
+      <link>https://www.example.com/ct-sample/item-2</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-2</guid>
+      <description>SAMPLE text 9</description>
+      <pubDate>Mon, 09 Nov 2026 19:11:00 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    <item>
+      <title>SAMPLE title 3</title>
+      <link>https://www.example.com/ct-sample/item-3</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-3</guid>
+      <description>SAMPLE text 10</description>
+      <pubDate>Mon, 09 Nov 2026 19:22:00 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    <item>
+      <title>SAMPLE title 4</title>
+      <link>https://www.example.com/ct-sample/item-4</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-4</guid>
+      <description>SAMPLE text 11</description>
+      <pubDate>Mon, 09 Nov 2026 22:13:00 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    <item>
+      <title>SAMPLE title 5</title>
+      <link>https://www.example.com/ct-sample/item-5</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-5</guid>
+      <description>SAMPLE text 12</description>
+      <pubDate>Mon, 09 Nov 2026 19:20:09 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    <item>
+      <title>SAMPLE title 6 不正アクセス</title>
+      <link>https://www.example.com/ct-sample/item-6</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-6</guid>
+      <description>SAMPLE text 13 不正アクセス</description>
+      <pubDate>Mon, 09 Nov 2026 19:17:59 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    <item>
+      <title>SAMPLE title 7</title>
+      <link>https://www.example.com/ct-sample/item-7</link>
+      <guid isPermaLink="true">https://www.example.com/ct-sample/item-7</guid>
+      <description>SAMPLE text 14</description>
+      <pubDate>Mon, 09 Nov 2026 20:38:47 +0900</pubDate>
+      <nhknews:new>false</nhknews:new>
+    </item>
+    </channel>
+</rss>

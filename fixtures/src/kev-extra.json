@@ -1,0 +1,13 @@
+{
+  "note": "Real CISA KEV entries added 2023 and 2024 (catalog 2026.11.06), joined to their CVE records at 67c39b1, as state/kev-index.json rows: [cve_id, date_added, vendor_project, product, date_published, assigner, ransomware]. They give the fixture index rows from 2023 on. rejoin_id is the row the fixture state leaves unjoined; its record is in fixtures/feeds/cvelist/by-id/.",
+  "rejoin_id": "CVE-2024-38112",
+  "entries": [
+    ["CVE-2023-23397", "2023-03-14", "Microsoft", "Office", "2023-03-14", "microsoft", "unknown"],
+    ["CVE-2023-34362", "2023-06-02", "Progress", "MOVEit Transfer", "2023-06-02", "mitre", "known"],
+    ["CVE-2023-41179", "2023-09-21", "Trend Micro", "Apex One and Worry-Free Business Security", "2023-09-19", "trendmicro", "unknown"],
+    ["CVE-2023-47565", "2023-12-21", "QNAP", "VioStor NVR", "2023-12-08", "qnap", "unknown"],
+    ["CVE-2024-21762", "2024-02-09", "Fortinet", "FortiOS", "2024-02-09", "fortinet", "known"],
+    ["CVE-2024-38112", "2024-07-09", "Microsoft", "Windows", "2024-07-09", "microsoft", "unknown"],
+    ["CVE-2024-11667", "2024-12-03", "Zyxel", "Multiple Firewalls", "2024-11-27", "Zyxel", "known"]
+  ]
+}

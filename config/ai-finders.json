@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "version": 1,
-  "updated": "2026-11-07",
+  "version": 2,
+  "updated": "2026-11-09",
   "fields": ["cna.credits", "adp.credits", "ghsa.credits"],
   "prefilter": "\\b(?:AI|LLMs?|Claude|Mythos|Glasswing|ANT-20\\d\\d|Anthropic|Aardvark|Codex|OpenAI|ChatGPT|Big ?Sleep|CodeMender|DeepMind|Gemini|XBOW|AISLE|depthfirst|ZeroPath|AIxCC|Buttercup|Atlanta|Atlantis|RoboDuck|Vulnhuntr|autonomous)\\b",
   "strip": [
@@ -110,7 +110,7 @@
       "patterns": ["\\bXBOW\\b"],
       "patterns_case_sensitive": [],
       "lab_names": [],
-      "examples": { "match": ["XBOW", "https://github.com/xbow-security"], "no_match": ["crossbow"] },
+      "examples": { "match": ["XBOW", "XBOW (xbow.com)"], "no_match": ["crossbow"] },
       "note": null
     },
     {
@@ -119,9 +119,9 @@
       "family": "other",
       "kind": "ai_system",
       "patterns": [],
-      "patterns_case_sensitive": ["\\bAISLE\\b"],
+      "patterns_case_sensitive": ["\\bAISLE\\b", "\\bAisle Research\\b", "\\bAisle\\.com\\b"],
       "lab_names": [],
-      "examples": { "match": ["AISLE Research"], "no_match": ["Aisle Smith"] },
+      "examples": { "match": ["AISLE Research", "Aisle Research"], "no_match": ["Aisle Smith"] },
       "note": "Case-sensitive: 'aisle' is an ordinary word"
     },
     {
@@ -151,7 +151,7 @@
       "name": "DARPA AIxCC systems (Team Atlanta, Buttercup, RoboDuck)",
       "family": "other",
       "kind": "ai_system",
-      "patterns": ["\\bAIxCC\\b", "\\bTeam Atlanta\\b", "\\bAtlantis[- ]CRS\\b", "\\bButtercup\\b", "\\bRoboDuck\\b"],
+      "patterns": ["\\bAIxCC\\b", "\\bTeam[- ]Atlanta\\b", "\\bAtlantis[- ]CRS\\b", "\\bButtercup\\b", "\\bRoboDuck\\b"],
       "patterns_case_sensitive": [],
       "lab_names": [],
       "examples": { "match": ["Team Atlanta (AIxCC)", "Buttercup CRS"], "no_match": ["Atlanta, GA"] },

@@ -149,7 +149,7 @@ export const FixSide = z.strictObject({
     source_url: z.string().min(1),
   }).nullable(),
   ghsa_unfixed: z.strictObject({
-    share: Fraction,
+    share: Fraction.nullable().describe("n_unfixed / n_total, round4; null when n_total < MIN_N"),
     n_unfixed: Count,
     n_total: Count,
     from: IsoDate,
@@ -210,10 +210,22 @@ const seriesFields = {
   data_only_weeks: z.array(IsoDate).describe("For reference only; no series depends on editions"),
 };
 
-type SeriesShape = z.infer<z.ZodObject<typeof seriesFields>>;
+/**
+ * state/series.json reaches back to 2023-01-02, before the first full Flood window (week 2023-03-27) and
+ * the first full Window (week 2023-06-26): there those three counts are null (§5.9). The 104 weeks of a
+ * metrics file never reach that far, so `Series` keeps them non-null and seriesSlice() throws on a null.
+ */
+const seriesFileFields = {
+  ...seriesFields,
+  flood_n13: z.array(Count.nullable()),
+  flood_n13_kernel: z.array(Count.nullable()),
+  window_cohort_n: z.array(Count.nullable()),
+};
+
+type SeriesShape = z.infer<z.ZodObject<typeof seriesFields>> | z.infer<z.ZodObject<typeof seriesFileFields>>;
 type Problem = { message: string; path: (string | number)[] };
 
-/** Every per-week array has one value per entry of `weeks`, and the weeks ascend. */
+/** Every per-week array has one value per entry of `weeks`, and the weeks ascend (Series and SeriesFile alike). */
 function alignmentProblems(s: SeriesShape): Problem[] {
   const out: Problem[] = [];
   const n = s.weeks.length;
@@ -314,8 +326,11 @@ export const KevIndexRow = z.tuple([CveId, IsoDate, z.string(), z.string(), IsoD
 /** state/kev-index.json: every KEV entry. */
 export const KevIndexFile = z.strictObject({ ...stateHead, catalog_version: z.string().min(1), entries: z.array(KevIndexRow) });
 
-/** [date, n, kernel_n, unscored_n] */
-export const DayRow = z.tuple([IsoDate, Count, Count, Count]);
+/**
+ * [date, n, kernel_n, unscored_n, ids_sha256]. ids_sha256: SHA-256 of the day's counted CVE ids in
+ * code-unit order joined by "\n" (sha256 of "" for a day with none), so the manifest can name any day's ids.
+ */
+export const DayRow = z.tuple([IsoDate, Count, Count, Count, Sha256]);
 /** state/days.json: every UTC day since 2023-01-01, counted once. */
 export const DaysFile = z.strictObject({ ...stateHead, days: z.array(DayRow) });
 
@@ -328,8 +343,8 @@ export const AiCreditsFile = z.strictObject({
   ...stateHead, finders_version: Count, finders_sha256: Sha256, matches: z.array(AiCreditRow),
 });
 
-/** [id, date_published, field, text] */
-export const CreditCandidateRow = z.tuple([z.string().min(1), IsoDate, CreditField, z.string()]);
+/** [id, date_published, field, text]: the three credit fields only (a ledger id is never a candidate). */
+export const CreditCandidateRow = z.tuple([z.string().min(1), IsoDate, z.enum(["cna.credits", "adp.credits", "ghsa.credits"]), z.string()]);
 /** state/credit-candidates.json: every credit string that passes the ai-finders prefilter. */
 export const CreditCandidatesFile = z.strictObject({
   ...stateHead, prefilter_sha256: Sha256, candidates: z.array(CreditCandidateRow),
@@ -348,10 +363,29 @@ export const AnthropicCvdFile = z.strictObject({
   ledger_ids: z.array(z.string().min(1)).describe("CVE and GHSA ids in the dashboard payload"),
 });
 
-/** state/series.json: the Series fields for every ISO week from 2023-01-02. */
-export const SeriesFile = z.strictObject({ ...stateHead, ...seriesFields }).superRefine((s, ctx) => {
+/** state/series.json: the Series fields for every ISO week from 2023-01-02 (Flood and Window counts null before their first full window). */
+export const SeriesFile = z.strictObject({ ...stateHead, ...seriesFileFields }).superRefine((s, ctx) => {
   for (const p of alignmentProblems(s)) ctx.addIssue({ code: "custom", ...p });
 });
+
+/** The six files of content/state/, in §4.7's order. */
+export const STATE_FILES = ["kev-index.json", "days.json", "ai-credits.json", "credit-candidates.json", "anthropic-cvd.json", "series.json"] as const;
+export type StateFileName = (typeof STATE_FILES)[number];
+
+/** Each state file's schema, by file name (the validator, the metrics and the backfill read and write through these). */
+export const STATE_SCHEMAS = {
+  "kev-index.json": KevIndexFile,
+  "days.json": DaysFile,
+  "ai-credits.json": AiCreditsFile,
+  "credit-candidates.json": CreditCandidatesFile,
+  "anthropic-cvd.json": AnthropicCvdFile,
+  "series.json": SeriesFile,
+} as const satisfies Record<StateFileName, z.ZodType>;
+
+/** True when `name` is one of the six state file names. */
+export function isStateFileName(name: string): name is StateFileName {
+  return (STATE_FILES as readonly string[]).includes(name);
+}
 
 export type ShareDirection = z.infer<typeof ShareDirection>;
 export type SpeedDirection = z.infer<typeof SpeedDirection>;
@@ -383,3 +417,13 @@ export type CreditCandidateRow = z.infer<typeof CreditCandidateRow>;
 export type CreditCandidatesFile = z.infer<typeof CreditCandidatesFile>;
 export type AnthropicCvdFile = z.infer<typeof AnthropicCvdFile>;
 export type SeriesFile = z.infer<typeof SeriesFile>;
+
+/** The six state files as read or written in one run. */
+export interface StateFiles {
+  "kev-index.json": KevIndexFile;
+  "days.json": DaysFile;
+  "ai-credits.json": AiCreditsFile;
+  "credit-candidates.json": CreditCandidatesFile;
+  "anthropic-cvd.json": AnthropicCvdFile;
+  "series.json": SeriesFile;
+}

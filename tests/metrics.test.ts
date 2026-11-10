@@ -1,6 +1,7 @@
 // lib/metrics/stats.ts, reference.ts, home-vendors.ts and headline.ts (SPEC §5.2, §5.3, §5.7, §5.8),
 // checked against Appendix D. The Gap headline and second line are rendered from a metrics object built by
-// hand from Appendix D.2 and D.3's numbers and must equal D.3's text exactly. No content/ and no network.
+// hand from Appendix D.2 and D.3's numbers and must equal D.3's text exactly. The AI-credited figures are D.3
+// and D.7 at AI-finder list v2 with sanitised matching (rulings R1, R2; §0.4 rows 31, 32). No content/ and no network.
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import { HomeVendorKev, Metrics, VendorsFile, WindowStats, type Metrics as MetricsT } from "@/lib/schema";
@@ -294,13 +295,13 @@ describe("homeVendorKev and the Taiwan Lens KEV lines (§5.7, D.3)", () => {
 // ── §5.8 the Gap headline, from a metrics object built by hand from Appendix D ───────────────────
 
 const D3_TEXT = "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).";
-const D3_SECOND = "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 386 in 13 weeks, 173 excluding Anthropic (a lower bound).";
+const D3_SECOND = "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).";
 const D3_QUOTED = [
   ["window.w26.at_disclosure_share", "37%"], ["window.reference.at_disclosure_share", "37%"],
   ["window.w26.after_disclosure_median_days", "17"], ["window.reference.after_disclosure_median_days", "21"],
   ["window.w26.cohort_n", "157"], ["constant", "26"], ["window.kev_pace_ratio", "1.9"],
   ["flood.n", "44,944"], ["constant", "13"], ["flood.vs_reference_ratio", "5.2"], ["flood.vs_reference_ex_kernel_ratio", "5.0"],
-  ["ai_credited.w13.total", "386"], ["constant", "13"], ["ai_credited.w13.ex_anthropic", "173"],
+  ["ai_credited.w13.total", "502"], ["constant", "13"], ["ai_credited.w13.ex_anthropic", "224"],
 ].map(([path, display]) => ({ path, display }));
 
 const W26: WindowStats = {
@@ -333,7 +334,7 @@ function d3Metrics(): MetricsT {
       kev_catalog_version: "2026.11.06", kev_count: 1769, kev_date_released: "2026-11-06T19:44:45.1797Z",
       cve_list_release: "cve_2026-11-06_2100Z", cve_list_commit: REFERENCE.flood.cve_list_commit, kev_data_commit: null,
       epss_model_version: "v2025.03.14", epss_date: "2026-11-06", ghsa_source: "git", ghsa_commit: null,
-      config_versions: { vendors: 1, ai_finders: 1, source_tiers: 1, regions: 1, actors: 1 },
+      config_versions: { vendors: 1, ai_finders: 2, source_tiers: 1, regions: 1, actors: 1 },
       reference: { from: "2023-01-01", to: "2024-12-31" }, inputs_file: "metrics/inputs/2026-11-08.json", inputs_sha256: "0".repeat(64),
     },
     blocks: { flood: ok, window: ok, ai_credited: ok, fix_side: ok, kev: ok, home_vendors: ok },
@@ -347,14 +348,14 @@ function d3Metrics(): MetricsT {
     },
     window: { w26: W26, w13: W13, reference: referenceWindowStats(), reference_pace_26w: 70.21, volume_ratio: 2.2361, kev_pace_ratio: 1.9275 },
     ai_credited: {
-      finders_version: 1, from: "2026-08-08", to: "2026-11-06",
-      w13: { total: 386, by_family: { anthropic: 213, openai: 41, google: 1, other: 131 }, ex_anthropic: 173, ledger_only_anthropic: 0 },
+      finders_version: 2, from: "2026-08-08", to: "2026-11-06",
+      w13: { total: 502, by_family: { anthropic: 278, openai: 41, google: 1, other: 182 }, ex_anthropic: 224, ledger_only_anthropic: 0 },
       provisional_from: "2026-10-05",
       in_kev: { since: "2025-01-01", n: 1, entries: [{ cve_id: "CVE-2026-111497", finder_id: "openai-codex", family: "openai", kev_date_added: "2026-10-27", matched: "Codex Security" }] },
     },
     base_rate: {
-      since: "2025-01-01", to_published: "2026-08-08", to: "2026-11-06", follow_up_days: 90, ai_credited_n: 195, ai_credited_in_kev_n: 0,
-      ai_rate: 0, all_n: 95725, all_in_kev_n: 281, all_rate: 0.0029, expected: 0.4987, ratio: null, ratio_ci80: null,
+      since: "2025-01-01", to_published: "2026-08-08", to: "2026-11-06", follow_up_days: 90, ai_credited_n: 289, ai_credited_in_kev_n: 0,
+      ai_rate: 0, all_n: 95725, all_in_kev_n: 281, all_rate: 0.0029, expected: 0.7329, ratio: null, ratio_ci80: null,
     },
     fix_side: { anthropic_cvd: null, ghsa_unfixed: null },
     kev: { catalog_version: "2026.11.06", catalog_count: 1769, date_released: "2026-11-06T19:44:45.1797Z", new_since_last_edition: { since_catalog_version: "2026.11.05", cve_ids: [] } },
@@ -398,12 +399,13 @@ describe("the Gap headline (§5.8, Appendix D.3)", () => {
     expect(m.headline.after_disclosure_direction).toBe("no_clear_change");
   });
 
-  it("gives D.7's second line with the strip fix (451 in 13 weeks)", () => {
+  it("gives the list-v1 second line, sanitised (450 in 13 weeks, 172 excluding Anthropic; §0.4 row 31)", () => {
     const m = variant((x) => {
-      x.ai_credited!.w13 = { total: 451, by_family: { anthropic: 278, openai: 41, google: 1, other: 131 }, ex_anthropic: 173, ledger_only_anthropic: 0 };
+      x.ai_credited!.finders_version = 1;
+      x.ai_credited!.w13 = { total: 450, by_family: { anthropic: 278, openai: 41, google: 1, other: 130 }, ex_anthropic: 172, ledger_only_anthropic: 0 };
     });
     expect(secondLine(m).text).toBe(
-      "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+      "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 450 in 13 weeks, 172 excluding Anthropic (a lower bound).",
     );
   });
 
@@ -482,7 +484,7 @@ describe("the Gap headline (§5.8, Appendix D.3)", () => {
     });
     const s = secondLine(stale).text;
     expect(s).toBe(
-      "Flood, as of 30 Dec 2025: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited, as of 29 Dec 2025: 386 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+      "Flood, as of 30 Dec 2025: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited, as of 29 Dec 2025: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     );
     expect(countWords(s)).toBe(40);
     const failed = variant((x) => { x.flood = null; x.ai_credited = null; });
@@ -500,8 +502,8 @@ describe("the Gap headline (§5.8, Appendix D.3)", () => {
 
 describe("footerLine and inKevLine (§5.8, §5.5)", () => {
   it("renders the footer with the year always shown", () => {
-    expect(footerLine(d3Metrics())).toBe("data to 6 Nov 2026 UTC · KEV catalog 2026.11.06 · CVE List cve_2026-11-06_2100Z · AI-finder list v1");
-    expect(footerLine(variant((x) => { x.ai_credited = null; x.provenance.config_versions.ai_finders = 2; }))).toMatch(/AI-finder list v2$/);
+    expect(footerLine(d3Metrics())).toBe("data to 6 Nov 2026 UTC · KEV catalog 2026.11.06 · CVE List cve_2026-11-06_2100Z · AI-finder list v2");
+    expect(footerLine(variant((x) => { x.ai_credited = null; x.provenance.config_versions.ai_finders = 3; }))).toMatch(/AI-finder list v3$/);
   });
 
   it("renders the in-KEV line with the finder's id, as the metrics file freezes it (D.7)", () => {
@@ -533,7 +535,7 @@ describe("metricDisplays and metricNumbers (§4.12, §5.8)", () => {
   it("holds the quoted displays, the table, the in-KEV line and the Lens KEV lines", () => {
     const m = d3Metrics();
     const all = metricDisplays(m);
-    for (const s of ["37%", "157", "1.9", "44,944", "5.2", "5.0", "386", "173", "AI-credited and now on CISA's list: 1 since 1 Jan 2025",
+    for (const s of ["37%", "157", "1.9", "44,944", "5.2", "5.0", "502", "224", "AI-credited and now on CISA's list: 1 since 1 Jan 2025",
       "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 6 Nov (US date)."]) expect(all).toContain(s);
     const values = metricNumbers(m).map((n) => `${n.value}${n.percent ? "%" : ""}`);
     for (const v of ["37%", "157", "1.9", "44944", "20.5", "23", "30", "90", "1"]) expect(values).toContain(v);

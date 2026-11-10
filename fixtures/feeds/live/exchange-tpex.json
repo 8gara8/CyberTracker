@@ -1,0 +1,24 @@
+[
+  {
+    "Date": "1151109",
+    "發言日期": "1151108",
+    "發言時間": "70003",
+    "SecuritiesCompanyCode": "3489",
+    "CompanyName": "SAMPLE CompanyName 1",
+    "主旨": "SAMPLE 主旨 2",
+    "符合條款": "SAMPLE 符合條款 3",
+    "事實發生日": "1151103",
+    "說明": "SAMPLE 說明 4"
+  },
+  {
+    "Date": "1151109",
+    "發言日期": "1151108",
+    "發言時間": "155353",
+    "SecuritiesCompanyCode": "6844",
+    "CompanyName": "SAMPLE CompanyName 5",
+    "主旨": "SAMPLE 主旨 6 資安",
+    "符合條款": "SAMPLE 符合條款 7",
+    "事實發生日": "1151107",
+    "說明": "SAMPLE 說明 8 資安"
+  }
+]

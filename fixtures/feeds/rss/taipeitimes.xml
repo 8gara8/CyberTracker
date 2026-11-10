@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:dc="http://purl.org/dc/elements/1.1/"
+xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+xmlns="http://purl.org/rss/1.0/">
+
+<channel rdf:about="https://www.taipeitimes.com/ct-sample/home">
+<title>SAMPLE title 1</title>
+<link>https://www.taipeitimes.com/ct-sample/home</link>
+<description>SAMPLE text 8</description>
+<sy:updatePeriod>daily</sy:updatePeriod>
+<sy:updateFrequency>1</sy:updateFrequency>
+<sy:updateBase>2005-02-14T08:00:00+08:00</sy:updateBase>
+
+<items>
+<rdf:Seq><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867397"/><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867398"/><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867399"/><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867400"/><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867401"/><rdf:li resource="https://www.taipeitimes.com/ct-sample/2003867408"/></rdf:Seq>
+</items>
+</channel><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867397">
+<title>SAMPLE title 2</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867397</link>
+<description>SAMPLE text 9</description>
+<dc:subject>SAMPLE text 21</dc:subject>
+<dc:creator>SAMPLE text 15</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867398">
+<title>SAMPLE title 3</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867398</link>
+<description>SAMPLE text 10</description>
+<dc:subject>SAMPLE text 22</dc:subject>
+<dc:creator>SAMPLE text 16</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867399">
+<title>SAMPLE title 4</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867399</link>
+<description>SAMPLE text 11</description>
+<dc:subject>SAMPLE text 23</dc:subject>
+<dc:creator>SAMPLE text 17</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867400">
+<title>SAMPLE title 5</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867400</link>
+<description>SAMPLE text 12</description>
+<dc:subject>SAMPLE text 24</dc:subject>
+<dc:creator>SAMPLE text 18</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867401">
+<title>SAMPLE title 6</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867401</link>
+<description>SAMPLE text 13</description>
+<dc:subject>SAMPLE text 25</dc:subject>
+<dc:creator>SAMPLE text 19</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item><item rdf:about="https://www.taipeitimes.com/ct-sample/2003867408">
+<title>SAMPLE title 7</title>
+<link>https://www.taipeitimes.com/ct-sample/2003867408</link>
+<description>SAMPLE text 14</description>
+<dc:subject>SAMPLE text 26</dc:subject>
+<dc:creator>SAMPLE text 20</dc:creator>
+<dc:date>2026-11-09T08:00:00+08:00</dc:date>
+</item></rdf:RDF>

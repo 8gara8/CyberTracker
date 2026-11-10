@@ -17,9 +17,9 @@
     "ghsa_source": "git",
     "ghsa_commit": null,
     "config_versions": {
-      "vendors": 1,
-      "ai_finders": 1,
-      "source_tiers": 1,
+      "vendors": 2,
+      "ai_finders": 2,
+      "source_tiers": 2,
       "regions": 1,
       "actors": 1
     },
@@ -28,7 +28,7 @@
       "to": "2024-12-31"
     },
     "inputs_file": "metrics/inputs/2026-10-09.json",
-    "inputs_sha256": "5839b00bf1009d213fe50bdee5a698e35a89f8869f37b5326d75721a24ccbeb8"
+    "inputs_sha256": "0c75163e854817360b84bc67f2994c6b1aeff3691b68385ab890748b1bdd68ca"
   },
   "blocks": {
     "flood": {
@@ -64,7 +64,7 @@
   },
   "headline": {
     "text": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
-    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     "at_disclosure_direction": "no_clear_change",
     "after_disclosure_direction": "no_clear_change",
     "quoted": [
@@ -114,7 +114,7 @@
       },
       {
         "path": "ai_credited.w13.total",
-        "display": "451"
+        "display": "502"
       },
       {
         "path": "constant",
@@ -122,7 +122,7 @@
       },
       {
         "path": "ai_credited.w13.ex_anthropic",
-        "display": "173"
+        "display": "224"
       }
     ]
   },
@@ -244,18 +244,18 @@
     "kev_pace_ratio": 1.9275
   },
   "ai_credited": {
-    "finders_version": 1,
+    "finders_version": 2,
     "from": "2026-07-09",
     "to": "2026-10-07",
     "w13": {
-      "total": 451,
+      "total": 502,
       "by_family": {
         "anthropic": 278,
         "openai": 41,
         "google": 1,
-        "other": 131
+        "other": 182
       },
-      "ex_anthropic": 173,
+      "ex_anthropic": 224,
       "ledger_only_anthropic": 0
     },
     "provisional_from": "2026-09-05",
@@ -270,13 +270,13 @@
     "to_published": "2026-07-09",
     "to": "2026-10-07",
     "follow_up_days": 90,
-    "ai_credited_n": 195,
+    "ai_credited_n": 289,
     "ai_credited_in_kev_n": 0,
     "ai_rate": 0,
     "all_n": 95725,
     "all_in_kev_n": 281,
     "all_rate": 0.0029,
-    "expected": 0.4987,
+    "expected": 0.7329,
     "ratio": null,
     "ratio_ci80": null
   },

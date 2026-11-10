@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xml:lang="ja">
+<channel rdf:about="https://www.jpcert.or.jp/">
+<title>JPCERT/CC (SAMPLE)</title>
+<link>https://www.jpcert.or.jp/</link>
+<description>SAMPLE: 試験用の架空のフィードです。</description>
+<dc:date>2026-10-14T03:00+09:00</dc:date>
+<items><rdf:Seq>
+<rdf:li rdf:resource="https://www.jpcert.or.jp/wr/2026/wr264101.html"/>
+<rdf:li rdf:resource="https://www.jpcert.or.jp/at/2026/at260031.html"/>
+<rdf:li rdf:resource="https://www.jpcert.or.jp/at/2026/at260029.html"/>
+<rdf:li rdf:resource="https://www.jpcert.or.jp/wr/2026/wr264001.html"/>
+</rdf:Seq></items>
+</channel>
+<item rdf:about="https://www.jpcert.or.jp/wr/2026/wr264101.html">
+<title>SAMPLE JPCERT/CC WEEKLY REPORT 2026-10-14</title>
+<link>https://www.jpcert.or.jp/wr/2026/wr264101.html</link>
+<description>SAMPLE: Microsoft 製品の脆弱性 (CVE-2026-96951) について、悪用が確認されています。内容は架空です。</description>
+<dc:date>2026-10-14T03:00+09:00</dc:date>
+</item>
+<item rdf:about="https://www.jpcert.or.jp/at/2026/at260031.html">
+<title>SAMPLE Ivanti Connect Secure の脆弱性 (CVE-2026-104935) に関する注意喚起</title>
+<link>https://www.jpcert.or.jp/at/2026/at260031.html</link>
+<description>SAMPLE: 試験用の架空の注意喚起です。</description>
+<dc:date>2026-10-14T00:15+09:00</dc:date>
+</item>
+<item rdf:about="https://www.jpcert.or.jp/at/2026/at260029.html">
+<title>SAMPLE 範例製品の脆弱性に関する注意喚起</title>
+<link>https://www.jpcert.or.jp/at/2026/at260029.html</link>
+<description>SAMPLE: 期間外の古い注意喚起です。</description>
+<dc:date>2026-10-02T10:00+09:00</dc:date>
+</item>
+<item rdf:about="https://www.jpcert.or.jp/wr/2026/wr264001.html">
+<title>SAMPLE JPCERT/CC WEEKLY REPORT 2026-10-08</title>
+<link>https://www.jpcert.or.jp/wr/2026/wr264001.html</link>
+<description>SAMPLE: 期間外の週報です。</description>
+<dc:date>2026-10-08T03:00+09:00</dc:date>
+</item>
+</rdf:RDF>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE zone-less feed</title>
+<link>https://www.example.com/ct-sample/zoneless</link>
+<description>SAMPLE: the channel is dated +0900; its items carry no zone.</description>
+<pubDate>Tue, 13 Oct 2026 21:00:00 +0900</pubDate>
+<item>
+<title>SAMPLE 大手企業へのサイバー攻撃を確認</title>
+<link>https://www.example.com/ct-sample/zoneless-1</link>
+<pubDate>Tue, 13 Oct 2026 18:30:00</pubDate>
+<description>SAMPLE: an RFC 822 date with no zone.</description>
+</item>
+<item>
+<title>SAMPLE ランサムウェア被害の続報</title>
+<link>https://www.example.com/ct-sample/zoneless-2</link>
+<pubDate>2026-10-13 09:15</pubDate>
+<description>SAMPLE: a YYYY-MM-DD HH:mm date with no zone.</description>
+</item>
+</channel>
+</rss>

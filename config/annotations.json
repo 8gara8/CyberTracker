@@ -15,18 +15,18 @@
       "id": "us-kev-three-day-deadline",
       "date": "2026-06-10",
       "end_date": null,
-      "label": "US 3-day deadline for worst KEV flaws",
+      "label": "BOD 26-04: US 3-day KEV deadline",
       "detail": "US federal agencies must fix the worst newly listed KEV flaws within three days. A policy marker, not a defender series.",
       "panels": ["window"],
       "kind": "policy",
-      "source_url": "https://www.cisa.gov/news-events/directives"
+      "source_url": "https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk"
     },
     {
       "id": "kernel-batch-2026-07",
       "date": "2026-07-19",
       "end_date": "2026-07-20",
       "label": "Linux kernel batch",
-      "detail": "The Linux kernel CNA published a batch of about 430 CVE records over two days.",
+      "detail": "The Linux kernel CNA published 429 CVE records on 19 July and 9 on 20 July.",
       "panels": ["flood", "window"],
       "kind": "data_change",
       "source_url": null

@@ -137,10 +137,10 @@
   },
   "gap": {
     "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
-    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     "status": "ok",
     "metrics_file": "metrics/2026-10-14.json",
-    "metrics_sha256": "0f432177948d763415725eab6f2aa92dd40f0c9950de8909ecd4013301a55a41",
+    "metrics_sha256": "f5dee2eaa30377907a5a4e72e2a61319ae363bf55c5a631a1dd33cbebd5618d0",
     "as_of": "2026-10-12"
   },
   "items": [
@@ -671,7 +671,7 @@
             "field": "cna.credits",
             "matched": "AISLE",
             "rule": "pattern",
-            "finders_version": 1
+            "finders_version": 2
           },
           "discovery_credit": "ai_autonomous",
           "advisory_date": null,

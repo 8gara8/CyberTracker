@@ -3369,7 +3369,7 @@
     },
     {
       "id": "CVE-2026-980006",
-      "published": "2026-07-08",
+      "published": "2026-07-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3419,7 +3419,7 @@
     },
     {
       "id": "CVE-2026-980011",
-      "published": "2026-07-09",
+      "published": "2026-07-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3429,7 +3429,7 @@
     },
     {
       "id": "CVE-2026-980012",
-      "published": "2026-07-09",
+      "published": "2026-07-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3469,7 +3469,7 @@
     },
     {
       "id": "CVE-2026-980016",
-      "published": "2026-07-10",
+      "published": "2026-07-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3479,7 +3479,7 @@
     },
     {
       "id": "CVE-2026-980017",
-      "published": "2026-07-10",
+      "published": "2026-07-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3519,7 +3519,7 @@
     },
     {
       "id": "CVE-2026-980021",
-      "published": "2026-07-11",
+      "published": "2026-07-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3529,7 +3529,7 @@
     },
     {
       "id": "CVE-2026-980022",
-      "published": "2026-07-11",
+      "published": "2026-07-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3539,7 +3539,7 @@
     },
     {
       "id": "CVE-2026-980023",
-      "published": "2026-07-11",
+      "published": "2026-07-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3569,7 +3569,7 @@
     },
     {
       "id": "CVE-2026-980026",
-      "published": "2026-07-12",
+      "published": "2026-07-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3579,7 +3579,7 @@
     },
     {
       "id": "CVE-2026-980027",
-      "published": "2026-07-12",
+      "published": "2026-07-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3589,7 +3589,7 @@
     },
     {
       "id": "CVE-2026-980028",
-      "published": "2026-07-12",
+      "published": "2026-07-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3619,7 +3619,7 @@
     },
     {
       "id": "CVE-2026-980031",
-      "published": "2026-07-13",
+      "published": "2026-07-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3629,7 +3629,7 @@
     },
     {
       "id": "CVE-2026-980032",
-      "published": "2026-07-13",
+      "published": "2026-07-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3639,7 +3639,7 @@
     },
     {
       "id": "CVE-2026-980033",
-      "published": "2026-07-13",
+      "published": "2026-07-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3649,7 +3649,7 @@
     },
     {
       "id": "CVE-2026-980034",
-      "published": "2026-07-13",
+      "published": "2026-07-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3669,7 +3669,7 @@
     },
     {
       "id": "CVE-2026-980036",
-      "published": "2026-07-14",
+      "published": "2026-07-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3679,7 +3679,7 @@
     },
     {
       "id": "CVE-2026-980037",
-      "published": "2026-07-14",
+      "published": "2026-07-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3689,7 +3689,7 @@
     },
     {
       "id": "CVE-2026-980038",
-      "published": "2026-07-14",
+      "published": "2026-07-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3699,7 +3699,7 @@
     },
     {
       "id": "CVE-2026-980039",
-      "published": "2026-07-14",
+      "published": "2026-07-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3719,7 +3719,7 @@
     },
     {
       "id": "CVE-2026-980041",
-      "published": "2026-07-15",
+      "published": "2026-07-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3729,7 +3729,7 @@
     },
     {
       "id": "CVE-2026-980042",
-      "published": "2026-07-15",
+      "published": "2026-07-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3739,7 +3739,7 @@
     },
     {
       "id": "CVE-2026-980043",
-      "published": "2026-07-15",
+      "published": "2026-07-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3749,7 +3749,7 @@
     },
     {
       "id": "CVE-2026-980044",
-      "published": "2026-07-15",
+      "published": "2026-07-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3759,7 +3759,7 @@
     },
     {
       "id": "CVE-2026-980045",
-      "published": "2026-07-15",
+      "published": "2026-07-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3769,7 +3769,7 @@
     },
     {
       "id": "CVE-2026-980046",
-      "published": "2026-07-16",
+      "published": "2026-07-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3779,7 +3779,7 @@
     },
     {
       "id": "CVE-2026-980047",
-      "published": "2026-07-16",
+      "published": "2026-07-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3789,7 +3789,7 @@
     },
     {
       "id": "CVE-2026-980048",
-      "published": "2026-07-16",
+      "published": "2026-07-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3799,7 +3799,7 @@
     },
     {
       "id": "CVE-2026-980049",
-      "published": "2026-07-16",
+      "published": "2026-07-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3809,7 +3809,7 @@
     },
     {
       "id": "CVE-2026-980050",
-      "published": "2026-07-16",
+      "published": "2026-07-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3819,7 +3819,7 @@
     },
     {
       "id": "CVE-2026-980051",
-      "published": "2026-07-17",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3829,7 +3829,7 @@
     },
     {
       "id": "CVE-2026-980052",
-      "published": "2026-07-17",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3839,7 +3839,7 @@
     },
     {
       "id": "CVE-2026-980053",
-      "published": "2026-07-17",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3849,7 +3849,7 @@
     },
     {
       "id": "CVE-2026-980054",
-      "published": "2026-07-17",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3859,7 +3859,7 @@
     },
     {
       "id": "CVE-2026-980055",
-      "published": "2026-07-17",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3869,7 +3869,7 @@
     },
     {
       "id": "CVE-2026-980056",
-      "published": "2026-07-18",
+      "published": "2026-07-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3879,7 +3879,7 @@
     },
     {
       "id": "CVE-2026-980057",
-      "published": "2026-07-18",
+      "published": "2026-07-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3889,7 +3889,7 @@
     },
     {
       "id": "CVE-2026-980058",
-      "published": "2026-07-18",
+      "published": "2026-07-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3899,7 +3899,7 @@
     },
     {
       "id": "CVE-2026-980059",
-      "published": "2026-07-18",
+      "published": "2026-07-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3909,7 +3909,7 @@
     },
     {
       "id": "CVE-2026-980060",
-      "published": "2026-07-18",
+      "published": "2026-07-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3919,7 +3919,7 @@
     },
     {
       "id": "CVE-2026-980061",
-      "published": "2026-07-19",
+      "published": "2026-07-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3929,7 +3929,7 @@
     },
     {
       "id": "CVE-2026-980062",
-      "published": "2026-07-19",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3939,7 +3939,7 @@
     },
     {
       "id": "CVE-2026-980063",
-      "published": "2026-07-19",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3949,7 +3949,7 @@
     },
     {
       "id": "CVE-2026-980064",
-      "published": "2026-07-19",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3959,7 +3959,7 @@
     },
     {
       "id": "CVE-2026-980065",
-      "published": "2026-07-19",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3969,7 +3969,7 @@
     },
     {
       "id": "CVE-2026-980066",
-      "published": "2026-07-20",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3979,7 +3979,7 @@
     },
     {
       "id": "CVE-2026-980067",
-      "published": "2026-07-20",
+      "published": "2026-07-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3989,7 +3989,7 @@
     },
     {
       "id": "CVE-2026-980068",
-      "published": "2026-07-20",
+      "published": "2026-07-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -3999,7 +3999,7 @@
     },
     {
       "id": "CVE-2026-980069",
-      "published": "2026-07-20",
+      "published": "2026-07-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4009,7 +4009,7 @@
     },
     {
       "id": "CVE-2026-980070",
-      "published": "2026-07-20",
+      "published": "2026-07-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4019,7 +4019,7 @@
     },
     {
       "id": "CVE-2026-980071",
-      "published": "2026-07-21",
+      "published": "2026-07-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4029,7 +4029,7 @@
     },
     {
       "id": "CVE-2026-980072",
-      "published": "2026-07-21",
+      "published": "2026-07-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4039,7 +4039,7 @@
     },
     {
       "id": "CVE-2026-980073",
-      "published": "2026-07-21",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4049,7 +4049,7 @@
     },
     {
       "id": "CVE-2026-980074",
-      "published": "2026-07-21",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4059,7 +4059,7 @@
     },
     {
       "id": "CVE-2026-980075",
-      "published": "2026-07-21",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4069,7 +4069,7 @@
     },
     {
       "id": "CVE-2026-980076",
-      "published": "2026-07-22",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4079,7 +4079,7 @@
     },
     {
       "id": "CVE-2026-980077",
-      "published": "2026-07-22",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4089,7 +4089,7 @@
     },
     {
       "id": "CVE-2026-980078",
-      "published": "2026-07-22",
+      "published": "2026-07-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4099,7 +4099,7 @@
     },
     {
       "id": "CVE-2026-980079",
-      "published": "2026-07-22",
+      "published": "2026-07-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4109,7 +4109,7 @@
     },
     {
       "id": "CVE-2026-980080",
-      "published": "2026-07-22",
+      "published": "2026-07-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4119,7 +4119,7 @@
     },
     {
       "id": "CVE-2026-980081",
-      "published": "2026-07-23",
+      "published": "2026-07-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4129,7 +4129,7 @@
     },
     {
       "id": "CVE-2026-980082",
-      "published": "2026-07-23",
+      "published": "2026-07-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4139,7 +4139,7 @@
     },
     {
       "id": "CVE-2026-980083",
-      "published": "2026-07-23",
+      "published": "2026-07-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4149,7 +4149,7 @@
     },
     {
       "id": "CVE-2026-980084",
-      "published": "2026-07-23",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4159,7 +4159,7 @@
     },
     {
       "id": "CVE-2026-980085",
-      "published": "2026-07-23",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4169,7 +4169,7 @@
     },
     {
       "id": "CVE-2026-980086",
-      "published": "2026-07-24",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4179,7 +4179,7 @@
     },
     {
       "id": "CVE-2026-980087",
-      "published": "2026-07-24",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4189,7 +4189,7 @@
     },
     {
       "id": "CVE-2026-980088",
-      "published": "2026-07-24",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4199,7 +4199,7 @@
     },
     {
       "id": "CVE-2026-980089",
-      "published": "2026-07-24",
+      "published": "2026-07-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4209,7 +4209,7 @@
     },
     {
       "id": "CVE-2026-980090",
-      "published": "2026-07-24",
+      "published": "2026-07-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4219,7 +4219,7 @@
     },
     {
       "id": "CVE-2026-980091",
-      "published": "2026-07-25",
+      "published": "2026-07-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4229,7 +4229,7 @@
     },
     {
       "id": "CVE-2026-980092",
-      "published": "2026-07-25",
+      "published": "2026-07-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4239,7 +4239,7 @@
     },
     {
       "id": "CVE-2026-980093",
-      "published": "2026-07-25",
+      "published": "2026-07-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4249,7 +4249,7 @@
     },
     {
       "id": "CVE-2026-980094",
-      "published": "2026-07-25",
+      "published": "2026-07-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4259,7 +4259,7 @@
     },
     {
       "id": "CVE-2026-980095",
-      "published": "2026-07-25",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4269,7 +4269,7 @@
     },
     {
       "id": "CVE-2026-980096",
-      "published": "2026-07-26",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4279,7 +4279,7 @@
     },
     {
       "id": "CVE-2026-980097",
-      "published": "2026-07-26",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4289,7 +4289,7 @@
     },
     {
       "id": "CVE-2026-980098",
-      "published": "2026-07-26",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4299,7 +4299,7 @@
     },
     {
       "id": "CVE-2026-980099",
-      "published": "2026-07-26",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4309,7 +4309,7 @@
     },
     {
       "id": "CVE-2026-980100",
-      "published": "2026-07-26",
+      "published": "2026-07-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4319,7 +4319,7 @@
     },
     {
       "id": "CVE-2026-980101",
-      "published": "2026-07-27",
+      "published": "2026-07-25",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4329,7 +4329,7 @@
     },
     {
       "id": "CVE-2026-980102",
-      "published": "2026-07-27",
+      "published": "2026-07-25",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4339,7 +4339,7 @@
     },
     {
       "id": "CVE-2026-980103",
-      "published": "2026-07-27",
+      "published": "2026-07-25",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4349,7 +4349,7 @@
     },
     {
       "id": "CVE-2026-980104",
-      "published": "2026-07-27",
+      "published": "2026-07-25",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4359,7 +4359,7 @@
     },
     {
       "id": "CVE-2026-980105",
-      "published": "2026-07-27",
+      "published": "2026-07-25",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4369,7 +4369,7 @@
     },
     {
       "id": "CVE-2026-980106",
-      "published": "2026-07-28",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4379,7 +4379,7 @@
     },
     {
       "id": "CVE-2026-980107",
-      "published": "2026-07-28",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4389,7 +4389,7 @@
     },
     {
       "id": "CVE-2026-980108",
-      "published": "2026-07-28",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4399,7 +4399,7 @@
     },
     {
       "id": "CVE-2026-980109",
-      "published": "2026-07-28",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4409,7 +4409,7 @@
     },
     {
       "id": "CVE-2026-980110",
-      "published": "2026-07-28",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4419,7 +4419,7 @@
     },
     {
       "id": "CVE-2026-980111",
-      "published": "2026-07-29",
+      "published": "2026-07-26",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4429,7 +4429,7 @@
     },
     {
       "id": "CVE-2026-980112",
-      "published": "2026-07-29",
+      "published": "2026-07-27",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4439,7 +4439,7 @@
     },
     {
       "id": "CVE-2026-980113",
-      "published": "2026-07-29",
+      "published": "2026-07-27",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4449,7 +4449,7 @@
     },
     {
       "id": "CVE-2026-980114",
-      "published": "2026-07-29",
+      "published": "2026-07-27",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4459,7 +4459,7 @@
     },
     {
       "id": "CVE-2026-980115",
-      "published": "2026-07-30",
+      "published": "2026-07-27",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4469,7 +4469,7 @@
     },
     {
       "id": "CVE-2026-980116",
-      "published": "2026-07-30",
+      "published": "2026-07-27",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4479,7 +4479,7 @@
     },
     {
       "id": "CVE-2026-980117",
-      "published": "2026-07-30",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4489,7 +4489,7 @@
     },
     {
       "id": "CVE-2026-980118",
-      "published": "2026-07-30",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4499,7 +4499,7 @@
     },
     {
       "id": "CVE-2026-980119",
-      "published": "2026-07-30",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4509,7 +4509,7 @@
     },
     {
       "id": "CVE-2026-980120",
-      "published": "2026-07-31",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4519,7 +4519,7 @@
     },
     {
       "id": "CVE-2026-980121",
-      "published": "2026-07-31",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4529,7 +4529,7 @@
     },
     {
       "id": "CVE-2026-980122",
-      "published": "2026-07-31",
+      "published": "2026-07-28",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4539,7 +4539,7 @@
     },
     {
       "id": "CVE-2026-980123",
-      "published": "2026-07-31",
+      "published": "2026-07-29",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4549,7 +4549,7 @@
     },
     {
       "id": "CVE-2026-980124",
-      "published": "2026-07-31",
+      "published": "2026-07-29",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4559,7 +4559,7 @@
     },
     {
       "id": "CVE-2026-980125",
-      "published": "2026-08-01",
+      "published": "2026-07-29",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4569,7 +4569,7 @@
     },
     {
       "id": "CVE-2026-980126",
-      "published": "2026-08-01",
+      "published": "2026-07-29",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4579,7 +4579,7 @@
     },
     {
       "id": "CVE-2026-980127",
-      "published": "2026-08-01",
+      "published": "2026-07-29",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4589,7 +4589,7 @@
     },
     {
       "id": "CVE-2026-980128",
-      "published": "2026-08-01",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4599,7 +4599,7 @@
     },
     {
       "id": "CVE-2026-980129",
-      "published": "2026-08-01",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4609,7 +4609,7 @@
     },
     {
       "id": "CVE-2026-980130",
-      "published": "2026-08-02",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4619,7 +4619,7 @@
     },
     {
       "id": "CVE-2026-980131",
-      "published": "2026-08-02",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4629,7 +4629,7 @@
     },
     {
       "id": "CVE-2026-980132",
-      "published": "2026-08-02",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4639,7 +4639,7 @@
     },
     {
       "id": "CVE-2026-980133",
-      "published": "2026-08-02",
+      "published": "2026-07-30",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4649,7 +4649,7 @@
     },
     {
       "id": "CVE-2026-980134",
-      "published": "2026-08-02",
+      "published": "2026-07-31",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4659,7 +4659,7 @@
     },
     {
       "id": "CVE-2026-980135",
-      "published": "2026-08-03",
+      "published": "2026-07-31",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4669,7 +4669,7 @@
     },
     {
       "id": "CVE-2026-980136",
-      "published": "2026-08-03",
+      "published": "2026-07-31",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4679,7 +4679,7 @@
     },
     {
       "id": "CVE-2026-980137",
-      "published": "2026-08-03",
+      "published": "2026-07-31",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4689,7 +4689,7 @@
     },
     {
       "id": "CVE-2026-980138",
-      "published": "2026-08-03",
+      "published": "2026-07-31",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4699,7 +4699,7 @@
     },
     {
       "id": "CVE-2026-980139",
-      "published": "2026-08-03",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4709,7 +4709,7 @@
     },
     {
       "id": "CVE-2026-980140",
-      "published": "2026-08-04",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4719,7 +4719,7 @@
     },
     {
       "id": "CVE-2026-980141",
-      "published": "2026-08-04",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4729,7 +4729,7 @@
     },
     {
       "id": "CVE-2026-980142",
-      "published": "2026-08-04",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4739,7 +4739,7 @@
     },
     {
       "id": "CVE-2026-980143",
-      "published": "2026-08-04",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4749,7 +4749,7 @@
     },
     {
       "id": "CVE-2026-980144",
-      "published": "2026-08-04",
+      "published": "2026-08-01",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4759,7 +4759,7 @@
     },
     {
       "id": "CVE-2026-980145",
-      "published": "2026-08-05",
+      "published": "2026-08-02",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4769,7 +4769,7 @@
     },
     {
       "id": "CVE-2026-980146",
-      "published": "2026-08-05",
+      "published": "2026-08-02",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4779,7 +4779,7 @@
     },
     {
       "id": "CVE-2026-980147",
-      "published": "2026-08-05",
+      "published": "2026-08-02",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4789,7 +4789,7 @@
     },
     {
       "id": "CVE-2026-980148",
-      "published": "2026-08-05",
+      "published": "2026-08-02",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4799,7 +4799,7 @@
     },
     {
       "id": "CVE-2026-980149",
-      "published": "2026-08-05",
+      "published": "2026-08-02",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4809,7 +4809,7 @@
     },
     {
       "id": "CVE-2026-980150",
-      "published": "2026-08-06",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4819,7 +4819,7 @@
     },
     {
       "id": "CVE-2026-980151",
-      "published": "2026-08-06",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4829,7 +4829,7 @@
     },
     {
       "id": "CVE-2026-980152",
-      "published": "2026-08-06",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4839,7 +4839,7 @@
     },
     {
       "id": "CVE-2026-980153",
-      "published": "2026-08-06",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4849,7 +4849,7 @@
     },
     {
       "id": "CVE-2026-980154",
-      "published": "2026-08-06",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4859,7 +4859,7 @@
     },
     {
       "id": "CVE-2026-980155",
-      "published": "2026-08-07",
+      "published": "2026-08-03",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4869,7 +4869,7 @@
     },
     {
       "id": "CVE-2026-980156",
-      "published": "2026-08-07",
+      "published": "2026-08-04",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4879,7 +4879,7 @@
     },
     {
       "id": "CVE-2026-980157",
-      "published": "2026-08-07",
+      "published": "2026-08-04",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4889,7 +4889,7 @@
     },
     {
       "id": "CVE-2026-980158",
-      "published": "2026-08-07",
+      "published": "2026-08-04",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4899,7 +4899,7 @@
     },
     {
       "id": "CVE-2026-980159",
-      "published": "2026-08-07",
+      "published": "2026-08-04",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4909,7 +4909,7 @@
     },
     {
       "id": "CVE-2026-980160",
-      "published": "2026-08-08",
+      "published": "2026-08-04",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4919,7 +4919,7 @@
     },
     {
       "id": "CVE-2026-980161",
-      "published": "2026-08-08",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4929,7 +4929,7 @@
     },
     {
       "id": "CVE-2026-980162",
-      "published": "2026-08-08",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4939,7 +4939,7 @@
     },
     {
       "id": "CVE-2026-980163",
-      "published": "2026-08-08",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4949,7 +4949,7 @@
     },
     {
       "id": "CVE-2026-980164",
-      "published": "2026-08-08",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4959,7 +4959,7 @@
     },
     {
       "id": "CVE-2026-980165",
-      "published": "2026-08-09",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4969,7 +4969,7 @@
     },
     {
       "id": "CVE-2026-980166",
-      "published": "2026-08-09",
+      "published": "2026-08-05",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4979,7 +4979,7 @@
     },
     {
       "id": "CVE-2026-980167",
-      "published": "2026-08-09",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4989,7 +4989,7 @@
     },
     {
       "id": "CVE-2026-980168",
-      "published": "2026-08-09",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -4999,7 +4999,7 @@
     },
     {
       "id": "CVE-2026-980169",
-      "published": "2026-08-09",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5009,7 +5009,7 @@
     },
     {
       "id": "CVE-2026-980170",
-      "published": "2026-08-10",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5019,7 +5019,7 @@
     },
     {
       "id": "CVE-2026-980171",
-      "published": "2026-08-10",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5029,7 +5029,7 @@
     },
     {
       "id": "CVE-2026-980172",
-      "published": "2026-08-10",
+      "published": "2026-08-06",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5039,7 +5039,7 @@
     },
     {
       "id": "CVE-2026-980173",
-      "published": "2026-08-10",
+      "published": "2026-08-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5049,7 +5049,7 @@
     },
     {
       "id": "CVE-2026-980174",
-      "published": "2026-08-10",
+      "published": "2026-08-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5059,7 +5059,7 @@
     },
     {
       "id": "CVE-2026-980175",
-      "published": "2026-08-11",
+      "published": "2026-08-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5069,7 +5069,7 @@
     },
     {
       "id": "CVE-2026-980176",
-      "published": "2026-08-11",
+      "published": "2026-08-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5079,7 +5079,7 @@
     },
     {
       "id": "CVE-2026-980177",
-      "published": "2026-08-11",
+      "published": "2026-08-07",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5089,7 +5089,7 @@
     },
     {
       "id": "CVE-2026-980178",
-      "published": "2026-08-11",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5099,7 +5099,7 @@
     },
     {
       "id": "CVE-2026-980179",
-      "published": "2026-08-11",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5109,7 +5109,7 @@
     },
     {
       "id": "CVE-2026-980180",
-      "published": "2026-08-12",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5119,7 +5119,7 @@
     },
     {
       "id": "CVE-2026-980181",
-      "published": "2026-08-12",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5129,7 +5129,7 @@
     },
     {
       "id": "CVE-2026-980182",
-      "published": "2026-08-12",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5139,7 +5139,7 @@
     },
     {
       "id": "CVE-2026-980183",
-      "published": "2026-08-12",
+      "published": "2026-08-08",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5149,7 +5149,7 @@
     },
     {
       "id": "CVE-2026-980184",
-      "published": "2026-08-12",
+      "published": "2026-08-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5159,7 +5159,7 @@
     },
     {
       "id": "CVE-2026-980185",
-      "published": "2026-08-13",
+      "published": "2026-08-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5169,7 +5169,7 @@
     },
     {
       "id": "CVE-2026-980186",
-      "published": "2026-08-13",
+      "published": "2026-08-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5179,7 +5179,7 @@
     },
     {
       "id": "CVE-2026-980187",
-      "published": "2026-08-13",
+      "published": "2026-08-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5189,7 +5189,7 @@
     },
     {
       "id": "CVE-2026-980188",
-      "published": "2026-08-13",
+      "published": "2026-08-09",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5199,7 +5199,7 @@
     },
     {
       "id": "CVE-2026-980189",
-      "published": "2026-08-13",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5209,7 +5209,7 @@
     },
     {
       "id": "CVE-2026-980190",
-      "published": "2026-08-14",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5219,7 +5219,7 @@
     },
     {
       "id": "CVE-2026-980191",
-      "published": "2026-08-14",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5229,7 +5229,7 @@
     },
     {
       "id": "CVE-2026-980192",
-      "published": "2026-08-14",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5239,7 +5239,7 @@
     },
     {
       "id": "CVE-2026-980193",
-      "published": "2026-08-14",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5249,7 +5249,7 @@
     },
     {
       "id": "CVE-2026-980194",
-      "published": "2026-08-14",
+      "published": "2026-08-10",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5259,7 +5259,7 @@
     },
     {
       "id": "CVE-2026-980195",
-      "published": "2026-08-15",
+      "published": "2026-08-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5269,7 +5269,7 @@
     },
     {
       "id": "CVE-2026-980196",
-      "published": "2026-08-15",
+      "published": "2026-08-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5279,7 +5279,7 @@
     },
     {
       "id": "CVE-2026-980197",
-      "published": "2026-08-15",
+      "published": "2026-08-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5289,7 +5289,7 @@
     },
     {
       "id": "CVE-2026-980198",
-      "published": "2026-08-15",
+      "published": "2026-08-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5299,7 +5299,7 @@
     },
     {
       "id": "CVE-2026-980199",
-      "published": "2026-08-15",
+      "published": "2026-08-11",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5309,7 +5309,7 @@
     },
     {
       "id": "CVE-2026-980200",
-      "published": "2026-08-16",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5319,7 +5319,7 @@
     },
     {
       "id": "CVE-2026-980201",
-      "published": "2026-08-16",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5329,7 +5329,7 @@
     },
     {
       "id": "CVE-2026-980202",
-      "published": "2026-08-16",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5339,7 +5339,7 @@
     },
     {
       "id": "CVE-2026-980203",
-      "published": "2026-08-16",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5349,7 +5349,7 @@
     },
     {
       "id": "CVE-2026-980204",
-      "published": "2026-08-16",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5359,7 +5359,7 @@
     },
     {
       "id": "CVE-2026-980205",
-      "published": "2026-08-17",
+      "published": "2026-08-12",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5369,7 +5369,7 @@
     },
     {
       "id": "CVE-2026-980206",
-      "published": "2026-08-17",
+      "published": "2026-08-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5379,7 +5379,7 @@
     },
     {
       "id": "CVE-2026-980207",
-      "published": "2026-08-17",
+      "published": "2026-08-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5389,7 +5389,7 @@
     },
     {
       "id": "CVE-2026-980208",
-      "published": "2026-08-17",
+      "published": "2026-08-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5399,7 +5399,7 @@
     },
     {
       "id": "CVE-2026-980209",
-      "published": "2026-08-17",
+      "published": "2026-08-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5409,7 +5409,7 @@
     },
     {
       "id": "CVE-2026-980210",
-      "published": "2026-08-18",
+      "published": "2026-08-13",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5419,7 +5419,7 @@
     },
     {
       "id": "CVE-2026-980211",
-      "published": "2026-08-18",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5429,7 +5429,7 @@
     },
     {
       "id": "CVE-2026-980212",
-      "published": "2026-08-18",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5439,7 +5439,7 @@
     },
     {
       "id": "CVE-2026-980213",
-      "published": "2026-08-18",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5449,7 +5449,7 @@
     },
     {
       "id": "CVE-2026-980214",
-      "published": "2026-08-18",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5459,7 +5459,7 @@
     },
     {
       "id": "CVE-2026-980215",
-      "published": "2026-08-19",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5469,7 +5469,7 @@
     },
     {
       "id": "CVE-2026-980216",
-      "published": "2026-08-19",
+      "published": "2026-08-14",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5479,7 +5479,7 @@
     },
     {
       "id": "CVE-2026-980217",
-      "published": "2026-08-19",
+      "published": "2026-08-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5489,7 +5489,7 @@
     },
     {
       "id": "CVE-2026-980218",
-      "published": "2026-08-19",
+      "published": "2026-08-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5499,7 +5499,7 @@
     },
     {
       "id": "CVE-2026-980219",
-      "published": "2026-08-19",
+      "published": "2026-08-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5509,7 +5509,7 @@
     },
     {
       "id": "CVE-2026-980220",
-      "published": "2026-08-20",
+      "published": "2026-08-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5519,7 +5519,7 @@
     },
     {
       "id": "CVE-2026-980221",
-      "published": "2026-08-20",
+      "published": "2026-08-15",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5529,7 +5529,7 @@
     },
     {
       "id": "CVE-2026-980222",
-      "published": "2026-08-20",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5539,7 +5539,7 @@
     },
     {
       "id": "CVE-2026-980223",
-      "published": "2026-08-20",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5549,7 +5549,7 @@
     },
     {
       "id": "CVE-2026-980224",
-      "published": "2026-08-20",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5559,7 +5559,7 @@
     },
     {
       "id": "CVE-2026-980225",
-      "published": "2026-08-21",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5569,7 +5569,7 @@
     },
     {
       "id": "CVE-2026-980226",
-      "published": "2026-08-21",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5579,7 +5579,7 @@
     },
     {
       "id": "CVE-2026-980227",
-      "published": "2026-08-21",
+      "published": "2026-08-16",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5589,7 +5589,7 @@
     },
     {
       "id": "CVE-2026-980228",
-      "published": "2026-08-21",
+      "published": "2026-08-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5599,7 +5599,7 @@
     },
     {
       "id": "CVE-2026-980229",
-      "published": "2026-08-22",
+      "published": "2026-08-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5609,7 +5609,7 @@
     },
     {
       "id": "CVE-2026-980230",
-      "published": "2026-08-22",
+      "published": "2026-08-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5619,7 +5619,7 @@
     },
     {
       "id": "CVE-2026-980231",
-      "published": "2026-08-22",
+      "published": "2026-08-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5629,7 +5629,7 @@
     },
     {
       "id": "CVE-2026-980232",
-      "published": "2026-08-22",
+      "published": "2026-08-17",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5639,7 +5639,7 @@
     },
     {
       "id": "CVE-2026-980233",
-      "published": "2026-08-22",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5649,7 +5649,7 @@
     },
     {
       "id": "CVE-2026-980234",
-      "published": "2026-08-23",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5659,7 +5659,7 @@
     },
     {
       "id": "CVE-2026-980235",
-      "published": "2026-08-23",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5669,7 +5669,7 @@
     },
     {
       "id": "CVE-2026-980236",
-      "published": "2026-08-23",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5679,7 +5679,7 @@
     },
     {
       "id": "CVE-2026-980237",
-      "published": "2026-08-23",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5689,7 +5689,7 @@
     },
     {
       "id": "CVE-2026-980238",
-      "published": "2026-08-23",
+      "published": "2026-08-18",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5699,7 +5699,7 @@
     },
     {
       "id": "CVE-2026-980239",
-      "published": "2026-08-24",
+      "published": "2026-08-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5709,7 +5709,7 @@
     },
     {
       "id": "CVE-2026-980240",
-      "published": "2026-08-24",
+      "published": "2026-08-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5719,7 +5719,7 @@
     },
     {
       "id": "CVE-2026-980241",
-      "published": "2026-08-24",
+      "published": "2026-08-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5729,7 +5729,7 @@
     },
     {
       "id": "CVE-2026-980242",
-      "published": "2026-08-24",
+      "published": "2026-08-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5739,7 +5739,7 @@
     },
     {
       "id": "CVE-2026-980243",
-      "published": "2026-08-24",
+      "published": "2026-08-19",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5749,7 +5749,7 @@
     },
     {
       "id": "CVE-2026-980244",
-      "published": "2026-08-25",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5759,7 +5759,7 @@
     },
     {
       "id": "CVE-2026-980245",
-      "published": "2026-08-25",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5769,7 +5769,7 @@
     },
     {
       "id": "CVE-2026-980246",
-      "published": "2026-08-25",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5779,7 +5779,7 @@
     },
     {
       "id": "CVE-2026-980247",
-      "published": "2026-08-25",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5789,7 +5789,7 @@
     },
     {
       "id": "CVE-2026-980248",
-      "published": "2026-08-25",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5799,7 +5799,7 @@
     },
     {
       "id": "CVE-2026-980249",
-      "published": "2026-08-26",
+      "published": "2026-08-20",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5809,7 +5809,7 @@
     },
     {
       "id": "CVE-2026-980250",
-      "published": "2026-08-26",
+      "published": "2026-08-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5819,7 +5819,7 @@
     },
     {
       "id": "CVE-2026-980251",
-      "published": "2026-08-26",
+      "published": "2026-08-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5829,7 +5829,7 @@
     },
     {
       "id": "CVE-2026-980252",
-      "published": "2026-08-26",
+      "published": "2026-08-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5839,7 +5839,7 @@
     },
     {
       "id": "CVE-2026-980253",
-      "published": "2026-08-26",
+      "published": "2026-08-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5849,7 +5849,7 @@
     },
     {
       "id": "CVE-2026-980254",
-      "published": "2026-08-27",
+      "published": "2026-08-21",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5859,7 +5859,7 @@
     },
     {
       "id": "CVE-2026-980255",
-      "published": "2026-08-27",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5869,7 +5869,7 @@
     },
     {
       "id": "CVE-2026-980256",
-      "published": "2026-08-27",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5879,7 +5879,7 @@
     },
     {
       "id": "CVE-2026-980257",
-      "published": "2026-08-27",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5889,7 +5889,7 @@
     },
     {
       "id": "CVE-2026-980258",
-      "published": "2026-08-27",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5899,7 +5899,7 @@
     },
     {
       "id": "CVE-2026-980259",
-      "published": "2026-08-28",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5909,7 +5909,7 @@
     },
     {
       "id": "CVE-2026-980260",
-      "published": "2026-08-28",
+      "published": "2026-08-22",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5919,7 +5919,7 @@
     },
     {
       "id": "CVE-2026-980261",
-      "published": "2026-08-28",
+      "published": "2026-08-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5929,7 +5929,7 @@
     },
     {
       "id": "CVE-2026-980262",
-      "published": "2026-08-28",
+      "published": "2026-08-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5939,7 +5939,7 @@
     },
     {
       "id": "CVE-2026-980263",
-      "published": "2026-08-28",
+      "published": "2026-08-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5949,7 +5949,7 @@
     },
     {
       "id": "CVE-2026-980264",
-      "published": "2026-08-29",
+      "published": "2026-08-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5959,7 +5959,7 @@
     },
     {
       "id": "CVE-2026-980265",
-      "published": "2026-08-29",
+      "published": "2026-08-23",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5969,7 +5969,7 @@
     },
     {
       "id": "CVE-2026-980266",
-      "published": "2026-08-29",
+      "published": "2026-08-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5979,7 +5979,7 @@
     },
     {
       "id": "CVE-2026-980267",
-      "published": "2026-08-29",
+      "published": "2026-08-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5989,7 +5989,7 @@
     },
     {
       "id": "CVE-2026-980268",
-      "published": "2026-08-29",
+      "published": "2026-08-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -5999,7 +5999,7 @@
     },
     {
       "id": "CVE-2026-980269",
-      "published": "2026-08-30",
+      "published": "2026-08-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -6009,7 +6009,7 @@
     },
     {
       "id": "CVE-2026-980270",
-      "published": "2026-08-30",
+      "published": "2026-08-24",
       "finder_id": "anthropic-claude",
       "family": "anthropic",
       "kind": "ai_system",
@@ -6019,87 +6019,87 @@
     },
     {
       "id": "CVE-2026-980271",
-      "published": "2026-08-30",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-24",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980272",
-      "published": "2026-08-30",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-25",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980273",
-      "published": "2026-08-30",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-25",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980274",
-      "published": "2026-08-31",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-25",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980275",
-      "published": "2026-08-31",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-25",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980276",
-      "published": "2026-08-31",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-25",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980277",
-      "published": "2026-08-31",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-26",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980278",
-      "published": "2026-08-31",
-      "finder_id": "anthropic-claude",
+      "published": "2026-08-26",
+      "finder_id": "anthropic-claude-code",
       "family": "anthropic",
-      "kind": "ai_system",
+      "kind": "ai_assisted",
       "field": "cna.credits",
-      "matched": "Claude",
+      "matched": "Claude Code",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980279",
-      "published": "2026-09-01",
+      "published": "2026-08-26",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6109,7 +6109,7 @@
     },
     {
       "id": "CVE-2026-980280",
-      "published": "2026-09-01",
+      "published": "2026-08-26",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6119,7 +6119,7 @@
     },
     {
       "id": "CVE-2026-980281",
-      "published": "2026-09-01",
+      "published": "2026-08-26",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6129,7 +6129,7 @@
     },
     {
       "id": "CVE-2026-980282",
-      "published": "2026-09-01",
+      "published": "2026-08-26",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6139,7 +6139,7 @@
     },
     {
       "id": "CVE-2026-980283",
-      "published": "2026-09-01",
+      "published": "2026-08-27",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6149,7 +6149,7 @@
     },
     {
       "id": "CVE-2026-980284",
-      "published": "2026-09-02",
+      "published": "2026-08-27",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6159,7 +6159,7 @@
     },
     {
       "id": "CVE-2026-980285",
-      "published": "2026-09-02",
+      "published": "2026-08-27",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6169,7 +6169,7 @@
     },
     {
       "id": "CVE-2026-980286",
-      "published": "2026-09-02",
+      "published": "2026-08-27",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6179,7 +6179,7 @@
     },
     {
       "id": "CVE-2026-980287",
-      "published": "2026-09-02",
+      "published": "2026-08-27",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6189,7 +6189,7 @@
     },
     {
       "id": "CVE-2026-980288",
-      "published": "2026-09-02",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6199,7 +6199,7 @@
     },
     {
       "id": "CVE-2026-980289",
-      "published": "2026-09-03",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6209,7 +6209,7 @@
     },
     {
       "id": "CVE-2026-980290",
-      "published": "2026-09-03",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6219,7 +6219,7 @@
     },
     {
       "id": "CVE-2026-980291",
-      "published": "2026-09-03",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6229,7 +6229,7 @@
     },
     {
       "id": "CVE-2026-980292",
-      "published": "2026-09-03",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6239,7 +6239,7 @@
     },
     {
       "id": "CVE-2026-980293",
-      "published": "2026-09-03",
+      "published": "2026-08-28",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6249,7 +6249,7 @@
     },
     {
       "id": "CVE-2026-980294",
-      "published": "2026-09-04",
+      "published": "2026-08-29",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6259,7 +6259,7 @@
     },
     {
       "id": "CVE-2026-980295",
-      "published": "2026-09-04",
+      "published": "2026-08-29",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6269,7 +6269,7 @@
     },
     {
       "id": "CVE-2026-980296",
-      "published": "2026-09-04",
+      "published": "2026-08-29",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6279,7 +6279,7 @@
     },
     {
       "id": "CVE-2026-980297",
-      "published": "2026-09-04",
+      "published": "2026-08-29",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6289,7 +6289,7 @@
     },
     {
       "id": "CVE-2026-980298",
-      "published": "2026-09-04",
+      "published": "2026-08-29",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6299,7 +6299,7 @@
     },
     {
       "id": "CVE-2026-980299",
-      "published": "2026-09-05",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6309,7 +6309,7 @@
     },
     {
       "id": "CVE-2026-980300",
-      "published": "2026-09-05",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6319,7 +6319,7 @@
     },
     {
       "id": "CVE-2026-980301",
-      "published": "2026-09-05",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6329,7 +6329,7 @@
     },
     {
       "id": "CVE-2026-980302",
-      "published": "2026-09-05",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6339,7 +6339,7 @@
     },
     {
       "id": "CVE-2026-980303",
-      "published": "2026-09-05",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6349,7 +6349,7 @@
     },
     {
       "id": "CVE-2026-980304",
-      "published": "2026-09-06",
+      "published": "2026-08-30",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6359,7 +6359,7 @@
     },
     {
       "id": "CVE-2026-980305",
-      "published": "2026-09-06",
+      "published": "2026-08-31",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6369,7 +6369,7 @@
     },
     {
       "id": "CVE-2026-980306",
-      "published": "2026-09-06",
+      "published": "2026-08-31",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6379,7 +6379,7 @@
     },
     {
       "id": "CVE-2026-980307",
-      "published": "2026-09-06",
+      "published": "2026-08-31",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6389,7 +6389,7 @@
     },
     {
       "id": "CVE-2026-980308",
-      "published": "2026-09-06",
+      "published": "2026-08-31",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6399,7 +6399,7 @@
     },
     {
       "id": "CVE-2026-980309",
-      "published": "2026-09-07",
+      "published": "2026-08-31",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6409,7 +6409,7 @@
     },
     {
       "id": "CVE-2026-980310",
-      "published": "2026-09-07",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6419,7 +6419,7 @@
     },
     {
       "id": "CVE-2026-980311",
-      "published": "2026-09-07",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6429,7 +6429,7 @@
     },
     {
       "id": "CVE-2026-980312",
-      "published": "2026-09-07",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6439,7 +6439,7 @@
     },
     {
       "id": "CVE-2026-980313",
-      "published": "2026-09-07",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6449,7 +6449,7 @@
     },
     {
       "id": "CVE-2026-980314",
-      "published": "2026-09-08",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6459,7 +6459,7 @@
     },
     {
       "id": "CVE-2026-980315",
-      "published": "2026-09-08",
+      "published": "2026-09-01",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6469,7 +6469,7 @@
     },
     {
       "id": "CVE-2026-980316",
-      "published": "2026-09-08",
+      "published": "2026-09-02",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6479,7 +6479,7 @@
     },
     {
       "id": "CVE-2026-980317",
-      "published": "2026-09-08",
+      "published": "2026-09-02",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6489,7 +6489,7 @@
     },
     {
       "id": "CVE-2026-980318",
-      "published": "2026-09-08",
+      "published": "2026-09-02",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6499,7 +6499,7 @@
     },
     {
       "id": "CVE-2026-980319",
-      "published": "2026-09-09",
+      "published": "2026-09-02",
       "finder_id": "openai-codex",
       "family": "openai",
       "kind": "ai_system",
@@ -6509,7 +6509,7 @@
     },
     {
       "id": "CVE-2026-980320",
-      "published": "2026-09-09",
+      "published": "2026-09-02",
       "finder_id": "google-big-sleep",
       "family": "google",
       "kind": "ai_system",
@@ -6519,7 +6519,7 @@
     },
     {
       "id": "CVE-2026-980321",
-      "published": "2026-09-09",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6529,7 +6529,7 @@
     },
     {
       "id": "CVE-2026-980322",
-      "published": "2026-09-09",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6539,7 +6539,7 @@
     },
     {
       "id": "CVE-2026-980323",
-      "published": "2026-09-09",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6549,7 +6549,7 @@
     },
     {
       "id": "CVE-2026-980324",
-      "published": "2026-09-10",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6559,7 +6559,7 @@
     },
     {
       "id": "CVE-2026-980325",
-      "published": "2026-09-10",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6569,7 +6569,7 @@
     },
     {
       "id": "CVE-2026-980326",
-      "published": "2026-09-10",
+      "published": "2026-09-03",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6579,7 +6579,7 @@
     },
     {
       "id": "CVE-2026-980327",
-      "published": "2026-09-10",
+      "published": "2026-09-04",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6589,7 +6589,7 @@
     },
     {
       "id": "CVE-2026-980328",
-      "published": "2026-09-10",
+      "published": "2026-09-04",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6599,7 +6599,7 @@
     },
     {
       "id": "CVE-2026-980329",
-      "published": "2026-09-11",
+      "published": "2026-09-04",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6609,7 +6609,7 @@
     },
     {
       "id": "CVE-2026-980330",
-      "published": "2026-09-11",
+      "published": "2026-09-04",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6619,7 +6619,7 @@
     },
     {
       "id": "CVE-2026-980331",
-      "published": "2026-09-11",
+      "published": "2026-09-04",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6629,7 +6629,7 @@
     },
     {
       "id": "CVE-2026-980332",
-      "published": "2026-09-11",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6639,7 +6639,7 @@
     },
     {
       "id": "CVE-2026-980333",
-      "published": "2026-09-11",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6649,7 +6649,7 @@
     },
     {
       "id": "CVE-2026-980334",
-      "published": "2026-09-12",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6659,7 +6659,7 @@
     },
     {
       "id": "CVE-2026-980335",
-      "published": "2026-09-12",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6669,7 +6669,7 @@
     },
     {
       "id": "CVE-2026-980336",
-      "published": "2026-09-12",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6679,7 +6679,7 @@
     },
     {
       "id": "CVE-2026-980337",
-      "published": "2026-09-12",
+      "published": "2026-09-05",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6689,7 +6689,7 @@
     },
     {
       "id": "CVE-2026-980338",
-      "published": "2026-09-12",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6699,7 +6699,7 @@
     },
     {
       "id": "CVE-2026-980339",
-      "published": "2026-09-13",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6709,7 +6709,7 @@
     },
     {
       "id": "CVE-2026-980340",
-      "published": "2026-09-13",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6719,7 +6719,7 @@
     },
     {
       "id": "CVE-2026-980341",
-      "published": "2026-09-13",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6729,7 +6729,7 @@
     },
     {
       "id": "CVE-2026-980342",
-      "published": "2026-09-13",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6739,7 +6739,7 @@
     },
     {
       "id": "CVE-2026-980343",
-      "published": "2026-09-14",
+      "published": "2026-09-06",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6749,7 +6749,7 @@
     },
     {
       "id": "CVE-2026-980344",
-      "published": "2026-09-14",
+      "published": "2026-09-07",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6759,7 +6759,7 @@
     },
     {
       "id": "CVE-2026-980345",
-      "published": "2026-09-14",
+      "published": "2026-09-07",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6769,7 +6769,7 @@
     },
     {
       "id": "CVE-2026-980346",
-      "published": "2026-09-14",
+      "published": "2026-09-07",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6779,7 +6779,7 @@
     },
     {
       "id": "CVE-2026-980347",
-      "published": "2026-09-14",
+      "published": "2026-09-07",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6789,7 +6789,7 @@
     },
     {
       "id": "CVE-2026-980348",
-      "published": "2026-09-15",
+      "published": "2026-09-07",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6799,7 +6799,7 @@
     },
     {
       "id": "CVE-2026-980349",
-      "published": "2026-09-15",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6809,7 +6809,7 @@
     },
     {
       "id": "CVE-2026-980350",
-      "published": "2026-09-15",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6819,7 +6819,7 @@
     },
     {
       "id": "CVE-2026-980351",
-      "published": "2026-09-15",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6829,7 +6829,7 @@
     },
     {
       "id": "CVE-2026-980352",
-      "published": "2026-09-15",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6839,7 +6839,7 @@
     },
     {
       "id": "CVE-2026-980353",
-      "published": "2026-09-16",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6849,7 +6849,7 @@
     },
     {
       "id": "CVE-2026-980354",
-      "published": "2026-09-16",
+      "published": "2026-09-08",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6859,7 +6859,7 @@
     },
     {
       "id": "CVE-2026-980355",
-      "published": "2026-09-16",
+      "published": "2026-09-09",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6869,7 +6869,7 @@
     },
     {
       "id": "CVE-2026-980356",
-      "published": "2026-09-16",
+      "published": "2026-09-09",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6879,7 +6879,7 @@
     },
     {
       "id": "CVE-2026-980357",
-      "published": "2026-09-16",
+      "published": "2026-09-09",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6889,7 +6889,7 @@
     },
     {
       "id": "CVE-2026-980358",
-      "published": "2026-09-17",
+      "published": "2026-09-09",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6899,7 +6899,7 @@
     },
     {
       "id": "CVE-2026-980359",
-      "published": "2026-09-17",
+      "published": "2026-09-09",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6909,7 +6909,7 @@
     },
     {
       "id": "CVE-2026-980360",
-      "published": "2026-09-17",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6919,7 +6919,7 @@
     },
     {
       "id": "CVE-2026-980361",
-      "published": "2026-09-17",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6929,7 +6929,7 @@
     },
     {
       "id": "CVE-2026-980362",
-      "published": "2026-09-17",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6939,7 +6939,7 @@
     },
     {
       "id": "CVE-2026-980363",
-      "published": "2026-09-18",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6949,7 +6949,7 @@
     },
     {
       "id": "CVE-2026-980364",
-      "published": "2026-09-18",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6959,7 +6959,7 @@
     },
     {
       "id": "CVE-2026-980365",
-      "published": "2026-09-18",
+      "published": "2026-09-10",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6969,7 +6969,7 @@
     },
     {
       "id": "CVE-2026-980366",
-      "published": "2026-09-18",
+      "published": "2026-09-11",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6979,7 +6979,7 @@
     },
     {
       "id": "CVE-2026-980367",
-      "published": "2026-09-18",
+      "published": "2026-09-11",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6989,7 +6989,7 @@
     },
     {
       "id": "CVE-2026-980368",
-      "published": "2026-09-19",
+      "published": "2026-09-11",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -6999,7 +6999,7 @@
     },
     {
       "id": "CVE-2026-980369",
-      "published": "2026-09-19",
+      "published": "2026-09-11",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7009,7 +7009,7 @@
     },
     {
       "id": "CVE-2026-980370",
-      "published": "2026-09-19",
+      "published": "2026-09-11",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7019,7 +7019,7 @@
     },
     {
       "id": "CVE-2026-980371",
-      "published": "2026-09-19",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7029,7 +7029,7 @@
     },
     {
       "id": "CVE-2026-980372",
-      "published": "2026-09-19",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7039,7 +7039,7 @@
     },
     {
       "id": "CVE-2026-980373",
-      "published": "2026-09-20",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7049,7 +7049,7 @@
     },
     {
       "id": "CVE-2026-980374",
-      "published": "2026-09-20",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7059,7 +7059,7 @@
     },
     {
       "id": "CVE-2026-980375",
-      "published": "2026-09-20",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7069,7 +7069,7 @@
     },
     {
       "id": "CVE-2026-980376",
-      "published": "2026-09-20",
+      "published": "2026-09-12",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7079,7 +7079,7 @@
     },
     {
       "id": "CVE-2026-980377",
-      "published": "2026-09-20",
+      "published": "2026-09-13",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7089,7 +7089,7 @@
     },
     {
       "id": "CVE-2026-980378",
-      "published": "2026-09-21",
+      "published": "2026-09-13",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7099,7 +7099,7 @@
     },
     {
       "id": "CVE-2026-980379",
-      "published": "2026-09-21",
+      "published": "2026-09-13",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7109,7 +7109,7 @@
     },
     {
       "id": "CVE-2026-980380",
-      "published": "2026-09-21",
+      "published": "2026-09-13",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7119,7 +7119,7 @@
     },
     {
       "id": "CVE-2026-980381",
-      "published": "2026-09-21",
+      "published": "2026-09-13",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7129,7 +7129,7 @@
     },
     {
       "id": "CVE-2026-980382",
-      "published": "2026-09-21",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7139,7 +7139,7 @@
     },
     {
       "id": "CVE-2026-980383",
-      "published": "2026-09-22",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7149,7 +7149,7 @@
     },
     {
       "id": "CVE-2026-980384",
-      "published": "2026-09-22",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7159,7 +7159,7 @@
     },
     {
       "id": "CVE-2026-980385",
-      "published": "2026-09-22",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7169,7 +7169,7 @@
     },
     {
       "id": "CVE-2026-980386",
-      "published": "2026-09-22",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7179,7 +7179,7 @@
     },
     {
       "id": "CVE-2026-980387",
-      "published": "2026-09-22",
+      "published": "2026-09-14",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7189,7 +7189,7 @@
     },
     {
       "id": "CVE-2026-980388",
-      "published": "2026-09-23",
+      "published": "2026-09-15",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7199,7 +7199,7 @@
     },
     {
       "id": "CVE-2026-980389",
-      "published": "2026-09-23",
+      "published": "2026-09-15",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7209,7 +7209,7 @@
     },
     {
       "id": "CVE-2026-980390",
-      "published": "2026-09-23",
+      "published": "2026-09-15",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7219,7 +7219,7 @@
     },
     {
       "id": "CVE-2026-980391",
-      "published": "2026-09-23",
+      "published": "2026-09-15",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7229,7 +7229,7 @@
     },
     {
       "id": "CVE-2026-980392",
-      "published": "2026-09-23",
+      "published": "2026-09-15",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7239,7 +7239,7 @@
     },
     {
       "id": "CVE-2026-980393",
-      "published": "2026-09-24",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7249,7 +7249,7 @@
     },
     {
       "id": "CVE-2026-980394",
-      "published": "2026-09-24",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7259,7 +7259,7 @@
     },
     {
       "id": "CVE-2026-980395",
-      "published": "2026-09-24",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7269,7 +7269,7 @@
     },
     {
       "id": "CVE-2026-980396",
-      "published": "2026-09-24",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7279,7 +7279,7 @@
     },
     {
       "id": "CVE-2026-980397",
-      "published": "2026-09-24",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7289,7 +7289,7 @@
     },
     {
       "id": "CVE-2026-980398",
-      "published": "2026-09-25",
+      "published": "2026-09-16",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7299,7 +7299,7 @@
     },
     {
       "id": "CVE-2026-980399",
-      "published": "2026-09-25",
+      "published": "2026-09-17",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7309,7 +7309,7 @@
     },
     {
       "id": "CVE-2026-980400",
-      "published": "2026-09-25",
+      "published": "2026-09-17",
       "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
@@ -7319,496 +7319,996 @@
     },
     {
       "id": "CVE-2026-980401",
-      "published": "2026-09-25",
-      "finder_id": "xbow",
+      "published": "2026-09-17",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980402",
-      "published": "2026-09-25",
-      "finder_id": "xbow",
+      "published": "2026-09-17",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980403",
-      "published": "2026-09-26",
-      "finder_id": "xbow",
+      "published": "2026-09-17",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980404",
-      "published": "2026-09-26",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980405",
-      "published": "2026-09-26",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980406",
-      "published": "2026-09-26",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980407",
-      "published": "2026-09-26",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980408",
-      "published": "2026-09-27",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980409",
-      "published": "2026-09-27",
-      "finder_id": "xbow",
+      "published": "2026-09-18",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980410",
-      "published": "2026-09-27",
-      "finder_id": "xbow",
+      "published": "2026-09-19",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980411",
-      "published": "2026-09-27",
-      "finder_id": "xbow",
+      "published": "2026-09-19",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980412",
-      "published": "2026-09-27",
-      "finder_id": "xbow",
+      "published": "2026-09-19",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980413",
-      "published": "2026-09-28",
-      "finder_id": "xbow",
+      "published": "2026-09-19",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980414",
-      "published": "2026-09-28",
-      "finder_id": "xbow",
+      "published": "2026-09-19",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980415",
-      "published": "2026-09-28",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980416",
-      "published": "2026-09-28",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980417",
-      "published": "2026-09-28",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980418",
-      "published": "2026-09-29",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980419",
-      "published": "2026-09-29",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980420",
-      "published": "2026-09-29",
-      "finder_id": "xbow",
+      "published": "2026-09-20",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980421",
-      "published": "2026-09-29",
-      "finder_id": "xbow",
+      "published": "2026-09-21",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980422",
-      "published": "2026-09-29",
-      "finder_id": "xbow",
+      "published": "2026-09-21",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980423",
-      "published": "2026-09-30",
-      "finder_id": "xbow",
+      "published": "2026-09-21",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980424",
-      "published": "2026-09-30",
-      "finder_id": "xbow",
+      "published": "2026-09-21",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980425",
-      "published": "2026-09-30",
-      "finder_id": "xbow",
+      "published": "2026-09-21",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980426",
-      "published": "2026-09-30",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980427",
-      "published": "2026-09-30",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980428",
-      "published": "2026-10-01",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980429",
-      "published": "2026-10-01",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980430",
-      "published": "2026-10-01",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980431",
-      "published": "2026-10-01",
-      "finder_id": "xbow",
+      "published": "2026-09-22",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980432",
-      "published": "2026-10-01",
-      "finder_id": "xbow",
+      "published": "2026-09-23",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980433",
-      "published": "2026-10-02",
-      "finder_id": "xbow",
+      "published": "2026-09-23",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980434",
-      "published": "2026-10-02",
-      "finder_id": "xbow",
+      "published": "2026-09-23",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980435",
-      "published": "2026-10-02",
-      "finder_id": "xbow",
+      "published": "2026-09-23",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980436",
-      "published": "2026-10-02",
-      "finder_id": "xbow",
+      "published": "2026-09-23",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980437",
-      "published": "2026-10-02",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980438",
-      "published": "2026-10-03",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980439",
-      "published": "2026-10-03",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980440",
-      "published": "2026-10-03",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980441",
-      "published": "2026-10-03",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980442",
-      "published": "2026-10-03",
-      "finder_id": "xbow",
+      "published": "2026-09-24",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980443",
-      "published": "2026-10-04",
-      "finder_id": "xbow",
+      "published": "2026-09-25",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980444",
-      "published": "2026-10-04",
-      "finder_id": "xbow",
+      "published": "2026-09-25",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980445",
-      "published": "2026-10-04",
-      "finder_id": "xbow",
+      "published": "2026-09-25",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980446",
-      "published": "2026-10-04",
-      "finder_id": "xbow",
+      "published": "2026-09-25",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980447",
-      "published": "2026-10-04",
-      "finder_id": "xbow",
+      "published": "2026-09-25",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980448",
-      "published": "2026-10-05",
-      "finder_id": "xbow",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980449",
-      "published": "2026-10-05",
-      "finder_id": "xbow",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "AISLE",
       "rule": "pattern"
     },
     {
       "id": "CVE-2026-980450",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980451",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980452",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980453",
+      "published": "2026-09-26",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980454",
+      "published": "2026-09-27",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980455",
+      "published": "2026-09-27",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980456",
+      "published": "2026-09-27",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980457",
+      "published": "2026-09-27",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980458",
+      "published": "2026-09-27",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980459",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980460",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980461",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980462",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980463",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980464",
+      "published": "2026-09-28",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980465",
+      "published": "2026-09-29",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980466",
+      "published": "2026-09-29",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980467",
+      "published": "2026-09-29",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980468",
+      "published": "2026-09-29",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980469",
+      "published": "2026-09-29",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980470",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980471",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980472",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980473",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980474",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980475",
+      "published": "2026-09-30",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980476",
+      "published": "2026-10-01",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980477",
+      "published": "2026-10-01",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980478",
+      "published": "2026-10-01",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980479",
+      "published": "2026-10-01",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980480",
+      "published": "2026-10-01",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980481",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980482",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980483",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980484",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980485",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980486",
+      "published": "2026-10-02",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980487",
+      "published": "2026-10-03",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980488",
+      "published": "2026-10-03",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980489",
+      "published": "2026-10-03",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980490",
+      "published": "2026-10-03",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980491",
+      "published": "2026-10-03",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980492",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980493",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980494",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980495",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980496",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980497",
+      "published": "2026-10-04",
+      "finder_id": "aisle",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "AISLE",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980498",
+      "published": "2026-10-05",
+      "finder_id": "depthfirst",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "depthfirst",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980499",
+      "published": "2026-10-05",
+      "finder_id": "depthfirst",
+      "family": "other",
+      "kind": "ai_system",
+      "field": "cna.credits",
+      "matched": "depthfirst",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980500",
       "published": "2026-10-05",
       "finder_id": "xbow",
       "family": "other",
@@ -7818,13 +8318,23 @@
       "rule": "pattern"
     },
     {
-      "id": "CVE-2026-980451",
+      "id": "CVE-2026-980501",
       "published": "2026-10-05",
-      "finder_id": "xbow",
+      "finder_id": "aixcc",
       "family": "other",
       "kind": "ai_system",
       "field": "cna.credits",
-      "matched": "XBOW",
+      "matched": "Team Atlanta",
+      "rule": "pattern"
+    },
+    {
+      "id": "CVE-2026-980502",
+      "published": "2026-10-05",
+      "finder_id": "generic-ai-assisted",
+      "family": "other",
+      "kind": "ai_assisted",
+      "field": "cna.credits",
+      "matched": "AI-assisted",
       "rule": "pattern"
     }
   ],

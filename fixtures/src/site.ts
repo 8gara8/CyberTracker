@@ -419,8 +419,11 @@ function windowRows(plan: BandPlan, from: string, to: string, seq: { n: number }
 }
 
 /** The AI-credited records of Appendix D.7's 13 weeks: [finder id, matched text, records]. */
+// Appendix D.7's w13 split by finder at list v2 (§0.4 row 31): 502 rows, 278 Anthropic.
 const AI_ROWS: readonly [string, string, number][] = [
-  ["anthropic-claude", "Claude", 278], ["openai-codex", "Aardvark", 41], ["google-big-sleep", "Big Sleep", 1], ["aisle", "AISLE", 80], ["xbow", "XBOW", 51],
+  ["anthropic-claude", "Claude", 270], ["anthropic-claude-code", "Claude Code", 8], ["openai-codex", "Aardvark", 41],
+  ["google-big-sleep", "Big Sleep", 1], ["aisle", "AISLE", 177], ["depthfirst", "depthfirst", 2], ["xbow", "XBOW", 1],
+  ["aixcc", "Team Atlanta", 1], ["generic-ai-assisted", "AI-assisted", 1],
 ];
 
 function manifestFor(t: SiteTimes, m: Metrics): InputsManifest {

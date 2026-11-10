@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>SAMPLE title 1</title>
+	<atom:link href="https://www.volexity.com/ct-sample/item-1" rel="self" type="application/rss+xml" />
+	<link>https://www.volexity.com/ct-sample/home</link>
+	<description>SAMPLE text 9</description>
+	<lastBuildDate>Thu, 29 Oct 2026 17:39:35 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>SAMPLE text 80</generator>
+
+<image>
+	<url>https://www.volexity.com/ct-sample/img-1</url>
+	<title>SAMPLE title 2</title>
+	<link>https://www.volexity.com/ct-sample/home</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+	<item>
+		<title>SAMPLE title 3 patch</title>
+		<link>https://www.volexity.com/ct-sample/item-2</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Fri, 16 Oct 2026 18:27:25 +0000</pubDate>
+				<category>SAMPLE text 22</category>
+		<category>SAMPLE text 23 0-day</category>
+		<category>SAMPLE text 24 APT</category>
+		<category>SAMPLE text 25</category>
+		<category>SAMPLE text 26</category>
+		<category>SAMPLE text 27 CVE-2026-85046</category>
+		<category>SAMPLE text 28 CVE-2026-85880</category>
+		<category>SAMPLE text 29 CVE-2026-87491</category>
+		<category>SAMPLE text 30</category>
+		<category>SAMPLE text 31</category>
+		<category>SAMPLE text 32</category>
+		<category>SAMPLE text 33</category>
+		<category>SAMPLE text 34</category>
+		<category>SAMPLE text 35</category>
+		<category>SAMPLE text 36 vulnerabilities</category>
+		<category>SAMPLE text 37 zero-day</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-2</guid>
+
+					<description>SAMPLE text 10 zero-day patch</description>
+										<content:encoded>SAMPLE text 16 zero-day 0-day vulnerabilities CVE-2026-85046 CVE-2026-85880</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 4 zero-day</title>
+		<link>https://www.volexity.com/ct-sample/item-3</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Tue, 13 Oct 2026 15:32:12 +0000</pubDate>
+				<category>SAMPLE text 38</category>
+		<category>SAMPLE text 39 0-day</category>
+		<category>SAMPLE text 40 APT</category>
+		<category>SAMPLE text 41 CVE-2026-104935</category>
+		<category>SAMPLE text 42</category>
+		<category>SAMPLE text 43</category>
+		<category>SAMPLE text 44 vulnerabilities</category>
+		<category>SAMPLE text 45 zero-day</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-3</guid>
+
+					<description>SAMPLE text 11 zero-day vulnerability patch</description>
+										<content:encoded>SAMPLE text 17 zero-day 0-day breach CVE-2026-104935 CVE-2026-111357</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 5 0-day patch</title>
+		<link>https://www.volexity.com/ct-sample/item-4</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Mon, 21 Sep 2026 21:01:46 +0000</pubDate>
+				<category>SAMPLE text 46</category>
+		<category>SAMPLE text 47 0-day</category>
+		<category>SAMPLE text 48 APT</category>
+		<category>SAMPLE text 49</category>
+		<category>SAMPLE text 50</category>
+		<category>SAMPLE text 51 CVE-2026-85046</category>
+		<category>SAMPLE text 52 CVE-2026-85880</category>
+		<category>SAMPLE text 53 CVE-2026-87491</category>
+		<category>SAMPLE text 54</category>
+		<category>SAMPLE text 55</category>
+		<category>SAMPLE text 56</category>
+		<category>SAMPLE text 57 vulnerabilities</category>
+		<category>SAMPLE text 58 zero-day</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-4</guid>
+
+					<description>SAMPLE text 12 zero-day 0-day CVE- CVE-2026-85046 CVE-2026-85880</description>
+										<content:encoded>SAMPLE text 18 zero-day 0-day vulnerability CVE-2026-85046 CVE-2026-85880</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 6 0-day patch</title>
+		<link>https://www.volexity.com/ct-sample/item-5</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Wed, 09 Sep 2026 17:36:22 +0000</pubDate>
+				<category>SAMPLE text 59</category>
+		<category>SAMPLE text 60 0-day</category>
+		<category>SAMPLE text 61 APT</category>
+		<category>SAMPLE text 62</category>
+		<category>SAMPLE text 63 CVE-2026-85046</category>
+		<category>SAMPLE text 64 CVE-2026-85880</category>
+		<category>SAMPLE text 65 CVE-2026-87491</category>
+		<category>SAMPLE text 66</category>
+		<category>SAMPLE text 67</category>
+		<category>SAMPLE text 68</category>
+		<category>SAMPLE text 69</category>
+		<category>SAMPLE text 70 zero-day</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-5</guid>
+
+					<description>SAMPLE text 13 0-day phishing patch</description>
+										<content:encoded>SAMPLE text 19 zero-day 0-day vulnerability CVE-2026-85046 CVE-2026-85880</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 7 0-day</title>
+		<link>https://www.volexity.com/ct-sample/item-6</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Fri, 17 Jul 2026 22:10:37 +0000</pubDate>
+				<category>SAMPLE text 71</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-6</guid>
+
+					<description>SAMPLE text 14 0-day</description>
+										<content:encoded>SAMPLE text 20 zero-day 0-day breach CVE-2026-15409 CVE-2026-15410</content:encoded>
+					
+		
+		
+			</item>
+		<item>
+		<title>SAMPLE title 8</title>
+		<link>https://www.volexity.com/ct-sample/item-7</link>
+		
+		<dc:creator>SAMPLE Author</dc:creator>
+		<pubDate>Thu, 04 Jun 2026 20:23:55 +0000</pubDate>
+				<category>SAMPLE text 72</category>
+		<category>SAMPLE text 73</category>
+		<category>SAMPLE text 74 APT</category>
+		<category>SAMPLE text 75</category>
+		<category>SAMPLE text 76</category>
+		<category>SAMPLE text 77</category>
+		<category>SAMPLE text 78</category>
+		<category>SAMPLE text 79</category>
+		<guid isPermaLink="false">https://www.volexity.com/ct-sample/home-7</guid>
+
+					<description>SAMPLE text 15</description>
+										<content:encoded>SAMPLE text 21 breach vulnerability backdoor</content:encoded>
+					
+		
+		
+			</item>
+		</channel>
+</rss>

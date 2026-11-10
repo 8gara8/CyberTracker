@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>SAMPLE advisories feed</title>
+<link>https://www.example.com/ct-sample/advisories</link>
+<description>SAMPLE: dates with a two-digit year.</description>
+<item>
+<title>SAMPLE ICS advisory one</title>
+<link>https://www.example.com/ct-sample/advisory-1</link>
+<pubDate>Tue, 13 Oct 26 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SAMPLE ICS advisory two</title>
+<link>https://www.example.com/ct-sample/advisory-2</link>
+<pubDate>Mon, 12 Oct 26 12:00:00 +0000</pubDate>
+</item>
+</channel>
+</rss>

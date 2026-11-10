@@ -13,9 +13,7 @@ import { inRange, isValidDate, utcDateOf } from "./dates";
 import { Brief, RegionSignal } from "./schema/brief";
 import type { AgentContext } from "./schema/context";
 import { DraftBrief } from "./schema/draft-brief";
-import {
-  AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, InputsManifest, KevIndexFile, KevIndexRow, Metrics, SeriesFile,
-} from "./schema/metrics";
+import { InputsManifest, isStateFileName, KevIndexRow, Metrics, STATE_SCHEMAS } from "./schema/metrics";
 import { ArchiveIndex, CorrectionsFile, type Evidence } from "./schema/misc";
 import type { Pack } from "./schema/pack";
 import { ScoreboardFile } from "./schema/scoreboard";
@@ -427,15 +425,6 @@ const DATED_DIRS = [
   { prefix: "status/", kind: "status" },
 ] as const;
 
-const STATE_SCHEMAS: Record<string, z.ZodType> = {
-  "kev-index.json": KevIndexFile,
-  "days.json": DaysFile,
-  "ai-credits.json": AiCreditsFile,
-  "credit-candidates.json": CreditCandidatesFile,
-  "anthropic-cvd.json": AnthropicCvdFile,
-  "series.json": SeriesFile,
-};
-
 const TOP_FILES = { "scoreboard.json": "scoreboard", "corrections.json": "corrections", "archive-index.json": "archive" } as const;
 
 /** Names a filesystem walk can meet that git ignores (.gitignore `.DS_Store`): never content, never reported. */
@@ -623,8 +612,10 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
       else archive = parse(file, ArchiveIndex);
       continue;
     }
-    if (file.startsWith("state/") && Object.hasOwn(STATE_SCHEMAS, file.slice(6))) {
-      parse(file, STATE_SCHEMAS[file.slice(6)]!);
+    const stateName = file.startsWith("state/") ? file.slice(6) : null;
+    if (stateName !== null && isStateFileName(stateName)) {
+      const schema: z.ZodType = STATE_SCHEMAS[stateName];
+      parse(file, schema);
       continue;
     }
     const dated = DATED_DIRS.find((d) => file.startsWith(d.prefix) && !file.slice(d.prefix.length).includes("/"));

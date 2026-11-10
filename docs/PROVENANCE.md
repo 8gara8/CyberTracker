@@ -8,7 +8,8 @@ Verdicts:
 
 - **copied**: the same code, with only comments, names and imports changed;
 - **adapted**: the same job, rewritten where CyberTracker differs (the "What changed" column);
-- **later**: not copied in the Foundation PR; the phase named in SPEC §8's table or §10 adapts it;
+- **later**: not copied in the Foundation PR; the phase named in SPEC §8's table or §10 adapts it, and
+  that phase's PR changes the verdict here;
 - **dropped**: not carried over (SPEC §2 "Dropped from EuropeTracker" says why).
 
 Every carried file names its Europe source in its header comment.
@@ -19,7 +20,8 @@ Every carried file names its Europe source in its header comment.
 |---|---|---|
 | `package.json` | adapted | Name `cybertracker`; the same packages and exact pins (SPEC §2); only the Foundation scripts (`typecheck`, `test`, `check`, `agent:check`); `engines.node >=22` |
 | `package-lock.json` | adapted | Europe's lockfile with the name changed, because `npm install` on this machine fails inside npm itself (`edgesOut` of null); `npm ci` installs it cleanly |
-| `tsconfig.json`, `vitest.config.ts`, `postcss.config.mjs` | copied | |
+| `tsconfig.json`, `postcss.config.mjs` | copied | |
+| `vitest.config.ts` | adapted | P2 adds `setupFiles: ["tests/setup/offline.ts"]`, the offline guard for every test file (SPEC §8.1) |
 | `next.config.ts` | adapted | `poweredByHeader: false` only; P4 adds the CSP and headers (SPEC §6) |
 | `.gitignore` | adapted | Exactly SPEC §3 |
 | `.github/workflows/ci.yml` | adapted | One job running `npm run check` on Node 24; pushes to `main` that change only `content/` skip it (SPEC §9.2) |
@@ -35,7 +37,8 @@ Every carried file names its Europe source in its header comment.
 | `lib/text.ts` | copied | `countWords()` unchanged |
 | `lib/urls.ts` | adapted | Kept `stripArchivePrefix`, `normalizeUrl` (Telegram folding removed) and `isHttpsUrl`. Added `hostOf`, `hostMatches`, `extractUrls`, `defang` and `blockedEntry` (SPEC §4.12). Dropped `isGoogleNewsUrl` |
 | `lib/vocab.ts` | replaced | The Foundation holds only `BLOCKED_HOSTS` (Appendix B.3) and the canary; P1 adds CyberTracker's vocabularies |
-| `lib/collect.ts` | later (P2) | Keeps the harness, RSS parsing, `feedDate`, dedupe and caps; drops Telegram and Google News |
+| `lib/collect.ts` | adapted (P2) | Kept the job and the shape: `inWindow()` (now with the lookback), `keywordHits()`, the item score (`packScore()`, +4 for tier 1 publishers), `dedupe()` (`jaccard()` moved to `lib/text.ts`, with character bigrams for Han and Kana), `capItems()` (SPEC §4.14's caps), `toPackItems()` and `renderPackMd()` (every line fitted within 1,000 characters). New: the record window, the zip plan, the pack records of every structured feed, the record cap and renumbering, feed states, the degraded rule and the stdout summary (SPEC §4.14, §8.3). The RSS harness moved to `lib/feeds/rss.ts`; Telegram, Google News, `classifyDomain()`, `stripOutletSuffix()` and `USER_AGENT` (now `run.json`) are dropped |
+| `lib/collect.ts` (its RSS half) | adapted (P2) | Became `lib/feeds/rss.ts`: `rssParser()`, `feedDate()`, `zoneOf()` and `rssItems()`, without Google News `<source>` handling; reads the RDF channel's `dc:date` and Atom's `<updated>`, dates in "YYYY-MM-DD HH:mm(:ss)" form and named zones (CEST, CET and others), and a body whatever its content type; adds the TWCERT and JPCERT note readers |
 | `lib/context.ts` | later (P3) | The pattern, for CyberTracker's `AgentContext` |
 | `lib/validate.ts`, `lib/rules/types.ts`, `lib/rules/words.ts`, `lib/rules/sources.ts`, `lib/schema/common.ts`, `lib/json-schema.ts` | later (P1) | The validator's frame and the generic rules; every rule is rewritten for items, metrics and the Gap |
 | `lib/apply.ts` | later (P1) | `applyDraft()` and `dropUnverified()` for CyberTracker's brief |
@@ -48,15 +51,15 @@ Every carried file names its Europe source in its header comment.
 |---|---|---|
 | `scripts/lib/log.ts` | copied | |
 | `scripts/lib/lock.ts` | adapted | The lock appears atomically through a hard link, so a lost race returns the holder instead of throwing (PR 2 review) |
-| `scripts/lib/run.ts` | adapted | An `onLine` hook (returning `"stop"` kills the child) and a `stopped` flag, for the sandbox guard (SPEC §8.12) |
-| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.7) |
+| `scripts/lib/run.ts` | adapted | An `onLine` hook (returning `"stop"` kills the child) and a `stopped` flag, for the sandbox guard (SPEC §8.12); in P2 a 1,000,000-byte stdout limit by default, a per-call `maxStdoutBytes`, a `stdoutCut` flag and one decode of the kept bytes (SPEC §8.3) |
+| `scripts/lib/git.ts` | adapted | `syncMain(g, layout)` takes the allowed paths, fast-forwards, and rebases with `--autostash` only when local commits stay inside the layout; `onOriginMain` replaces `onOrigin`; `ensureIdentity` sets a commit identity only when none is configured (SPEC §8.7); in P2 `git()` keeps 64 MiB of stdout and throws `GitOutputCut` when output is cut (SPEC §8.3) |
 | `scripts/lib/transcript.ts` | adapted | More fields (tools, MCP servers, permission mode, calls with results, denials, usage, terminal reason, limits, safety stops) and `scrubModels()` (SPEC §8.12) |
 | `scripts/lib/agent.ts` | adapted | `--restricted`, `--safe-mode`, no model flag, an isolated config dir. Written for the retired cloud run; P3 brings it back to Europe's Kobol harness (keychain token, `~/.cybertracker`, SPEC §9.4) |
 | `scripts/agent-check.ts` | adapted | `ask()` kept; sandbox tests and the canary test (SPEC §8.12). P3 drops the cloud-only `--find-passthrough` and `--network` and restores Europe's Mac sign-in check |
 | `scripts/publish.ts` | later (P3) | Commits only `content/` to `main` in this repo and pushes (SPEC §8.7) |
 | `scripts/daily.ts` | later (P3) | Data-only edition first, run records, CyberTracker's stages (SPEC §8.2) |
 | `scripts/preflight.ts` | later (P3) | Europe's arm64, keychain and push-path checks |
-| `scripts/collect.ts` | later (P2) | `--check-feeds` becomes `sources:check` |
+| `scripts/collect.ts` | adapted (P2) | Rewritten around SPEC §8.3: one commit per repo through `GitSource`, the delta zips, per-id records, phase A and B pools, ranking, the record cap and the cache files (`cache/feeds/index.json`, `inputs.json`). Kept from Europe: the feed pool of 8, `readFeed()`'s role and `--check-feeds`, which becomes `sources:check` (SPEC §8.10). Its header comment names the Europe source |
 | `scripts/build-context.ts` | later (P3) | |
 | `scripts/validate.ts`, `scripts/gen-json-schema.ts` | later (P1) | |
 | `scripts/lib/summary.ts` | later (P1) | Becomes `lib/chat.ts` and `scripts/chat.ts` (four formats; `changes()` dropped) |
@@ -76,9 +79,23 @@ Every carried file names its Europe source in its header comment.
 | `fixtures/src/**`, `fixtures/empty-content/**` | later (P1, P4) | The fixture builder's pattern; every fixture is CyberTracker's own |
 | `fixtures/briefs/**`, `fixtures/collect/**`, `fixtures/context/**`, `fixtures/evidence/**`, `fixtures/site-content/**` | dropped | Europe's data; CyberTracker builds its own (P1, P2) |
 | `tests/lib.test.ts` | adapted | CyberTracker's dates (cutoff, windows, ISO weeks, the two CVE timestamps without a zone), URLs, defang and the blocked list |
-| `tests/collect.test.ts`, `tests/daily.test.ts`, `tests/fixtures.test.ts`, `tests/validate.test.ts`, `tests/site.test.tsx` | later | Rewritten in the phase that adds their code |
+| `tests/collect.test.ts` | adapted (P2) | Rewritten for CyberTracker's collect: the pure helpers, then `scripts/collect.ts` end to end on `fixtures/feeds/` under `CT_FIXTURE_FEEDS`, and the exit codes |
+| `tests/daily.test.ts`, `tests/fixtures.test.ts`, `tests/validate.test.ts`, `tests/site.test.tsx` | later | Rewritten in the phase that adds their code |
 | `tests/aggregate.test.ts`, `tests/pipeline.test.ts`, `tests/seed.test.ts` | dropped | Europe's domain |
 | none | new in Foundation | `tests/no-europe-strings.test.ts`, `tests/agent.test.ts`, `tests/transcript.test.ts`, `tests/lock.test.ts` |
+
+## New in P2 (no Europe source)
+
+| Files | What they are |
+|---|---|
+| `lib/feeds/{anthropic-cvd,cache,cvelist,epss,exchange,ghsa,github,kev,myjvn,nvd,types,zip}.ts` | One parser per structured feed, the cache layout, the GitHub refs and asset names, and a zip reader with no new package (SPEC §8.3). `lib/feeds/http.ts` (Foundation) gains `pool()`, `fetchBudget()`, `truncate` and the deadline |
+| `lib/rank.ts`, `lib/ids.ts`, `lib/json.ts` | Candidate ranking (SPEC §5.12); id ordering; `jsonText()` and `sha256Hex()` |
+| `lib/metrics/{ai-credit,fix-side,flood,index,kev-index,notes,series}.ts`, `lib/schema/reference.ts` | The metrics (SPEC §5) and the reference fixtures' schemas; `lib/metrics/window.ts` gains `joinKev` and `windowStats` |
+| `scripts/metrics.ts`, `scripts/backfill.ts`, `scripts/lib/{appendix-d,cve-read-worker,cvelist-clone,feed-cache,feeds,git-source,kev-source}.ts` | The metrics run, the backfill, Appendix D, the clone and its worker threads, the collect cache reader, the feed readers, the git runner and the KEV source (SPEC §5.9, §8.4) |
+| `fixtures/src/{feeds,state,scrub-feed,zip-writer}.ts`, `fixtures/src/kev-extra.json`, `fixtures/src/tools/cvelist-clone.ts` | The feed fixtures, `fixtures/state/`, the capture scrubber, a zip writer and the one-time trimming tool for `fixtures/cvelist-clone/` |
+| `fixtures/feeds/**`, `fixtures/state/**`, `fixtures/reference/**`, `fixtures/cvelist-clone/**`, `fixtures/ai-credit/records/**` | CyberTracker's own data: real formats with invented prose, trimmed real CVE records with people's names replaced by "SAMPLE Researcher", and the reference counts (SPEC §3) |
+| `docs/SOURCES.md` | Each source's terms, attribution lines and limits, as P2 session 1 read them on Kobol (SPEC §10 P2 item 3) |
+| `tests/setup/offline.ts` and the P2 tests (`ai-credit`, `backfill`, `captures`, `collect`, `compute-metrics`, `contract`, `feed-readers`, `feeds`, `fix-side`, `fixture-safety`, `fixtures-state`, `flood`, `http`, `metrics-script`, `no-network`, `rank`, `reference`, `registry`, `run`, `series`, `shared`, `sources-check`), `tests/helpers/` | Vitest; no test touches the network (SPEC §8.1) |
 
 ## Site (`app/`, `components/`)
 
@@ -91,4 +108,4 @@ Every carried file names its Europe source in its header comment.
 
 | Europe file | Verdict | What changed |
 |---|---|---|
-| `content/**` | dropped | CyberTracker's content lives in `8gara8/CyberTracker-content`, written only by `scripts/publish.ts` |
+| `content/**` | dropped | Europe's data. CyberTracker's `content/` is tracked in this repo (SPEC §3): `scripts/publish.ts` writes it on `main`, and before go-live only the phase PRs change it (P2's backfill state and cutoff metrics, then `p5-golive`'s catch-up). The separate content repo of SPEC v1.0 was retired on 2026-11-08 and is unused |

@@ -116,9 +116,30 @@ const rule = {
 };
 const fetched = {
   id: "sample-feed", name: "SAMPLE feed", kind: "rss", url: "https://example.org/feed", fallback_url: null, language: "en",
-  region: "GLOBAL", coverage: ["exploits"], priority: 2, fresh_days: 2, must_match: false,
+  region: "GLOBAL", coverage: ["exploits"], priority: 2, fresh_days: 2, must_match: false, date_zone: null,
 };
 const search = { id: "q-sample", name: "SAMPLE search", kind: "search", query: "SAMPLE query", language: "ja", region: "JP", coverage: ["japan"], priority: 2 };
+const feedIndexEntry = {
+  id: "sample-feed", kind: "rss", status: "ok", label: "OK", error_class: null, url_used: "https://example.org/feed", fallback_used: false,
+  newest: T, items: 3, records: 0, version: null, sha256: SHA, fetched_at: T, note: null,
+};
+const zipRead = {
+  tag: "cve_2026-11-06_at_end_of_day", asset: "SAMPLE.zip", kind: "end_of_day", utc_day: CUTOFF, sha256: SHA, records: 2,
+};
+const collectInputs = {
+  schema_version: 1, date: D, data_cutoff_utc: CUTOFF, generated_at: T, run_utc_day: "2026-11-07",
+  record_window: { start: "2026-11-06T20:00:00Z", end: "2026-11-07T20:00:00Z" },
+  commits: { cvelist: COMMIT, kev_data: COMMIT, ghsa: null },
+  cvelist: {
+    zips: [zipRead], days: [{ date: CUTOFF, zips: ["SAMPLE.zip", "SAMPLE-2.zip"], ok: true }], newest_hourly_tag: "cve_2026-11-07_2000Z",
+    delta_log_newest: null, by_id: { fetched: [], not_found: [], over_cap: 0 },
+  },
+  kev: { catalog_version: "2026.11.06", date_released: "2026-11-06T15:00:00Z", count: 1500, url_used: "https://example.org/kev.json", sha256: SHA, fallback_used: false },
+  epss: { source: "csv", model_version: "v2025.03.14", files: [{ role: "e", date: CUTOFF, sha256: SHA }] },
+  ghsa: null,
+  anthropic_cvd: null,
+};
+const refHead = { schema_version: 1, cve_list_commit: COMMIT, cutoff: CUTOFF };
 const runFile = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "config", "run.json"), "utf8")) as unknown;
 
 const TOP_LEVEL: [string, z.ZodType, unknown][] = [
@@ -131,7 +152,7 @@ const TOP_LEVEL: [string, z.ZodType, unknown][] = [
     home_vendors: { tw: [], jp: [] },
   }],
   ["KevIndexFile", S.KevIndexFile, { ...state, catalog_version: "2026.11.06", entries: [["CVE-2026-0001", "2026-11-05", "SAMPLE", "SAMPLE", null, null, "unknown"]] }],
-  ["DaysFile", S.DaysFile, { ...state, days: [["2023-01-01", 50, 3, 10]] }],
+  ["DaysFile", S.DaysFile, { ...state, days: [["2023-01-01", 50, 3, 10, SHA]] }],
   ["AiCreditsFile", S.AiCreditsFile, { ...state, finders_version: 1, finders_sha256: SHA, matches: [] }],
   ["CreditCandidatesFile", S.CreditCandidatesFile, { ...state, prefilter_sha256: SHA, candidates: [] }],
   ["AnthropicCvdFile", S.AnthropicCvdFile, {
@@ -175,6 +196,20 @@ const TOP_LEVEL: [string, z.ZodType, unknown][] = [
     corrections: { flagged: [], reports: [] },
     config: { tiers: { t1: [], t2: [], not_sole_newsroom: [], state_labelled: [] }, home_vendors: { tw: [], jp: [] }, actors: [], ai_finders: [], banned_words: [...V.BANNED_WORDS] },
     pack: { md: `packs/${D}.md`, json: `packs/${D}.json`, degraded: false, failed_feeds: [] },
+  }],
+  ["FeedIndexFile", S.FeedIndexFile, { schema_version: 1, date: D, generated_at: T, feeds: [feedIndexEntry] }],
+  ["CollectInputsFile", S.CollectInputsFile, collectInputs],
+  ["CandidatesFile", S.CandidatesFile, { schema_version: 1, date: D, kept: [], cut: { count: 0, by_reason: { below_cap: 0, merged: 0, bundled: 0 } } }],
+  ["CandidateLogFile", S.CandidateLogFile, {
+    schema_version: 1, date: D, ranked: 1, kept: [], cut: [{ id: "cve-2026-0001", score: 10, reason: "below_cap", pack_ids: ["r0001"], cve_ids: ["CVE-2026-0001"] }],
+    log: [{ code: "MERGED", detail: "SAMPLE detail" }],
+  }],
+  ["ReferenceJoinFile", S.ReferenceJoinFile, {
+    ...refHead, kev_catalog_version: "2026.11.06", kev_data_commit: COMMIT, rows: [["CVE-2026-0001", "2026-11-05", "SAMPLE", null]],
+  }],
+  ["ReferenceFloodDaysFile", S.ReferenceFloodDaysFile, { ...refHead, days: [["2023-01-01", 50, 3, 10]] }],
+  ["ReferenceAiCreditsFile", S.ReferenceAiCreditsFile, {
+    ...refHead, finders_version: 2, finders_sha256: SHA, matches: [["CVE-2026-0001", "2026-11-05", "sample-finder", "other", "pattern", "cna.credits", "SAMPLE"]],
   }],
 ];
 
@@ -293,6 +328,50 @@ describe("schema-level constraints", () => {
     fails(S.SeriesFile, { ...state, ...seriesOf([weeks[1]!, weeks[0]!]) });
   });
 
+  it("state files (P2): days.json rows carry ids_sha256; series.json counts may be null, a metrics file's may not", () => {
+    fails(S.DaysFile, { ...state, days: [["2023-01-01", 50, 3, 10]] });
+    fails(S.DaysFile, { ...state, days: [["2023-01-01", 50, 3, 10, "not a hash"]] });
+    const early = { ...seriesOf(weeks.slice(0, 3)), flood_n13: [null, null, 5], flood_n13_kernel: [null, null, 1], window_cohort_n: [null, null, null] };
+    expect(problems(S.SeriesFile, { ...state, ...early })).toEqual([]);
+    fails(S.SeriesFile, { ...state, ...early, window_cohort_n: [null, null] });
+    fails(S.Metrics, { ...metrics, series: { ...seriesOf(weeks), flood_n13: [null, ...zeros(103)] } });
+    fails(S.Metrics, { ...metrics, series: { ...seriesOf(weeks), window_cohort_n: [...zeros(103), null] } });
+  });
+
+  it("state files (P2): a credit candidate is never a ledger row; the GitHub share is null below MIN_N", () => {
+    const candidates = (field: string) => ({ ...state, prefilter_sha256: SHA, candidates: [["CVE-2026-0001", CUTOFF, field, "SAMPLE text"]] });
+    for (const f of ["cna.credits", "adp.credits", "ghsa.credits"]) expect(problems(S.CreditCandidatesFile, candidates(f))).toEqual([]);
+    fails(S.CreditCandidatesFile, candidates("cvd_ledger"));
+    const ghsa = { share: null, n_unfixed: 3, n_total: 20, from: "2026-07-09", to: "2026-10-07", as_of: CUTOFF };
+    expect(problems(S.FixSide, { anthropic_cvd: null, ghsa_unfixed: ghsa })).toEqual([]);
+    expect(problems(S.FixSide, { anthropic_cvd: null, ghsa_unfixed: { ...ghsa, share: 0.15 } })).toEqual([]);
+    fails(S.FixSide, { anthropic_cvd: null, ghsa_unfixed: { ...ghsa, share: 1.5 } });
+  });
+
+  it("state files (P2): STATE_SCHEMAS covers exactly the six STATE_FILES", () => {
+    expect(Object.keys(S.STATE_SCHEMAS)).toEqual([...S.STATE_FILES]);
+    expect(S.STATE_FILES).toEqual(["kev-index.json", "days.json", "ai-credits.json", "credit-candidates.json", "anthropic-cvd.json", "series.json"]);
+    for (const f of S.STATE_FILES) expect(S.isStateFileName(f)).toBe(true);
+    for (const f of ["kev.json", "state/days.json", "days.json.bak", ""]) expect(S.isStateFileName(f)).toBe(false);
+    const byName = Object.fromEntries(TOP_LEVEL.map(([n, , v]) => [n, v]));
+    expect(problems(S.STATE_SCHEMAS["days.json"], byName.DaysFile)).toEqual([]);
+    expect(problems(S.STATE_SCHEMAS["series.json"], byName.SeriesFile)).toEqual([]);
+  });
+
+  it("collect outputs (P2): zip tags, cut reasons, GHSA months and the two-zip day", () => {
+    expect(problems(S.ZipRead, { ...zipRead, tag: "cve_2026-11-07_2000Z", kind: "hourly" })).toEqual([]);
+    for (const tag of ["cve_2026-11-07_20Z", "cve_2026-11-07", "2026-11-07_at_end_of_day"]) fails(S.ZipRead, { ...zipRead, tag });
+    const cut = { id: "x", score: 1, pack_ids: [], cve_ids: [] };
+    for (const reason of ["below_cap", "merged:cve-2026-0001", "bundled:rel-microsoft-2026-10"]) expect(problems(S.CutEntry, { ...cut, reason })).toEqual([]);
+    for (const reason of ["merged:", "bundled:pt-microsoft-2026-10", "dropped", "below_cap "]) fails(S.CutEntry, { ...cut, reason });
+    fails(S.DayRead, { date: CUTOFF, zips: ["SAMPLE.zip"], ok: true });
+    const ghsa = { commit: null, head_date: null, months: ["2026/07"], tree_sha256: SHA, advisories: 0 };
+    expect(problems(S.CollectInputsFile, { ...collectInputs, ghsa })).toEqual([]);
+    fails(S.CollectInputsFile, { ...collectInputs, ghsa: { ...ghsa, months: ["2026-07"] } });
+    fails(S.FeedIndexEntry, { ...feedIndexEntry, label: "ok" });
+    expect(S.FeedState.options).toEqual([...V.FEED_STATUS]);
+  });
+
   it("config: regions in order, home-only rules, whole-day lookbacks, home vendor country only for TW and JP", () => {
     const regions = (TOP_LEVEL.find(([n]) => n === "RegionsFile")![2]) as Record<string, unknown>;
     fails(S.RegionsFile, { ...regions, regions: V.LEVELLED_REGIONS.map(regionDef).reverse() });
@@ -329,8 +408,10 @@ describe("schema-level constraints", () => {
   it("registry: every key written out; search entries take a query, never a URL", () => {
     const { fallback_url: _f, ...noFallback } = fetched;
     const { must_match: _m, ...noMustMatch } = fetched;
+    const { date_zone: _z, ...noDateZone } = fetched;
     fails(S.FeedEntry, noFallback);
     fails(S.FeedEntry, noMustMatch);
+    fails(S.FeedEntry, noDateZone);
     fails(S.FeedEntry, { ...fetched, url: "http://example.org/feed" });
     fails(S.FeedEntry, { ...search, url: "https://example.org/" });
     fails(S.SourcesFile, { schema_version: 1, keywords: ["only one"], feeds: [] });

@@ -1,6 +1,9 @@
-# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalises it with
-# `npm run sources:check` and drops or replaces any entry that fails. Entries marked "unverified" have
-# no confirmed path yet (SPEC §4.13 "Verify in P2").
+# Source registry (SPEC §4.13). Drafted in the Foundation PR; P2 finalised it on Kobol's reads of
+# 2026-11-09 (the curl read of every URL and P2 session 1's `npm run sources:check`). MyJVN, the Anthropic
+# dashboard, iThome, Focus Taiwan, NHK, the Google Threat Intelligence blog, Google's security blog, BSI and
+# the CISA advisories moved to the paths that answer; TPEx and CISA's alerts joined; the MSRC blog (no feed)
+# left. iThome's zone-less dates are Taipei time (date_zone). Google's security blog moved to
+# blog.google/security (session 2, 2026-11-10: the feedburner feed stopped at 2026-04-23).
 schema_version: 1
 keywords:            # ranking boosts and filters for news items; any language; case-insensitive
   - zero-day
@@ -62,6 +65,7 @@ feeds:
     priority: 1
     fresh_days: 7
     must_match: false
+    date_zone: null
   - id: cvelist
     name: CVE List V5 (CVEProject/cvelistV5)
     kind: cvelist
@@ -73,6 +77,7 @@ feeds:
     priority: 1
     fresh_days: 1
     must_match: false
+    date_zone: null
   - id: epss
     name: FIRST EPSS daily scores
     kind: epss
@@ -84,6 +89,7 @@ feeds:
     priority: 1
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: ghsa
     name: GitHub Advisory Database (reviewed advisories)
     kind: ghsa
@@ -95,6 +101,7 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: nvd
     name: NVD CVE API 2.0 (keyless)
     kind: nvd
@@ -106,10 +113,11 @@ feeds:
     priority: 3
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: myjvn
     name: MyJVN (JVN iPedia)
     kind: myjvn
-    url: https://jvndb.jvn.jp/myjvn?method=getVulnOverviewList&feed=hnd&rangeDatePublic=w&maxCountItem=50&startItem=1
+    url: https://jvndb.jvn.jp/ja/rss/jvndb_new.rdf
     fallback_url: null
     language: ja
     region: JP
@@ -117,10 +125,11 @@ feeds:
     priority: 2
     fresh_days: 7
     must_match: false
+    date_zone: null
   - id: anthropic-cvd
     name: Anthropic coordinated disclosure dashboard
     kind: anthropic-cvd
-    url: https://red.anthropic.com/
+    url: https://red.anthropic.com/2026/cvd/
     fallback_url: null
     language: en
     region: GLOBAL
@@ -128,6 +137,7 @@ feeds:
     priority: 2
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: exchange-tw
     name: TWSE material information (open data)
     kind: exchange
@@ -139,6 +149,19 @@ feeds:
     priority: 2
     fresh_days: 3
     must_match: false
+    date_zone: null
+  - id: exchange-tpex
+    name: TPEx material information (open data)
+    kind: exchange
+    url: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
+    fallback_url: null
+    language: zh-Hant-TW
+    region: TW
+    coverage: [breaches, taiwan]
+    priority: 2
+    fresh_days: 3
+    must_match: false
+    date_zone: null
   # ── Global and US newsrooms and research ──────────────────────────────────────────────────────────
   - id: therecord
     name: The Record
@@ -151,6 +174,7 @@ feeds:
     priority: 1
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: bleepingcomputer
     name: BleepingComputer
     kind: rss
@@ -162,6 +186,7 @@ feeds:
     priority: 1
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: securityweek
     name: SecurityWeek
     kind: rss
@@ -173,6 +198,7 @@ feeds:
     priority: 1
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: krebs
     name: Krebs on Security
     kind: rss
@@ -184,6 +210,7 @@ feeds:
     priority: 2
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: thehackernews
     name: The Hacker News
     kind: rss
@@ -195,6 +222,7 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: techcrunch-security
     name: TechCrunch Security
     kind: rss
@@ -206,10 +234,23 @@ feeds:
     priority: 2
     fresh_days: 3
     must_match: false
+    date_zone: null
   - id: cisa-advisories
     name: CISA cybersecurity advisories
     kind: rss
-    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    url: https://www.cisa.gov/cybersecurity-advisories/cybersecurity-advisories.xml
+    fallback_url: null
+    language: en
+    region: US
+    coverage: [exploits, policy]
+    priority: 1
+    fresh_days: 60                                # joint advisories, about monthly (all.xml was 5.7 MB, over the RSS cap)
+    must_match: false
+    date_zone: null
+  - id: cisa-alerts
+    name: CISA alerts
+    kind: rss
+    url: https://www.cisa.gov/cybersecurity-advisories/alerts.xml
     fallback_url: null
     language: en
     region: US
@@ -217,10 +258,11 @@ feeds:
     priority: 1
     fresh_days: 7
     must_match: false
+    date_zone: null
   - id: gtig
-    name: Google Threat Intelligence blog (unverified)
+    name: Google Threat Intelligence blog
     kind: rss
-    url: https://cloud.google.com/blog/topics/threat-intelligence/rss/
+    url: https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/
     fallback_url: null
     language: en
     region: GLOBAL
@@ -228,6 +270,7 @@ feeds:
     priority: 2
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: msft-security
     name: Microsoft Security blog
     kind: rss
@@ -239,17 +282,7 @@ feeds:
     priority: 2
     fresh_days: 14
     must_match: false
-  - id: msrc
-    name: Microsoft Security Response Center blog
-    kind: rss
-    url: https://msrc.microsoft.com/blog/feed
-    fallback_url: null
-    language: en
-    region: GLOBAL
-    coverage: [exploits]
-    priority: 2
-    fresh_days: 30
-    must_match: false
+    date_zone: null
   - id: unit42
     name: Palo Alto Networks Unit 42
     kind: rss
@@ -261,6 +294,7 @@ feeds:
     priority: 2
     fresh_days: 14
     must_match: false
+    date_zone: null
   - id: volexity
     name: Volexity
     kind: rss
@@ -272,6 +306,7 @@ feeds:
     priority: 3
     fresh_days: 60
     must_match: false
+    date_zone: null
   - id: project-zero
     name: Google Project Zero
     kind: rss
@@ -283,10 +318,11 @@ feeds:
     priority: 3
     fresh_days: 90
     must_match: false
+    date_zone: null
   - id: google-security
-    name: Google Online Security Blog
+    name: Google Security Blog
     kind: rss
-    url: https://security.googleblog.com/feeds/posts/default
+    url: https://blog.google/security/rss/
     fallback_url: null
     language: en
     region: GLOBAL
@@ -294,6 +330,7 @@ feeds:
     priority: 3
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: openai-news
     name: OpenAI news
     kind: rss
@@ -305,6 +342,7 @@ feeds:
     priority: 3
     fresh_days: 14
     must_match: true
+    date_zone: null
   # ── Europe ────────────────────────────────────────────────────────────────────────────────────────
   - id: ncsc-uk
     name: NCSC UK
@@ -317,8 +355,9 @@ feeds:
     priority: 1
     fresh_days: 14
     must_match: false
+    date_zone: null
   - id: cert-eu
-    name: CERT-EU security advisories (unverified)
+    name: CERT-EU security advisories
     kind: rss
     url: https://cert.europa.eu/publications/security-advisories-rss
     fallback_url: null
@@ -326,12 +365,13 @@ feeds:
     region: EU
     coverage: [exploits, policy]
     priority: 2
-    fresh_days: 14
+    fresh_days: 30                                # publishes rarely: the newest was 16 days old on 2026-11-09
     must_match: false
+    date_zone: null
   - id: bsi
-    name: BSI news
+    name: BSI press and events
     kind: rss
-    url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml
+    url: https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml
     fallback_url: null
     language: de
     region: EU
@@ -339,6 +379,7 @@ feeds:
     priority: 2
     fresh_days: 14
     must_match: false
+    date_zone: null
   - id: cert-fr
     name: CERT-FR
     kind: rss
@@ -350,6 +391,7 @@ feeds:
     priority: 2
     fresh_days: 7
     must_match: false
+    date_zone: null
   # ── Taiwan ────────────────────────────────────────────────────────────────────────────────────────
   - id: twcert-tvn
     name: TWCERT/CC vulnerability notes (TVN)
@@ -362,10 +404,11 @@ feeds:
     priority: 1
     fresh_days: 14
     must_match: false
+    date_zone: null
   - id: focustaiwan
-    name: Focus Taiwan (CNA English) (unverified)
+    name: Focus Taiwan (CNA English)
     kind: rss
-    url: https://focustaiwan.tw/rss/aall.xml
+    url: https://feeds.feedburner.com/rsscna/engnews/
     fallback_url: null
     language: en
     region: TW
@@ -373,6 +416,7 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: true
+    date_zone: null
   - id: taipeitimes
     name: Taipei Times
     kind: rss
@@ -384,8 +428,9 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: true
+    date_zone: null
   - id: cna
-    name: Central News Agency 中央社 (unverified)
+    name: Central News Agency 中央社
     kind: rss
     url: https://feeds.feedburner.com/rsscna/technology
     fallback_url: null
@@ -395,10 +440,11 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: true
+    date_zone: null
   - id: ithome-security
-    name: iThome 資安 (unverified)
+    name: iThome 資安
     kind: rss
-    url: https://www.ithome.com.tw/rss
+    url: https://www.ithome.com.tw/rss/security
     fallback_url: null
     language: zh-Hant-TW
     region: TW
@@ -406,6 +452,7 @@ feeds:
     priority: 1
     fresh_days: 2
     must_match: false
+    date_zone: "+08:00"                           # zone-less "YYYY-MM-DD HH:mm" dates, no channel date: Taipei time (Kobol 2026-11-09)
   # ── Japan ─────────────────────────────────────────────────────────────────────────────────────────
   - id: jpcert
     name: JPCERT/CC
@@ -418,8 +465,9 @@ feeds:
     priority: 1
     fresh_days: 14                                # 注意喚起 pages under /at/ are alerts through regions.json alert_patterns (§5.11)
     must_match: false
+    date_zone: null
   - id: ipa
-    name: IPA security alerts (unverified)
+    name: IPA security alerts
     kind: rss
     url: https://www.ipa.go.jp/security/alert-rss.rdf
     fallback_url: null
@@ -429,6 +477,7 @@ feeds:
     priority: 2
     fresh_days: 30
     must_match: false
+    date_zone: null
   - id: security-next
     name: Security NEXT
     kind: rss
@@ -440,10 +489,11 @@ feeds:
     priority: 2
     fresh_days: 2
     must_match: false
+    date_zone: null
   - id: nhk
     name: NHK News
     kind: rss
-    url: https://www3.nhk.or.jp/rss/news/cat0.xml
+    url: https://www.nhk.or.jp/rss/news/cat0.xml
     fallback_url: null
     language: ja
     region: JP
@@ -451,6 +501,7 @@ feeds:
     priority: 2
     fresh_days: 1
     must_match: true                              # keep only items that hit a keyword
+    date_zone: null
   # ── Searches the agent runs (never fetched by collect) ────────────────────────────────────────────
   - id: q-reuters
     name: Reuters (search)

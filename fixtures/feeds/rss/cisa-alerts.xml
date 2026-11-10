@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="https://www.cisa.gov/ct-sample/home" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>SAMPLE title 1</title>
+    <link>https://www.cisa.gov/ct-sample/home</link>
+    <description>SAMPLE text 8</description>
+    <language>en</language>
+    
+    <item>
+  <title>SAMPLE title 2 known exploited vulnerability</title>
+  <link>https://www.cisa.gov/ct-sample/item-1</link>
+  <description>SAMPLE text 9 known exploited vulnerability vulnerabilities CVE-2026-19868</description>
+  <pubDate>Fri, 06 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25756</guid>
+    </item>
+<item>
+  <title>SAMPLE title 3 known exploited vulnerability</title>
+  <link>https://www.cisa.gov/ct-sample/item-2</link>
+  <description>SAMPLE text 10 known exploited vulnerability vulnerabilities CVE-2024-27834</description>
+  <pubDate>Wed, 04 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25749</guid>
+    </item>
+<item>
+  <title>SAMPLE title 4 known exploited vulnerability</title>
+  <link>https://www.cisa.gov/ct-sample/item-3</link>
+  <description>SAMPLE text 11 known exploited vulnerability vulnerabilities CVE-2026-119977</description>
+  <pubDate>Tue, 03 Nov 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25747</guid>
+    </item>
+<item>
+  <title>SAMPLE title 5 known exploited vulnerabilities</title>
+  <link>https://www.cisa.gov/ct-sample/item-4</link>
+  <description>SAMPLE text 12 known exploited vulnerability vulnerabilities CVE-2026-111357 CVE-2026-118527</description>
+  <pubDate>Fri, 30 Oct 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25738</guid>
+    </item>
+<item>
+  <title>SAMPLE title 6 known exploited vulnerabilities</title>
+  <link>https://www.cisa.gov/ct-sample/item-5</link>
+  <description>SAMPLE text 13 known exploited vulnerability vulnerabilities CVE-2026-76418 CVE-2026-97229</description>
+  <pubDate>Thu, 29 Oct 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25735</guid>
+    </item>
+<item>
+  <title>SAMPLE title 7 known exploited vulnerabilities</title>
+  <link>https://www.cisa.gov/ct-sample/item-6</link>
+  <description>SAMPLE text 14 known exploited vulnerability vulnerabilities CVE-2026-41709 CVE-2026-46300</description>
+  <pubDate>Wed, 28 Oct 26 12:00:00 +0000</pubDate>
+    <dc:creator>SAMPLE Author</dc:creator>
+    <guid isPermaLink="false">/node/25727</guid>
+    </item>
+</channel>
+</rss>

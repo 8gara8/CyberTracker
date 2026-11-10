@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.4.0",
+  "id": "GHSA-2f8c-wq4h-r7jm",
+  "modified": "2026-10-13T16:42:11Z",
+  "published": "2026-10-13T16:42:10Z",
+  "aliases": [
+    "CVE-2026-107460"
+  ],
+  "summary": "SAMPLE: Apache Fesod UrlImageConverter SSRF protection can be bypassed",
+  "details": "SAMPLE details, invented for the fixture. The image converter's address check can be bypassed. No fixed version is listed.",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.apache.fesod:fesod-sheet"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "last_affected": "2.0.2-incubating"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-107460"
+    },
+    {
+      "type": "WEB",
+      "url": "https://example.com/ct-sample/ghsa-2f8c-wq4h-r7jm"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://example.org/ct-sample/org.apache.fesod-fesod-sheet"
+    }
+  ],
+  "database_specific": {
+    "cwe_ids": [
+      "CWE-918"
+    ],
+    "severity": "CRITICAL",
+    "github_reviewed": true,
+    "github_reviewed_at": "2026-10-13T16:42:11Z",
+    "nvd_published_at": "2026-10-13T15:15:43Z"
+  }
+}

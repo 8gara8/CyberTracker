@@ -10,7 +10,7 @@ import { severityAtLeast } from "./items";
 import { sanitize } from "./sanitize";
 import type { Item, RegionRaise } from "./schema";
 import type { Brief, RegionRow, RegionSignal, Regions } from "./schema/brief";
-import type { DraftSource, Source } from "./schema/common";
+import type { DraftSource, RegionCode, Source } from "./schema/common";
 import type { RegionDef, RegionRule, RegionsFile, SourceTiersFile, VendorsFile } from "./schema/config";
 import type { KevIndexFile } from "./schema/metrics";
 import type { Pack } from "./schema/pack";
@@ -150,11 +150,30 @@ export const BASELINE_REASON = "No rule fired.";
 // ── Signals ──────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * A national CERT reporting exploitation (§5.11), case-insensitive: English "exploited in the wild",
- * "actively exploited", "being exploited", "exploitation has been observed"; Japanese 悪用 and 攻撃が確認;
- * Chinese 遭利用, 已被利用 and 攻擊活動.
+ * The Japanese half of CERT_EXPLOITATION_RE: 悪用 or 攻撃, then within the same sentence (at most 40
+ * characters, no 。！？ or line break) the first 確認 after it in an affirmative form: 確認されています,
+ * 確認されており, 確認しています, 確認しており, 確認されました, 確認しました, 確認された or 確認した. Kobol's
+ * read of 2026-11-09 (V12) found bare 悪用 matching conditional boilerplate (容易に悪用可能, 悪用が困難,
+ * 悪用された場合, 悪用されると), so neither word counts alone. A negative or conditional ending never counts:
+ * 確認されていません, 確認していない and 確認してください have no affirmative form, and the lookahead refuses
+ * 確認しておりません, 確認された場合, 確認したら, 確認した上で and the like. The gap may not hold 確認 itself, so
+ * "悪用は確認されていませんが、修正を確認しました" does not match on the second 確認. Nor may it hold a negated
+ * clause (ない, 無い, なかった or 無かった, then こと or の), so "悪用されていないことを確認しています" (no
+ * exploitation confirmed) does not match.
  */
-export const CERT_EXPLOITATION_RE = /exploited\s+in\s+the\s+wild|actively\s+exploited|being\s+exploited|exploitation\s+has\s+been\s+observed|悪用|攻撃が確認|遭利用|已被利用|攻擊活動/iu;
+const JA_EXPLOITATION =
+  "(?:悪用|攻撃)(?:(?!確認|(?:ない|無い|なかった|無かった)(?:こと|の))[^。！？!?\\r\\n]){0,40}確認(?:されています|されており|しています|しており|されました|しました|された|した)" +
+  "(?!ません|ず|場合|ら|い|か|時|とき|際|上)";
+
+/**
+ * A national CERT reporting exploitation (§5.11), case-insensitive: English "exploited in the wild",
+ * "actively exploited", "being exploited", "exploitation has been observed"; Japanese 悪用 or 攻撃 confirmed
+ * in an affirmative form (JA_EXPLOITATION above); Chinese 遭利用, 已被利用 and 攻擊活動.
+ */
+export const CERT_EXPLOITATION_RE = new RegExp(
+  `exploited\\s+in\\s+the\\s+wild|actively\\s+exploited|being\\s+exploited|exploitation\\s+has\\s+been\\s+observed|${JA_EXPLOITATION}|遭利用|已被利用|攻擊活動`,
+  "iu",
+);
 
 /** The KEV signals' publisher id (§5.11). */
 export const KEV_PUBLISHER = "cisa-kev";
@@ -192,6 +211,16 @@ function isAlertUrl(config: RegionsConfig, code: LevelledRegion, url: string): b
   return res.some((re) => re.test(norm));
 }
 
+/**
+ * The regions whose agencies include `publisher` and whose alert_patterns match `url`'s normalised form
+ * (§5.11), in regions.json order: what collect's PackItem.alert and JPCERT records' facts.alert are built
+ * from, and what collectSignals() reads for items and records alike (ruling R36). A newsroom quoting an
+ * alert page is not an agency, so its items never count.
+ */
+export function alertRegions(url: string, publisher: string, config: RegionsConfig): RegionCode[] {
+  return config.regions.regions.filter((r) => r.agencies.includes(publisher) && isAlertUrl(config, r.code, url)).map((r) => r.code);
+}
+
 /** A source or signal date as a Taipei calendar date: a timestamp converted, a bare date as written. */
 function taipeiDay(value: string): string | null {
   if (isValidDate(value)) return value;
@@ -219,9 +248,10 @@ export function compareSignalIds(a: string, b: string): number {
 
 /**
  * Today's region signals (§5.11), dated in [date − N_max, date]:
- * - `agency_alert`: every pack item whose publisher (publisherFor(), stamped by collect) is in a region's
- *   `agencies` and whose normalised URL matches one of that region's `alert_patterns`; Taipei date of
- *   `published_at`.
+ * - `agency_alert`: every pack item or record whose publisher (an item's as collect stamped it, a
+ *   record's from publisherFor() on its URL) is in a region's `agencies` and whose normalised URL matches
+ *   one of that region's `alert_patterns` (alertRegions(), ruling R36: JPCERT /at/ notes are records);
+ *   Taipei date of the item's `published_at` or the record's `date`.
  * - `home_vendor_kev`: every KEV entry with `dateAdded` in the span whose matchVendor() country is a
  *   region's `home_vendor_country`, all lags (the rule filters by lag); `dateAdded` (US date). Read from
  *   the catalog, or from kev-index.json when the catalog is null.
@@ -245,9 +275,10 @@ export function collectSignals(
   for (const it of pack?.items ?? []) {
     const d = taipeiDay(it.published_at);
     if (!inSpan(d)) continue;
+    const alerts = alertRegions(it.url, it.publisher, config);
     for (const r of config.regions.regions) {
       const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
-      if (r.agencies.includes(it.publisher) && isAlertUrl(config, r.code, it.url)) byType.agency_alert.push({ type: "agency_alert", ...base });
+      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
       if (r.certs.includes(it.publisher) && CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`))) {
         byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
       }
@@ -257,13 +288,12 @@ export function collectSignals(
     const d = taipeiDay(rec.date);
     if (!inSpan(d)) continue;
     const publisher = publisherFor(rec.url, "government", pubCfg).publisher;
-    if (!CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`))) continue;
+    const alerts = alertRegions(rec.url, publisher, config);
+    const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
     for (const r of config.regions.regions) {
-      if (!r.certs.includes(publisher)) continue;
-      byType.cert_exploitation.push({
-        type: "cert_exploitation", region: r.code, date: d, publisher, url: normalizeUrl(rec.url),
-        title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids],
-      });
+      const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
+      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
+      if (exploited && r.certs.includes(publisher)) byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
     }
   }
 

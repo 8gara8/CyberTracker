@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:rss="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:sec="http://jvn.jp/rss/mod_sec/3.0/" xmlns:marking="http://data-marking.mitre.org/Marking" xmlns:tlpMarking="http://data-marking.mitre.org/extensions/MarkingStructure#TLP" xmlns:status="http://jvndb.jvn.jp/myjvn/Status" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jvndb.jvn.jp/myjvn/Results https://jvndb.jvn.jp/schema/results_3.3.xsd">
+<channel rdf:about="https://jvndb.jvn.jp/apis/myjvn">
+<title>JVNDB 脆弱性対策情報</title>
+<link>https://jvndb.jvn.jp/apis/myjvn</link>
+<description>JVNDB 脆弱性対策情報</description>
+<dc:date>2026-10-14T05:37:12+09:00</dc:date>
+<dcterms:modified>2026-10-14T05:37:12+09:00</dcterms:modified>
+<sec:handling><marking:Marking><marking:Marking_Structure xsi:type="tlpMarking:TLPMarkingStructureType" marking_model_ref="http://www.us-cert.gov/tlp/" marking_model_name="TLP" color="WHITE"/></marking:Marking></sec:handling>
+<items><rdf:Seq>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012900.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012901.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012902.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012903.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012904.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012905.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012906.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012907.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012908.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012909.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012910.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012911.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012912.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012913.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012914.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012915.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012916.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012917.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012918.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012919.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012920.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012921.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012922.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012923.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012924.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012925.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012926.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012927.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012928.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012929.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012930.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012931.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012932.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012933.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012934.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012935.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012936.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012937.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012938.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012939.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012940.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012941.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012942.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012943.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012944.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012945.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012946.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012947.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012948.html"/>
+<rdf:li rdf:resource="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012949.html"/>
+</rdf:Seq></items>
+</channel>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012900.html">
+<title>SAMPLE 資産管理ソフトウェアにおける脆弱性 (架空の項目 1)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012900.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。 CVE-2026-101020</description>
+<sec:identifier>JVNDB-2026-012900</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012900">https://jvn.jp/vu/JVNVU90012900/</sec:references>
+<sec:references source="CVE" id="CVE-2026-101020">https://www.cve.org/CVERecord?id=CVE-2026-101020</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="5.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-12T05:00:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T05:00:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T05:00:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012901.html">
+<title>SAMPLE 産業用ルータにおける脆弱性 (架空の項目 2)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012901.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012901</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012901">https://jvn.jp/vu/JVNVU90012901/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T12:13:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T12:13:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T12:13:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012902.html">
+<title>SAMPLE ネットワークカメラにおける脆弱性 (架空の項目 3)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012902.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012902</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012902">https://jvn.jp/vu/JVNVU90012902/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T19:26:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T19:26:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T19:26:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012903.html">
+<title>SAMPLE 業務用プリンタにおける脆弱性 (架空の項目 4)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012903.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。 CVE-2026-78557</description>
+<sec:identifier>JVNDB-2026-012903</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012903">https://jvn.jp/vu/JVNVU90012903/</sec:references>
+<sec:references source="CVE" id="CVE-2026-78557">https://www.cve.org/CVERecord?id=CVE-2026-78557</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T26:39:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T26:39:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T26:39:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012904.html">
+<title>SAMPLE グループウェアにおける脆弱性 (架空の項目 5)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012904.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012904</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012904">https://jvn.jp/vu/JVNVU90012904/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="9.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T09:52:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T09:52:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T09:52:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012905.html">
+<title>SAMPLE VPN 装置における脆弱性 (架空の項目 6)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012905.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012905</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012905">https://jvn.jp/vu/JVNVU90012905/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T16:05:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T16:05:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T16:05:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012906.html">
+<title>SAMPLE NAS 製品における脆弱性 (架空の項目 7)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012906.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012906</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012906">https://jvn.jp/vu/JVNVU90012906/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T23:18:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T23:18:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T23:18:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012907.html">
+<title>SAMPLE ファイアウォールにおける脆弱性 (架空の項目 8)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012907.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。 CVE-2026-104935 CVE-2026-96951</description>
+<sec:identifier>JVNDB-2026-012907</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012907">https://jvn.jp/vu/JVNVU90012907/</sec:references>
+<sec:references source="CVE" id="CVE-2026-104935">https://www.cve.org/CVERecord?id=CVE-2026-104935</sec:references>
+<sec:references source="CVE" id="CVE-2026-96951">https://www.cve.org/CVERecord?id=CVE-2026-96951</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T06:31:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T06:31:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T06:31:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012908.html">
+<title>SAMPLE 無線 LAN ルータにおける脆弱性 (架空の項目 9)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012908.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012908</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012908">https://jvn.jp/vu/JVNVU90012908/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="8.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T13:44:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T13:44:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T13:44:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012909.html">
+<title>SAMPLE ウェブサーバにおける脆弱性 (架空の項目 10)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012909.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012909</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012909">https://jvn.jp/vu/JVNVU90012909/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T20:57:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T20:57:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T20:57:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012910.html">
+<title>SAMPLE 資産管理ソフトウェアにおける脆弱性 (架空の項目 11)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012910.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012910</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012910">https://jvn.jp/vu/JVNVU90012910/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T27:10:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T27:10:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T27:10:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012911.html">
+<title>SAMPLE 産業用ルータにおける脆弱性 (架空の項目 12)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012911.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012911</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012911">https://jvn.jp/vu/JVNVU90012911/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T10:23:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T10:23:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T10:23:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012912.html">
+<title>SAMPLE ネットワークカメラにおける脆弱性 (架空の項目 13)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012912.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012912</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012912">https://jvn.jp/vu/JVNVU90012912/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="7.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-12T17:36:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T17:36:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T17:36:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012913.html">
+<title>SAMPLE 業務用プリンタにおける脆弱性 (架空の項目 14)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012913.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012913</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012913">https://jvn.jp/vu/JVNVU90012913/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T24:49:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T24:49:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T24:49:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012914.html">
+<title>SAMPLE グループウェアにおける脆弱性 (架空の項目 15)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012914.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012914</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012914">https://jvn.jp/vu/JVNVU90012914/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T07:02:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T07:02:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T07:02:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012915.html">
+<title>SAMPLE VPN 装置における脆弱性 (架空の項目 16)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012915.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012915</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012915">https://jvn.jp/vu/JVNVU90012915/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T14:15:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T14:15:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T14:15:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012916.html">
+<title>SAMPLE NAS 製品における脆弱性 (架空の項目 17)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012916.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012916</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012916">https://jvn.jp/vu/JVNVU90012916/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="6.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T21:28:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T21:28:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T21:28:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012917.html">
+<title>SAMPLE ファイアウォールにおける脆弱性 (架空の項目 18)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012917.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012917</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012917">https://jvn.jp/vu/JVNVU90012917/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T28:41:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T28:41:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T28:41:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012918.html">
+<title>SAMPLE 無線 LAN ルータにおける脆弱性 (架空の項目 19)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012918.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012918</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012918">https://jvn.jp/vu/JVNVU90012918/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T11:54:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T11:54:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T11:54:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012919.html">
+<title>SAMPLE ウェブサーバにおける脆弱性 (架空の項目 20)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012919.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012919</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012919">https://jvn.jp/vu/JVNVU90012919/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T18:07:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T18:07:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T18:07:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012920.html">
+<title>SAMPLE 資産管理ソフトウェアにおける脆弱性 (架空の項目 21)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012920.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012920</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012920">https://jvn.jp/vu/JVNVU90012920/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="5.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T25:20:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T25:20:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T25:20:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012921.html">
+<title>SAMPLE 産業用ルータにおける脆弱性 (架空の項目 22)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012921.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012921</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012921">https://jvn.jp/vu/JVNVU90012921/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T08:33:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T08:33:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T08:33:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012922.html">
+<title>SAMPLE ネットワークカメラにおける脆弱性 (架空の項目 23)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012922.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012922</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012922">https://jvn.jp/vu/JVNVU90012922/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T15:46:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T15:46:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T15:46:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012923.html">
+<title>SAMPLE 業務用プリンタにおける脆弱性 (架空の項目 24)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012923.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012923</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012923">https://jvn.jp/vu/JVNVU90012923/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T22:59:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T22:59:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T22:59:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012924.html">
+<title>SAMPLE グループウェアにおける脆弱性 (架空の項目 25)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012924.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012924</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012924">https://jvn.jp/vu/JVNVU90012924/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="9.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-12T05:12:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T05:12:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T05:12:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012925.html">
+<title>SAMPLE VPN 装置における脆弱性 (架空の項目 26)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012925.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012925</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012925">https://jvn.jp/vu/JVNVU90012925/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T12:25:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T12:25:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T12:25:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012926.html">
+<title>SAMPLE NAS 製品における脆弱性 (架空の項目 27)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012926.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012926</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012926">https://jvn.jp/vu/JVNVU90012926/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T19:38:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T19:38:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T19:38:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012927.html">
+<title>SAMPLE ファイアウォールにおける脆弱性 (架空の項目 28)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012927.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012927</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012927">https://jvn.jp/vu/JVNVU90012927/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T26:51:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T26:51:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T26:51:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012928.html">
+<title>SAMPLE 無線 LAN ルータにおける脆弱性 (架空の項目 29)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012928.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012928</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012928">https://jvn.jp/vu/JVNVU90012928/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="8.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T09:04:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T09:04:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T09:04:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012929.html">
+<title>SAMPLE ウェブサーバにおける脆弱性 (架空の項目 30)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012929.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012929</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012929">https://jvn.jp/vu/JVNVU90012929/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T16:17:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T16:17:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T16:17:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012930.html">
+<title>SAMPLE 資産管理ソフトウェアにおける脆弱性 (架空の項目 31)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012930.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012930</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012930">https://jvn.jp/vu/JVNVU90012930/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T23:30:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T23:30:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T23:30:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012931.html">
+<title>SAMPLE 産業用ルータにおける脆弱性 (架空の項目 32)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012931.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012931</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012931">https://jvn.jp/vu/JVNVU90012931/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T06:43:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T06:43:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T06:43:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012932.html">
+<title>SAMPLE ネットワークカメラにおける脆弱性 (架空の項目 33)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012932.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012932</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012932">https://jvn.jp/vu/JVNVU90012932/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="7.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T13:56:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T13:56:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T13:56:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012933.html">
+<title>SAMPLE 業務用プリンタにおける脆弱性 (架空の項目 34)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012933.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012933</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012933">https://jvn.jp/vu/JVNVU90012933/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T20:09:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T20:09:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T20:09:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012934.html">
+<title>SAMPLE グループウェアにおける脆弱性 (架空の項目 35)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012934.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012934</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012934">https://jvn.jp/vu/JVNVU90012934/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T27:22:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T27:22:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T27:22:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012935.html">
+<title>SAMPLE VPN 装置における脆弱性 (架空の項目 36)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012935.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012935</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012935">https://jvn.jp/vu/JVNVU90012935/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T10:35:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T10:35:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T10:35:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012936.html">
+<title>SAMPLE NAS 製品における脆弱性 (架空の項目 37)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012936.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012936</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012936">https://jvn.jp/vu/JVNVU90012936/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="6.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-12T17:48:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T17:48:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T17:48:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012937.html">
+<title>SAMPLE ファイアウォールにおける脆弱性 (架空の項目 38)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012937.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012937</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012937">https://jvn.jp/vu/JVNVU90012937/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T24:01:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T24:01:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T24:01:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012938.html">
+<title>SAMPLE 無線 LAN ルータにおける脆弱性 (架空の項目 39)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012938.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012938</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012938">https://jvn.jp/vu/JVNVU90012938/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T07:14:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T07:14:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T07:14:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012939.html">
+<title>SAMPLE ウェブサーバにおける脆弱性 (架空の項目 40)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012939.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012939</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012939">https://jvn.jp/vu/JVNVU90012939/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T14:27:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T14:27:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T14:27:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012940.html">
+<title>SAMPLE 資産管理ソフトウェアにおける脆弱性 (架空の項目 41)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012940.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012940</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012940">https://jvn.jp/vu/JVNVU90012940/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="5.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T21:40:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T21:40:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T21:40:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012941.html">
+<title>SAMPLE 産業用ルータにおける脆弱性 (架空の項目 42)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012941.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012941</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012941">https://jvn.jp/vu/JVNVU90012941/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T28:53:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T28:53:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T28:53:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012942.html">
+<title>SAMPLE ネットワークカメラにおける脆弱性 (架空の項目 43)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012942.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012942</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012942">https://jvn.jp/vu/JVNVU90012942/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T11:06:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T11:06:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T11:06:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012943.html">
+<title>SAMPLE 業務用プリンタにおける脆弱性 (架空の項目 44)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012943.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012943</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012943">https://jvn.jp/vu/JVNVU90012943/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T18:19:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T18:19:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T18:19:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012944.html">
+<title>SAMPLE グループウェアにおける脆弱性 (架空の項目 45)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012944.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012944</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012944">https://jvn.jp/vu/JVNVU90012944/</sec:references>
+<sec:cvss score="6.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="9.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-13T25:32:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T25:32:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T25:32:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012945.html">
+<title>SAMPLE VPN 装置における脆弱性 (架空の項目 46)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012945.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012945</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012945">https://jvn.jp/vu/JVNVU90012945/</sec:references>
+<sec:cvss score="7.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-12T08:45:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T08:45:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T08:45:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012946.html">
+<title>SAMPLE NAS 製品における脆弱性 (架空の項目 47)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012946.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012946</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012946">https://jvn.jp/vu/JVNVU90012946/</sec:references>
+<sec:cvss score="8.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T15:58:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T15:58:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T15:58:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012947.html">
+<title>SAMPLE ファイアウォールにおける脆弱性 (架空の項目 48)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012947.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012947</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012947">https://jvn.jp/vu/JVNVU90012947/</sec:references>
+<sec:cvss score="9.3" severity="High" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T22:11:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T22:11:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T22:11:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012948.html">
+<title>SAMPLE 無線 LAN ルータにおける脆弱性 (架空の項目 49)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012948.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012948</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012948">https://jvn.jp/vu/JVNVU90012948/</sec:references>
+<sec:cvss score="4.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<sec:cvss score="8.1" severity="High" vector="CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N" version="4.0" type="Base"/>
+<dc:date>2026-10-12T05:24:00+09:00</dc:date>
+<dcterms:issued>2026-10-12T05:24:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-12T05:24:00+09:00</dcterms:modified>
+</item>
+<item rdf:about="https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012949.html">
+<title>SAMPLE ウェブサーバにおける脆弱性 (架空の項目 50)</title>
+<link>https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-012949.html</link>
+<description>SAMPLE: 試験用に作成した架空の説明です。</description>
+<sec:identifier>JVNDB-2026-012949</sec:identifier>
+<sec:references source="JVN" id="JVNVU#90012949">https://jvn.jp/vu/JVNVU90012949/</sec:references>
+<sec:cvss score="5.3" severity="Medium" vector="CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N" version="3.0" type="Base"/>
+<dc:date>2026-10-13T12:37:00+09:00</dc:date>
+<dcterms:issued>2026-10-13T12:37:00+09:00</dcterms:issued>
+<dcterms:modified>2026-10-13T12:37:00+09:00</dcterms:modified>
+</item>
+<status:Status version="3.3" method="getVulnOverviewList" lang="ja" retCd="0" retMax="50" errCd="" errMsg="" totalRes="60" totalResRet="50" firstRes="1" feed="hnd" startItem="1" maxCountItem="50" rangeDatePublic="w" rangeDatePublished="n" rangeDateFirstPublished="n"/>
+</rdf:RDF>

@@ -1,0 +1,57 @@
+<rss version="2.0">
+    <channel>
+        <title>SAMPLE title 1</title>
+        <link>https://cert.europa.eu/ct-sample/security-advisories</link>
+        <description>SAMPLE text 8</description>
+        <ttl>1440</ttl>
+        <language>en-gb</language>
+        <item>
+            <title>SAMPLE title 2 vulnerabilities</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-018
+            </link>
+            <description>SAMPLE text 9 vulnerability vulnerabilities remote code execution</description>
+            <pubDate>Fri, 23 Oct 2026 16:36:26 CEST</pubDate>
+            <guid>security-advisories-10955</guid>
+        </item><item>
+            <title>SAMPLE title 3 vulnerability</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-019
+            </link>
+            <description>SAMPLE text 10 vulnerabilities</description>
+            <pubDate>Thu, 22 Oct 2026 11:14:22 CEST</pubDate>
+            <guid>security-advisories-10956</guid>
+        </item><item>
+            <title>SAMPLE title 4 vulnerability</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-017
+            </link>
+            <description>SAMPLE text 11 vulnerability malware</description>
+            <pubDate>Thu, 15 Oct 2026 11:38:20 CEST</pubDate>
+            <guid>security-advisories-10954</guid>
+        </item><item>
+            <title>SAMPLE title 5 vulnerability</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-016
+            </link>
+            <description>SAMPLE text 12 vulnerability</description>
+            <pubDate>Mon, 12 Oct 2026 14:57:02 CEST</pubDate>
+            <guid>security-advisories-10953</guid>
+        </item><item>
+            <title>SAMPLE title 6 vulnerability</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-015
+            </link>
+            <description>SAMPLE text 13 vulnerability</description>
+            <pubDate>Wed, 07 Oct 2026 09:52:48 CEST</pubDate>
+            <guid>security-advisories-10952</guid>
+        </item><item>
+            <title>SAMPLE title 7 vulnerabilities</title>
+            <link>
+                https://cert.europa.eu/ct-sample/2026-014
+            </link>
+            <description>SAMPLE text 14 vulnerabilities remote code execution</description>
+            <pubDate>Sun, 27 Sep 2026 19:40:52 CEST</pubDate>
+            <guid>security-advisories-10951</guid>
+        </item></channel>
+</rss>

@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-09 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-10 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -42,9 +42,22 @@ faster?
   CyberTracker on Kobol the EuropeTracker way (design v0.3). SPEC v2.0 replaces v1.0 at about half
   its length. The two cloud tasks were deleted; the content repo and the `cybertracker-run` cloud
   environment are retired and unused.
-- **2026-11-09:** JL merged the Foundation PR #2 at 07:37 Taipei (23:37 UTC on 2026-11-08). P1 is
-  built on `p1-contract`, PR #3, with the seed configs in `config/`, the validator and its rules, the
-  fixtures and the chat edition. The spec changes it needed are §0.4 rows 7 to 30.
+- **2026-11-09:** JL merged the Foundation PR #2 at 07:37 Taipei (23:37 UTC on 2026-11-08) and the P1
+  PR #3 at 17:19 Taipei (09:19 UTC; `main` at `a5c183c`): the seed configs in `config/`, the validator
+  and its rules, the fixtures and the chat edition, with the spec changes in §0.4 rows 7 to 30.
+- **P2 on `p2-feeds-metrics`, done and in review (2026-11-10):** feeds, collect, rank, metrics, the
+  backfill, Appendix D and their tests, built in the cloud container; the review's 30 findings fixed
+  there (§0.4 rows 44 to 63). Kobol sessions 1 and 2a (2026-11-09) read every feed, made the Verify reads
+  and passed `--check-reference` from a fresh clone. Session 2 (2026-11-10, 01:39 to 01:52 Taipei) ran
+  the milestone: the final `sources:check`, the recaptures, collect for 2026-11-10 and two byte-identical
+  builds into `content/` at CVE List `658a966`, cutoff 2026-11-08. Then the scrubber's attribute and Open
+  Graph gaps were fixed, `google-security` moved to blog.google/security, and e-mail addresses were kept
+  out of `content/state/credit-candidates.json` (sessions 2c and 2d rebuilt it); §0.4 row 64. A Linux
+  rebuild gave the same state hashes. Report: `docs/reports/2026-11-10-p2-backfill.md`. The 26-week
+  Window shows no clear change against 2023 to 2024 (37% exploited at disclosure, median 17 days against
+  21) while the 13-week volume is 5.3 times the reference. After JL merges: fast-forward the main
+  checkout (rule 4), then remove the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics`
+  (its 4.8G `cache/cvelistV5` goes with it; P3 clones again if it needs one).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -63,8 +76,8 @@ faster?
 |---|---|---|---|
 | Spec v1.0 | `spec` | #1 | Merged 2026-11-08 |
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
-| P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Open |
-| P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | | Not started |
+| P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
+| P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | In review |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | | Not started |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
@@ -146,7 +159,11 @@ faster?
 | Rebuild fixtures | `npm run fixtures:gen` writes every fixture from `fixtures/src/` and validates them; `npm run fixtures:check` compares without writing (from P1) |
 | Draft JSON Schema | `npm run schema:gen` writes `routine/schema/draft-brief.schema.json`; `npm run schema:check` compares it (from P1) |
 | Chat edition for a date | `npm run chat -- --date D` prints D's chat edition from `content/` alone; prefix `CT_CONTENT_DIR=fixtures/site-content` for the sample (from P1) |
-| Check feeds | `npm run sources:check` (from P2) |
+| Collect a day's feeds | `npm run collect -- --date D` writes `packs/D.json`, `packs/D.md`, the candidates files and `cache/feeds/` (the morning's stage 2; from P2) |
+| Check feeds | `npm run sources:check` prints the table of every feed (`-- --id ID` for one, `-- --json` for rows) and keeps its bodies in `cache/check/`, never in collect's `cache/feeds/`; exit 1 on a priority-1 problem (from P2) |
+| Capture a feed fixture | After `sources:check`: `npm exec -- tsx fixtures/src/scrub-feed.ts <kind> cache/check/feeds/<file> fixtures/feeds/rss/<registry id>.xml` (kinds in SPEC §4.12; live captures go to `fixtures/feeds/live/`); it refuses a feed with an unknown XML namespace or a link in another scheme. Read the output before committing it; `tests/fixture-safety.test.ts` and `tests/captures.test.ts` check it (from P2) |
+| Metrics for a date | `npm run metrics -- --date D` stages `metrics/D.json`, its inputs manifest and the changed state in `cache/staged/D/`; `-- --recompute` checks a committed file reproduces from `cache/`; `--out DIR` writes elsewhere (from P2) |
+| Backfill | `npm run backfill -- --check-reference` (Appendix D from `fixtures/reference/`, offline; add `--commit 67c39b124fe4a56018212b4e6f62bd078058e76c --kev-commit e5b3a9b25050a8da26c96266c5bfe438ee0bdebc --cutoff 2026-11-06` to check the clone too); after `npm run collect -- --date D`, `npm run backfill -- --out content` builds `content/state/` and D's metrics (P2 only, before go-live); `-- --catch-up` and `-- --credits` rebuild state, with `--push` after go-live (from P3). Needs 10 GiB free for the CVE List clone in `cache/cvelistV5` (SPEC §5.9, §8.4) |
 | Agent sandbox | `npm run agent:check` (P3, with the keychain token) |
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
 

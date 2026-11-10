@@ -162,7 +162,7 @@
           "note": null
         },
         {
-          "id": "therecord",
+          "id": "exchange-tpex",
           "status": "ok",
           "newest": "2026-10-08T18:56:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -171,7 +171,7 @@
           "note": null
         },
         {
-          "id": "bleepingcomputer",
+          "id": "therecord",
           "status": "ok",
           "newest": "2026-10-08T19:03:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -180,7 +180,7 @@
           "note": null
         },
         {
-          "id": "securityweek",
+          "id": "bleepingcomputer",
           "status": "ok",
           "newest": "2026-10-08T20:10:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -189,7 +189,7 @@
           "note": null
         },
         {
-          "id": "krebs",
+          "id": "securityweek",
           "status": "ok",
           "newest": "2026-10-08T21:17:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -198,7 +198,7 @@
           "note": null
         },
         {
-          "id": "thehackernews",
+          "id": "krebs",
           "status": "ok",
           "newest": "2026-10-08T22:24:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -207,7 +207,7 @@
           "note": null
         },
         {
-          "id": "techcrunch-security",
+          "id": "thehackernews",
           "status": "ok",
           "newest": "2026-10-08T23:31:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -216,7 +216,7 @@
           "note": null
         },
         {
-          "id": "cisa-advisories",
+          "id": "techcrunch-security",
           "status": "ok",
           "newest": "2026-10-08T17:38:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -225,7 +225,7 @@
           "note": null
         },
         {
-          "id": "gtig",
+          "id": "cisa-advisories",
           "status": "ok",
           "newest": "2026-10-08T18:45:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -234,7 +234,7 @@
           "note": null
         },
         {
-          "id": "msft-security",
+          "id": "cisa-alerts",
           "status": "ok",
           "newest": "2026-10-08T19:52:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -243,7 +243,7 @@
           "note": null
         },
         {
-          "id": "msrc",
+          "id": "gtig",
           "status": "ok",
           "newest": "2026-10-08T20:59:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -252,7 +252,7 @@
           "note": null
         },
         {
-          "id": "unit42",
+          "id": "msft-security",
           "status": "ok",
           "newest": "2026-10-08T21:06:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -261,7 +261,7 @@
           "note": null
         },
         {
-          "id": "volexity",
+          "id": "unit42",
           "status": "ok",
           "newest": "2026-10-08T22:13:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -270,7 +270,7 @@
           "note": null
         },
         {
-          "id": "project-zero",
+          "id": "volexity",
           "status": "ok",
           "newest": "2026-10-08T23:20:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -279,7 +279,7 @@
           "note": null
         },
         {
-          "id": "google-security",
+          "id": "project-zero",
           "status": "ok",
           "newest": "2026-10-08T17:27:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -288,7 +288,7 @@
           "note": null
         },
         {
-          "id": "openai-news",
+          "id": "google-security",
           "status": "ok",
           "newest": "2026-10-08T18:34:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -297,7 +297,7 @@
           "note": null
         },
         {
-          "id": "ncsc-uk",
+          "id": "openai-news",
           "status": "ok",
           "newest": "2026-10-08T19:41:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -306,7 +306,7 @@
           "note": null
         },
         {
-          "id": "cert-eu",
+          "id": "ncsc-uk",
           "status": "ok",
           "newest": "2026-10-08T20:48:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -315,7 +315,7 @@
           "note": null
         },
         {
-          "id": "bsi",
+          "id": "cert-eu",
           "status": "ok",
           "newest": "2026-10-08T21:55:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -324,7 +324,7 @@
           "note": null
         },
         {
-          "id": "cert-fr",
+          "id": "bsi",
           "status": "ok",
           "newest": "2026-10-08T22:02:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -333,7 +333,7 @@
           "note": null
         },
         {
-          "id": "twcert-tvn",
+          "id": "cert-fr",
           "status": "ok",
           "newest": "2026-10-08T23:09:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -342,7 +342,7 @@
           "note": null
         },
         {
-          "id": "focustaiwan",
+          "id": "twcert-tvn",
           "status": "ok",
           "newest": "2026-10-08T17:16:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -351,7 +351,7 @@
           "note": null
         },
         {
-          "id": "taipeitimes",
+          "id": "focustaiwan",
           "status": "ok",
           "newest": "2026-10-08T18:23:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -360,7 +360,7 @@
           "note": null
         },
         {
-          "id": "cna",
+          "id": "taipeitimes",
           "status": "ok",
           "newest": "2026-10-08T19:30:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -369,7 +369,7 @@
           "note": null
         },
         {
-          "id": "ithome-security",
+          "id": "cna",
           "status": "ok",
           "newest": "2026-10-08T20:37:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -378,7 +378,7 @@
           "note": null
         },
         {
-          "id": "jpcert",
+          "id": "ithome-security",
           "status": "ok",
           "newest": "2026-10-08T21:44:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -387,7 +387,7 @@
           "note": null
         },
         {
-          "id": "ipa",
+          "id": "jpcert",
           "status": "ok",
           "newest": "2026-10-08T22:51:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -396,7 +396,7 @@
           "note": null
         },
         {
-          "id": "security-next",
+          "id": "ipa",
           "status": "ok",
           "newest": "2026-10-08T23:58:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
@@ -405,12 +405,21 @@
           "note": null
         },
         {
-          "id": "nhk",
+          "id": "security-next",
           "status": "ok",
           "newest": "2026-10-08T17:05:00+08:00",
           "checked_at": "2026-10-09T04:41:05+08:00",
           "stale_since": null,
           "records": 17,
+          "note": null
+        },
+        {
+          "id": "nhk",
+          "status": "ok",
+          "newest": "2026-10-08T18:12:00+08:00",
+          "checked_at": "2026-10-09T04:41:05+08:00",
+          "stale_since": null,
+          "records": 18,
           "note": null
         },
         {

@@ -4,6 +4,7 @@
 
 import { matchVendor } from "../config";
 import { inRange, windowEnding } from "../dates";
+import { compareCveIds } from "../ids";
 import type { KevLine } from "../schema/brief";
 import type { VendorsFile } from "../schema/config";
 import type { HomeVendorKev, HomeVendorRow, Metrics } from "../schema/metrics";
@@ -64,19 +65,6 @@ export function homeVendorKev(
     };
   }
   return out;
-}
-
-/** CVE ids in numeric order: year, then sequence number ("CVE-2026-999" before "CVE-2026-1000"). */
-function compareCveIds(a: string, b: string): number {
-  const pa = /^CVE-(\d+)-(\d+)$/i.exec(a);
-  const pb = /^CVE-(\d+)-(\d+)$/i.exec(b);
-  if (pa && pb) {
-    const y = Number(pa[1]) - Number(pb[1]);
-    if (y !== 0) return y;
-    const s = Number(pa[2]) - Number(pb[2]);
-    if (s !== 0) return s;
-  }
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**

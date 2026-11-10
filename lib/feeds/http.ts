@@ -1,11 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// The fetch harness (SPEC §8.3): the only network call in collect, the snapshot fetcher, the link check
-// and probe.ts. GET only, at most 5 redirects (https only after the first hop), one retry after 2 s on
-// a timeout, a network error or a 5xx, a body cap, and errors reduced to a class. With CT_FIXTURE_FEEDS
-// set, every URL is answered from <dir>/index.json and an unknown URL is a `dns` error.
-// P0 lands fetchFeed() only; P2 adds the concurrency pool and the total cap.
+// The fetch harness (SPEC §8.3): the only HTTP call in collect, the snapshot fetcher and the link check
+// (git reads go through scripts/lib/git-source.ts). GET only, at most 5 redirects (https only after the
+// first hop), one retry after 2 s on a timeout, a network error or a 5xx, a body cap (or a cut at the cap
+// with `truncate`), an optional deadline, and errors reduced to a class. With CT_FIXTURE_FEEDS set, every
+// URL is answered from <dir>/index.json and an unknown URL is a `dns` error. Collect runs requests through
+// pool() (8 feeds, 16 per-id records at a time) under one fetchBudget() (240 s from the first request).
 
 export type FetchErrorClass = "timeout" | "dns" | "tls" | `http_${number}` | "too_large" | "redirects" | "network" | "parse" | "schema" | "empty";
 
@@ -16,6 +17,10 @@ export interface FetchOptions {
   userAgent?: string;
   /** Retry once after this delay on a timeout, network error or 5xx. 0 turns the retry off. */
   retryDelayMs?: number;
+  /** A body over `maxBytes` is cut there instead of failing `too_large` (snapshots and the link check, §8.3). P2 WP1. */
+  truncate?: boolean;
+  /** Epoch ms: each attempt's timeout is min(timeoutMs, deadline − now), and no attempt starts past it (`timeout`). P2 WP1. */
+  deadline?: number;
 }
 
 export interface FetchResult {
@@ -34,6 +39,19 @@ export interface FetchResult {
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
 export const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Per-request timeouts (§8.3): 15 s; 30 s for kev, nvd and each MyJVN page; 60 s per EPSS file; 90 s for deltaLog.json and each delta zip. */
+export const FEED_TIMEOUTS = { default: 15_000, kev: 30_000, nvd: 30_000, myjvn: 30_000, epss: 60_000, deltaLog: 90_000, zip: 90_000 } as const;
+/** Body caps (§8.3): 5 MB by default, 20 MB for KEV, EPSS and the disclosure dashboard's payload, 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. */
+export const FEED_MAX_BYTES = {
+  default: 5 * 1024 * 1024,
+  kev: 20 * 1024 * 1024,
+  epss: 20 * 1024 * 1024,
+  payload: 20 * 1024 * 1024,
+  deltaLog: 64 * 1024 * 1024,
+  zip: 64 * 1024 * 1024,
+  snapshot: 3 * 1024 * 1024,
+} as const;
 const MAX_REDIRECTS = 5;
 
 let cachedUserAgent: string | null = null;
@@ -63,35 +81,67 @@ export function classifyError(e: unknown): FetchErrorClass {
 
 interface FixtureEntry { status?: number; file?: string; content_type?: string; error?: FetchErrorClass }
 
-function fromFixtures(dir: string, url: string, started: number): FetchResult {
+/**
+ * A saved answer from `<dir>/index.json`. The body cap applies as it does live (`too_large`, or a cut with
+ * `truncate`). The deadline does not: a saved file answers at once, and tests drive time with their own clock.
+ */
+function fromFixtures(dir: string, url: string, started: number, opts: FetchOptions): FetchResult {
   const index = JSON.parse(fs.readFileSync(path.join(dir, "index.json"), "utf8")) as Record<string, FixtureEntry>;
   const entry = index[url];
   const base = { finalUrl: url, durationMs: Date.now() - started, attempts: 1 };
   if (!entry) return { ...base, ok: false, status: null, body: null, contentType: null, error: "dns", detail: "not in fixture index" };
   if (entry.error) return { ...base, ok: false, status: null, body: null, contentType: null, error: entry.error, detail: "fixture error" };
   const status = entry.status ?? 200;
-  const body = entry.file ? fs.readFileSync(path.join(dir, entry.file)) : Buffer.alloc(0);
+  const contentType = entry.content_type ?? null;
   const ok = status >= 200 && status < 300;
-  return { ...base, ok, status, body, contentType: entry.content_type ?? null, error: ok ? null : `http_${status}`, detail: null };
+  if (!ok) return { ...base, ok, status, body: null, contentType, error: `http_${status}`, detail: null };
+  let body = entry.file ? fs.readFileSync(path.join(dir, entry.file)) : Buffer.alloc(0);
+  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
+  if (body.length > maxBytes) {
+    if (!opts.truncate) return { ...base, ok: false, status, body: null, contentType, error: "too_large", detail: null };
+    body = body.subarray(0, maxBytes);
+  }
+  return { ...base, ok, status, body, contentType, error: null, detail: null };
 }
 
-async function readCapped(res: Response, maxBytes: number): Promise<Buffer | "too_large"> {
+/** The body, at most `maxBytes`: "too_large" past it, or cut there when `truncate` is set. */
+async function readCapped(res: Response, maxBytes: number, truncate: boolean): Promise<Buffer | "too_large"> {
   const declared = Number(res.headers.get("content-length") ?? "0");
-  if (declared > maxBytes) return "too_large";
+  if (declared > maxBytes && !truncate) return "too_large";
   if (!res.body) return Buffer.alloc(0);
   const chunks: Buffer[] = [];
   let size = 0;
-  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
-    size += chunk.byteLength;
-    if (size > maxBytes) return "too_large";
-    chunks.push(Buffer.from(chunk));
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = Buffer.from(value);
+      if (size + chunk.length > maxBytes) {
+        if (!truncate) return "too_large";
+        chunks.push(chunk.subarray(0, maxBytes - size));
+        size = maxBytes;
+        break;
+      }
+      chunks.push(chunk);
+      size += chunk.length;
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
   }
-  return Buffer.concat(chunks);
+  return Buffer.concat(chunks, size);
 }
 
-async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" | "maxBytes">> & FetchOptions): Promise<Omit<FetchResult, "attempts" | "durationMs">> {
+type Attempt = Omit<FetchResult, "attempts" | "durationMs">;
+
+const timedOut = (url: string, detail: string): Attempt =>
+  ({ ok: false, status: null, finalUrl: url, body: null, contentType: null, error: "timeout", detail });
+
+async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" | "maxBytes">> & FetchOptions): Promise<Attempt> {
   let current = url;
-  const signal = AbortSignal.timeout(opts.timeoutMs);
+  const remaining = opts.deadline === undefined ? Infinity : opts.deadline - Date.now();
+  if (remaining <= 0) return timedOut(url, "deadline passed before the request");
+  const signal = AbortSignal.timeout(Math.max(1, Math.min(opts.timeoutMs, remaining)));
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     if (hop > 0 && !current.startsWith("https:")) {
       return { ok: false, status: null, finalUrl: current, body: null, contentType: null, error: "redirects", detail: "redirect to a non-https URL" };
@@ -123,7 +173,7 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
     }
     let body: Buffer | "too_large";
     try {
-      body = await readCapped(res, opts.maxBytes);
+      body = await readCapped(res, opts.maxBytes, opts.truncate === true);
     } catch (e) {
       return { ok: false, status: res.status, finalUrl: current, body: null, contentType, error: classifyError(e), detail: String((e as Error).message).slice(0, 300) };
     }
@@ -133,23 +183,30 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
   return { ok: false, status: null, finalUrl: current, body: null, contentType: null, error: "redirects", detail: `more than ${MAX_REDIRECTS} redirects` };
 }
 
-function retryable(r: Omit<FetchResult, "attempts" | "durationMs">): boolean {
+function retryable(r: Attempt): boolean {
   if (r.ok) return false;
   if (r.error === "timeout" || r.error === "network") return true;
   return r.status !== null && r.status >= 500;
 }
 
-/** One GET with SPEC §8.3's rules. Never throws. */
+/**
+ * One GET with SPEC §8.3's rules. Never throws. With `deadline`, no attempt starts past it (a first attempt
+ * that cannot start is `timeout`, attempts 0) and the retry is skipped when its delay would cross it.
+ */
 export async function fetchFeed(url: string, options: FetchOptions = {}): Promise<FetchResult> {
   const started = Date.now();
   let attempts = 0;
   try {
     const fixtures = process.env.CT_FIXTURE_FEEDS;
-    if (fixtures) return fromFixtures(fixtures, url, started);
+    if (fixtures) return fromFixtures(fixtures, url, started, options);
     const opts = { timeoutMs: DEFAULT_TIMEOUT_MS, maxBytes: DEFAULT_MAX_BYTES, retryDelayMs: 2_000, ...options };
+    if (opts.deadline !== undefined && Date.now() >= opts.deadline) {
+      return { ...timedOut(url, "deadline passed before the request"), attempts, durationMs: Date.now() - started };
+    }
     attempts = 1;
     let r = await once(url, opts);
-    if (retryable(r) && opts.retryDelayMs > 0) {
+    const retryAt = Date.now() + opts.retryDelayMs;
+    if (retryable(r) && opts.retryDelayMs > 0 && (opts.deadline === undefined || retryAt < opts.deadline)) {
       await new Promise((res) => setTimeout(res, opts.retryDelayMs));
       attempts = 2;
       r = await once(url, opts);
@@ -159,4 +216,60 @@ export async function fetchFeed(url: string, options: FetchOptions = {}): Promis
     // Anything once() did not foresee (a bad option, an unreadable fixture index) is still a result.
     return { ok: false, status: null, finalUrl: url, body: null, contentType: null, error: "network", detail: String((e as Error).message).slice(0, 300), attempts, durationMs: Date.now() - started };
   }
+}
+
+// ── The harness pieces collect needs (§8.3: 8 feeds at a time, the per-id pool 16, a 240 s total cap) ──
+
+/**
+ * Runs `fn` over `items` with at most `limit` (at least 1) in flight; results in input order. When a call
+ * throws, no further item starts, the calls in flight finish, and the first error is thrown.
+ */
+export async function pool<T, R>(items: readonly T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  const width = Math.max(1, Math.min(Math.floor(limit) || 1, items.length));
+  let next = 0;
+  let failed = false;
+  let firstError: unknown = null;
+  const worker = async () => {
+    while (!failed && next < items.length) {
+      const i = next++;
+      try {
+        out[i] = await fn(items[i]!, i);
+      } catch (e) {
+        if (!failed) firstError = e;
+        failed = true;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: items.length === 0 ? 0 : width }, worker));
+  if (failed) throw firstError;
+  return out;
+}
+
+/** The shared 240 s cap: the clock starts at the first request (begin), and deadline() is begin + capMs. */
+export interface FetchBudget {
+  readonly started: number | null;
+  readonly capMs: number;
+  begin(now: number): void;
+  deadline(): number;
+}
+
+/**
+ * A fresh budget; capMs defaults to 240_000. begin() takes effect once (the first request); later calls
+ * change nothing. Before begin(), deadline() is Infinity (nothing has started, so nothing is late).
+ */
+export function fetchBudget(capMs: number = 240_000): FetchBudget {
+  let started: number | null = null;
+  return {
+    get started() {
+      return started;
+    },
+    capMs,
+    begin(now: number) {
+      if (started === null) started = now;
+    },
+    deadline() {
+      return started === null ? Number.POSITIVE_INFINITY : started + capMs;
+    },
+  };
 }

@@ -1,6 +1,7 @@
 // config/ (SPEC §4.11, §4.13, Appendix B): every file parses with its schema and passes validateConfig();
-// the seed counts Appendix B states; the D.7 strip fix; normalizeVendor() and matchVendor(); sample mode
-// and overrides; and a broken copy of each config file failing with its CONFIG_* code (§4.12 T cases).
+// the seed counts Appendix B states; the D.7 strip fix; normalizeVendor() and matchVendor(); the P2
+// registry and Verify checks; sample mode and overrides; and a broken copy of each config file failing with
+// its CONFIG_* code (§4.12 T cases).
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,7 +14,7 @@ import {
 import { liveIndicators, listedHosts } from "@/lib/rules/safety";
 import { ClaimsFile } from "@/lib/schema/scoreboard";
 import { contentDir, isSampleData, issueFormUrl, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
-import { compileTier1Paths, publisherFor, TIER1_PATH_FLAGS } from "@/lib/sources";
+import { blockedReason, compileTier1Paths, publisherFor, TIER1_PATH_FLAGS } from "@/lib/sources";
 import { blockedEntry, hostMatches } from "@/lib/urls";
 import { COVERAGE, LEVELLED_REGIONS, REGION_RULE_TYPES } from "@/lib/vocab";
 
@@ -71,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 1, ai_finders: 1, source_tiers: 1, regions: 1, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 2, ai_finders: 2, source_tiers: 2, regions: 1, actors: 1 });
   });
 });
 
@@ -94,7 +95,7 @@ describe("seed counts (Appendix B)", () => {
 
   it("B.2 ai-finders: three fields, thirteen finders in match order, generic last", () => {
     const af = prod().aiFinders;
-    expect(af.updated).toBe("2026-11-07");
+    expect(af.updated).toBe("2026-11-09");
     expect(af.fields).toEqual(["cna.credits", "adp.credits", "ghsa.credits"]);
     expect(af.finders.map((f) => f.id)).toEqual(["anthropic-claude", "anthropic-claude-code", "openai-codex", "openai-chatgpt",
       "google-big-sleep", "google-gemini", "xbow", "aisle", "depthfirst", "zeropath", "aixcc", "vulnhuntr", "generic-ai-assisted"]);
@@ -160,6 +161,13 @@ describe("seed counts (Appendix B)", () => {
       ["us-kev-three-day-deadline", "2026-06-10", null, "policy"],
       ["kernel-batch-2026-07", "2026-07-19", "2026-07-20", "data_change"],
     ]);
+    // Kobol session 1 (V19): the directive is BOD 26-04 with its own page; the kernel batch's per-day counts.
+    const a = (id: string) => c.annotations.annotations.find((x) => x.id === id)!;
+    expect([a("us-kev-three-day-deadline").label, a("us-kev-three-day-deadline").source_url]).toEqual([
+      "BOD 26-04: US 3-day KEV deadline", "https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk",
+    ]);
+    expect(a("kernel-batch-2026-07").detail).toBe("The Linux kernel CNA published 429 CVE records on 19 July and 9 on 20 July.");
+    expect([a("nvd-scoring-stop").label, a("nvd-scoring-stop").source_url]).toEqual(["NVD stops scoring most CVEs", "https://nvd.nist.gov/general/news"]);
     expect(c.watchWindows).toEqual({ schema_version: 1, windows: [] });
     expect(c.standingStories.stories.map((s) => s.id)).toEqual(["salt-typhoon", "volt-typhoon", "dprk-it-workers", "taiwan-undersea-cables"]);
     expect(c.standingStories.stories.every((s) => s.seed_last_development === null && s.seed_source_url === null)).toBe(true);
@@ -179,9 +187,12 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("every versioned file is at version 1", () => {
+  it("versioned files: vendors, ai-finders and source-tiers at 2 (P2: Schneider's CNA; the AISLE and Team Atlanta spellings; Kobol's feed domains), the rest at 1", () => {
     const c = prod();
-    for (const f of [c.vendors, c.aiFinders, c.sourceTiers, c.regions, c.actors]) expect(f.version).toBe(1);
+    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([2, 2, 2]);
+    expect(c.sourceTiers.updated).toBe("2026-11-10");
+    expect(c.vendors.updated).toBe("2026-11-10");
+    for (const f of [c.regions, c.actors]) expect(f.version).toBe(1);
   });
 });
 
@@ -288,6 +299,85 @@ describe("source registry (§4.13)", () => {
     expect(publisherFor("https://feeds.feedburner.com/SomeOtherFeed", "press", { sourceTiers, vendors }).tier).toBe(3);
     const aggregators = sourceTiers.publishers.filter((p) => p.kind === "aggregator").flatMap((p) => p.domains);
     for (const f of feeds) if (f.kind === "rss") expect(aggregators.some((d) => hostMatches(new URL(f.url).hostname, d)), f.id).toBe(false);
+  });
+});
+
+// P2 finalises the registry and the seed's Verify items (§4.13, Appendix B; fixtures plan §7). These are the
+// checks that hold before the Kobol sessions; the two that need them stay skipped until then.
+describe("the P2 registry and the Verify items", () => {
+  const { sources, sourceTiers } = loadConfig({ root, fresh: true });
+  const feeds = sources.feeds;
+  const fetched = feeds.flatMap((f) => (f.kind === "search" ? [] : [f]));
+  const STRUCTURED = ["kev", "cvelist", "epss", "ghsa", "nvd", "myjvn", "anthropic-cvd", "exchange"] as const;
+  const one = (id: string) => feeds.find((f) => f.id === id)!;
+
+  it("has unique ids, every structured kind (one entry each, exchange aside), and no search entry at priority 1", () => {
+    expect(new Set(feeds.map((f) => f.id)).size).toBe(feeds.length);
+    for (const k of STRUCTURED) {
+      const n = feeds.filter((f) => f.kind === k).length;
+      if (k === "exchange") expect(n, k).toBeGreaterThanOrEqual(1);
+      else expect(n, k).toBe(1);
+    }
+    expect(feeds.filter((f) => f.kind === "search" && f.priority === 1).map((f) => f.id)).toEqual([]);
+  });
+
+  it("keeps §4.13's stated priorities and freshness, and the optional NVD read below priority 1", () => {
+    expect(one("kev")).toMatchObject({ kind: "kev", priority: 1, fresh_days: 7 });
+    expect(one("bleepingcomputer")).toMatchObject({ kind: "rss", priority: 1, fresh_days: 2 });
+    expect(one("jpcert")).toMatchObject({ kind: "rss", priority: 1, fresh_days: 14 });
+    expect(one("nvd").priority).toBeGreaterThan(1);
+    for (const f of fetched) expect(f.fresh_days, f.id).toBeGreaterThanOrEqual(1);
+  });
+
+  it("fetches only https; raw.githubusercontent.com only for kev and cvelist (by script), and no other URL on a blocked host", () => {
+    for (const f of fetched) {
+      for (const u of [f.url, f.fallback_url].filter((x): x is string => x !== null)) {
+        expect(u.startsWith("https://"), `${f.id}: ${u}`).toBe(true);
+        const host = new URL(u).hostname;
+        if (host === "raw.githubusercontent.com") expect(["kev", "cvelist"], `${f.id}: ${u}`).toContain(f.kind);
+        else if (f.kind === "ghsa") expect(u).toBe("https://github.com/github/advisory-database.git");
+        else expect(blockedReason(u, sourceTiers), `${f.id}: ${u}`).toBeNull();
+      }
+    }
+  });
+
+  it("source-tiers.json, regions.json, annotations.json and vendors.json hold no Verify note (Kobol session 1 settled them)", () => {
+    for (const f of ["source-tiers.json", "regions.json", "annotations.json", "vendors.json"]) expect(read(`config/${f}`), f).not.toMatch(/\bverify\b/i);
+  });
+
+  it("names no feed (unverified): Kobol session 1 confirmed gtig's feed path", () => {
+    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
+  });
+
+  // Kobol session 1 (K3) confirmed gtig's feed path and V15 settled the five vendor domains and HQs.
+  it("no registry name says (unverified) and no vendors.json note asks to Verify (after Kobol session 1)", () => {
+    expect(feeds.filter((f) => /\(unverified\)/i.test(f.name)).map((f) => f.id)).toEqual([]);
+    const vendors = (json("config/vendors.json") as { vendors: { id: string; note: string | null }[] }).vendors;
+    expect(vendors.filter((v) => /\bVerify\b/.test(v.note ?? "")).map((v) => v.id)).toEqual([]);
+  });
+
+  it("vendors.json holds V15's results: the five HQs as found, and the redirect targets no other vendor holds (C2)", () => {
+    const { vendors } = loadConfig({ root, fresh: true }).vendors;
+    const v = (id: string) => vendors.find((x) => x.id === id)!;
+    expect(["avtech", "digiever", "merit-lilin", "fxc", "sky"].map((id) => [id, v(id).country, v(id).domains, v(id).note])).toEqual([
+      ["avtech", "TW", ["avtech.com.tw"], "IP cameras; the site states no address, so the HQ stays Taiwan"],
+      ["digiever", "TW", ["digiever.com"], "NVR maker; its site calls it a Taiwan-based manufacturer"],
+      ["merit-lilin", "TW", ["meritlilin.com"], "IP cameras and NVRs; founded in Taiwan in 1980"],
+      ["fxc", "JP", ["fxc.jp"], "Network equipment; HQ Asakusabashi, Taito, Tokyo"],
+      ["sky", "JP", ["skygroup.jp"], "SKYSEA Client View; head offices in Tokyo and Osaka"],
+    ]);
+    // Redirects seen on Kobol (V15). A target joins the vendor whose domain redirected, unless another vendor
+    // already holds it; one owned by another company stays with that company's entry.
+    expect(v("brother").domains).toEqual(["brother.com", "global.brother"]);
+    expect(v("ruijie").domains).toEqual(["ruijienetworks.com", "ruijie.com"]);
+    expect(v("openssh").domains).toEqual(["openssh.com", "openssh.org", "openbsd.org"]);
+    expect(v("zoom").domains).toEqual(["zoom.us", "zoom.com"]);
+    const holders = (d: string) => vendors.filter((x) => x.domains.includes(d)).map((x) => x.id);
+    expect(holders("paloaltonetworks.com")).toEqual(["palo-alto-networks"]);
+    expect(holders("hpe.com")).toEqual(["hpe"]);
+    expect(holders("opentext.com")).toEqual(["opentext"]);
+    expect(holders("cohesity.com")).toEqual([]);
+    expect(holders("blog.google")).toEqual([]);
   });
 });
 

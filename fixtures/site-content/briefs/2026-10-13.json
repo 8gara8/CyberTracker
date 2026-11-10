@@ -108,10 +108,10 @@
   },
   "gap": {
     "headline": "37% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 17 days (2023–24: 21, no clear change). 157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 1.9 times).",
-    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 451 in 13 weeks, 173 excluding Anthropic (a lower bound).",
+    "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     "status": "ok",
     "metrics_file": "metrics/2026-10-13.json",
-    "metrics_sha256": "0d6092b665c8c5805158b0c81639a251835b040cb10afde3ac0bf1add249b10b",
+    "metrics_sha256": "eb44a9ec47cecd3e5630fbe2eda495f3de96143f38d9d1a8e70abd6cdf1b925c",
     "as_of": "2026-10-11"
   },
   "items": [
@@ -307,7 +307,7 @@
   "feeds_stale": [
     {
       "id": "ithome-security",
-      "name": "iThome 資安 (unverified)",
+      "name": "iThome 資安",
       "status": "failed",
       "newest": "2026-10-12T16:40:00+08:00",
       "stale_since": "2026-10-13"
@@ -331,7 +331,7 @@
     }
   ],
   "computed": {
-    "word_count": 532,
+    "word_count": 531,
     "reading_minutes": 3,
     "item_count": 1,
     "ai_linked": {

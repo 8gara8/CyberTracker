@@ -14,6 +14,10 @@
     "schema:check": "tsx scripts/gen-json-schema.ts --check",
     "fixtures:gen": "tsx fixtures/src/build.ts",
     "fixtures:check": "tsx fixtures/src/build.ts --check",
+    "collect": "tsx scripts/collect.ts",
+    "sources:check": "tsx scripts/collect.ts --check-feeds",
+    "metrics": "tsx scripts/metrics.ts",
+    "backfill": "tsx scripts/backfill.ts",
     "chat": "tsx scripts/chat.ts",
     "agent:check": "tsx scripts/agent-check.ts"
   },

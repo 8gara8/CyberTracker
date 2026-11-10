@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Coverage, ConfigId, Language, RegionCode, uniqueArray } from "./common";
 
 // The source registry, `config/sources.yaml` (SPEC §4.13). Every key is written out, never optional
-// (§4.1): fetched entries carry `fallback_url: null` and `must_match: false` where unused. It holds no
+// (§4.1): fetched entries carry `fallback_url: null`, `must_match: false` and `date_zone: null` where unused. It holds no
 // tiers: a URL's tier, publisher and kind always come from publisherFor(). Counts and coverage minimums
 // are tests/config.test.ts's requirements, not schema facts.
 
@@ -16,6 +16,9 @@ const HttpsUrl = z.url({
   protocol: /^https$/,
   error: (iss) => (iss.code === "invalid_format" ? "Expected an https URL" : undefined),
 });
+
+/** A UTC offset as "+08:00" or "-05:00" (never "Z": null stands for UTC). */
+const UtcOffset = z.string().regex(/^[+-](?:0\d|1[0-4]):[0-5]\d$/, "Expected an offset like +08:00");
 
 const entryHead = {
   id: ConfigId,
@@ -36,6 +39,7 @@ export const FetchedFeed = z.strictObject({
   ...entryTail,
   fresh_days: z.int().min(1).describe("The newest entry must be younger"),
   must_match: z.boolean().describe("true keeps only items that hit a keyword"),
+  date_zone: UtcOffset.nullable().describe("The zone of the feed's zone-less dates when its channel gives no offset (+08:00 for iThome); null reads them as UTC"),
 });
 
 export const SearchFeed = z.strictObject({
