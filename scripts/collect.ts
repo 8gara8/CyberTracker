@@ -42,6 +42,7 @@ import {
   cacheWrite, readCveById, readCvd, readDeltaLog, readEpss, readEpssApi, readExchange, readGhsa, readKev, readMyJvn, readNvd,
   readRss, readZip, type FeedCtx, type Read,
 } from "./lib/feeds";
+import { realDeadline } from "./lib/clock";
 import { fixtureGit, liveGit, type GitSource } from "./lib/git-source";
 
 export interface CollectOptions {
@@ -242,8 +243,12 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   fs.rmSync(paths.recordsDir, { recursive: true, force: true });
   for (const d of [paths.feedsDir, paths.zipsDir, paths.recordsDir, path.dirname(paths.epssFile(D))]) fs.mkdirSync(d, { recursive: true });
 
+  const fetchImpl = o.deps?.fetch ?? fetchFeed;
   const ctx: FeedCtx = {
-    fetch: o.deps?.fetch ?? fetchFeed, budget: fetchBudget(BUDGET_MS), deadline: o.deadline, now, log, paths,
+    // The run's deadline and the budget are on `now`; fetchFeed measures its deadline with Date.now(), so it
+    // gets realDeadline() (plan §3.2, G7). In production the two clocks are the same.
+    fetch: (url, opts) => fetchImpl(url, opts?.deadline === undefined ? opts : { ...opts, deadline: realDeadline(now, opts.deadline) }),
+    budget: fetchBudget(BUDGET_MS), deadline: o.deadline, now, log, paths,
     sleep: o.deps?.sleep ?? (fixtures ? async () => {} : (ms) => new Promise((r) => setTimeout(r, ms))),
   };
   const feeds = config.sources.feeds.filter((f): f is FetchedFeed => f.kind !== "search");

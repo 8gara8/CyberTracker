@@ -744,6 +744,24 @@ describe("collect's other runs", () => {
     expect(written(root)).toEqual([]);
   });
 
+  it("fetchFeed gets the logical deadline converted to Date.now()'s clock with realDeadline (plan §3.2, G7)", async () => {
+    process.env.CT_FIXTURE_FEEDS = FEEDS;
+    // The run's clock stands at T0, weeks before Date.now(): T0 + 300 s as such would be long past for fetchFeed.
+    const seen: { at: number; deadline: number | undefined }[] = [];
+    const fetch: typeof fetchFeed = (url, opts) => {
+      seen.push({ at: Date.now(), deadline: opts?.deadline });
+      return fetchFeed(url, opts);
+    };
+    const t0 = Date.now();
+    await collect({ date: DATE, deadline: T0 + 300_000, root: tempRoot(true), deps: { now: () => T0, aiMatch, fetch } });
+    expect(seen.length).toBeGreaterThan(25);
+    for (const s of seen) {
+      // min(the 240 s budget, the 300 s deadline) from the clock's T0, moved onto the real clock.
+      expect(s.deadline).toBeGreaterThanOrEqual(t0 + 240_000);
+      expect(s.deadline).toBeLessThanOrEqual(s.at + 240_000);
+    }
+  });
+
   it("a deadline passed during the run writes no pack, no candidates and no index", async () => {
     const root = tempRoot(true);
     let calls = 0;
