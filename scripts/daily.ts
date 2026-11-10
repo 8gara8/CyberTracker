@@ -296,11 +296,15 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     watchdog = null;
   };
 
-  /** The no-record failure (preflight steps 1 to 5): the failed chat format, a runs.jsonl line, exit 1. */
+  /**
+   * The no-record failure (preflight steps 1 to 5): the failed chat format, a runs.jsonl line, exit 1. A
+   * dry run keeps its own forms (§8.2, §8.8): the dry-run failed format, outcome dry_run with the code, exit 0.
+   */
   const finishNoRecord = (code: string): number => {
+    const outcome: RunOutcome = dryRun ? "dry_run" : "failed";
     let summary: string;
     try {
-      summary = renderChat(chatInputFor({ date: D, brief: null, runs: [], code, siteShows: newestBrief(P.content), needsReview: false }), siteUrl());
+      summary = renderChat(chatInputFor({ date: D, brief: null, runs: [], code, dryRun, siteShows: newestBrief(P.content), needsReview: false }), siteUrl());
     } catch (e) {
       line(errorText(e));
       summary = fallbackChat(D, e);
@@ -309,16 +313,16 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       writeFile(P.summary, summary);
       fs.appendFileSync(P.runsJsonl, runsJsonlLine({
         date: D, run_id: runIdFor(start), trigger, started: taipeiTimestamp(new Date(start)), ended: taipeiTimestamp(new Date(now())),
-        outcome: "failed", edition: null, attempts: 0, repairs: 0, error_code: code, duration_s: Math.max(0, Math.round((now() - start) / 1000)),
+        outcome, edition: null, attempts: 0, repairs: 0, error_code: code, duration_s: Math.max(0, Math.round((now() - start) / 1000)),
       }));
     } catch (e) {
       line(errorText(e));
     }
     clearWatchdog();
     releaseLock(P.lock);
-    line(LINES.runEnded("failed"));
+    line(LINES.runEnded(outcome));
     console.log(summary.replace(/\n$/, ""));
-    return 1;
+    return exitCodeFor(outcome);
   };
 
   // Step 1, before the lock, so a wrong Node never touches logs/.lock.

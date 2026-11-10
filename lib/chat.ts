@@ -247,6 +247,8 @@ export interface ChatSource {
   needsReview?: boolean;
   /** The code of a failure that left no record (preflight steps 1 to 5). */
   code?: string | null;
+  /** A dry run, for a failure that left no record; otherwise the records say so. */
+  dryRun?: boolean;
   /** Default siteUrl() (config/run.json). */
   siteUrl?: string;
   /** Default config/run.json schedule. */
@@ -367,7 +369,7 @@ export function chatInputFor(src: ChatSource): ChatInput {
   const schedule = src.schedule ?? SCHEDULE;
   const site = (src.siteUrl ?? configuredSiteUrl()).replace(/\/+$/, "");
   const brief = src.brief && src.brief.date === date ? src.brief : null;
-  const dryRun = runs.some((r) => r.trigger === "dry_run" || r.outcome === "dry_run");
+  const dryRun = src.dryRun === true || runs.some((r) => r.trigger === "dry_run" || r.outcome === "dry_run");
   const notes = allStageNotes(runs);
 
   // Skipped: the outcome says so; a dry run that stopped at preflight step 6 carries the reason as a note.

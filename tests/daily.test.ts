@@ -586,6 +586,25 @@ describe("daily.ts end to end", () => {
     expect(fs.existsSync(P.needsReview)).toBe(false);
   }, TIMEOUT);
 
+  it("D35 --dry-run that fails at preflight step 4 (no network): exit 0, outcome dry_run with E_NET, the dry-run failed chat format", async () => {
+    const h = harness();
+    okAgent(h);
+    const offline = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).startsWith("https://github.com")) throw new TypeError("fetch failed");
+      return h.deps.fetchImpl(input, init);
+    }) as typeof fetch;
+    expect(await run(h, ["--dry-run"], { fetchImpl: offline })).toBe(0);
+    expect(h.remoteLog()).toEqual([]);
+    const lines = summary(h).split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · dry run (failed)** (E_NET)`);
+    expect(lines).toContain("Dry run: nothing was published.");
+    expect(lines.some((l) => l.startsWith("Site shows"))).toBe(false);
+    expect(runsJsonl(h)).toMatchObject([{ trigger: "dry_run", outcome: "dry_run", error_code: "E_NET" }]);
+    expect(dailyLog(h).trimEnd().split("\n").at(-1)).toMatch(/ Run ended: dry_run\.$/);
+    expect(fs.existsSync(path.join(h.root, "needs-review", D))).toBe(false);
+    expect(agentRuns(h)).toEqual([]);
+  }, TIMEOUT);
+
   it("D18 --dry-run --simulate-failure: exit 0, dry_run, E_SIMULATED, the dry-run data-only chat format", async () => {
     const h = harness();
     okAgent(h);
