@@ -492,12 +492,16 @@ function oneLine(s: string): string {
 const EDITION_WORD: Record<Edition, string> = { full: "full", partial: "partial", data_only: "data-only" };
 const CORRECTION_WORD = { correction: "correction", clarification: "clarification", update: "update", name_removed: "name withheld" } as const;
 
-/** The item kicker (§8.8): severity pips and word (LANDMARK for a landmark), the AI chip, the region codes. */
-export function kicker(item: Pick<Item, "severity" | "landmark" | "ai_role" | "ai_confidence" | "regions">): string {
+/**
+ * The item kicker (§8.8): severity pips and word (LANDMARK for a landmark), the AI chip, the region codes. A
+ * withheld item never assessed (a data-only item a full edition keeps, lib/withhold-mask.ts carryWithheld())
+ * shows no AI chip: "AI: unassessed" means a data-only edition, which this is not.
+ */
+export function kicker(item: Pick<Item, "severity" | "landmark" | "ai_role" | "ai_confidence" | "regions"> & { withheld?: Item["withheld"] }): string {
   const parts: string[] = [];
   if (item.severity) parts.push(`${SEVERITY_INFO[item.severity].pips} ${SEVERITY_INFO[item.severity].word}`);
   else if (item.landmark) parts.push("LANDMARK");
-  const chip = AI_ROLE_INFO[item.ai_role].chip;
+  const chip = item.withheld && item.ai_role === "unassessed" ? null : AI_ROLE_INFO[item.ai_role].chip;
   if (chip) parts.push(item.ai_confidence === "claimed" ? `${chip} (claimed)` : chip);
   parts.push(item.regions.join(" "));
   return parts.join(" · ");

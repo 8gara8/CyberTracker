@@ -19,7 +19,7 @@ import type { CveBlock, Item } from "@/lib/schema/item";
 import type { Correction } from "@/lib/schema/misc";
 import { RunRecord, StatusFile, type RunStage, type StageRecord } from "@/lib/schema/status";
 import { siteUrl } from "@/lib/site";
-import { CANARY_TOKEN, KEV_ABSENCE_NOTE, RUN_STAGES, TAIWAN_LENS_ROWS, TAIWAN_NO_NEWS } from "@/lib/vocab";
+import { CANARY_TOKEN, KEV_ABSENCE_NOTE, RUN_STAGES, TAIWAN_LENS_ROWS, TAIWAN_NO_NEWS, WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { chatFromContent, main as chatMain, newestEdition } from "@/scripts/chat";
 import { SITE_CONTENT_DIR } from "@/fixtures/src/site";
 
@@ -232,6 +232,56 @@ describe("chat edition: published format", () => {
       "Notes: usage 85% of weekly limit",
       "Run 04:37–05:21 · data-only 04:45 · 1 attempt, 1 repair · 9 sources · data to 8 Nov UTC",
     ));
+  });
+
+  it("a full edition holding a carried data-only item, withheld this morning: no null, no unassessed chip, no stored headline", () => {
+    // The same-day withhold kept the data-only item (severity null, AI role unassessed) in the slot of the draft item
+    // that re-reported it (§0.4 row 127), so it is the second top story. Before T6 its kicker read "AI: unassessed".
+    const D = "2026-11-10";
+    const STORED = "SAMPLE: Fortinet FortiOS flaw added to CISA's list";
+    const carried = {
+      ...kevItem(D, "CVE-2026-96951", "Fortinet", "FortiOS"),
+      regions: ["US"] as Item["regions"],
+      headline: WITHHELD_HEADLINE, summary: WITHHELD_TEXT.replace("{date}", "10 November"),
+      withheld: { correction_id: "C-0004", since: D },
+    };
+    expect([carried.severity, carried.ai_role, carried.why_it_matters]).toEqual([null, "unassessed", null]);
+    const b = brief(D, {
+      lead: [
+        { text: "SAMPLE: Attackers hit a FortiOS flaw within days of disclosure.", item_ids: ["cve-2026-104935"], gap: false },
+        { text: WITHHELD_MARK, item_ids: ["cve-2026-96951"], gap: false },
+      ],
+      items: [
+        item(D, { id: "cve-2026-104935", kind: "exploited_flaw", severity: "critical", regions: ["US", "GLOBAL"], cve_ids: ["CVE-2026-104935"], headline: "SAMPLE: FortiOS flaw exploited before a patch" }),
+        carried,
+        item(D, { id: "inc-retail-nl-2026-11", kind: "breach", severity: "elevated", regions: ["EU"], headline: "SAMPLE: Dutch retailer reports a breach" }),
+        item(D, { id: "eco-nvd-backlog-2026-11", kind: "ecosystem", why_it_matters: null, headline: "SAMPLE: NVD backlog grows again" }),
+      ],
+      corrections: [correction(4, "name_removed", "cve-2026-96951", D)],
+    });
+    const runs = [record(D, { data_only_published_at: b.data_only_published_at, full_published_at: b.published_at })];
+    const text = render(chatInputFor({ date: D, brief: b, runs }));
+    const out = text.split("\n");
+    expect(out.slice(3, 7)).toEqual([
+      `SAMPLE: Attackers hit a FortiOS flaw within days of disclosure. ${WITHHELD_MARK}`,
+      `1. ●●●● CRITICAL · US GLOBAL · SAMPLE: FortiOS flaw exploited before a patch · ${SITE}/brief/2026-11-10#cve-2026-104935`,
+      `2. US · ${WITHHELD_HEADLINE} · ${SITE}/brief/2026-11-10#cve-2026-96951`,
+      `3. ●●○○ ELEVATED · EU · SAMPLE: Dutch retailer reports a breach · ${SITE}/brief/2026-11-10#inc-retail-nl-2026-11`,
+    ]);
+    expect(out).toContain("Corrections: C-0004 name withheld to cve-2026-96951 (10 Nov)");
+    expect(text).not.toMatch(/\bnull\b|unassessed|undefined/i);
+    expect(text).not.toContain(STORED);
+    // Kept last, after every draft item (§0.4 row 126): the top stories are the draft's, and the count holds it.
+    // Its stored headline, were it left in place, is never printed either: the line reads the withheld headline.
+    const last = brief(D, { ...b, items: [b.items[0]!, b.items[2]!, b.items[3]!, { ...carried, headline: STORED }] });
+    const lastText = render(chatInputFor({ date: D, brief: last, runs }));
+    expect(lastText).toContain(`3. GLOBAL · SAMPLE: NVD backlog grows again · ${SITE}/brief/2026-11-10#eco-nvd-backlog-2026-11`);
+    expect(lastText).toContain(`Also today (1): ${SITE}/brief/2026-11-10#also-today`);
+    expect(lastText).not.toMatch(/\bnull\b|unassessed|undefined/i);
+    expect(lastText).not.toContain(STORED);
+    const top = render(chatInputFor({ date: D, brief: brief(D, { ...b, items: b.items.map((x) => (x.id === carried.id ? { ...x, headline: STORED } : x)) }), runs }));
+    expect(top).toContain(`2. US · ${WITHHELD_HEADLINE} · ${SITE}/brief/2026-11-10#cve-2026-96951`);
+    expect(top).not.toContain(STORED);
   });
 
   it("a partial edition after a retry, with every rebuilt note", () => {

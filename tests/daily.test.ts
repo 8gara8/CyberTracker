@@ -615,6 +615,11 @@ describe("daily.ts end to end", () => {
     // The agent was told: brief D's withheld item is in recent_items, marked, with the withheld headline only.
     const context = AgentContext.parse(JSON.parse(fs.readFileSync(path.join(h.root, "drafts", "context.json"), "utf8")));
     expect(context.recent_items.filter((x) => x.date === D)).toMatchObject([{ id: ITEM, headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" }]);
+    // The chat edition's top stories hold the kept item in the patch batch's slot: the withheld headline, no AI chip.
+    const slot = draftIds.indexOf(PATCHES);
+    expect(slot).toBeLessThan(3);
+    expect(summary(h)).toMatch(new RegExp(`\\n${slot + 1}\\. [^\\n]* · ${WITHHELD_HEADLINE} · \\S+#${ITEM}\\n`));
+    expect(summary(h)).not.toMatch(/unassessed|\bnull\b/);
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);
