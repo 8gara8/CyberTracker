@@ -23,6 +23,12 @@ export interface FetchOptions {
   truncate?: boolean;
   /** Epoch ms: each attempt's timeout is min(timeoutMs, deadline − now), and no attempt starts past it (`timeout`). P2 WP1. */
   deadline?: number;
+  /**
+   * Asked about every redirect target before it is requested: a reason ends the fetch with `redirects` and that
+   * hop is never requested. The snapshot fetcher and the link check pass the blocked-host test, so a page that
+   * redirects into a BLOCKED_HOSTS host is not read (§4.12 step 1). Fixture mode has no redirects.
+   */
+  refuseRedirect?: (url: string) => string | null;
 }
 
 export interface FetchResult {
@@ -169,6 +175,10 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
         current = new URL(res.headers.get("location")!, current).toString();
       } catch {
         return { ok: false, status: res.status, finalUrl: current, body: null, contentType: null, error: "redirects", detail: "a redirect with an invalid Location" };
+      }
+      const refused = opts.refuseRedirect?.(current) ?? null;
+      if (refused !== null) {
+        return { ok: false, status: res.status, finalUrl: current, body: null, contentType: null, error: "redirects", detail: `a redirect to a refused URL (${refused})` };
       }
       continue;
     }

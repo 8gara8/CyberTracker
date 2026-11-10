@@ -248,6 +248,20 @@ describe("results from a local server (L1 to L8)", () => {
     expect(linkResultOf({ ok: false, status: 301, error: "redirects" })).toBe("unknown");
     expect(linkResultOf({ ok: false, status: 304, error: "http_304" })).toBe("ok");
   });
+
+  it("L2 a redirect into a blocked host is not followed: the hop is never requested and the link is unknown", async () => {
+    const hops: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const u = String(input);
+      hops.push(u);
+      if (u === "https://example.org/ct-sample/to-archive") return new Response(null, { status: 301, headers: { location: "https://web.archive.org/web/2026/https://example.org/x" } });
+      return new Response(PAGE(TEXT), { status: 200, headers: { "content-type": "text/html" } });
+    });
+    const w = linkWorld({ [D]: [{ url: "https://example.org/ct-sample/to-archive", tier: 1, sha256: null }] });
+    const r = await run(w);
+    expect(hops).toEqual(["https://example.org/ct-sample/to-archive"]);
+    expect(r.results).toEqual([{ url: "https://example.org/ct-sample/to-archive", result: "unknown", http: 301, sha256: null, hashed_at: null }]);
+  });
 });
 
 // ── L9: which URLs, in what order, and when to stop ──────────────────────────────────────────────

@@ -849,7 +849,7 @@ function decode(body: Buffer, contentType: string | null): string {
 /**
  * §8.11 step 4, by the status after redirects: 200 to 399 ok; 404, 410 and a host that does not resolve
  * broken; anything else unknown. A redirect fetchFeed would not follow (more than 5, an invalid Location, a
- * hop off https) is unknown, whatever its status.
+ * hop off https, a hop into a blocked URL) is unknown, whatever its status.
  */
 export function linkResultOf(r: Pick<FetchResult, "ok" | "status" | "error">): "ok" | "unknown" | "broken" {
   if (r.ok) return "ok";
@@ -895,6 +895,8 @@ export async function checkLinks(o: {
       acceptLanguage: SNAPSHOT_HEADERS.acceptLanguage,
       userAgent: o.config.run.user_agent,
       deadline: realDeadline(o.now, stop),
+      // A redirect into a blocked URL is not followed: the link is unknown, and the blocked page is never read.
+      refuseRedirect: (hop) => blockedReason(hop, o.config.sourceTiers),
     });
     if (r.error === "timeout" && o.now() >= stop) return; // cut by the stop: not reached
     let result: LinkResult["result"] = linkResultOf(r);
