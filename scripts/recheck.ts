@@ -19,6 +19,7 @@ import { parseKev } from "../lib/feeds/kev";
 import type { KevCatalog, KevEntry } from "../lib/feeds/types";
 import { htmlText, textSha256 } from "../lib/html-text";
 import { jsonText } from "../lib/json";
+import { exploitLinkProblem } from "../lib/rules/safety";
 import { sourceIdFields } from "../lib/rules/shared";
 import { readArchiveIndex, readBrief, readCorrections, readHistory, readStatus } from "../lib/run-inputs";
 import type { Brief } from "../lib/schema/brief";
@@ -102,13 +103,17 @@ function formBlocks(body: string): Partial<Record<FieldKey, string>> | null {
   return out;
 }
 
-/** An evidence link as §8.9 keeps it: https, at most 500 characters, not blocked, normalised; else null. */
+/**
+ * An evidence link as §8.9 keeps it: https, at most 500 characters, not blocked, normalised; else null. A reader's
+ * link is checked as a tier 3 page too (NO_EXPLOIT_LINK's path test, on any host), because it goes into the
+ * agent's context and the public corrections.json: a path holding an exploit word gives null.
+ */
 function evidenceUrl(value: string | undefined, tiers: Pick<SourceTiersFile, "github">): string | null {
   if (value === undefined || value === NO_RESPONSE) return null;
   if (value.length > EVIDENCE_MAX || /\s/.test(value) || !/^https:/i.test(value) || !isHttpsUrl(value)) return null;
-  if (blockedReason(value, tiers) !== null) return null;
+  if (blockedReason(value, tiers) !== null || exploitLinkProblem(value, 3, tiers) !== null) return null;
   const normal = normalizeUrl(value);
-  if (normal.length > EVIDENCE_MAX || !isHttpsUrl(normal) || blockedReason(normal, tiers) !== null) return null;
+  if (normal.length > EVIDENCE_MAX || !isHttpsUrl(normal) || blockedReason(normal, tiers) !== null || exploitLinkProblem(normal, 3, tiers) !== null) return null;
   return normal;
 }
 

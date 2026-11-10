@@ -355,6 +355,17 @@ describe("the correction form parser (R8 to R11)", () => {
     expect(at("https://WWW.Ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935/?utm_source=x")?.evidence_url)
       .toBe("https://ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935");
   });
+
+  it("R11 an evidence link whose path holds an exploit word is dropped on any host, so it never reaches the context or corrections.json", () => {
+    const at = (evidence: string) => parseDisputeForm(formBody("cve-2026-104935", "2026-10-14", DISPUTE_FORM_OPTIONS.fact, evidence), briefs);
+    // Built here, not in fixtures: a reader's link is checked as a tier 3 page, whatever its host.
+    expect(at("https://example.net/ct-sample/cve-2026-104935-poc")).toMatchObject({ kind: "fact", evidence_url: null });
+    expect(at("https://example.net/ct-sample/PoC/notes")?.evidence_url).toBeNull();
+    expect(at("https://www.ivanti.com/ct-sample/exploit")?.evidence_url).toBeNull();
+    expect(at("https://www.ivanti.com/ct-sample/payload_notes")?.evidence_url).toBeNull();
+    // A word that only contains one of them is fine.
+    expect(at("https://www.ivanti.com/ct-sample/exploitation-status")?.evidence_url).toBe("https://ivanti.com/ct-sample/exploitation-status");
+  });
 });
 
 // ── Intake: R12 to R19 ───────────────────────────────────────────────────────────────────────────

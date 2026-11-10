@@ -19,7 +19,9 @@ import type { Pack } from "./schema/pack";
 import { ScoreboardFile } from "./schema/scoreboard";
 import { StatusFile } from "./schema/status";
 import { RULES } from "./rules";
+import { exploitLinkProblem } from "./rules/safety";
 import { derive, isDataOnly } from "./rules/shared";
+import { blockedReason } from "./sources";
 import {
   error, plural, warning, type CrossFile, type CveLookup, type CveRecordInfo, type RegionsBase, type Rule, type RuleInput,
   type ValidationIssue,
@@ -791,6 +793,17 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
       const prev = cf.corrections[i - 1];
       if (prev && (prev.date > c.date || (prev.date === c.date && prev.id > c.id))) {
         add(file, error("FILE_ORDER", p, `corrections.json must be sorted by date, then id (${c.id} comes after ${prev.id}).`));
+      }
+    });
+    // NO_EXPLOIT_LINK: a reader's evidence link is published in corrections.json, so it gets the cited-URL check as a
+    // tier 3 page (any exploit word in its path fails, on any host), and no blocked host passes (§8.9 intake keeps neither).
+    cf.disputes.forEach((d, i) => {
+      if (d.evidence_url === null) return;
+      const tiers = config().sourceTiers;
+      const why = exploitLinkProblem(d.evidence_url, 3, tiers) ?? (blockedReason(d.evidence_url, tiers) !== null ? "is on the blocked list" : null);
+      if (why) {
+        add(file, error("NO_EXPLOIT_LINK", `disputes[${i}].evidence_url`, `${d.id}'s evidence link ${why}.`,
+          "Set the dispute's evidence_url to null: dispute intake keeps only a safe https link (SPEC §8.9)."));
       }
     });
     const numbers = cf.corrections.map((c) => Number(c.id.slice(2)));
