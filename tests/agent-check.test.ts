@@ -184,6 +184,14 @@ describe("AC5: the canary inputs (fixtures/injection/)", () => {
     expect(Object.values(e.seen_as)).toEqual(["pack"]);
     expect(e.fetched).toEqual([]);
   });
+  it("AC5: every file in the folder is read by code or a test (the unused pre-P3 canary prompt is gone)", () => {
+    const sources = ["scripts", "lib", "tests"].flatMap((d) => fs.readdirSync(path.join(REPO, d), { recursive: true, encoding: "utf8" })
+      .filter((f) => f.endsWith(".ts") && !f.endsWith("agent-check.test.ts")).map((f) => fs.readFileSync(path.join(REPO, d, f), "utf8")));
+    const files = fs.readdirSync(dir).sort();
+    expect(files).toEqual(["context.json", "evidence-base.json", "item.xml", "metrics.json", "pack.json", "pack.md", "page.html"]);
+    // Named as fixtures/injection/<file>, or through agent-check's injection(root, "<file>").
+    for (const f of files) expect(sources.some((s) => s.includes(`injection/${f}`) || s.includes(`injection(root, "${f}")`)), f).toBe(true);
+  });
   it("AC5: canaryContext moves only the deadline, to now + 10 min", () => {
     const now = Date.parse("2026-11-10T04:40:00+08:00");
     const c = canaryContext(REPO, now);
