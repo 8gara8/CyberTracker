@@ -320,6 +320,43 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(r.errors[0]!.message).toContain("C-0002 is missing");
   });
 
+  it("XREF_CORRECTION: a correction's dispute and a dispute's correction must name each other's records (§4.10, §8.9)", () => {
+    const linked = (f: (c: CorrectionsFile) => void) => {
+      const dir = copy();
+      edit<CorrectionsFile>(dir, "corrections.json", f);
+      const r = all(dir);
+      return { codes: codes(r.errors), paths: paths(r, "XREF_CORRECTION"), messages: r.errors.map((e) => e.message) };
+    };
+    // A correction naming a dispute that does not exist, or one linked to another correction.
+    const missing = linked((c) => { c.corrections[0]!.dispute_id = "D-0009"; });
+    expect(missing.codes).toEqual(["XREF_CORRECTION"]);
+    expect(missing.paths).toEqual(["corrections.json: corrections[0].dispute_id"]);
+    expect(missing.messages[0]).toContain("C-0001 answers D-0009, which is not a dispute in corrections.json");
+    const unlinked = linked((c) => { c.disputes[0]!.correction_id = null; });
+    expect(unlinked.paths).toEqual(["corrections.json: corrections[0].dispute_id"]);
+    expect(unlinked.messages[0]).toContain("C-0001 answers D-0001, but D-0001's correction_id is null");
+    // A dispute naming a correction that does not exist, or one on another item.
+    const absent = linked((c) => { c.disputes[0]!.correction_id = "C-0009"; });
+    expect(absent.paths).toEqual(["corrections.json: corrections[0].dispute_id", "corrections.json: disputes[0].correction_id"]);
+    expect(absent.messages[1]).toContain("D-0001 names C-0009, which is not a correction in corrections.json");
+    const other = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, correction_id: "C-0002" });
+    });
+    expect(other.paths).toEqual(["corrections.json: disputes[1].correction_id"]);
+    expect(other.messages[0]).toContain(`D-0002 names C-0002, which corrects pol-jp-active-cyber-defence-2026-10 in 2026-10-12, not inc-health-us-2026-10 in 2026-10-12`);
+    // A dispute naming a correction that answers no dispute (a re-check correction).
+    const recheck = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, item_id: c.corrections[1]!.item_id, correction_id: "C-0002" });
+    });
+    expect(recheck.paths).toEqual(["corrections.json: disputes[1].correction_id"]);
+    expect(recheck.messages[0]).toContain("D-0002 names C-0002, which answers no dispute");
+    // Intake's "already answered" path: a later dispute on the same item and edition takes the stored correction's id. Valid.
+    const answered = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, received: "2026-10-13T21:00:00+08:00" });
+    });
+    expect(answered.codes).toEqual([]);
+  });
+
   it("XREF_ARCHIVE: a brief missing from archive-index.json, or listed with another publish time", () => {
     const dir = copy();
     edit<ArchiveIndex>(dir, "archive-index.json", (a) => {

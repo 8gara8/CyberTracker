@@ -819,6 +819,30 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
           "Set the dispute's evidence_url to null: dispute intake keeps only a safe https link (SPEC §8.9)."));
       }
     });
+    // Links (§4.10, §8.9): a correction's dispute_id names a dispute whose correction_id is that correction, and a
+    // dispute's correction_id names a correction on its item (and its edition, when it names one) that answers a
+    // dispute. Not the strict reverse: intake answers a later dispute on an item and edition a stored name_removed
+    // correction already withholds with that correction's id, so one correction can answer several disputes.
+    // The first record under an id (a repeated id is its own error below).
+    const disputeById = new Map([...cf.disputes].reverse().map((d) => [d.id, d] as const));
+    const correctionById = new Map([...cf.corrections].reverse().map((c) => [c.id, c] as const));
+    const LINK_HINT = "Publish links both records: the correction's dispute_id and the dispute's correction_id (SPEC §4.10, §8.9).";
+    cf.corrections.forEach((c, i) => {
+      if (c.dispute_id === null) return;
+      const d = disputeById.get(c.dispute_id);
+      const why = !d ? "which is not a dispute in corrections.json"
+        : d.correction_id !== c.id ? `but ${d.id}'s correction_id is ${d.correction_id ?? "null"}` : null;
+      if (why) add(file, error("XREF_CORRECTION", `corrections[${i}].dispute_id`, `${c.id} answers ${c.dispute_id}, ${why}.`, LINK_HINT));
+    });
+    cf.disputes.forEach((d, i) => {
+      if (d.correction_id === null) return;
+      const c = correctionById.get(d.correction_id);
+      const why = !c ? "which is not a correction in corrections.json"
+        : c.item_id !== d.item_id || (d.edition_date !== null && c.edition_date !== d.edition_date)
+          ? `which corrects ${c.item_id} in ${c.edition_date}, not ${d.item_id} in ${d.edition_date ?? "any edition"}`
+          : c.dispute_id === null ? "which answers no dispute" : null;
+      if (why) add(file, error("XREF_CORRECTION", `disputes[${i}].correction_id`, `${d.id} names ${d.correction_id}, ${why}.`, LINK_HINT));
+    });
     const numbers = cf.corrections.map((c) => Number(c.id.slice(2)));
     const seen = new Set<number>();
     cf.corrections.forEach((c, i) => {
