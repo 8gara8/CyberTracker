@@ -481,6 +481,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       setStage(cur(), "data_only", { status: "skipped", note: NOTES.notRun("metrics") });
     } else if (now() > sch.publishUntil) {
       setStage(cur(), "data_only", { status: "skipped", note: NOTES.tooLate(cfg.run.schedule.publish_until) });
+      // 11:00 passed during collect or metrics: whatever follows, nothing of D is published by this run.
+      state.code ??= "E_TOO_LATE";
     } else {
       const t0 = now();
       setStage(cur(), "data_only", { status: "ok", started: t0 });
@@ -878,8 +880,11 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     const rec = cur();
     const outcome = outcomeFor({ dryRun, skipped: state.skipped, full: state.full, dataOnly: state.dataOnly });
     let errorCode = outcome === "failed" || outcome === "published_data_only" || outcome === "dry_run" ? state.code : null;
-    if (outcome === "failed" && !errorCode) {
-      errorCode = rec.stages.find((x) => x.id === "data_only")?.status === "failed" ? "E_PUBLISH" : "E_INTERNAL";
+    // Nothing published and no stage named why (a dry run: nothing written to its copy): with no editorial
+    // code, the data-only edition's own failure, else an unexpected one.
+    const nothingOut = outcome === "failed" || (dryRun && !state.skipped && !state.full && !state.dataOnly);
+    if (nothingOut && !errorCode) {
+      errorCode = rec.stages.find((x) => x.id === "data_only")?.status === "failed" ? "E_DATA_ONLY" : "E_INTERNAL";
     }
     const brief = readBrief(outDir(), D);
     closeRecord(rec, { outcome, errorCode, edition: brief?.edition ?? null, late: lateOf(brief), finishedAt: now() });

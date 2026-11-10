@@ -582,7 +582,7 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
-  it("D16 a 10:58 start with reject-briefs: the data-only stage fails and only status: commits land", async () => {
+  it("D16 a 10:58 start with reject-briefs: the data-only stage fails with E_DATA_ONLY and only status: commits land", async () => {
     const h = harness({ start: "10:58" });
     okAgent(h);
     h.pushes("reject-briefs");
@@ -596,14 +596,40 @@ describe("daily.ts end to end", () => {
     const r = statusOn(h)!.runs;
     expect(r).toHaveLength(1);
     expect(r[0]!.outcome).toBe("failed");
-    expect(r[0]!.error_code).toBe("E_PUBLISH");
+    expect(r[0]!.error_code).toBe("E_DATA_ONLY");
     expect(stageOf(r[0]!, "data_only")).toMatchObject({ status: "failed", note: "Data-only edition not published." });
     expect(stageOf(r[0]!, "recheck")).toMatchObject({ status: "skipped", note: "Not run: under 6 minutes left before 11:00." });
     for (const st of ["draft", "validate", "publish"]) expect(stageOf(r[0]!, st).note).toBe("Started after 05:30: no editorial pass today.");
     expect(h.agentCalls()).toEqual([]);
-    expect(summary(h).split("\n")[0]).toBe(`**CyberTracker ${D} · failed** (E_PUBLISH)`);
+    const lines = summary(h).split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · failed** (E_DATA_ONLY)`);
+    // Not E_PUBLISH's lines: no draft exists, so publish's full mode is never the next step.
+    expect(lines).toContain("What happened: The data-only edition could not be composed, validated or pushed, and no full edition followed.");
+    expect(summary(h)).not.toContain("npm run publish");
+    expect(runsJsonl(h)).toMatchObject([{ outcome: "failed", error_code: "E_DATA_ONLY" }]);
     expect(h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
     expect(h.git("rev-parse", "HEAD")).toBe(h.remoteLog().at(-1)!.sha);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D39 a start at 10:59:57 whose start record lands after 11:00: the data-only stage is skipped as too late, E_TOO_LATE, exit 1", async () => {
+    const h = harness({ start: "10:59" });
+    okAgent(h);
+    h.pushes({ slowSeconds: 4 });
+    h.clock.set(at(D, "10:59") + 57_000);
+    expect(await run(h, ["--trigger", "manual"])).toBe(1);
+    const s = subjects(h);
+    expect(s).toEqual([expect.stringMatching(/ started$/), expect.stringMatching(/ ended: failed$/)]);
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ outcome: "failed", error_code: "E_TOO_LATE" });
+    expect(stageOf(r[0]!, "data_only")).toMatchObject({ status: "skipped", note: "Too late: nothing is published after 11:00." });
+    const lines = summary(h).split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · failed** (E_TOO_LATE)`);
+    expect(lines).toContain("Next step: nothing: nothing is published after 11:00; the next morning's run will publish");
+    expect(summary(h)).not.toContain("unexpected error");
+    expect(briefOn(h)).toBeNull();
+    expect(h.agentCalls()).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);
 

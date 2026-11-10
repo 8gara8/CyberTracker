@@ -27,7 +27,7 @@ export const CHAT_MAX_LINES = 15;
 
 /** Every run error code of §8.2's table, in its order. */
 export const ERROR_CODES = [
-  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_SANDBOX", "E_LIMIT",
+  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_DATA_ONLY", "E_SANDBOX", "E_LIMIT",
   "E_AGENT", "E_TIMEOUT", "E_VALIDATION", "E_PUBLISH", "E_TOO_LATE", "E_SIMULATED", "E_INTERNAL",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -72,6 +72,7 @@ export const NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
   E_AUTH: `the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6), then ${RERUN}`,
   E_PUSH: `the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6), then ${RERUN}`,
   E_METRICS: `read logs/{date}.metrics.log; fix in a PR, then ${RERUN}`,
+  E_DATA_ONLY: `read logs/{date}.daily.log, then ${RERUN}`,
   E_SANDBOX: "the agent's sandbox is wrong; run npm run agent:check -- --sandbox and fix SPEC §9.5's settings before the next run",
   E_LIMIT: "the account's usage limit stopped the agent; the data-only edition stands; runs resume when the limit window resets",
   E_AGENT: RERUN,
@@ -122,6 +123,7 @@ export const WHAT_HAPPENED: Readonly<Record<ErrorCode, (f: WhatFacts) => string>
   E_AUTH: () => "The agent's sign-in token was missing or expired, so no editorial pass ran.",
   E_PUSH: () => "The start record could not be pushed to GitHub, so nothing else was tried.",
   E_METRICS: () => "No metrics file was written, so nothing could be published.",
+  E_DATA_ONLY: () => "The data-only edition could not be composed, validated or pushed, and no full edition followed.",
   E_SANDBOX: () => "The agent started with tools beyond its sandbox and was stopped.",
   E_LIMIT: () => "The account's usage limit stopped the agent before it wrote a valid draft.",
   E_AGENT: (f) => `The agent wrote no draft in ${count(f.attempts, "attempt")}.`,
