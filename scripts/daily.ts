@@ -46,7 +46,7 @@ import { readToken as keychainToken } from "./lib/keychain";
 import { acquireLock, releaseLock } from "./lib/lock";
 import { RunLog } from "./lib/log";
 import { agentTranscript, runPaths } from "./lib/paths";
-import { pruneRunFiles } from "./lib/prune";
+import { pruneCache, pruneRunFiles } from "./lib/prune";
 import { LINES } from "./lib/run-lines";
 import { snapshotHashes, snapshotUrls, type Snapshot } from "./lib/snapshot";
 import {
@@ -881,6 +881,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       line(errorText(e));
     }
     pruneRunFiles(root, today);
+    // File times are on the real clock, whatever deps.now says.
+    pruneCache(root, Date.now());
     clearWatchdog();
     releaseLock(P.lock);
     line(LINES.runEnded(outcome));
