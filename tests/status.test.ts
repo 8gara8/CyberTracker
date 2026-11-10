@@ -234,8 +234,13 @@ describe("stage notes", () => {
       const rec = record({ date: dataOnly.date });
       runStages(rec, RUN_STAGES.length, []);
       setStage(rec, "publish", { status: "failed", ended: at(dataOnly.date, "05:12"), note: NOTES.failure("E_PUBLISH", {} as WhatFacts) });
+      // Earlier notes that leave no room for it: only its CHAT_READ_NOTES entry keeps it past the cut.
+      const before = [NOTES.staleLock("02:31"), NOTES.restored];
+      for (const n of before) addNote(rec, "publish", n);
+      expect([NOTES.failure("E_PUBLISH", {} as WhatFacts), ...before, NOTES.notComposed].join(" ").length).toBeGreaterThan(200);
+      expect([NOTES.failure("E_PUBLISH", {} as WhatFacts), ...before].join(" ").length).toBeLessThanOrEqual(200);
       addNote(rec, "publish", NOTES.notComposed);
-      for (const n of [NOTES.staleLock("02:31"), NOTES.restored, NOTES.restarted("abc1234")]) addNote(rec, "publish", n);
+      addNote(rec, "publish", NOTES.restarted("abc1234"));
       rec.data_only_published_at = dataOnly.data_only_published_at;
       rec.deploy = { triggered: true, ready_at: dataOnly.published_at, shows_date: dataOnly.date, shows_edition: "data_only" };
       closeRecord(rec, { outcome: "published_data_only", errorCode: "E_PUBLISH", edition: "data_only", late: false, finishedAt: at(dataOnly.date, "05:20") });
