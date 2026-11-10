@@ -5,7 +5,8 @@
 // maskWithheld(). An item re-reports a withheld item when it has the id of a withheld reference (an item
 // keeps its id in every edition, so whatever the later copy cites), or when it cites a URL whose
 // archive-index item_ids are all withheld references (a page an unwithheld item also cites, such as a
-// vendor index, is not the withheld story's). rewriteItem(), markRegions() and
+// vendor index, is not the withheld story's); a reference with a withheld item's id counts however old its
+// brief, and the stored brief D counts when a full edition replaces it. rewriteItem(), markRegions() and
 // dropActorItem() rewrite one brief in place. Pure, and imports no composer, so lib/apply.ts and
 // lib/withhold.ts can both use it. Owner: lane L3.
 
@@ -181,7 +182,10 @@ export interface MaskInput {
   sameDay?: readonly BindingWithhold[];
   /** As synced: before this edition's URLs are added. */
   archiveIndex: ArchiveIndex | null;
-  /** The stored briefs before the edition (their withheld items' references). */
+  /**
+   * The stored briefs before the edition, and the stored brief of the edition's own date when a full edition
+   * replaces it (their withheld items' references: a forced rerun must see the items its first publish masked).
+   */
   history: readonly Pick<Brief, "date" | "items">[];
 }
 
@@ -203,6 +207,10 @@ export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
     for (const w of ws) if (!list.includes(w)) list.push(w);
     byId.set(ref.slice(11), list);
   }
+  // A binding withhold's references by item id, so an archive reference to any copy of a withheld item counts,
+  // however old the brief holding it (the history is only the last days).
+  const heldIds = new Map([...byId].map(([id, ws]) => [id, [...ws]] as const));
+  const heldRef = (ref: string): readonly BindingWithhold[] | undefined => refs.get(ref) ?? heldIds.get(ref.slice(11));
   for (const w of i.sameDay ?? []) {
     const list = byId.get(w.item_id) ?? [];
     if (!list.some((x) => x.correction_id === w.correction_id)) list.push(w);
@@ -218,9 +226,9 @@ export function maskWithheld(b: Brief, i: MaskInput): MaskedItem[] {
       // A page every stored citer of which is withheld is the story's own; one an unwithheld item also
       // cites (a vendor index, a CVE record two stories share) says nothing about this item.
       const cited = (url && i.archiveIndex?.urls[url]?.item_ids) || [];
-      if (cited.length === 0 || !cited.every((ref) => refs.has(ref))) continue;
+      if (cited.length === 0 || !cited.every((ref) => heldRef(ref))) continue;
       for (const ref of cited) {
-        for (const w of refs.get(ref) ?? []) if (!hits.has(w.correction_id)) hits.set(w.correction_id, { w, match: "url" });
+        for (const w of heldRef(ref) ?? []) if (!hits.has(w.correction_id)) hits.set(w.correction_id, { w, match: "url" });
       }
     }
     for (const { w, match } of hits.values()) {
@@ -275,10 +283,12 @@ export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
   if (o.sameDay.length === 0) return out;
   const all = [...o.binding, ...o.sameDay.filter((w) => !o.binding.some((x) => x.correction_id === w.correction_id))];
   const refs = withheldRefs(all, o.history);
+  // As maskWithheld() reads them: a reference to any copy of a withheld item counts, by its id.
+  const ids = new Set([...refs.keys()].map((ref) => ref.slice(11)));
   const urlOf = new Map(d.sources.map((s) => [s.id, normalizeUrl(s.url)] as const));
   const reReports = (it: DraftItem, own: string) => it.source_ids.some((sid) => {
     const cited = o.archiveIndex?.urls[urlOf.get(sid) ?? ""]?.item_ids ?? [];
-    return cited.includes(own) && cited.every((ref) => refs.has(ref));
+    return cited.includes(own) && cited.every((ref) => refs.has(ref) || ids.has(ref.slice(11)));
   });
   const renamed = new Set<string>();
   for (const w of o.sameDay) {

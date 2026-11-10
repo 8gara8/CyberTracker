@@ -272,8 +272,11 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   const d = structuredClone(i.draft) as GatedDraft;
   const binding = bindingWithholds(i.corrections, i.disputes);
   const sameDay = withholdsOn(i.corrections, i.date, i.disputes);
+  // The stored brief D's withheld items are withheld references too: the archive index as synced still lists
+  // D's items, so a forced rerun must count the items its first publish masked.
+  const held = i.stored && i.stored.date === i.date ? [...i.history, i.stored] : i.history;
   const adopted = adoptWithheldIds(d, {
-    sameDay, binding, stored: i.stored ?? null, archiveIndex: i.archiveIndex, history: i.history,
+    sameDay, binding, stored: i.stored ?? null, archiveIndex: i.archiveIndex, history: held,
     firstSeen: i.firstSeen ?? firstSeenOf(i.history.filter((b) => b.date < i.date)),
   });
   const sources = d.sources.map((s) => freezeSource(s, seenAsOf(i.evidence, s.url), c));
@@ -316,7 +319,7 @@ export function applyDraft(i: ApplyInput): ContentChanges {
     sources,
     computed: emptyComputed(),
   };
-  const masked = maskWithheld(b, { binding, sameDay, archiveIndex: i.archiveIndex, history: i.history }).map((x): MaskedItem => {
+  const masked = maskWithheld(b, { binding, sameDay, archiveIndex: i.archiveIndex, history: held }).map((x): MaskedItem => {
     const a = adopted.find((y) => y.item_id === x.item_id && y.correction_id === x.correction_id);
     if (a) return { ...x, match: "url", draft_id: a.draft_id };
     return kept.includes(x.item_id) && sameDay.some((w) => w.correction_id === x.correction_id) ? { ...x, match: "carried" } : x;

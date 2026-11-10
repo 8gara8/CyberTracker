@@ -629,6 +629,33 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(applyDraft({ ...i, history }).masked!.map((m) => [m.item_id, m.match])).toEqual(expect.arrayContaining([[CAMPAIGN, "url"]]));
   });
 
+  it("C25: a forced rerun keeps masked the item its first publish masked by URL (the synced index lists D's own references)", () => {
+    const i = withWithhold({ item: "camp-tw-old-2026-10", edition: "2026-10-10", kind: "attribution", date: "2026-10-13" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    i.archiveIndex!.urls[url] = { first_cited: "2026-10-10", item_ids: ["2026-10-10/camp-tw-old-2026-10"], sha256: null, hashed_at: null, last_check: null };
+    const first = applyDraft(i);
+    expect(first.masked!.map((m) => [m.item_id, m.match])).toEqual([[CAMPAIGN, "url"]]);
+    expect(first.archiveIndex.urls[url]!.item_ids).toEqual(["2026-10-10/camp-tw-old-2026-10", `${D}/${CAMPAIGN}`]);
+    // --force: the same draft over brief D and the archive index as the first publish left them.
+    const again = applyDraft({ ...i, archiveIndex: first.archiveIndex, stored: first.brief });
+    expect(again.masked!.map((m) => [m.item_id, m.correction_id])).toEqual([[CAMPAIGN, "C-0003"]]);
+    expect(again.brief).toEqual(first.brief);
+  });
+
+  it("C26: a page only copies of the withheld item cite masks however old the copy: a reference counts by the item's id", () => {
+    // The withheld item also ran on 1 September, beyond the 30 days of history publish reads.
+    const i = withWithhold({ item: "camp-tw-old-2026-10", edition: "2026-10-10", kind: "attribution", date: "2026-10-13" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    expect(i.history.some((h) => h.date === "2026-09-01")).toBe(false);
+    i.archiveIndex!.urls[url] = {
+      first_cited: "2026-09-01", item_ids: ["2026-09-01/camp-tw-old-2026-10", "2026-10-10/camp-tw-old-2026-10"], sha256: null, hashed_at: null, last_check: null,
+    };
+    expect(applyDraft(i).masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0003", kind: "attribution", match: "url" }]);
+    // An old reference to another item still frees the page.
+    i.archiveIndex!.urls[url]!.item_ids.unshift("2026-09-01/camp-tw-other-2026-09");
+    expect(applyDraft(i).masked).toEqual([]);
+  });
+
   it("C19: intake's list read before this morning's withhold: the dispute keeps the withhold's correction, and a draft correction does not answer it", () => {
     const i = world("weekday");
     // As intake read it: D-0001's withhold commit came after, so its correction_id is still null there.
