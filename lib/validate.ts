@@ -29,7 +29,7 @@ import {
 import { contentDir, isSampleData } from "./site";
 import { normalizeUrl } from "./urls";
 import { WITHHELD_MARK } from "./vocab";
-import { bindingWithholds } from "./withhold-mask";
+import { bindingWithholds, withheldOnlySources } from "./withhold-mask";
 
 export type { CveLookup, CveRecordInfo, RegionsBase, Rule, RuleInput, ValidationIssue } from "./rules/types";
 export { SAFETY_CODES } from "./rules/safety";
@@ -812,6 +812,24 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
         add(file, error("FILE_ORDER", p, `corrections.json must be sorted by date, then id (${c.id} comes after ${prev.id}).`));
       }
     });
+    // A source only withheld items cite has its title (and English title) masked with them (§4.10 rewriteItem()):
+    // a page title can name the victim or the actor. Every stored brief, whatever correction withheld its items.
+    for (const [date, held] of briefs) {
+      const data = held.data;
+      if (!data || !data.items.some((it) => it.withheld)) continue;
+      for (const [sid, ids] of withheldOnlySources(data)) {
+        const k = data.sources.findIndex((x) => x.id === sid);
+        const src = data.sources[k];
+        if (!src) continue;
+        for (const field of ["title", "title_en"] as const) {
+          const v = src[field];
+          if (v === null || v === WITHHELD_MARK) continue;
+          add(held.file, error("XREF_CORRECTION", `sources[${k}].${field}`,
+            `${sid} is cited only by withheld items (${ids.join(", ")}), but its ${field} is not "${WITHHELD_MARK}" in ${date}'s brief.`,
+            "A withhold masks the title of each source only withheld items cite (SPEC §4.10)."));
+        }
+      }
+    }
     // NO_EXPLOIT_LINK: a reader's evidence link is published in corrections.json, so it gets the cited-URL check as a
     // tier 3 page (any exploit word in its path fails, on any host), and no blocked host passes (§8.9 intake keeps neither).
     cf.disputes.forEach((d, i) => {

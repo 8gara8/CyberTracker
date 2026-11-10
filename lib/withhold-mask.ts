@@ -148,18 +148,41 @@ export function rewriteItem(b: Brief, it: Item, w: { kind: WithholdKind; since: 
 
   // A source that only withheld items cite is masked too: two withheld items sharing a page (two withholds on one
   // day, a re-report masked by URL beside the item kept or masked by id) must not leave its title for each other.
-  const others = new Set(b.items.filter((x) => x.id !== it.id && !x.withheld).flatMap((x) => [
-    ...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? []),
-  ]));
-  const elsewhere = new Set([
-    ...b.elsewhere.map((e) => e.source_id), ...(b.angle?.source_id ? [b.angle.source_id] : []), ...(b.angle?.counterpoint_source_ids ?? []),
-    ...(b.week_in_review?.strongest_against.source_ids ?? []), ...lens.source_ids, ...lens.rows.flatMap((row) => row.source_ids), ...lens.japan.source_ids,
-  ]);
+  const open = openSourceIds(b);
   for (const s of b.sources) {
-    if (!it.source_ids.includes(s.id) || others.has(s.id) || elsewhere.has(s.id)) continue;
+    if (!it.source_ids.includes(s.id) || open.has(s.id)) continue;
     s.title = WITHHELD_MARK;
     if (s.title_en !== null) s.title_en = WITHHELD_MARK;
   }
+}
+
+/**
+ * The source ids `b` cites outside its withheld items: an unwithheld item's sources, flaw evidence and
+ * incident status sources, and Elsewhere, the Angle, the Week in review and the Taiwan Lens.
+ */
+function openSourceIds(b: Brief): Set<string> {
+  const lens = b.taiwan_lens;
+  return new Set([
+    ...b.items.filter((x) => !x.withheld).flatMap((x) => [
+      ...x.source_ids, ...x.flaw_evidence.map((f) => f.source_id), ...(x.incident?.status_source_ids ?? []),
+    ]),
+    ...b.elsewhere.map((e) => e.source_id), ...(b.angle?.source_id ? [b.angle.source_id] : []), ...(b.angle?.counterpoint_source_ids ?? []),
+    ...(b.week_in_review?.strongest_against.source_ids ?? []), ...lens.source_ids, ...lens.rows.flatMap((row) => row.source_ids), ...lens.japan.source_ids,
+  ]);
+}
+
+/**
+ * The sources of `b` only withheld items cite, whose titles rewriteItem() masked (§4.10): source id → the
+ * ids of the withheld items citing it. XREF_CORRECTION checks each reads WITHHELD_MARK (lib/validate.ts).
+ */
+export function withheldOnlySources(b: Brief): Map<string, string[]> {
+  const open = openSourceIds(b);
+  const out = new Map<string, string[]>();
+  for (const it of b.items) {
+    if (!it.withheld) continue;
+    for (const sid of it.source_ids) if (!open.has(sid)) out.set(sid, [...new Set([...(out.get(sid) ?? []), it.id])]);
+  }
+  return out;
 }
 
 /** Region row and raise reasons that list the item become WITHHELD_MARK (a reason embeds its headline, §5.11). */

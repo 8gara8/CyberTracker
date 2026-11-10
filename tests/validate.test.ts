@@ -273,6 +273,31 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(r.errors[0]!.message).toContain(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
   });
 
+  it("XREF_CORRECTION: a source only withheld items cite keeps its title (or its English title); one an unwithheld item also cites may", () => {
+    // Before T5 nothing checked rewriteItem()'s source-title rule (§4.10), so a withheld item's page title could name the victim.
+    for (const field of ["title", "title_en"] as const) {
+      const dir = copy();
+      let k = -1;
+      editBrief(dir, "2026-10-12", (b) => {
+        k = b.sources.findIndex((s) => s.id === b.items[0]!.source_ids[0]);
+        b.sources[k]![field] = "SAMPLE named company says an intruder copied patient records";
+      });
+      const r = all(dir);
+      expect(codes(r.errors), field).toEqual(["XREF_CORRECTION"]);
+      expect(paths(r, "XREF_CORRECTION"), field).toEqual([`briefs/2026-10-12.json: sources[${k}].${field}`]);
+      expect(r.errors[0]!.message).toContain(`is cited only by withheld items (inc-health-us-2026-10), but its ${field} is not "${WITHHELD_MARK}"`);
+    }
+    // An unwithheld item citing the page too: the title is that item's, so it may stand.
+    const dir = copy();
+    editBrief(dir, "2026-10-12", (b) => {
+      const sid = b.items[0]!.source_ids[0]!;
+      const k = b.sources.findIndex((s) => s.id === sid);
+      b.sources[k]!.title = "SAMPLE vendor advisory index";
+      b.items[1]!.source_ids = [...b.items[1]!.source_ids, sid];
+    });
+    expect(all(dir).errors.filter((e) => e.code === "XREF_CORRECTION")).toEqual([]);
+  });
+
   it("XREF_CORRECTION: while its dispute is open or upheld, a withhold covers a later brief holding the item; once rejected, it does not", () => {
     const FLAW = "cve-2026-108917";
     const later = (dir: string, through: string, status: "open" | "rejected") => {
