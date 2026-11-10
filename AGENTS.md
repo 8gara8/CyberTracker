@@ -62,13 +62,15 @@ faster?
   4.8G `cache/cvelistV5` with it (P3 clones again if it needs one).
 - **P3 on `p3-pipeline`, draft PR #5:** built and tested in the cloud container on 2026-11-10: the
   morning pipeline (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its
-  tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. On Kobol, `--help` of CLI
-  2.1.316 lists every §9.4 flag and `file -L` says arm64. Kobol checks next: JL stores the agent's token
+  tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. An independent review in the
+  container (two verify passes, 22 findings, one a duplicate) and the build's 11 known items were then
+  fixed there, with rows 95 to 120. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and `file -L`
+  says arm64. Kobol checks next: JL stores the agent's token
   (SPEC §9.6), most simply with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which
   reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
   transcript re-record and the dry runs of SPEC §10 P3, whose report
-  (`docs/reports/<date>-p3-dry-runs.md`) is written on Kobol. The PR stays a draft until those and an
-  independent review are in; marking it ready starts the Codex review.
+  (`docs/reports/<date>-p3-dry-runs.md`) is written on Kobol. The PR stays a draft until those are in;
+  marking it ready starts the Codex review.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
