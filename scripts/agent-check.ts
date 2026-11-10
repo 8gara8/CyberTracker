@@ -48,8 +48,12 @@ export const USAGE = "Usage: tsx scripts/agent-check.ts [--sandbox] [--canary] [
 export const CALL_TIMEOUT_MS = 5 * MIN;
 /** The cli test's limit (§8.12). */
 export const CLI_REPLY_MS = 60_000;
-/** Messages a denied or restricted tool call carries (SPEC §8.12 negative-test rule). */
-export const RESTRICTION_RE = /--restricted confines|denied access to domain:|don't ask mode|outside (?:the )?(?:allowed )?working director|not allowed|permission/i;
+/**
+ * The restriction an `is_error` tool result must name to count as denied: exactly SPEC §8.12's three phrases
+ * (negative-test rule). Any other error, a missing file, a network failure or a vaguer "not allowed", is not a
+ * denial. Kobol's first `agent:check` on the pinned CLI confirms the real messages carry these phrases.
+ */
+export const RESTRICTION_RE = /--restricted confines|denied access to domain:|don't ask mode/i;
 /** The canary's own files under drafts/ (plan A22), never the morning's drafts/D.json or drafts/context.json. */
 export const canaryFiles = (nonce: string) => ({ draft: `drafts/canary-${nonce}.json`, context: `drafts/canary-context-${nonce}.json` });
 /** The canary's pack, read by the agent in place of packs/D.md (plan A22). */

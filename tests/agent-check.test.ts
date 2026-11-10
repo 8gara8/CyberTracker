@@ -14,7 +14,7 @@ import { Evidence } from "@/lib/schema/misc";
 import { Pack } from "@/lib/schema/pack";
 import { CANARY_TOKEN, CANARY_URL_MARK } from "@/lib/vocab";
 import {
-  CANARY_PACK_MD, USAGE, WEB_PAGES, canaryContext, canaryEvidence, canaryFiles, domainDenied, fetchedCanary, listingWithoutGlob, main,
+  CANARY_PACK_MD, RESTRICTION_RE, USAGE, WEB_PAGES, canaryContext, canaryEvidence, canaryFiles, domainDenied, fetchedCanary, listingWithoutGlob, main,
   negativeResult, renderTable, sandboxTestDir, smokeLine, smokeReply, toolResultsContain, webRow, type AgentCheckDeps, type Row,
 } from "@/scripts/agent-check";
 import { AGENT_ENV_KEYS } from "@/scripts/lib/agent";
@@ -57,6 +57,26 @@ describe("AC1: the negative-test rule on canned transcripts (§8.12)", () => {
     expect(negativeResult(through, "Read", [isPath("/etc/hosts")])).toEqual({ result: "FAIL", attempts: 1, denied: 0 });
     const missing = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result: "File does not exist.", isError: true }]);
     expect(negativeResult(missing, "Read", [isPath("/etc/hosts")]).result).toBe("FAIL");
+    // Only §8.12's three phrases name a restriction; vaguer wording an older rule accepted is not a denial.
+    for (const result of [
+      "Permission to read /etc/hosts was not granted.", "Reading /etc/hosts is not allowed.",
+      "Path /etc/hosts is outside the allowed working directory.", "EACCES: permission denied, open '/etc/hosts'",
+    ]) {
+      const vague = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result, isError: true }]);
+      expect(negativeResult(vague, "Read", [isPath("/etc/hosts")]).result, result).toBe("FAIL");
+    }
+    for (const result of [
+      "Claude requested permissions to read from /etc/hosts, but you haven't granted it yet. Running in don't ask mode.",
+      "Claude Code was denied access to domain:example.net",
+      "Read is unavailable: --restricted confines file tools to the working directory.",
+    ]) {
+      const named = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result, isError: true }]);
+      expect(negativeResult(named, "Read", [isPath("/etc/hosts")]).result, result).toBe("PASS");
+      // The phrase counts only on an error result: a successful read that quotes it went through.
+      const quoted = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result }]);
+      expect(negativeResult(quoted, "Read", [isPath("/etc/hosts")]).result, result).toBe("FAIL");
+    }
+    expect(RESTRICTION_RE.source).toBe("--restricted confines|denied access to domain:|don't ask mode");
     const mixed = canned([
       { id: "a", name: "Write", input: { file_path: "content/x.json" }, result: "x", isError: true },
       { id: "b", name: "Edit", input: { file_path: "content/x.json" }, result: "edited" },
