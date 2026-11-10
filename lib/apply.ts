@@ -3,7 +3,7 @@
 // Step S0 wrote applyDraft()'s types (plan §2.4, amendments A5 and A6); lane L3 wrote the bodies, ported
 // from fixtures/src/site.ts (freezeSource, recordBlock, kevBlock, releaseBlock, freezeItems, actorsSeen,
 // regionsFor, gapOf, lensScript, computedOf), so a brief built here equals the sample content's. The
-// helpers below the stub types are exported for lib/data-only.ts and lib/withhold.ts.
+// helpers below the types are exported for lib/data-only.ts and lib/withhold.ts.
 
 import { matchVendor, type LoadedConfig } from "./config";
 import { addDays, utcDateOf } from "./dates";

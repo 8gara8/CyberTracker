@@ -98,7 +98,7 @@ describe("the P3 contract", () => {
     const needle = ["P3", "stub"].join(" ");
     const hits = ["lib", "scripts", "routine", path.join("fixtures", "src"), path.join("fixtures", "agent")]
       .flatMap((d) => filesUnder(path.join(ROOT, d)))
-      .filter((f) => /\.(ts|tsx|mjs|md|json)$/.test(f) && fs.readFileSync(f, "utf8").includes(needle))
+      .filter((f) => /\.(ts|tsx|mjs|sh|md|json)$/.test(f) && fs.readFileSync(f, "utf8").includes(needle))
       .map((f) => path.relative(ROOT, f));
     expect(hits).toEqual([]);
   });
