@@ -68,7 +68,12 @@ faster?
   fixes left open (a same-day withhold whose item the draft drops, later copies of a withheld item, the
   URL rule, shared source titles, intake's reuse of a non-binding correction, the draft-mode `first_seen`,
   the not-composed next step and the sample's blocks), editing rows 29, 79, 84, 87, 95, 96, 98, 100, 102
-  and 103 and adding rows 121 to 125. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
+  and 103 and adding rows 121 to 125. A third fix pass in the container (2026-11-11) kept withheld
+  items out of the top-story slots and the word counts, showed a same-day withheld story once when the
+  draft re-reports it as another kind, read withheld references from every stored brief, gave a
+  whole-tree validation failure and a failed `--force` rerun the right next step, checked the titles of
+  sources only withheld items cite and dropped the unassessed chip of a withheld item, with rows 126 to
+  132. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
   `file -L` says arm64. Kobol checks next: JL stores the agent's token
   (SPEC §9.6), most simply with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which
   reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
