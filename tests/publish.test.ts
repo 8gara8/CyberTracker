@@ -681,10 +681,11 @@ describe("cveFactsFor (A5)", () => {
       expect(facts.kev("CVE-2026-0000001")).toBeNull();
       expect(facts.record("../x")).toBeNull();
       expect(facts.ghsaIds("CVE-2026-0000001")).toEqual([]);
+      expect(facts.ghsaAdvisories?.("CVE-2026-0000001")).toEqual([]);
     });
   }, T);
 
-  it("CF3: the production facts reach the frozen block: KEV's vulnerabilityName is the title", async () => {
+  it("CF3: the production facts reach the frozen block: KEV's vulnerabilityName is the title, a reviewed GHSA gives ids and the advisory date", async () => {
     const h = makeHarness();
     made.push(h);
     const D = h.date;
@@ -699,6 +700,11 @@ describe("cveFactsFor (A5)", () => {
       const x = { config, facts, cveList: cveLookupFromDir(runPaths(h.root, D).cveRecords), kevIndex, inputs: null, findersVersion: 2, capturedAt: `${D}T04:45:00+08:00` };
       const listed = catalog.vulnerabilities.find((v) => v.cveID === "CVE-2026-104935")!;
       expect(cveBlockOf(listed.cveID, { flaw_evidence: [] }, [], x).title).toBe(listed.vulnerabilityName);
+      // GHSA-2f8c-wq4h-r7jm (reviewed, published 2026-10-13, no fixed version) aliases CVE-2026-107460.
+      expect(facts.ghsaIds("CVE-2026-107460")).toEqual(["GHSA-2f8c-wq4h-r7jm"]);
+      expect(facts.ghsaAdvisories?.("CVE-2026-107460")).toEqual([{ id: "GHSA-2f8c-wq4h-r7jm", published: "2026-10-13", fixed: false }]);
+      const b = cveBlockOf("CVE-2026-107460", { flaw_evidence: [] }, [], x);
+      expect(b).toMatchObject({ advisory_date: "2026-10-13", patch: null, ghsa_ids: ["GHSA-2f8c-wq4h-r7jm"] });
     });
   }, T);
 });

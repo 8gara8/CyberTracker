@@ -698,4 +698,27 @@ describe("CVE blocks from facts and the manifest (A5)", { timeout: 120_000 }, ()
     const named: CveFacts = { ...facts, kev: (id) => ({ ...facts.kev(cve)!, vulnerabilityName: `SAMPLE ${id} name` }) };
     expect(cveBlockOf(cve, { flaw_evidence: [] }, [], { ...x, facts: named }).title).toBe(`SAMPLE ${cve} name`);
   });
+
+  it("C20: with no cited vendor advisory, a reviewed GHSA gives advisory_date, and a fixed one the patch (basis ghsa_fixed_version)", () => {
+    const i = world("weekday");
+    const cve = "CVE-2026-104935";
+    const advisories = [
+      { id: "GHSA-2222-3333-4444", published: "2026-10-05", fixed: false },
+      { id: "GHSA-5555-6666-7777", published: "2026-10-08", fixed: true },
+    ];
+    const facts: CveFacts = { ...i.facts, ghsaAdvisories: (id) => (id === cve ? advisories : []) };
+    const x = { config: cfg, facts, cveList: i.cveList, kevIndex: i.kevIndex, inputs: null, findersVersion: 2, capturedAt: i.publishedAt };
+    const b = cveBlockOf(cve, { flaw_evidence: [] }, [], x);
+    expect(b.advisory_date).toBe("2026-10-05");
+    expect(b.patch).toEqual({ date: "2026-10-08", basis: "ghsa_fixed_version", source_url: "https://github.com/advisories/GHSA-5555-6666-7777" });
+    // A cited vendor advisory comes first for both.
+    const sources = [{ id: "s1", url: "https://vendor.example/advisory" }];
+    const patched = { flaw_evidence: [{ cve_id: cve, kind: "patched" as const, basis: "vendor_advisory" as const, date: "2026-10-09", source_id: "s1" }] };
+    expect(cveBlockOf(cve, patched, sources, x)).toMatchObject({
+      advisory_date: "2026-10-09", patch: { date: "2026-10-09", basis: "vendor_advisory", source_url: "https://vendor.example/advisory" },
+    });
+    // No fixed advisory: the date only. No advisory, or facts without the method: neither.
+    expect(cveBlockOf(cve, { flaw_evidence: [] }, [], { ...x, facts: { ...facts, ghsaAdvisories: () => [advisories[0]!] } })).toMatchObject({ advisory_date: "2026-10-05", patch: null });
+    expect(cveBlockOf(cve, { flaw_evidence: [] }, [], { ...x, facts: i.facts })).toMatchObject({ advisory_date: null, patch: null });
+  });
 });

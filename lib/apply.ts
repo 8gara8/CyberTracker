@@ -8,6 +8,7 @@
 import { matchVendor, type LoadedConfig } from "./config";
 import { addDays, utcDateOf } from "./dates";
 import { parseCveRecord } from "./feeds/cvelist";
+import { ghsaRecordUrl } from "./feeds/ghsa";
 import type { CveRecord } from "./feeds/types";
 import { actorNexusOf, publicExploitOf } from "./items";
 import { creditTexts, matchRecord } from "./metrics/ai-credit";
@@ -21,7 +22,7 @@ import { pageWords } from "./rules/words";
 import { sanitize } from "./sanitize";
 import { publisherFor } from "./sources";
 import { Brief, type ActorSeen, type FeedStale, type GapRef, type TaiwanLens } from "./schema/brief";
-import type { Ransomware, Source, VendorRef } from "./schema/common";
+import { ID_PATTERNS, type Ransomware, type Source, type VendorRef } from "./schema/common";
 import type { Vendor } from "./schema/config";
 import type { AgentContext, Candidate } from "./schema/context";
 import type { DraftAngle, DraftBrief, DraftCorrection } from "./schema/draft-brief";
@@ -175,6 +176,12 @@ export interface CveFacts {
   epss(cveId: string): { score: number; percentile: number; date: string } | null;
   /** Reviewed advisories naming the CVE, at most 5. */
   ghsaIds(cveId: string): string[];
+  /**
+   * The reviewed, not withdrawn advisories naming the CVE, oldest `published` (UTC date) first, each with
+   * whether it lists a fixed version (optional, as vulnerabilityName is): §4.6's fallbacks for
+   * advisory_date and patch (basis ghsa_fixed_version). Without it neither fallback applies.
+   */
+  ghsaAdvisories?(cveId: string): { id: string; published: string; fixed: boolean }[];
 }
 
 /** What every composer reads (applyDraft, composeDataOnly). */
@@ -468,6 +475,12 @@ export function cveBlockOf(
     ...exploited.map((f) => ({ date: f.date, basis: f.basis as CveBlock["exploitation_evidence"][number]["basis"], source_url: sourceUrl(f.source_id)! })),
   ].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const first = patched[0];
+  // §4.6's fallbacks: a reviewed GHSA's published date, and a patch when one lists a fixed version.
+  const advisories = (x.facts.ghsaAdvisories?.(id) ?? []).filter((a) => ID_PATTERNS.ghsa.test(a.id));
+  const fixedGhsa = advisories.find((a) => a.fixed) ?? null;
+  const patch: CveBlock["patch"] = first && first.basis === "vendor_advisory"
+    ? { date: first.date, basis: "vendor_advisory", source_url: sourceUrl(first.source_id)! }
+    : fixedGhsa ? { date: fixedGhsa.published, basis: "ghsa_fixed_version", source_url: ghsaRecordUrl(fixedGhsa.id) } : null;
   const epss = x.facts.epss(id);
   const cvss = rec?.cvss && rec.cvss.vector !== "" ? { score: rec.cvss.score, version: rec.cvss.version, vector: rec.cvss.vector, scorer: rec.cvss.scorer } : null;
 
@@ -486,8 +499,8 @@ export function cveBlockOf(
     credits,
     ai_credit: aiCredit,
     discovery_credit: aiCredit ? (aiCredit.kind === "ai_system" ? "ai_autonomous" : "ai_assisted") : credits.length ? "human" : "unknown",
-    advisory_date: first?.date ?? null,
-    patch: first && first.basis === "vendor_advisory" ? { date: first.date, basis: "vendor_advisory", source_url: sourceUrl(first.source_id)! } : null,
+    advisory_date: first?.date ?? advisories[0]?.published ?? null,
+    patch,
     exploitation_evidence: evidence,
     exploit_reference: rec?.exploit_reference ?? info?.exploit_reference ?? false,
     ghsa_ids: [...x.facts.ghsaIds(id)].slice(0, 5),
