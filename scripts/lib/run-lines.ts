@@ -20,6 +20,8 @@ export interface FirstLine {
 
 export interface AgentLine {
   attempt: number;
+  /** Set for a repair call: the line reads "Attempt N: repair K: agent ...". */
+  repair?: number;
   /** The CLI's exit code; null when it was stopped by a signal (the sandbox guard, a kill at the timeout). */
   exitCode: number | null;
   /** Whole minutes when the attempt timed out, else null. */
@@ -47,7 +49,7 @@ export const LINES = {
   /**
    * "Attempt N: agent exited C · T turns · tools {...} · fetches F/B." or "Attempt N: timed out after M min · ...";
    * " · reported an error" before the full stop when isError. A child stopped by a signal (exit code null)
-   * reads "agent was stopped".
+   * reads "agent was stopped". A repair call reads "Attempt N: repair K: agent ..." (new wording).
    */
   agent(o: AgentLine): string {
     const how = o.timedOutMin !== null
@@ -55,7 +57,7 @@ export const LINES = {
       : o.exitCode === null ? "agent was stopped" : `agent exited ${o.exitCode}`;
     const parts = [how, plural(o.turns, "turn"), `tools ${JSON.stringify(o.tools)}`, `fetches ${o.fetches}/${o.budget}`];
     if (o.isError) parts.push("reported an error");
-    return `Attempt ${o.attempt}: ${parts.join(" · ")}.`;
+    return `Attempt ${o.attempt}: ${o.repair !== undefined ? `repair ${o.repair}: ` : ""}${parts.join(" · ")}.`;
   },
   /** "Attempt N: no draft was written." */
   noDraft(attempt: number): string {

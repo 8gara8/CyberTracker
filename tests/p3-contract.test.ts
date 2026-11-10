@@ -132,7 +132,7 @@ describe("the run-log lines (RL1)", () => {
     expect(LINES.cli("2.1.316 (Claude Code)")).toBe("Agent CLI 2.1.316 (Claude Code).");
   });
 
-  it("RL1: the agent line, exited, timed out, stopped and with an error", () => {
+  it("RL1: the agent line, exited, timed out, stopped, with an error and for a repair", () => {
     const o = { attempt: 1, exitCode: 0, timedOutMin: null, turns: 23, tools: { WebSearch: 4, WebFetch: 12, Read: 3, Write: 1 }, fetches: 12, budget: 40, isError: false };
     expect(LINES.agent(o))
       .toBe('Attempt 1: agent exited 0 · 23 turns · tools {"WebSearch":4,"WebFetch":12,"Read":3,"Write":1} · fetches 12/40.');
@@ -142,6 +142,8 @@ describe("the run-log lines (RL1)", () => {
       .toBe('Attempt 1: agent exited 1 · 23 turns · tools {"WebSearch":4,"WebFetch":12,"Read":3,"Write":1} · fetches 12/40 · reported an error.');
     expect(LINES.agent({ ...o, exitCode: null, turns: 1, tools: {}, fetches: 0 }))
       .toBe("Attempt 1: agent was stopped · 1 turn · tools {} · fetches 0/40.");
+    expect(LINES.agent({ ...o, repair: 2, exitCode: null, turns: 1, tools: {}, fetches: 0 }))
+      .toBe("Attempt 1: repair 2: agent was stopped · 1 turn · tools {} · fetches 0/40.");
   });
 
   it("RL1: no draft, validation and repair lines", () => {

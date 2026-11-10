@@ -14,6 +14,7 @@
 //   version     what --version prints (default "2.1.316 (Claude Code)")
 //   touch       absolute paths created (empty) just before the draft step
 //   draftPath   the draft path, in place of the one found in the prompt
+//   resumeMode  the mode of a --resume call, in place of mode ("mcp", "auth" or "limit": a repair the run must stop on)
 // The result text is "OK" for agent-check's smoke prompts and "DONE" for every other prompt.
 // Every call, --version included, appends { argv, envKeys, cwd } (environment names only, never values) to
 // $CLAUDE_CONFIG_DIR/calls.jsonl. Adapted from the Europe fork's fixtures/agent/fake-claude.mjs.
@@ -43,7 +44,7 @@ const after = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] ?? n
 const prompt = after("-p") ?? "";
 const resume = after("--resume");
 const sessionId = resume ?? after("--session-id") ?? "00000000-0000-4000-8000-000000000000";
-const mode = cfg.mode ?? "ok";
+const mode = (resume && cfg.resumeMode) || (cfg.mode ?? "ok");
 const version = String(cfg.version ?? DEFAULT_VERSION).split(/\s+/)[0];
 
 const emit = (e) => process.stdout.write(`${JSON.stringify(e)}\n`);

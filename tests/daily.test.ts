@@ -462,6 +462,45 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D33 a repair session whose init breaks the sandbox is stopped: E_SANDBOX, no second repair, no retry, no full edition", async () => {
+    // Before the repair call was checked, the run validated the unchanged draft again, spent its second round and
+    // retried: E_VALIDATION twice, with nothing saying the sandbox broke.
+    const h = harness();
+    h.fakeAgent({ mode: "repair", invalidDraft: INVALID, repair: DRAFT, fetches: FETCHES, resumeMode: "mcp" });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!).toMatchObject({ outcome: "published_data_only", error_code: "E_SANDBOX", attempt: 1 });
+    expect(r[0]!.budgets.repair_rounds).toBe(1);
+    expect(stageOf(r[0]!, "validate").status).toBe("failed");
+    const calls = agentRuns(h);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.argv).toContain("--resume");
+    const log = dailyLog(h);
+    expect(log).toContain("Attempt 1: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+    expect(log).toMatch(/Attempt 1: repair 1: agent was stopped · /);
+    expect(log).not.toContain("repair 2");
+    expect(log).not.toContain("Attempt 2");
+    expect(briefOn(h)!.edition).toBe("data_only");
+    expect(summary(h).split("\n")[0]).toContain("(E_SANDBOX)");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  for (const [mode, code] of [["auth", "E_AUTH"], ["limit", "E_LIMIT"]] as const) {
+    it(`D34 a repair call that ${mode === "auth" ? "is signed out" : "hits the usage limit"} ends the run: ${code}, no retry`, async () => {
+      const h = harness();
+      h.fakeAgent({ mode: "repair", invalidDraft: INVALID, repair: DRAFT, fetches: FETCHES, resumeMode: mode });
+      expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+      const r = statusOn(h)!.runs;
+      expect(r).toHaveLength(1);
+      expect(r[0]!).toMatchObject({ outcome: "published_data_only", error_code: code });
+      expect(agentRuns(h)).toHaveLength(2);
+      expect(dailyLog(h)).not.toContain("repair 2");
+      if (mode === "limit") expect(r[0]!.budgets.usage).toEqual({ window: "five_hour", utilization: 1 });
+      expectContentOnly(h);
+    }, TIMEOUT);
+  }
+
   it("D15 rejected brief commits after the data-only commit give E_PUBLISH; the final status commit lands and records data_only", async () => {
     const h = harness();
     h.fakeAgent({ mode: "ok", draft: DRAFT, fetches: FETCHES, touch: [path.join(h.base, "reject-briefs")] });

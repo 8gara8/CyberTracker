@@ -237,6 +237,20 @@ describe("FA4: repair mode", () => {
   });
 });
 
+describe("FA6: resumeMode", () => {
+  it("FA6: a --resume call takes resumeMode; the first call keeps mode", async () => {
+    const w = world({ mode: "repair", draft, repair: { fixed: true }, resumeMode: "limit" });
+    const first = parseTranscript((await callFake(agentArgs(PROMPT, { sessionId: SID }), w)).stdout);
+    expect(first.isError).toBe(false);
+    expect(w.draft()).toEqual(draft);
+    const second = parseTranscript((await callFake(agentArgs(PROMPT, { resume: SID }), w)).stdout);
+    expect(second.limitHit).toBe(true);
+    expect(w.draft()).toEqual(draft);
+    const auth = world({ mode: "ok", draft, resumeMode: "auth" });
+    expect(parseTranscript((await callFake(agentArgs(PROMPT, { resume: SID }), auth)).stdout).authFailed).toBe(true);
+  });
+});
+
 describe("FA5: touch and draftPath (plan A14, A22)", () => {
   it("FA5: creates every touch file, with its folders, before it writes the draft", async () => {
     const w = world();

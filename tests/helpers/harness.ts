@@ -65,6 +65,8 @@ export interface FakeAgentConfig {
   touch?: string[];
   /** Overrides the draft path the fake takes from the prompt (A22: the canary's own draft file). */
   draftPath?: string;
+  /** The mode of a --resume call in place of `mode`: a repair whose init breaks the sandbox, signs out or hits the usage limit. */
+  resumeMode?: "mcp" | "auth" | "limit";
 }
 
 /** One call the fake agent recorded: its argv, the names (never values) of its environment, its cwd. */

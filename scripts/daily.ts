@@ -99,6 +99,18 @@ export interface Deps {
   sleep?: Sleep;
 }
 
+/**
+ * A repair call that no later repair can fix: its init broke the sandbox, or it was signed out or hit the usage
+ * limit. §8.2 stage 6's checks hold for repairs too, so the validate loop stops there and the run fails with the
+ * same code as the first call would, with no retry.
+ */
+class RepairStopped extends Error {
+  constructor(readonly code: "E_SANDBOX" | "E_AUTH" | "E_LIMIT") {
+    super(`the repair call ended with ${code}`);
+    this.name = "RepairStopped";
+  }
+}
+
 /** The watchdog's error class: its name is all fallbackChat() shows. */
 export class WatchdogTimeout extends Error {
   constructor() {
@@ -746,21 +758,38 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         repair: async (k, issues) => {
           const vars = repairVars({ root, date: D, context: built.context, fetchBudget: fetchBudgetLeft(x.budgetFetches, transcripts), issues });
           const t1 = now();
+          const tr = repairBudget(sch.hardStop, t1);
           const r = await runAgent(renderTemplate(readRoutine("REPAIR.md"), vars), agentCfg, {
-            resume: ar.sessionId, timeoutMs: repairBudget(sch.hardStop, now()), transcriptFile: agentTranscript(P, attempt, k),
+            resume: ar.sessionId, timeoutMs: tr, transcriptFile: agentTranscript(P, attempt, k),
           });
           agentMs += now() - t1;
           transcripts.push(r.transcript);
           attemptTranscripts.push(r.transcript);
+          const stop = r.sandbox.length ? "E_SANDBOX" as const : r.transcript.authFailed ? "E_AUTH" as const : r.transcript.limitHit ? "E_LIMIT" as const : null;
+          if (stop) {
+            line(LINES.agent({
+              attempt, repair: k, exitCode: r.run.code, timedOutMin: r.run.timedOut ? Math.round(tr / MIN) : null, turns: r.transcript.numTurns ?? 0,
+              tools: r.transcript.toolUses, fetches: r.transcript.toolUses.WebFetch ?? 0, budget: x.budgetFetches, isError: r.transcript.isError === true,
+            }));
+            throw new RepairStopped(stop);
+          }
         },
         repairBudgetMs: () => repairBudget(sch.hardStop, now()),
         log: line,
         writeValidation: (r) => writeFile(P.validation, jsonText(r)),
         writeDropped: (r) => writeFile(P.dropped, jsonText(r)),
       };
-      const out = await validateLoop(attempt, {
-        context: built.context, metrics: x.mf.metrics, config: cfg, regionsBase: x.regionsBase, packDates: packDatesOf(x.pack), fileDate: D,
-      }, io, loopState);
+      let out: Awaited<ReturnType<typeof validateLoop>>;
+      try {
+        out = await validateLoop(attempt, {
+          context: built.context, metrics: x.mf.metrics, config: cfg, regionsBase: x.regionsBase, packDates: packDatesOf(x.pack), fileDate: D,
+        }, io, loopState);
+      } catch (e) {
+        if (!(e instanceof RepairStopped)) throw e;
+        state.repairs = loopState.repairsUsed;
+        setBudgets(attemptTranscripts.length - 1);
+        return fail(e.code, "validate");
+      }
       state.repairs = loopState.repairsUsed;
       cur().validation = {
         errors: out.result.errors.length, warnings: out.result.warnings.length,
