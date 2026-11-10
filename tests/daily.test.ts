@@ -17,6 +17,7 @@ import { validateAll } from "@/lib/validate";
 import { DISPUTE_FORM_OPTIONS, WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { attemptBudget, CONFIG, main, repairBudget, type Deps } from "@/scripts/daily";
 import { MIN } from "@/scripts/lib/clock";
+import { siteUrl } from "@/lib/site";
 import { runPaths } from "@/scripts/lib/paths";
 import { runMetrics } from "@/scripts/metrics";
 import { scheduleFor } from "@/scripts/preflight";
@@ -631,6 +632,143 @@ describe("daily.ts end to end", () => {
     expect(stageOf(runs[0]!, "recheck").note).toContain("Withheld 1 item on reader disputes.");
     expect(h.requests().some((r) => r.method === "GET" && r.url.startsWith("https://api.github.com/repos/8gara8/CyberTracker/issues?"))).toBe(true);
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D27 an unpushed local brief: commit, then a run at 11:05: skipped, one status: commit lands, the brief commit gone and noted", async () => {
+    const h = harness({ start: "11:05" });
+    okAgent(h);
+    localBriefCommit(h, D, siteBrief(D));
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const s = subjects(h);
+    expect(s).toHaveLength(1);
+    expect(s[0]).toMatch(new RegExp(`^status: ${D} · run \\d{8}-\\d{6} ended: skipped$`));
+    expect(briefOn(h)).toBeNull();
+    expect(h.git("rev-list", "--count", "origin/main..HEAD")).toBe("0");
+    expect(h.git("log", "--format=%s").split("\n").filter((x) => x.startsWith("brief: "))).toEqual([]);
+    expect(fs.existsSync(path.join(h.root, "content", "briefs", `${D}.json`))).toBe(false);
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("skipped");
+    const note = stageOf(r[0]!, "preflight").note!;
+    expect(note).toContain("Dropped 1 unpushed edition commit left by an earlier run.");
+    expect(note).toContain("Too late: nothing is published after 11:00.");
+    expect(h.agentCalls()).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D27 an unpushed local brief: commit, then a run at 04:40: dropped, and the run publishes its own data-only edition", async () => {
+    const h = harness({ start: "04:40" });
+    okAgent(h);
+    const local = localBriefCommit(h, D, siteBrief(D));
+    expect(await run(h, ["--trigger", "schedule", "--data-only"])).toBe(3);
+    const log = h.remoteLog();
+    expect(log.map((c) => c.sha)).not.toContain(local);
+    expect(log.map((c) => c.subject)).toEqual([
+      expect.stringMatching(/ started$/), `brief: ${D} · data-only edition`, expect.stringMatching(/ ended: published_data_only$/),
+    ]);
+    const b = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(b.edition).toBe("data_only");
+    expect(b.published_at).toMatch(new RegExp(`^${D}T04:4\\d:\\d\\d\\+08:00$`));
+    expect(b.items.map((x) => x.id)).not.toEqual(siteBrief(D).items.map((x) => x.id));
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("published_data_only");
+    expect(stageOf(r[0]!, "preflight").note).toContain("Dropped 1 unpushed edition commit left by an earlier run.");
+    expect(h.agentCalls()).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D28 a local correction: under a local brief:, run at 11:05: GitHub gains a correction: withholding the same item and a status:, no brief:", async () => {
+    const D2 = "2026-10-15";
+    const ITEM = "inc-transport-jp-2026-10";
+    const h = harness({ date: D2, start: "04:37", seed: (x) => { beforeEdition(x, D2); } });
+    okAgent(h);
+    // The earlier run's withhold, refused by GitHub and left local; then its data-only brief, never pushed.
+    h.pushes("reject");
+    const config = worldConfig(h);
+    const cf = CorrectionsFile.parse(JSON.parse(fs.readFileSync(path.join(h.root, "content", "corrections.json"), "utf8")));
+    await inRoot(h, async () => {
+      await expect(publishWithholds({
+        root: h.root, date: D2, deadline: h.clock() + 5_000, now: h.clock, dryRun: false, repo: h.remote, config,
+        records: [testRecord(D2, `${D2}T04:37:02+08:00`)],
+        requests: [{ item_id: ITEM, edition_date: D, kind: "victim", dispute_id: "D-0002", since: D2 }], disputes: [...cf.disputes, victimDispute()],
+      })).rejects.toMatchObject({ code: "push" });
+    });
+    expect(h.git("log", "-1", "--format=%s")).toBe(`correction: ${D2} · withheld ${ITEM}`);
+    localBriefCommit(h, D2, siteBrief(D2));
+    h.pushes("accept");
+    h.clock.set(at(D2, "11:05"));
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const s = subjects(h);
+    expect(s).toEqual([`correction: ${D2} · withheld ${ITEM}`, expect.stringMatching(new RegExp(`^status: ${D2} · run \\d{8}-\\d{6} ended: skipped$`))]);
+    expect(s.filter((x) => x.startsWith("brief: "))).toEqual([]);
+    expect(h.remoteFile(`content/briefs/${D2}.json`)).toBeNull();
+    const remote = CorrectionsFile.parse(JSON.parse(h.remoteFile("content/corrections.json")!));
+    const c = remote.corrections.find((x) => x.item_id === ITEM && x.type === "name_removed");
+    expect(c).toMatchObject({ date: D2, edition_date: D, dispute_id: "D-0002", trigger: "reader_report" });
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.items.find((x) => x.id === ITEM)!.withheld).toEqual({ correction_id: c!.id, since: D2 });
+    const r = StatusFile.parse(JSON.parse(h.remoteFile(`content/status/${D2}.json`)!)).runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("skipped");
+    const note = stageOf(r[0]!, "preflight").note!;
+    expect(note).toContain("Dropped 2 unpushed edition commits left by an earlier run.");
+    expect(note).toContain("Remade 1 withhold from the dropped commits.");
+    expect(h.git("rev-list", "--count", "origin/main..HEAD")).toBe("0");
+    expect(validateAll(path.join(h.root, "content"), { config }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D29 a lock held by a live pid: exit 0, no commit, logs/D.summary.md written only when absent", async () => {
+    const h = harness();
+    okAgent(h);
+    const lock = path.join(h.root, "logs", ".lock");
+    fs.mkdirSync(path.dirname(lock), { recursive: true });
+    const holder = JSON.stringify({ pid: process.pid, started: new Date(h.clock() - 60_000).toISOString() });
+    fs.writeFileSync(lock, holder);
+    const held = `CyberTracker ${D}: another run is in progress (started 04:36); nothing done.`;
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(summary(h)).toBe(`${held}\n`);
+    expect(logSpy!.mock.calls.flat()).toContain(held);
+    // A summary already there (the holder's) is left alone.
+    fs.writeFileSync(path.join(h.root, "logs", `${D}.summary.md`), "the holder's summary\n");
+    expect(await run(h, ["--trigger", "manual"])).toBe(0);
+    expect(summary(h)).toBe("the holder's summary\n");
+    expect(fs.readFileSync(lock, "utf8")).toBe(holder);
+    expect(h.remoteLog()).toEqual([]);
+    expect(h.agentCalls()).toEqual([]);
+    expect(runsJsonl(h)).toEqual([]);
+    expect(fs.existsSync(path.join(h.root, "packs"))).toBe(false);
+  }, TIMEOUT);
+
+  it("D30 runMetrics fails with nothing staged: E_METRICS, deploy skipped, links ran, exit 1, only status: commits (A19)", async () => {
+    const h = harness();
+    okAgent(h);
+    vi.mocked(runMetrics).mockResolvedValueOnce({ code: 1, firstLine: "Metrics failed: SAMPLE.", lines: ["Metrics failed: SAMPLE."], wrote: [] });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(1);
+    expect(vi.mocked(runMetrics)).toHaveBeenCalled();
+    const s = subjects(h);
+    expect(s).toHaveLength(2);
+    for (const x of s) expect(x).toMatch(/^status: /);
+    expect(s[1]).toMatch(/ ended: failed$/);
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("failed");
+    expect(r[0]!.error_code).toBe("E_METRICS");
+    expect(stageOf(r[0]!, "metrics").status).toBe("failed");
+    for (const st of ["data_only", "draft", "validate", "publish", "deploy"]) {
+      expect(stageOf(r[0]!, st), st).toMatchObject({ status: "skipped", note: "Not run: no metrics file." });
+    }
+    expect(r[0]!.deploy.triggered).toBe(false);
+    expect(stageOf(r[0]!, "recheck").status).toBe("ok");
+    expect(stageOf(r[0]!, "links").status).toBe("ok");
+    expect(r[0]!.links).not.toBeNull();
+    expect(h.requests().some((x) => x.url === `${siteUrl()}/`)).toBe(false);
+    expect(agentRuns(h)).toEqual([]);
+    expect(briefOn(h)).toBeNull();
+    expect(summary(h).split("\n")[0]).toBe(`**CyberTracker ${D} · failed** (E_METRICS)`);
+    expect(fs.existsSync(path.join(h.root, "needs-review", D, `${D}.daily.log`))).toBe(true);
     expectContentOnly(h);
   }, TIMEOUT);
 });
