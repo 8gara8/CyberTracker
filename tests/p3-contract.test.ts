@@ -2,6 +2,8 @@
 // keep their values, and every run-log line (scripts/lib/run-lines.ts, amendment A4) reads as the spec
 // prints it (RL1). The functions themselves are tested by their owners' files; the integration lane adds
 // the check that no "P3 stub" string is left.
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CONTEXT_LINE_MAX, CONTEXT_MAX_BYTES, ContextTooLarge } from "@/lib/context";
 import { HTML_TEXT_MAX } from "@/lib/html-text";
@@ -23,7 +25,21 @@ const MODULES = [
   "@/scripts/lib/deploy", "@/scripts/preflight", "@/scripts/lib/prune",
   // Existing files that change in P3.
   "@/scripts/lib/transcript", "@/scripts/lib/git", "@/scripts/agent-check", "@/scripts/backfill", "@/lib/chat", "@/lib/feeds/http",
+  // Written by the integration lane.
+  "@/scripts/daily",
 ] as const;
+
+const ROOT = path.resolve(__dirname, "..");
+/** Every file under a folder, recursively. */
+function filesUnder(dir: string): string[] {
+  const out: string[] = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...filesUnder(p));
+    else if (e.isFile()) out.push(p);
+  }
+  return out;
+}
 
 describe("the P3 contract", () => {
   it.each(MODULES)("PC1: %s loads", async (m) => {
@@ -75,6 +91,16 @@ describe("the P3 contract", () => {
     expect(HTML_TEXT_MAX).toBe(200_000);
     expect(LINKS_LIMITS).toEqual({ maxUrls: 300, concurrency: 8, roundMs: 180_000, minLeftMs: 360_000 });
     expect(KEYCHAIN_SERVICE).toBe("cybertracker-claude-oauth");
+  });
+
+  it("PC5: no stub is left in the code the run loads (the integration lane's check)", () => {
+    // Built from fragments, so this file never matches itself.
+    const needle = ["P3", "stub"].join(" ");
+    const hits = ["lib", "scripts", "routine", path.join("fixtures", "src"), path.join("fixtures", "agent")]
+      .flatMap((d) => filesUnder(path.join(ROOT, d)))
+      .filter((f) => /\.(ts|tsx|mjs|md|json)$/.test(f) && fs.readFileSync(f, "utf8").includes(needle))
+      .map((f) => path.relative(ROOT, f));
+    expect(hits).toEqual([]);
   });
 
   it("PC4: the error classes carry their codes and names", () => {
