@@ -12,7 +12,7 @@ import { parseArgs } from "node:util";
 import { loadConfig } from "../lib/config";
 import { buildContext, ContextTooLarge, RECENT_DAYS } from "../lib/context";
 import { at, isValidDate, taipeiToday } from "../lib/dates";
-import { metricsFor, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "../lib/run-inputs";
+import { metricsFor, readBrief, readCorrections, readHistory, readScoreboard, regionsBaseFor, standingLast } from "../lib/run-inputs";
 import { AgentContext } from "../lib/schema/context";
 import { CandidatesFile, Pack } from "../lib/schema/pack";
 import type { Clock } from "./lib/clock";
@@ -86,6 +86,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps?: { now?
       metrics: m.metrics,
       config,
       history: readHistory(p.content, date, RECENT_DAYS),
+      today: readBrief(p.content, date),
       corrections: readCorrections(p.content),
       scoreboard: readScoreboard(p.content),
       regionsBase: regionsBaseFor({ root, contentDir: p.content, date, pack, config }),

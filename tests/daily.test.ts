@@ -575,6 +575,9 @@ describe("daily.ts end to end", () => {
     const log = dailyLog(h);
     expect(log).toContain(`Kept ${ITEM} in this edition, withheld: C-0001 names it in this edition and the draft left it out.`);
     expect(log).toContain(`Withheld ${PATCHES} in this edition: it re-reports the item C-0001 withholds (url match).`);
+    // The agent was told: brief D's withheld item is in recent_items, marked, with the withheld headline only.
+    const context = AgentContext.parse(JSON.parse(fs.readFileSync(path.join(h.root, "drafts", "context.json"), "utf8")));
+    expect(context.recent_items.filter((x) => x.date === D)).toMatchObject([{ id: ITEM, headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" }]);
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);

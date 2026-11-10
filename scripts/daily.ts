@@ -711,7 +711,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       try {
         built = buildContext({
           date: D, now: now(), deadline: now() + t - P3_LIMITS.contextReserveMs, pack: x.pack, candidates: x.candidates, metrics: x.mf.metrics,
-          config: cfg, history: readHistory(P.content, D, 14), corrections: readCorrections(P.content), disputes: x.intake?.disputes ?? null,
+          config: cfg, history: readHistory(P.content, D, 14), today: readBrief(P.content, D), corrections: readCorrections(P.content), disputes: x.intake?.disputes ?? null,
           scoreboard: readScoreboard(P.content),
           regionsBase: x.regionsBase, recheck: { flagged: x.shown, reports: x.intake?.reports ?? [] }, standingLast: standingLast(P.content, D),
         }, line);

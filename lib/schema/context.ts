@@ -106,7 +106,7 @@ export const AgentContext = z.strictObject({
     dispute_kind: z.enum(["victim", "attribution"]).optional().describe("With withheld: what the reader disputed"),
   }).refine((r) => (r.withheld === undefined) === (r.dispute_kind === undefined), {
     error: "withheld and dispute_kind come together", path: ["dispute_kind"],
-  })).describe("Last 14 days of editions"),
+  })).describe("Last 14 days of editions, newest first, and any item of today's data-only edition withheld this morning"),
   yesterday: z.strictObject({
     date: IsoDate,
     edition: Edition,

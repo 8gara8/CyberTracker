@@ -350,6 +350,38 @@ describe("withheld recent items (a withhold binds later editions, §4.10)", () =
     expect(buildContext({ ...input, history, corrections: null }).context.recent_items.filter((x) => x.withheld)).toEqual([]);
   });
 
+  it("X9 brief D's own withheld items enter recent_items, marked, with the withheld headline only; its other items stay out", () => {
+    // A withhold made this morning names the data-only edition D: the agent must leave the item out too (§4.10).
+    const { history, corrections } = world();
+    const today = briefOn(w.date);
+    today.edition = "data_only";
+    const SAME = TEMPLATE.items[0]!.id;
+    today.items = today.items.map((it) => {
+      if (it.id === SAME) return { ...it, headline: "SAMPLE today's headline naming a party", withheld: { correction_id: "C-0004", since: w.date } };
+      // A later copy of an item an earlier withhold binds, masked when D was composed.
+      if (it.id === ITEM) return { ...it, headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: w.date } };
+      return it;
+    });
+    const cf: CorrectionsFile = {
+      ...corrections,
+      corrections: [...corrections.corrections, { ...removed("C-0004", SAME, w.date, "incident.victim", "D-0004"), date: w.date }],
+      disputes: [...corrections.disputes, dispute("D-0004", SAME, w.date, "victim", "open", "C-0004")],
+    };
+    const r = buildContext({ ...input, history, corrections: cf, today });
+    const c = r.context;
+    const todays = c.recent_items.filter((x) => x.date === w.date);
+    expect(todays.map((x) => [x.id, x.headline, x.withheld, x.dispute_kind])).toEqual([
+      [SAME, WITHHELD_HEADLINE, true, "victim"], [ITEM, WITHHELD_HEADLINE, true, "victim"],
+    ]);
+    expect(c.recent_items[0]!.date).toBe(w.date);
+    expect(entry(c, w.date, SAME).source_urls.length).toBeGreaterThan(0);
+    expect(r.text).not.toContain("SAMPLE today's headline naming a party");
+    expect(AgentContext.parse(JSON.parse(r.text))).toEqual(c);
+    // Without brief D, or once nothing in it is withheld, no entry for D.
+    expect(buildContext({ ...input, history, corrections: cf }).context.recent_items.filter((x) => x.date === w.date)).toEqual([]);
+    expect(buildContext({ ...input, history, corrections, today: briefOn(w.date) }).context.recent_items.filter((x) => x.date === w.date)).toEqual([]);
+  });
+
   it("X8 the schema takes withheld and dispute_kind only together", () => {
     const { history, corrections } = world();
     const c = buildContext({ ...input, history, corrections }).context;

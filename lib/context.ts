@@ -20,7 +20,7 @@ import type { CorrectionsFile, Dispute } from "./schema/misc";
 import type { CandidatesFile, Pack } from "./schema/pack";
 import type { ScoreboardFile, Threshold } from "./schema/scoreboard";
 import { BANNED_WORDS, PARTIAL_FEED_IDS, WITHHELD_HEADLINE } from "./vocab";
-import { bindingWithholds, itemRef, withheldRefs } from "./withhold-mask";
+import { bindingWithholds, itemRef, withheldRefs, withholdsOn } from "./withhold-mask";
 
 /** The context's size limit (§8.5): past it, after every trim, buildContext() throws ContextTooLarge. */
 export const CONTEXT_MAX_BYTES = 250 * 1024;
@@ -48,6 +48,11 @@ export interface ContextInput {
   config: LoadedConfig;
   /** readHistory(content, D, 14) */
   history: readonly Brief[];
+  /**
+   * readBrief(content, D): brief D as stored this morning (the data-only edition, after intake's withholds).
+   * Only its withheld items enter recent_items, so the draft leaves them out; absent or null: none.
+   */
+  today?: Brief | null;
   corrections: CorrectionsFile | null;
   /** Intake's updated disputes, whose statuses decide which withholds still bind; absent or null: corrections' own. */
   disputes?: readonly Dispute[] | null;
@@ -161,7 +166,11 @@ function assemble(i: ContextInput): AgentContext {
   const yesterday = i.history.find((h) => h.date === addDays(i.date, -1)) ?? null;
   const states = new Map((i.scoreboard?.claims ?? []).map((c) => [c.id, c] as const));
   // A withhold binds later editions (lib/withhold-mask.ts): its items are marked, with the withheld headline only.
-  const held = withheldRefs(bindingWithholds(i.corrections, i.disputes), i.history);
+  // One made this morning names brief D, which applyDraft() masks whatever the dispute's status.
+  const binding = bindingWithholds(i.corrections, i.disputes);
+  const sameDay = withholdsOn(i.corrections, i.date, i.disputes).filter((x) => !binding.some((y) => y.correction_id === x.correction_id));
+  const today = i.today && i.today.date === i.date ? [i.today] : [];
+  const held = withheldRefs([...binding, ...sameDay], [...i.history, ...today]);
 
   return {
     date: i.date,
@@ -202,18 +211,19 @@ function assemble(i: ContextInput): AgentContext {
         region: w.regions.length === 1 ? w.regions[0]! : "GLOBAL" as const,
       }))),
     ],
-    recent_items: [...i.history]
-      .filter((h) => h.date < i.date && h.date >= addDays(i.date, -RECENT_DAYS))
+    recent_items: [...today, ...i.history.filter((h) => h.date < i.date && h.date >= addDays(i.date, -RECENT_DAYS))]
       .sort((a, c) => (a.date < c.date ? 1 : a.date > c.date ? -1 : 0))
       .flatMap((h) => {
         const urlOf = new Map(h.sources.map((s) => [s.id, s.url] as const));
-        return h.items.map((it) => {
+        return h.items.flatMap((it) => {
           const w = held.get(itemRef(h.date, it.id))?.[0];
-          return {
+          // Brief D itself: only its withheld items (every rule reading recent_items looks at dates before D).
+          if (h.date === i.date && !w) return [];
+          return [{
             date: h.date, id: it.id, kind: it.kind, headline: w ? WITHHELD_HEADLINE : it.headline, severity: it.severity,
             source_urls: [...new Set(it.source_ids.map((id) => urlOf.get(id)).filter((u): u is string => !!u && u.length <= RECENT_URL_MAX))],
             ...(w ? { withheld: true as const, dispute_kind: w.kind } : {}),
-          };
+          }];
         });
       }),
     yesterday: yesterday
