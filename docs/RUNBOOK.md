@@ -18,7 +18,7 @@ run or a dry run (below).
 | about 04:38 to 04:42 | Collect fetches every feed and builds the pack (`packs/D.json`, `packs/D.md`) |
 | about 04:42 | Metrics for D are computed and staged in `cache/staged/D/` |
 | about 04:45 (target 04:50) | The data-only edition is published: `brief: D · data-only edition` |
-| after it | Dispute intake (a victim or attribution dispute withholds its item at once, `correction:` commit) and the 14-day re-check |
+| after it | Dispute intake (a victim or attribution dispute withholds its item at once, `correction:` commit, in every stored brief that holds it; while the dispute is open or upheld, later editions withhold any item that re-reports it) and the 14-day re-check |
 | about 04:46 to 05:12 | The drafting agent writes `drafts/D.json` (up to 30 minutes); the validator checks it, with snapshots of the cited pages and up to two repair rounds |
 | 05:00 | Retry cutoff: a second attempt starts only before it |
 | about 05:12 (target 05:15) | The full edition is published: `brief: D · full edition, N items` (or `partial edition`) |
@@ -82,7 +82,10 @@ it is kept). All paths are in `/Users/kobol/Projects/CyberTracker`.
 | Vercel build logs | Whether a push built and deployed | The Vercel project `cybertracker` only |
 
 `logs/`, `drafts/` and `packs/` keep 60 days, pruned by the date in each file name at the end of every
-run. The dry-run tree `logs/dry-run/tree/` and `needs-review/` are never pruned.
+run. Feed bodies, CVE List zips, EPSS files and page snapshots in `cache/` (and in `sources:check`'s
+`cache/check/`) keep 60 days by file time, pruned at the same point; `feeds/index.json`,
+`feeds/inputs.json`, the clones, `staged/` and `cvelist/records/` are not pruned. The dry-run tree
+`logs/dry-run/tree/` and `needs-review/` are never pruned.
 
 ## Error codes
 
@@ -103,17 +106,20 @@ chat edition writes out in full: `rerun before 10:00: zsh /Users/kobol/Projects/
 | `E_AUTH` | The agent's sign-in token was missing or expired (data-only stands) | the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6), then `<rerun>` | Renew the token (below), then `npm run agent:check` |
 | `E_PUSH` | The start record could not be pushed to GitHub, so nothing else was tried | the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6), then `<rerun>` | `gh auth status` (never `--show-token`) |
 | `E_METRICS` | No metrics file was written, so nothing could be published | read logs/D.metrics.log; fix in a PR, then `<rerun>` | The metrics log; if it says the flood counts stop at a date, `npm run backfill -- --catch-up --push` |
-| `E_SANDBOX` | The agent started with tools beyond its sandbox and was stopped | the agent's sandbox is wrong; run npm run agent:check -- --sandbox and fix SPEC §9.5's settings before the next run | Do not rerun until `agent:check -- --sandbox` passes. Never widen the agent's tools |
+| `E_DATA_ONLY` | The data-only edition could not be composed, validated or pushed, and no full edition followed | read logs/D.daily.log, then `<rerun>` | The run log's lines before "Data-only edition not published.": a push error (fix git first, below), validation codes, or "could not be composed" (a release or CVE block without its date, page or record facts) |
+| `E_SANDBOX` | The agent, or a repair call, started with tools beyond its sandbox and was stopped | the agent's sandbox is wrong; run npm run agent:check -- --sandbox and fix SPEC §9.5's settings before the next run | Do not rerun until `agent:check -- --sandbox` passes. Never widen the agent's tools |
 | `E_LIMIT` | The account's usage limit stopped the agent (data-only stands) | the account's usage limit stopped the agent; the data-only edition stands; runs resume when the limit window resets | Nothing; the limit is shared with JL's own sessions and the sibling trackers' runs |
 | `E_AGENT` | The agent wrote no draft | `<rerun>` | The transcripts |
 | `E_TIMEOUT` | The agent timed out, or too little time was left before 05:30 | `<rerun>` | A late start (Kobol asleep); `--no-deadline` gives the rerun its own 75 minutes |
 | `E_VALIDATION` | The draft still had validation errors after its repairs and attempts | `<rerun>`; the draft is in needs-review/D/ | `needs-review/D/D.validation.json`; or finish by hand (below) |
-| `E_PUBLISH` | The draft was valid, but the full edition failed whole-tree validation or its push | the draft is valid: in /Users/kobol/Projects/CyberTracker run `PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D` before 11:00 | The run log's publish lines; fix git first if the push failed |
-| `E_TOO_LATE` | The full edition was not published: nothing is published after 11:00 | nothing: nothing is published after 11:00; the next morning's run will publish | Nothing |
+| `E_PUBLISH` | The draft was valid, but the full edition failed whole-tree validation or its push | the draft is valid: in /Users/kobol/Projects/CyberTracker run `PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D` before 11:00 | The run log's publish lines; fix git first if the push failed. With the stage note "Not composed: ..." a release or CVE block lacks its date, page or record facts, and publishing again from the same draft and cache gives the same error, so the data-only edition stands for the day |
+| `E_TOO_LATE` | The full edition was not published: nothing is published after 11:00 (also when 11:00 passed before the data-only edition) | nothing: nothing is published after 11:00; the next morning's run will publish | Nothing |
 | `E_SIMULATED` | A simulated failure (`--simulate-failure`) | nothing: this was a test of the failure path | Nothing |
 | `E_INTERNAL` | An unexpected error; the stack is in the run log | read logs/D.daily.log, then `<rerun>` | The stack trace near the end of the run log |
 
-A run held off by the lock is a quiet skip, not a code. **Exit codes** of `daily.ts`: 0 published (full
+`E_SANDBOX`, `E_AUTH` and `E_LIMIT` can also come from a repair call: the run log then shows "Attempt N:
+repair K: agent ..." and the validate stage failed. None of them is retried. A run held off by the lock is
+a quiet skip, not a code. **Exit codes** of `daily.ts`: 0 published (full
 or partial), skipped, every dry run, or a held lock; 1 failed; 2 usage error (no record); 3 data-only.
 The task never acts on the exit code; it replies with the summary.
 
@@ -190,7 +196,9 @@ held, after 11:00, and off native arm64.
   or a log. `AGENTS.md` records only the date it was made. Claude proves the token works with `npm run
   agent:check`, never by reading the keychain item.
 - **Update the CLI** (a PR): `/opt/homebrew/bin/npm install --prefix /Users/kobol/.cybertracker/cli @anthropic-ai/claude-code@<version>`,
-  compare `--help` with SPEC §9.4's flags, run `npm run agent:check -- --all`, and update Appendix C.
+  compare `--help` with SPEC §9.4's flags, recapture `fixtures/agent/cli-help-<version>.txt` from the new
+  `--help` (test A1 checks the run's flags against it), run `npm run agent:check -- --all`, and update
+  Appendix C.
   Never `npm install -g`, never `~/.local/bin/claude` (Intel).
 
 ## The lock
