@@ -273,6 +273,14 @@ function asDataOnly(b: Brief): Brief {
 
 const lateOf = (b: Pick<Brief, "date" | "published_at">) => Date.parse(b.published_at) > at(b.date, "08:00");
 
+/** `late` from the new published_at, and computed recounted when it changed (a late notice adds words). */
+function retime(b: Brief): void {
+  const late = lateOf(b);
+  if (late === b.late) return;
+  b.late = late;
+  b.computed = computedOf(b, Metrics.parse(JSON.parse(siteMetricsText(b.date))));
+}
+
 export interface FakeComposers {
   composeDataOnly: (i: DataOnlyInput) => ContentChanges;
   applyDraft: (i: ApplyInput) => ContentChanges;
@@ -283,7 +291,8 @@ export interface FakeComposers {
 
 /**
  * Composers returning siteFiles(D), timed by publish: the brief's published_at (and the archive edition's)
- * become the input's publishedAt, data_only_published_at follows the input, and `late` is recomputed.
+ * become the input's publishedAt, data_only_published_at follows the input, and `late` (with computed,
+ * when it changes) is recomputed.
  * composeDataOnly turns a full site brief into a data-only one when D's site edition is full (P3b);
  * applyDraft refuses a date whose site edition is data-only. composeWithholds rewrites each requested item
  * as §4.10 says (the test-only form of fixtures/src/site.ts's withhold()).
@@ -297,7 +306,7 @@ export function fakeComposers(date: string): FakeComposers {
       const site = siteFiles(date);
       const b0 = site.brief!.edition === "data_only" ? site.brief! : asDataOnly(site.brief!);
       const brief = Brief.parse({ ...b0, published_at: i.publishedAt, data_only_published_at: i.publishedAt });
-      brief.late = lateOf(brief);
+      retime(brief);
       const corrections = i.corrections?.corrections ?? [];
       return { brief, rewritten: [], scoreboard: null, corrections: null, archiveIndex: archiveWith(i.archiveIndex, date, brief, corrections), flagCorrections: [] };
     },
@@ -306,7 +315,7 @@ export function fakeComposers(date: string): FakeComposers {
       const site = siteFiles(date);
       if (site.brief!.edition === "data_only") throw new Error(`fakeComposers: site-content's ${date} is a data-only edition; there is no full brief to return`);
       const brief = Brief.parse({ ...site.brief!, published_at: i.publishedAt, data_only_published_at: i.dataOnlyPublishedAt });
-      brief.late = lateOf(brief);
+      retime(brief);
       const corrections = i.corrections?.corrections ?? [];
       return { brief, rewritten: [], scoreboard: site.scoreboard, corrections: null, archiveIndex: archiveWith(i.archiveIndex, date, brief, corrections), flagCorrections: [] };
     },
