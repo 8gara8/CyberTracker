@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Test stand-in for the Claude CLI (SPEC §8.2 Tests; plan §2.2, A14, A22). tests/helpers/harness.ts runs it
-// through a #!/bin/sh wrapper at CT_CLAUDE_BIN, because the agent's PATH has no Node on CI. It never touches
+// through a POSIX sh wrapper script at CT_CLAUDE_BIN, because the agent's PATH has no Node on CI. It never touches
 // the network or the keychain. It prints stream-json events in the shapes of fixtures/agent/transcript-ok.jsonl
 // and writes the draft the prompt names from its config. The agent's environment is minimal by design, so
 // the config comes from $CLAUDE_CONFIG_DIR/fake-agent.json (FakeAgentConfig in tests/helpers/harness.ts):
