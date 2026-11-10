@@ -207,6 +207,22 @@ const emptyCandidates = (date: string): CandidatesFile => ({
 
 const RETRYABLE: ReadonlySet<string> = new Set(["E_AGENT", "E_TIMEOUT", "E_VALIDATION"]);
 
+/** The codes that stop an agent call, first or repair, in §8.2's order: a sandbox breach, a lost sign-in, the usage limit. */
+function agentStop(r: AgentRun): "E_SANDBOX" | "E_AUTH" | "E_LIMIT" | null {
+  if (r.sandbox.length) return "E_SANDBOX";
+  if (r.transcript.authFailed) return "E_AUTH";
+  if (r.transcript.limitHit) return "E_LIMIT";
+  return null;
+}
+
+/** Thrown out of a repair round (validateLoop's io.repair) whose agent call agentStop() stopped. */
+class RepairStopped extends Error {
+  constructor(readonly code: "E_SANDBOX" | "E_AUTH" | "E_LIMIT") {
+    super(`a repair round's agent call was stopped (${code})`);
+    this.name = "RepairStopped";
+  }
+}
+
 type Issue = { code: string; path: string; severity?: "error" | "warning"; message?: string };
 
 interface RunState {
@@ -657,6 +673,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       rec2.recheck = structuredClone(rec1.recheck);
       state.records.push(rec2);
       state.code = null;
+      // Attempt 1's validator issues belong to its record; the failed format lists only the last attempt's.
+      state.issues = null;
       const event: StatusEvent = { kind: "retry", outcome: outcome1, retryId: rec2.run_id };
       try {
         await publishStatus({ ...base(now() + P3_LIMITS.finalCommitMs), event });
@@ -671,7 +689,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       state.attempts = attempt;
       const t = attemptBudget(sch.hardStop, now());
       if (t < P3_LIMITS.agentMinMs) {
-        if (attempt === 1) fail("E_TIMEOUT", "draft", { agentMinutes: null });
+        fail("E_TIMEOUT", "draft", { agentMinutes: null });
+        if (attempt === 1) await maybeRetry("E_TIMEOUT", attempt);
         else line(LINES.noRetry("too_little_time", hhmm(sch.retryCutoff)));
         return;
       }
@@ -714,9 +733,12 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         cur().budgets = budgetsFrom(attemptTranscripts, { agentSeconds: agentMs / 1000, repairRounds });
       };
       setBudgets(0);
-      if (ar.sandbox.length) return fail("E_SANDBOX", "draft");
-      if (ar.transcript.authFailed) return fail("E_AUTH", "draft");
-      if (ar.transcript.limitHit) return fail("E_LIMIT", "draft");
+      const stopped = agentStop(ar);
+      if (stopped) {
+        fail(stopped, "draft");
+        await maybeRetry(stopped, attempt);
+        return;
+      }
       if (!fs.existsSync(P.draft)) {
         line(LINES.noDraft(attempt));
         const code = ar.run.timedOut ? "E_TIMEOUT" : "E_AGENT";
@@ -729,6 +751,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       // 7. Validate, with the soft pass and repairs (§4.12).
       setStage(cur(), "validate", { status: "ok", started: now() });
       fs.mkdirSync(P.cveRecords, { recursive: true });
+      let roundsRun = 0;
       const io: ValidateLoopIo = {
         readDraft: () => {
           try {
@@ -760,15 +783,29 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
           agentMs += now() - t1;
           transcripts.push(r.transcript);
           attemptTranscripts.push(r.transcript);
+          roundsRun = k;
+          const stop = agentStop(r);
+          if (stop) throw new RepairStopped(stop);
         },
         repairBudgetMs: () => repairBudget(sch.hardStop, now()),
         log: line,
         writeValidation: (r) => writeFile(P.validation, jsonText(r)),
         writeDropped: (r) => writeFile(P.dropped, jsonText(r)),
       };
-      const out = await validateLoop(attempt, {
-        context: built.context, metrics: x.mf.metrics, config: cfg, regionsBase: x.regionsBase, packDates: packDatesOf(x.pack), fileDate: D,
-      }, io, loopState);
+      let out: Awaited<ReturnType<typeof validateLoop>>;
+      try {
+        out = await validateLoop(attempt, {
+          context: built.context, metrics: x.mf.metrics, config: cfg, regionsBase: x.regionsBase, packDates: packDatesOf(x.pack), fileDate: D,
+        }, io, loopState);
+      } catch (e) {
+        if (!(e instanceof RepairStopped)) throw e;
+        // A repair round denied by the sandbox, signed out or stopped by the usage limit: never retried (§8.2).
+        state.repairs = loopState.repairsUsed;
+        setBudgets(roundsRun);
+        fail(e.code, "validate");
+        await maybeRetry(e.code, attempt);
+        return;
+      }
       state.repairs = loopState.repairsUsed;
       cur().validation = {
         errors: out.result.errors.length, warnings: out.result.warnings.length,

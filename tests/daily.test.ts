@@ -272,6 +272,7 @@ describe("daily.ts end to end", () => {
     expect(r[0]!.error_code).toBe("E_SANDBOX");
     expect(agentRuns(h)).toHaveLength(1);
     expect(dailyLog(h)).toMatch(/Attempt 1: agent was stopped · /);
+    expect(dailyLog(h)).toContain("No retry: the error is not retryable.");
     expectContentOnly(h);
   }, TIMEOUT);
 
@@ -301,6 +302,58 @@ describe("daily.ts end to end", () => {
     expect(r[0]!.error_code).toBe("E_LIMIT");
     expect(r[0]!.budgets.usage).toEqual({ window: "five_hour", utilization: 1 });
     expect(agentRuns(h)).toHaveLength(1);
+    expect(dailyLog(h)).toContain("No retry: the error is not retryable.");
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D36 a repair round stopped by the usage limit or the sandbox ends the attempt with that code: no retry, nothing published past the data-only edition", async () => {
+    for (const [resumeMode, code] of [["limit", "E_LIMIT"], ["mcp", "E_SANDBOX"]] as const) {
+      const h = harness();
+      h.fakeAgent({ mode: "repair", resumeMode, invalidDraft: INVALID, repair: DRAFT, fetches: FETCHES });
+      expect(await run(h, ["--trigger", "schedule"]), code).toBe(3);
+      const r = statusOn(h)!.runs;
+      expect(r, code).toHaveLength(1);
+      expect(r[0]).toMatchObject({ outcome: "published_data_only", error_code: code });
+      expect(r[0]!.budgets.repair_rounds).toBe(1);
+      expect(stageOf(r[0]!, "validate").status).toBe("failed");
+      expect(stageOf(r[0]!, "publish").status).toBe("skipped");
+      const calls = agentRuns(h);
+      expect(calls).toHaveLength(2);
+      expect(calls[1]!.argv).toContain("--resume");
+      expect(dailyLog(h)).toContain("Attempt 1: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+      expect(dailyLog(h)).toContain("No retry: the error is not retryable.");
+      expect(summary(h).split("\n")[0]).toContain(`(${code})`);
+      expect(briefOn(h)!.edition).toBe("data_only");
+      expectContentOnly(h);
+    }
+  }, TIMEOUT);
+
+  it("D37 a retry that fails before validating: the failed format lists no issues of attempt 1's draft", async () => {
+    const h = harness();
+    h.pushes("reject-briefs");
+    h.fakeAgent({ mode: "repair", attemptModes: ["repair", "nodraft"], invalidDraft: INVALID, repair: INVALID, fetches: FETCHES });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(1);
+    const runs = statusOn(h)!.runs;
+    expect(runs.map((r) => [r.trigger, r.outcome, r.error_code])).toEqual([["schedule", "failed", "E_VALIDATION"], ["retry", "failed", "E_AGENT"]]);
+    const lines = summary(h).split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · failed** (E_AGENT)`);
+    expect(lines).not.toContain("First errors:");
+    expect(lines.some((l) => l.includes("BANNED_WORDS"))).toBe(false);
+    expect(briefOn(h)).toBeNull();
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D38 a start at 05:21 leaves too little time for attempt 1: E_TIMEOUT with the no-retry line, the data-only edition stands", async () => {
+    const h = harness({ start: "05:21" });
+    okAgent(h);
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ outcome: "published_data_only", error_code: "E_TIMEOUT" });
+    expect(stageOf(r[0]!, "draft")).toMatchObject({ status: "failed", note: "The run had too little time left for an editorial pass before 05:30." });
+    expect(dailyLog(h)).toContain("No retry: it is past the retry cutoff (05:00).");
+    expect(agentRuns(h)).toEqual([]);
+    expect(summary(h).split("\n")[0]).toMatch(/\(E_TIMEOUT\)$/);
     expectContentOnly(h);
   }, TIMEOUT);
 
