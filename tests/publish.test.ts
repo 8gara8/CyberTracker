@@ -579,6 +579,34 @@ describe("publish (§8.7)", () => {
     expect(holding).toBeGreaterThan(0);
   }, T);
 
+  it("P12b: a dropped withhold is made again when GitHub's name_removed correction on the item no longer binds (its dispute rejected)", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    const ITEM = "inc-health-us-2026-10";
+    const cfPath = contentFile(w, "corrections.json");
+    // GitHub: D-0001 rejected, so C-0001 withholds nothing more; intake gave the new dispute D-0002 its own withhold.
+    const cf = CorrectionsFile.parse(JSON.parse(read(cfPath)));
+    const rejected = { ...cf, disputes: cf.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "rejected" as const, resolved_on: "2026-10-14" } : d)) };
+    w.h.commitOnRemote({ "content/corrections.json": jsonText(rejected, CorrectionsFile) }, `status: 2026-10-14 · run 20261014-043702 ended: published_full`);
+    w.h.git("pull", "-q", "--ff-only", "origin", "main");
+    const D2 = { ...rejected.disputes[0]!, id: "D-0002", issue_number: rejected.disputes[0]!.issue_number + 1, received: `${D}T01:00:00+08:00`, status: "open" as const, resolved_on: null, correction_id: null };
+    const request: WithholdRequest = { item_id: ITEM, edition_date: "2026-10-12", kind: "victim", dispute_id: "D-0002", since: D };
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      w.h.pushes("reject");
+      await expect(publishWithholds({ ...base(w, [r0], { deadline: w.h.clock() + 5_000 }), requests: [request], disputes: [...rejected.disputes, D2] }, { composeWithholds }))
+        .rejects.toMatchObject({ code: "push" });
+      localBriefCommit(w);
+      w.h.pushes("accept");
+      const dropped = await dropPendingEditions(git(w.h.root), { root: w.h.root, config: w.config, now: w.h.clock, repo: w.h.remote }, { composeWithholds });
+      expect(dropped).toEqual({ dropped: 2, remade: 1, failed: [] });
+    });
+    const after = CorrectionsFile.parse(JSON.parse(w.h.remoteFile("content/corrections.json")!));
+    const made = after.corrections.filter((x) => x.item_id === ITEM && x.type === "name_removed");
+    expect(made.map((x) => [x.id, x.dispute_id])).toEqual([["C-0001", "D-0001"], ["C-0003", "D-0002"]]);
+    expect(after.disputes.find((d) => d.id === "D-0002")).toMatchObject({ status: "open", correction_id: "C-0003" });
+  }, T);
+
   it("P13: a dry run leaves HEAD and content/ unchanged; the fresh copy replaces an older one and later calls reuse it; its status file is mirrored", async () => {
     const w = world("2026-10-14");
     const D = w.D;

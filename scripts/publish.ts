@@ -37,7 +37,7 @@ import { contentDir } from "../lib/site";
 import { RegionsInputFile, cveLookupFromDir, packDatesOf, validateAll, type AllOptions, type AllResult, type DraftInputs } from "../lib/validate";
 import { PARTIAL_FEED_IDS, RUN_STAGES, type RunOutcome } from "../lib/vocab";
 import { composeWithholds, type WithholdInput, type WithholdRequest } from "../lib/withhold";
-import type { MaskedItem } from "../lib/withhold-mask";
+import { bindingWithholds, type MaskedItem } from "../lib/withhold-mask";
 import { P3_LIMITS, realDeadline, type Clock } from "./lib/clock";
 import { cveFactsFor } from "./lib/cve-facts";
 import { ensureIdentity, git, GitError, porcelainPaths, SyncError, syncMain, type Git, type Layout as GitLayout } from "./lib/git";
@@ -923,16 +923,17 @@ export async function dropPendingEditions(g: Git, o: {
   log(`Dropped ${dropped} local commit(s) GitHub lacks, an edition among them (§8.7).`);
 
   const content = path.join(root, "content");
-  const synced = readCorrections(content);
-  const done = new Set((synced?.corrections ?? []).filter((c) => c.type === "name_removed").map((c) => `${c.edition_date}/${c.item_id}`));
-  const todo = requests.filter((r) => !done.has(`${r.edition_date}/${r.item_id}`));
-  if (todo.length === 0 || date === null) return { dropped, remade: 0, failed: [] };
-
-  const ctx: Ctx = { root, dir: content, g, free: git(root), date, dryRun: false, edition: false, log, sleep: o.sleep ?? realSleep };
   const disputesNow = () => {
     const cf = readCorrections(content);
     return mergeDisputes(cf?.disputes ?? [], [...changed.values()], new Set((cf?.corrections ?? []).map((c) => c.id)));
   };
+  // A request GitHub already answers: a name_removed correction on the item and edition that still binds. One
+  // whose dispute was rejected or withdrawn withholds nothing more, so intake gave the new dispute its own (§8.9).
+  const done = new Set(bindingWithholds(readCorrections(content), disputesNow()).map((w) => `${w.edition_date}/${w.item_id}`));
+  const todo = requests.filter((r) => !done.has(`${r.edition_date}/${r.item_id}`));
+  if (todo.length === 0 || date === null) return { dropped, remade: 0, failed: [] };
+
+  const ctx: Ctx = { root, dir: content, g, free: git(root), date, dryRun: false, edition: false, log, sleep: o.sleep ?? realSleep };
   const all: Files = new Map();
   /** What each path held before the first accepted write, so a failed commit puts the tree back. */
   const firstWritten: Written[] = [];
