@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { STAGE_NOTES, chatInputFor, renderChat, type ChatInput } from "@/lib/chat";
+import { NOT_COMPOSED, STAGE_NOTES, chatInputFor, renderChat, type ChatInput, type WhatFacts } from "@/lib/chat";
 import { loadConfig } from "@/lib/config";
 import { at, taipeiTimestamp } from "@/lib/dates";
 import { readBrief } from "@/lib/run-inputs";
@@ -137,11 +137,12 @@ describe("stage notes", () => {
     const chatTexts = [
       STAGE_NOTES.dataOnlyRequested, STAGE_NOTES.startedAfterHardStop("05:30"), STAGE_NOTES.alreadyPublished("05:07"),
       STAGE_NOTES.tooLate("11:00"), STAGE_NOTES.replaced("05:07"), STAGE_NOTES.floodStops("2026-10-12"), STAGE_NOTES.depsChanged,
+      STAGE_NOTES.notComposed,
     ];
     expect(chatTexts.map((t) => CHAT_READ_NOTES.filter((re) => re.test(t)).length)).toEqual(chatTexts.map(() => 1));
     expect(Object.keys(STAGE_NOTES)).toHaveLength(CHAT_READ_NOTES.length);
     expect([NOTES.dataOnlyRequested, NOTES.startedAfterHardStop("05:30"), NOTES.alreadyPublished("05:07"), NOTES.tooLate("11:00"),
-      NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged]).toEqual(chatTexts);
+      NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.notComposed]).toEqual(chatTexts);
     for (const t of [NOTES.restored, NOTES.staleLock("02:31"), NOTES.dataOnlyFailed, NOTES.notInDryRun, NOTES.pendingNotPushed]) {
       expect(CHAT_READ_NOTES.some((re) => re.test(t)), t).toBe(false);
     }
@@ -227,6 +228,21 @@ describe("stage notes", () => {
     it("ST4 replaced on the publish stage reaches the Notes line", () => {
       const rec = published(full, "published_full", { stage: "publish", note: NOTES.replaced("04:58") });
       expect(notesLine(render(chatInputFor({ date: full.date, brief: full, runs: [rec] })))).toContain("replaced the 04:58 edition (--force)");
+    });
+
+    it("ST4 notComposed on the publish stage, after E_PUBLISH's failure note and past 200 characters, gives the NOT_COMPOSED lines", () => {
+      const rec = record({ date: dataOnly.date });
+      runStages(rec, RUN_STAGES.length, []);
+      setStage(rec, "publish", { status: "failed", ended: at(dataOnly.date, "05:12"), note: NOTES.failure("E_PUBLISH", {} as WhatFacts) });
+      addNote(rec, "publish", NOTES.notComposed);
+      for (const n of [NOTES.staleLock("02:31"), NOTES.restored, NOTES.restarted("abc1234")]) addNote(rec, "publish", n);
+      rec.data_only_published_at = dataOnly.data_only_published_at;
+      rec.deploy = { triggered: true, ready_at: dataOnly.published_at, shows_date: dataOnly.date, shows_edition: "data_only" };
+      closeRecord(rec, { outcome: "published_data_only", errorCode: "E_PUBLISH", edition: "data_only", late: false, finishedAt: at(dataOnly.date, "05:20") });
+      expect(splitNotes(rec.stages.find((x) => x.id === "publish")!.note!)).toContain(NOTES.notComposed);
+      const input = chatInputFor({ date: dataOnly.date, brief: dataOnly, runs: [RunRecord.parse(rec)] });
+      expect(input).toMatchObject({ kind: "data_only", code: "E_PUBLISH", what: NOT_COMPOSED.what, nextStep: NOT_COMPOSED.nextStep.replaceAll("{date}", dataOnly.date) });
+      expect(render(input)).toContain(`\nNext step: in /Users/kobol/Projects/CyberTracker, edit drafts/${dataOnly.date}.json to fix or drop`);
     });
 
     it("ST4 dataOnlyRequested is What happened, even for a start after the hard stop", () => {

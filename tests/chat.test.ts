@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  CHAT_MAX_LINES, CHAT_NOTES, ERROR_CODES, NEXT_STEP, RERUN_BEFORE, STAGE_NOTES, WHAT_HAPPENED, chatGuard, chatInputFor,
+  CHAT_MAX_LINES, CHAT_NOTES, ERROR_CODES, NEXT_STEP, NOT_COMPOSED, RERUN_BEFORE, STAGE_NOTES, WHAT_HAPPENED, chatGuard, chatInputFor,
   fallbackChat, gapLines, heldLockLine, lastRunRecords, nextStepFor, orderNotes, renderChat, safePath, whatHappened,
   type ChatInput, type WhatFacts,
 } from "@/lib/chat";
@@ -443,6 +443,29 @@ describe("chat edition: data-only format", () => {
     expect(kevLine({ date: D, kev: null })).toMatch(/\(7\): .* and 2 more$/);
   });
 
+  it("gives a compose failure (E_PUBLISH with the not-composed note on the publish stage) a next step that edits the draft", () => {
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const failed = (publishNote: string, dataOnlyNote: string | null = null) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: publishNote }, ...(dataOnlyNote ? { data_only: { note: dataOnlyNote } } : {}) },
+    })];
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const notComposed = chatInputFor({ date: D, brief: b, runs: failed(`${what} ${STAGE_NOTES.notComposed}`) });
+    expect(notComposed).toMatchObject({ kind: "data_only", code: "E_PUBLISH" });
+    const text = render(notComposed).split("\n");
+    expect(text).toContain("What happened: The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed.");
+    expect(text).toContain(`Next step: in /Users/kobol/Projects/CyberTracker, edit drafts/${D}.json to fix or drop the item whose block logs/${D}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date ${D} before 11:00`);
+    // A push failure keeps E_PUBLISH's own lines, even when the data-only stage was the one not composed.
+    for (const runs of [failed(what), failed(what, STAGE_NOTES.notComposed)]) {
+      const plain = chatInputFor({ date: D, brief: b, runs });
+      expect(plain).toMatchObject({ what, nextStep: nextStepFor("E_PUBLISH", D) });
+    }
+    // The failed format (a dry run that left no copy) reads the same note.
+    const dry = chatInputFor({ date: D, brief: null, runs: failed(`${what} ${STAGE_NOTES.notComposed}`).map((r) => ({ ...r, trigger: "dry_run" as const, outcome: "dry_run" as const, edition: null })) });
+    expect(dry).toMatchObject({ kind: "failed", nextStep: NOT_COMPOSED.nextStep.replaceAll("{date}", D), what: NOT_COMPOSED.what });
+  });
+
   it("keeps the metrics KEV count when the data-only brief holds no items", () => {
     const D = "2026-11-12";
     const b = dataOnlyBrief(D, []);
@@ -793,6 +816,11 @@ describe("NEXT_STEP and WHAT_HAPPENED", () => {
       expect(chatGuard(whatHappened(code, facts), SITE)).toBe(whatHappened(code, facts));
       expect(chatGuard(step, SITE)).toBe(step);
     }
+    const composeStep = NOT_COMPOSED.nextStep.replaceAll("{date}", "2026-11-14");
+    expect(composeStep).not.toMatch(/—|\{date\}/);
+    expect(NOT_COMPOSED.what).toMatch(/^[A-Z].*\.$/);
+    expect(chatGuard(composeStep, SITE)).toBe(composeStep);
+    expect(chatGuard(NOT_COMPOSED.what, SITE)).toBe(NOT_COMPOSED.what);
     expect(RERUN_BEFORE).toBe("10:00");
     expect(nextStepFor("E_PUBLISH", "2026-11-14")).toBe(
       "the draft is valid: in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date 2026-11-14 before 11:00");
