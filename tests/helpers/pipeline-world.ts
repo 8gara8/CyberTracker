@@ -97,3 +97,24 @@ export async function buildPipelineWorld(): Promise<PipelineWorld> {
     throw e;
   }
 }
+
+/**
+ * A stream-json transcript in the shape scripts/lib/transcript.ts reads (SPEC §8.12), as the fake agent
+ * reports one: each `fetches` URL a WebFetch call with a non-error result, each `failed` URL a WebFetch
+ * call whose result is an error, and each `searches` entry a WebSearch call whose result lists its URLs.
+ * No model field. For tests/evidence.test.ts and tests/pipeline-draft.test.ts.
+ */
+export function transcriptJsonl(o: { fetches?: readonly string[]; failed?: readonly string[]; searches?: readonly { query: string; urls: readonly string[] }[] }): string {
+  const lines: unknown[] = [{ type: "system", subtype: "init", session_id: "ct-test-session", tools: ["Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch"], mcp_servers: [] }];
+  let n = 0;
+  const call = (name: string, input: Record<string, unknown>, result: string, isError: boolean) => {
+    const id = `toolu_ct_${++n}`;
+    lines.push({ type: "assistant", message: { content: [{ type: "tool_use", id, name, input }] } });
+    lines.push({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content: result, is_error: isError }] } });
+  };
+  for (const url of o.fetches ?? []) call("WebFetch", { url, prompt: "Summarise the page." }, "SAMPLE page summary.", false);
+  for (const url of o.failed ?? []) call("WebFetch", { url, prompt: "Summarise the page." }, "Request failed with status code 403", true);
+  for (const s of o.searches ?? []) call("WebSearch", { query: s.query }, s.urls.map((u, k) => `${k + 1}. SAMPLE result ${u}`).join("\n"), false);
+  lines.push({ type: "result", subtype: "success", is_error: false, num_turns: n + 1, result: "Draft written." });
+  return `${lines.map((l) => JSON.stringify(l)).join("\n")}\n`;
+}
