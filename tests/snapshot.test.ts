@@ -29,6 +29,9 @@ const PAGE = [
   "<footer>Footer text</footer></body></html>",
 ].join("");
 
+/** The text past the 3 MB cut in the /cut page (S2). */
+const CUT_MARKER = "SAMPLE text after the cut";
+
 let server: http.Server;
 let base = "";
 let inFlight = 0;
@@ -50,6 +53,16 @@ beforeAll(async () => {
       const chunk = `<p>${"word ".repeat(200)}</p>`;
       for (let n = 0; n < Math.ceil((SNAPSHOT_LIMITS.maxBytes + 512 * 1024) / chunk.length); n++) res.write(chunk);
       res.end("</main></body></html>");
+      return;
+    }
+    if (url.startsWith("/cut")) {
+      // A marker 64 KiB past the 3 MB cut, behind a script the text drops: read whole, the text would end with it.
+      res.writeHead(200, { "Content-Type": "text/html" });
+      const head = "<html><body><main><p>SAMPLE start of the page</p><script>";
+      res.write(head);
+      const filler = "x".repeat(64 * 1024);
+      for (let n = 0; n < Math.ceil((SNAPSHOT_LIMITS.maxBytes + 64 * 1024 - head.length) / filler.length); n++) res.write(filler);
+      res.end(`</script><p>${CUT_MARKER}</p></main></body></html>`);
       return;
     }
     if (url.startsWith("/report.pdf")) {
@@ -136,6 +149,14 @@ describe("snapshotUrls", () => {
     expect(text.length).toBeGreaterThan(100_000);
     expect(text.length).toBeLessThanOrEqual(200_000);
     expect(text.startsWith("word word")).toBe(true);
+  });
+
+  it("S2 reads no byte past 3 MB: text after the cut is not in the snapshot", async () => {
+    delete process.env.CT_FIXTURE_FEEDS;
+    const r = await snapshotUrls({ root: tmpRoot(), urls: [`${base}/cut`], deadline: soon(), config });
+    expect(r.failed).toEqual([]);
+    expect(r.taken.map((x) => x.text)).toEqual(["SAMPLE start of the page"]);
+    expect(r.taken[0]!.text).not.toContain(CUT_MARKER);
   });
 
   it("S3 fails a URL after more than 5 redirects (stubbed fetch, plan A12)", async () => {
