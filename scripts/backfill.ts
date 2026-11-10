@@ -8,8 +8,9 @@
 // metrics). `--catch-up` and `--credits` start from contentDir()/state and write state only. `--fixtures`
 // also writes fixtures/reference/ and skips the metrics (R32); `--check-reference` recomputes Appendix D
 // from fixtures/reference/ and, at commit 67c39b1, from the clone at Appendix D's cutoff (the default there;
-// another cutoff is a usage error), and prints the table. `--push` keeps its
-// guards; publishState() arrives with P3 (R34). Everything read from the clone and the catalog is data.
+// another cutoff is a usage error), and prints the table. `--push` keeps its guards (R34) and, under the
+// run lock, hands the staged state to publish's publishState() (§8.7). Everything read from the clone and
+// the catalog is data.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -44,6 +45,7 @@ import { liveGit, type GitSource } from "./lib/git-source";
 import { branchTip, cachedRun, kevSource, type KevRead } from "./lib/kev-source";
 import { acquireLock, releaseLock } from "./lib/lock";
 import { runMetrics } from "./metrics";
+import { publishState } from "./publish";
 
 export interface BackfillOptions {
   root: string;
@@ -67,13 +69,14 @@ export interface BackfillDeps {
   workers: number;
   /** Where the stdout lines go (default: process.stdout). */
   print(line: string): void;
+  /** --push only: an origin URL that counts as repos.repo besides GitHub's (tests: a bare remote's path; publish's Deps.repo). */
+  repo?: string;
 }
 
 export const USAGE = "Usage: npm run backfill -- [--cutoff YYYY-MM-DD] [--commit SHA] [--kev-commit SHA] [--catch-up | --credits] " +
   "[--fixtures] [--check-reference] [--out DIR] [--push]";
 /** §5.9 step 1: at least 10 GiB free before any network. */
 export const MIN_FREE_BYTES = 10 * 1024 ** 3;
-export const PUBLISH_STATE_P3 = "publishState() arrives with P3 (SPEC §8.7).";
 export const DEFAULT_OUT = "cache/staged/backfill";
 export const CLONE_URL = `https://github.com/${REPOS.cvelist}.git`;
 /** The reference (Appendix D) is at this commit, catalog and cutoff; `--fixtures` takes only these. */
@@ -515,7 +518,7 @@ async function catchUp(o: BackfillOptions, d: BackfillDeps, config: LoadedConfig
   };
   d.print(`Catch-up to ${o.cutoff}: ${added.length} days added (${added[0]?.[0] ?? "none"}${added.length > 1 ? ` to ${added.at(-1)![0]}` : ""}), ` +
     `${rematch.length} records to ${o.cutoff} rematched, ${series.weeks.length} weeks; live_from ${series.live_from}.`);
-  return finishStateOnly(o, d, state);
+  return await finishStateOnly(o, d, state);
 }
 
 /** --credits (§8.4, §5.5): both credit files rebuilt from the clone, first_matched kept, the series' AI fields rewritten. State only. */
@@ -544,11 +547,14 @@ async function rebuildCredits(o: BackfillOptions, d: BackfillDeps, config: Loade
   const series = { ...s, ...aiWeekly(credits, s.weeks) };
   const state: StateFiles = { ...prev, "ai-credits.json": credits, "credit-candidates.json": fresh.candidates, "series.json": series };
   d.print(`Credits to ${o.cutoff}: ${fresh.candidates.candidates.length} candidate strings, ${credits.matches.length} AI matches at list v${run.version}.`);
-  return finishStateOnly(o, d, state);
+  return await finishStateOnly(o, d, state);
 }
 
-/** Writes the state into <out>/state/; with --push, takes the run lock and hands over to publishState() (P3). */
-function finishStateOnly(o: BackfillOptions, d: BackfillDeps, state: StateFiles): 0 | 1 {
+/**
+ * Writes the state into <out>/state/; with --push, takes the run lock and publishes the staged state files
+ * with publishState() (§8.4, §8.7): one `state: <cutoff> · catch-up` (or `· backfill`) commit, pushed.
+ */
+async function finishStateOnly(o: BackfillOptions, d: BackfillDeps, state: StateFiles): Promise<0 | 1> {
   const out = path.resolve(o.root, o.out);
   if (out === cachePaths(o.root).stagedBackfill) fs.rmSync(out, { recursive: true, force: true });
   const wrote = writeState(path.join(out, "state"), state);
@@ -561,7 +567,19 @@ function finishStateOnly(o: BackfillOptions, d: BackfillDeps, state: StateFiles)
     return 1;
   }
   try {
-    d.print(PUBLISH_STATE_P3);
+    const config = loadCheckedConfig({ root: o.root });
+    const now = () => d.now().getTime();
+    const r = await publishState({
+      root: o.root, date: taipeiToday(d.now()), deadline: Number.POSITIVE_INFINITY, now, dryRun: false, repo: d.repo, config,
+      mode: o.mode === "catch-up" ? "catch-up" : "backfill", stagedDir: out, cutoff: o.cutoff, log: d.print,
+    });
+    d.print(r.sha
+      ? `Published ${r.files.length} state files to main as ${sha7(r.sha)}.`
+      : "Nothing was published: content/state/ already holds this state.");
+    return 0;
+  } catch (e) {
+    const code = (e as { code?: unknown }).code;
+    d.print(`Nothing was published: ${typeof code === "string" ? code : e instanceof Error ? e.message.slice(0, 300) : String(e)}.`);
     return 1;
   } finally {
     releaseLock(lock);
@@ -594,6 +612,7 @@ function defaults(root: string, cutoff: string, d: Partial<BackfillDeps>): Backf
     now: d.now ?? (() => new Date()),
     workers: d.workers ?? 4,
     print: d.print ?? ((line) => process.stdout.write(`${line}\n`)),
+    repo: d.repo,
   };
 }
 

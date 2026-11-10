@@ -1,0 +1,617 @@
+// scripts/publish.ts (SPEC §8.7; plan §1 L2, amendments A5, A17 and A18) on the shared harness
+// (tests/helpers/harness.ts): a bare remote with a pre-receive hook standing in for GitHub, and its clone
+// seeded with fixtures/site-content as it stood before an edition (tests/helpers/publish-world.ts). The
+// composers are fakes that return site-content's own files, so validateAll() inside publish is the real
+// one; the integration lane reruns P3b and P13 with the real composers (I-P3, I-P13). P1 to P14 are §8.7's
+// fourteen tests; CF2 is plan A5's facts check; PW checks the world itself; G4 is publishState's own test.
+// Nothing here reaches the network.
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ContentChanges, GatedDraft } from "@/lib/apply";
+import type { LoadedConfig } from "@/lib/config";
+import { at } from "@/lib/dates";
+import { jsonText } from "@/lib/json";
+import type { CveLookup, RegionsBase } from "@/lib/rules/types";
+import { Brief } from "@/lib/schema/brief";
+import type { AgentContext } from "@/lib/schema/context";
+import { STATE_SCHEMAS } from "@/lib/schema/metrics";
+import { CorrectionsFile, type Evidence } from "@/lib/schema/misc";
+import { StatusFile, type RunRecord } from "@/lib/schema/status";
+import { validateAll } from "@/lib/validate";
+import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
+import type { WithholdRequest } from "@/lib/withhold";
+import { collect } from "@/scripts/collect";
+import { MIN } from "@/scripts/lib/clock";
+import { cveFactsFor } from "@/scripts/lib/cve-facts";
+import { git, SyncError } from "@/scripts/lib/git";
+import { runPaths } from "@/scripts/lib/paths";
+import {
+  COMMIT_RE, NOT_ARM64, PublishError, dropPendingEditions, main, originMatches, publishDataOnly, publishFull, publishState, publishStatus,
+  publishWithholds, pushPending, tooLateLine, type PublishDeps, type PublishOptions, type StatusEvent,
+} from "@/scripts/publish";
+import { REPO, inRoot, makeHarness, type Harness } from "./helpers/harness";
+import {
+  WORLD_DATES, beforeEdition, fakeComposers, siteBrief, stagedFiles, statusText, testRecord, treeBefore, victimDispute, worldConfig,
+  type FakeComposers,
+} from "./helpers/publish-world";
+
+const T = 120_000;
+const made: Harness[] = [];
+afterEach(() => {
+  vi.restoreAllMocks();
+  for (const h of made.splice(0)) h.dispose();
+});
+
+interface World {
+  h: Harness;
+  D: string;
+  config: LoadedConfig;
+  fakes: FakeComposers;
+  site: ContentChanges;
+  logs: string[];
+}
+
+/** A harness seeded with site-content as it stood before edition D, and fake composers for D. */
+function world(D: string, start = "04:37"): World {
+  let site: ContentChanges | null = null;
+  const h = makeHarness({ date: D, start, seed: (x) => { site = beforeEdition(x, D); } });
+  made.push(h);
+  return { h, D, config: worldConfig(h), fakes: fakeComposers(D), site: site!, logs: [] };
+}
+
+const rec = (w: World, hhmmss = "04:37:02", over: Partial<RunRecord> = {}) => testRecord(w.D, `${w.D}T${hhmmss}+08:00`, over);
+
+function base(w: World, records: readonly RunRecord[], over: Partial<PublishOptions> = {}): PublishOptions {
+  return {
+    root: w.h.root, date: w.D, deadline: w.h.clock() + 60_000, now: w.h.clock, dryRun: false, repo: w.h.remote, config: w.config, records,
+    log: (l) => w.logs.push(l), ...over,
+  };
+}
+
+const composers = (w: World): PublishDeps => ({ composeDataOnly: w.fakes.composeDataOnly, applyDraft: w.fakes.applyDraft, composeWithholds: w.fakes.composeWithholds });
+
+const dataOnly = (w: World, records: readonly RunRecord[], over: Partial<PublishOptions> = {}, deps: PublishDeps = composers(w)) =>
+  publishDataOnly({ ...base(w, records, over), feedsStale: [], generatedAt: `${w.D}T04:40:00+08:00` }, deps);
+
+const NO_CVES: CveLookup = { get: () => undefined };
+const full = (w: World, records: readonly RunRecord[], over: Partial<PublishOptions> = {}, force = false) =>
+  publishFull({
+    ...base(w, records, over), force, edition: "full",
+    // The fake applyDraft returns site-content's brief; publish reads only the draft's generated_at.
+    draft: { generated_at: `${w.D}T05:04:00+08:00` } as unknown as GatedDraft,
+    context: {} as AgentContext, evidence: {} as Evidence, cveList: NO_CVES, regionsBase: {} as RegionsBase, snapshots: {},
+    feedsStale: [], disputes: null, recheck: null,
+  }, composers(w));
+
+const status = (w: World, records: readonly RunRecord[], event: StatusEvent, over: Partial<PublishOptions> = {}, updateArchive?: Parameters<typeof publishStatus>[0]["updateArchive"]) =>
+  publishStatus({ ...base(w, records, over), event, updateArchive });
+
+/** The victim withhold of the 2026-10-14 breach item, on top of the disputes GitHub holds. */
+const REQUEST = (w: World): WithholdRequest => ({ item_id: "inc-transport-jp-2026-10", edition_date: "2026-10-14", kind: "victim", dispute_id: "D-0002", since: w.D });
+function withhold(w: World, records: readonly RunRecord[], over: Partial<PublishOptions> = {}) {
+  const cf = CorrectionsFile.parse(JSON.parse(fs.readFileSync(path.join(w.h.root, "content", "corrections.json"), "utf8")));
+  return publishWithholds({ ...base(w, records, over), requests: [REQUEST(w)], disputes: [...cf.disputes, victimDispute()] }, composers(w));
+}
+
+const subjects = (h: Harness) => h.remoteLog().map((c) => c.subject);
+const read = (file: string) => fs.readFileSync(file, "utf8");
+const contentFile = (w: World, rel: string) => path.join(w.h.root, "content", rel);
+
+/** A brief: commit made by hand, as a run killed between its commit and its push leaves it. */
+function localBriefCommit(w: World): void {
+  fs.writeFileSync(contentFile(w, `briefs/${w.D}.json`), jsonText(siteBrief(w.D), Brief));
+  w.h.git("add", "content");
+  w.h.git("commit", "-q", "-m", `brief: ${w.D} · data-only edition`);
+}
+
+/** Captures process.stderr and process.stdout writes (the CLI's lines). */
+function captureOutput() {
+  const err: string[] = [];
+  const out: string[] = [];
+  vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => (err.push(String(chunk)), true));
+  vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array) => (out.push(String(chunk)), true));
+  return { err, out, clear: () => { err.length = 0; out.length = 0; } };
+}
+
+const EDITION_FILES = (D: string) => [
+  `content/briefs/${D}.json`, `content/metrics/${D}.json`, `content/metrics/inputs/${D}.json`, `content/archive-index.json`, `content/status/${D}.json`,
+];
+const isState = (f: string) => /^content\/state\/[a-z-]+\.json$/.test(f);
+
+describe("the publish world", () => {
+  it.each(WORLD_DATES)("PW: the tree before %s passes validateAll, and so does a data-only edition composed on it", async (D) => {
+    const w = world(D);
+    expect(validateAll(path.join(w.h.root, "content"), { config: w.config }).errors).toEqual([]);
+    expect(fs.existsSync(contentFile(w, `briefs/${D}.json`))).toBe(false);
+    expect(fs.existsSync(contentFile(w, `metrics/${D}.json`))).toBe(false);
+    await inRoot(w.h, async () => {
+      await dataOnly(w, [rec(w, "04:37:02", { trigger: "dry_run" })], { dryRun: true, freshCopy: true });
+    });
+    expect(validateAll(runPaths(w.h.root, D).dryRunCopy, { publishing: D, config: w.config }).errors).toEqual([]);
+  }, T);
+});
+
+describe("publish (§8.7)", () => {
+  it("P1, P6: the morning's calls write only their listed paths, and every subject matches COMMIT_RE", async () => {
+    const w = world("2026-10-14");
+    const D = w.D;
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      await status(w, [r0], { kind: "started" });
+      const d = await dataOnly(w, [r0]);
+      w.h.clock.jump(15 * MIN);
+      const f = await full(w, [d.record]);
+      const closed: RunRecord = { ...f.record, outcome: "published_full", finished_at: `${D}T05:20:00+08:00` };
+      await status(w, [closed], { kind: "ended", outcome: "published_full" }, {}, (ix) => {
+        const url = Object.keys(ix.urls).sort()[0]!;
+        ix.urls[url]!.last_check = { date: D, result: "ok", http: 200 };
+        return ix;
+      });
+    });
+    const log = w.h.remoteLog();
+    expect(log.map((c) => c.subject)).toEqual([
+      `status: ${D} · run 20261014-043702 started`,
+      `brief: ${D} · data-only edition`,
+      `brief: ${D} · full edition, ${siteBrief(D).items.length} items`,
+      `status: ${D} · run 20261014-043702 ended: published_full`,
+    ]);
+    for (const c of log) expect(c.subject).toMatch(COMMIT_RE);
+    expect(log[0]!.files).toEqual([`content/status/${D}.json`]);
+    // The data-only commit carries the staged metrics, inputs and state; the full one does not repeat them.
+    for (const f of log[1]!.files) expect(EDITION_FILES(D).includes(f) || isState(f), f).toBe(true);
+    expect(log[1]!.files).toEqual(expect.arrayContaining([`content/briefs/${D}.json`, `content/metrics/${D}.json`, `content/metrics/inputs/${D}.json`, `content/status/${D}.json`]));
+    const fullAllowed = [`content/briefs/${D}.json`, "content/scoreboard.json", "content/corrections.json", "content/archive-index.json", `content/status/${D}.json`];
+    for (const f of log[2]!.files) expect(fullAllowed, f).toContain(f);
+    expect(log[2]!.files).toEqual(expect.arrayContaining([`content/briefs/${D}.json`, `content/status/${D}.json`]));
+    expect([...log[3]!.files].sort()).toEqual(["content/archive-index.json", `content/status/${D}.json`]);
+    expect(w.h.git("status", "--porcelain")).toBe("");
+  }, T);
+
+  it("P1: a withhold writes corrections.json, the rewritten briefs, archive-index.json and status/D.json only", async () => {
+    const w = world("2026-10-15");
+    await inRoot(w.h, async () => {
+      await withhold(w, [rec(w)]);
+    });
+    const [c] = w.h.remoteLog();
+    expect(c!.subject).toBe("correction: 2026-10-15 · withheld inc-transport-jp-2026-10");
+    expect(c!.subject).toMatch(COMMIT_RE);
+    for (const f of c!.files) expect(/^content\/(corrections\.json|archive-index\.json|status\/2026-10-15\.json|briefs\/\d{4}-\d{2}-\d{2}\.json)$/.test(f), f).toBe(true);
+    expect(c!.files).toEqual(expect.arrayContaining(["content/corrections.json", "content/briefs/2026-10-14.json", "content/status/2026-10-15.json"]));
+  }, T);
+
+  it("P2: a content folder other than <root>/content, a branch other than main or another origin is the wrong repository; a dirty tree is a SyncError", async () => {
+    const w = world("2026-10-15");
+    const head = w.h.git("rev-parse", "HEAD");
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      process.env.CT_CONTENT_DIR = "fixtures/site-content";
+      await expect(status(w, [r0], { kind: "started" })).rejects.toMatchObject({ code: "wrong repository" });
+      process.env.CT_CONTENT_DIR = path.join(w.h.root, "content");
+      await expect(status(w, [r0], { kind: "started" }, { deadline: w.h.clock() + 5_000, repo: path.join(w.h.base, "elsewhere.git") }))
+        .rejects.toMatchObject({ code: "wrong repository" });
+      delete process.env.CT_CONTENT_DIR;
+      w.h.git("checkout", "-q", "-b", "side");
+      await expect(dataOnly(w, [r0])).rejects.toMatchObject({ code: "wrong repository" });
+      w.h.git("checkout", "-q", "main");
+      expect(fs.existsSync(contentFile(w, "status/2026-10-15.json"))).toBe(false);
+
+      fs.appendFileSync(contentFile(w, "scoreboard.json"), " ");
+      const err = await status(w, [r0], { kind: "started" }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(SyncError);
+      expect(fs.existsSync(contentFile(w, "status/2026-10-15.json"))).toBe(false);
+      expect(w.h.git("status", "--porcelain")).toBe(" M content/scoreboard.json");
+    });
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.remoteLog()).toEqual([]);
+    // Origin URLs that count as the content repository (run.json repos.repo), and ones that do not.
+    for (const u of ["https://github.com/8gara8/CyberTracker.git", "https://github.com/8gara8/CyberTracker", "git@github.com:8gara8/cybertracker.git", "ssh://git@github.com/8gara8/CyberTracker.git"]) {
+      expect(originMatches(u, "8gara8/CyberTracker"), u).toBe(true);
+    }
+    for (const u of ["https://github.com/8gara8/OtherTracker.git", "https://example.org/8gara8/CyberTracker.git", "/tmp/remote.git", "https://github.com/8gara8/CyberTracker/x"]) {
+      expect(originMatches(u, "8gara8/CyberTracker"), u).toBe(false);
+    }
+    expect(originMatches("/tmp/remote.git/", "8gara8/CyberTracker", "/tmp/remote.git")).toBe(true);
+  }, T);
+
+  it("P3a, P3b: data-only after an edition is refused; full after data-only replaces it and keeps data_only_published_at", async () => {
+    const w = world("2026-10-14");
+    const D = w.D;
+    await inRoot(w.h, async () => {
+      const d = await dataOnly(w, [rec(w)]);
+      await expect(dataOnly(w, [d.record])).rejects.toMatchObject({ code: "already published" });
+      w.h.clock.jump(20 * MIN);
+      const f = await full(w, [d.record]);
+      // The spy: applyDraft got the stored brief's data_only_published_at.
+      expect(w.fakes.calls.apply).toHaveLength(1);
+      expect(w.fakes.calls.apply[0]!.dataOnlyPublishedAt).toBe(d.publishedAt);
+      const b = Brief.parse(JSON.parse(w.h.remoteFile(`content/briefs/${D}.json`)!));
+      expect(b.edition).toBe("full");
+      expect(b.published_at).toBe(f.publishedAt);
+      expect(b.data_only_published_at).toBe(d.publishedAt);
+      const s = StatusFile.parse(JSON.parse(w.h.remoteFile(`content/status/${D}.json`)!));
+      expect(s.runs).toHaveLength(1);
+      expect(s.runs[0]).toMatchObject({ edition: "full", data_only_published_at: d.publishedAt, full_published_at: f.publishedAt });
+      expect(f.record).toEqual(s.runs[0]);
+
+      // P3a: after a full edition, both a data-only and an unforced full call are refused.
+      await expect(dataOnly(w, [f.record])).rejects.toMatchObject({ code: "already published" });
+      await expect(full(w, [f.record])).rejects.toMatchObject({ code: "already published" });
+      w.h.clock.jump(5 * MIN);
+      const again = await full(w, [f.record], {}, true);
+      expect(w.fakes.calls.apply[1]!.dataOnlyPublishedAt).toBe(d.publishedAt);
+      expect(Brief.parse(JSON.parse(w.h.remoteFile(`content/briefs/${D}.json`)!)).published_at).toBe(again.publishedAt);
+    });
+    expect(subjects(w.h)).toHaveLength(3);
+    expect(w.h.git("status", "--porcelain")).toBe("");
+  }, T);
+
+  it("P4: a composed brief that fails validateAll leaves the tree clean and GitHub unchanged", async () => {
+    const w = world("2026-10-15");
+    const head = w.h.git("rev-parse", "HEAD");
+    await inRoot(w.h, async () => {
+      const broken: PublishDeps["composeDataOnly"] = (i) => {
+        const ch = w.fakes.composeDataOnly(i);
+        return { ...ch, brief: { ...ch.brief!, computed: { ...ch.brief!.computed, word_count: ch.brief!.computed.word_count + 7 } } };
+      };
+      const err = await dataOnly(w, [rec(w)], {}, { composeDataOnly: broken }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(PublishError);
+      expect((err as PublishError).code).toBe("validation");
+      expect((err as PublishError).message).toBe("validation");
+      expect((err as PublishError).codes).toContain("COMPUTED_MISMATCH");
+    });
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.remoteLog()).toEqual([]);
+    for (const rel of ["briefs/2026-10-15.json", "metrics/2026-10-15.json", "status/2026-10-15.json"]) expect(fs.existsSync(contentFile(w, rel)), rel).toBe(false);
+    expect(read(contentFile(w, "archive-index.json"))).toBe(treeBefore("2026-10-15").get("archive-index.json"));
+  }, T);
+
+  it("P5: a rejected status or withhold commit stays local and lands with pushPending() or a later status commit, after 11:00 too", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      w.h.pushes("reject");
+      await expect(status(w, [r0], { kind: "started" }, { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      expect(w.h.git("log", "-1", "--format=%s")).toBe(`status: ${D} · run 20261015-043702 started`);
+      expect(w.h.remoteLog()).toEqual([]);
+      w.h.pushes("accept");
+      await expect(pushPending(git(w.h.root))).resolves.toEqual({ pushed: 1 });
+      expect(subjects(w.h)).toEqual([`status: ${D} · run 20261015-043702 started`]);
+      await expect(pushPending(git(w.h.root))).resolves.toEqual({ pushed: 0 });
+
+      w.h.pushes("reject");
+      await expect(withhold(w, [r0], { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      expect(subjects(w.h)).toHaveLength(1);
+      w.h.clock.set(at(D, "11:30"));
+      w.h.pushes("accept");
+      const closed: RunRecord = { ...r0, outcome: "failed", error_code: "E_PUSH", finished_at: `${D}T11:30:00+08:00` };
+      await status(w, [closed], { kind: "ended", outcome: "failed" });
+    });
+    expect(subjects(w.h)).toEqual([
+      `status: ${D} · run 20261015-043702 started`,
+      `correction: ${D} · withheld inc-transport-jp-2026-10`,
+      `status: ${D} · run 20261015-043702 ended: failed`,
+    ]);
+    expect(w.h.git("rev-parse", "HEAD")).toBe(w.h.remoteLog().at(-1)!.sha);
+  }, T);
+
+  it("P7: with staged files and GitHub one status commit ahead, publishDataOnly commits the staged files byte for byte", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    const r0 = rec(w);
+    w.h.commitOnRemote({ [`content/status/${D}.json`]: statusText(D, [r0]) }, `status: ${D} · run ${r0.run_id} started`);
+    await inRoot(w.h, async () => {
+      await dataOnly(w, [r0]);
+    });
+    const log = w.h.remoteLog();
+    expect(log.map((c) => c.subject)).toEqual([`status: ${D} · run ${r0.run_id} started`, `brief: ${D} · data-only edition`]);
+    for (const [rel, text] of stagedFiles(D)) expect(w.h.remoteFile(`content/${rel}`), rel).toBe(text);
+    expect(log[1]!.files).toEqual(expect.arrayContaining([`content/metrics/${D}.json`, `content/metrics/inputs/${D}.json`]));
+    const s = StatusFile.parse(JSON.parse(w.h.remoteFile(`content/status/${D}.json`)!));
+    expect(s.runs.map((r) => r.run_id)).toEqual([r0.run_id]);
+    expect(s.runs[0]!.edition).toBe("data_only");
+  }, T);
+
+  it("P8: with reject-briefs both edition calls throw push and leave HEAD and git status as before; a status commit then lands alone", async () => {
+    const w = world("2026-10-14");
+    const D = w.D;
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      await status(w, [r0], { kind: "started" });
+      w.h.pushes("reject-briefs");
+      const head = w.h.git("rev-parse", "HEAD");
+      await expect(dataOnly(w, [r0], { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+      expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+      await expect(full(w, [r0], { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+      expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+      const closed: RunRecord = { ...r0, outcome: "failed", error_code: "E_PUBLISH", finished_at: `${D}T05:30:00+08:00` };
+      await status(w, [closed], { kind: "ended", outcome: "failed" });
+    });
+    const log = w.h.remoteLog();
+    expect(log.map((c) => c.subject)).toEqual([`status: ${D} · run 20261014-043702 started`, `status: ${D} · run 20261014-043702 ended: failed`]);
+    expect(log[1]!.files).toEqual([`content/status/${D}.json`]);
+    expect(w.h.remoteFile(`content/briefs/${D}.json`)).toBeNull();
+  }, T);
+
+  it("step 8: a non-fast-forward rejection rebases once over a code commit, validates again and pushes; one that touches the commit's paths is not rebased", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    let calls = 0;
+    // GitHub's main moves between this call's sync and its push: a merged code PR.
+    const moving: PublishDeps["validateTree"] = (dir, opts) => {
+      calls += 1;
+      if (calls === 1) w.h.commitOnRemote({ "scripts/README.txt": "a merged code change\n" }, "code: a merged change");
+      return validateAll(dir, opts);
+    };
+    await inRoot(w.h, async () => {
+      await dataOnly(w, [rec(w)], {}, { ...composers(w), validateTree: moving });
+    });
+    expect(calls).toBe(2);
+    const log = w.h.remoteLog();
+    expect(log.map((c) => c.subject)).toEqual(["code: a merged change", `brief: ${D} · data-only edition`]);
+    expect(w.h.git("rev-parse", "HEAD^")).toBe(log[0]!.sha);
+    expect(w.h.git("rev-parse", "HEAD")).toBe(log[1]!.sha);
+
+    // Now GitHub's newer main writes this call's own status file: no rebase, the edition is reset away.
+    const v = world("2026-10-15");
+    const head = v.h.git("rev-parse", "HEAD");
+    let n = 0;
+    const clashing: PublishDeps["validateTree"] = (dir, opts) => {
+      n += 1;
+      if (n === 1) v.h.commitOnRemote({ [`content/status/${D}.json`]: statusText(D, [rec(v, "04:30:00")]) }, `status: ${D} · run 20261015-043000 started`);
+      return validateAll(dir, opts);
+    };
+    await inRoot(v.h, async () => {
+      await expect(dataOnly(v, [rec(v)], {}, { ...composers(v), validateTree: clashing })).rejects.toMatchObject({ code: "push" });
+    });
+    expect(n).toBe(1);
+    expect(v.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(v.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(v.h.remoteLog().map((c) => c.subject)).toEqual([`status: ${D} · run 20261015-043000 started`]);
+  }, T);
+
+  it("P9: after publishUntil both edition calls are refused as too late, force included, and the CLI exits 1 with the message", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    w.h.clock.set(at(D, "11:00") + 1_000);
+    const io = captureOutput();
+    await inRoot(w.h, async () => {
+      await expect(dataOnly(w, [rec(w)], { deadline: at(D, "12:00") })).rejects.toMatchObject({ code: "too late" });
+      await expect(full(w, [rec(w)], {}, true)).rejects.toMatchObject({ code: "too late" });
+      for (const mode of [["--data-only"], [], ["--force"]]) {
+        io.clear();
+        expect(await main(["--date", D, ...mode], { arch: "arm64", now: w.h.clock, repo: w.h.remote })).toBe(1);
+        expect(io.err.join("")).toBe("Too late: nothing is published after 11:00.\n");
+      }
+      expect(tooLateLine("11:00")).toBe("Too late: nothing is published after 11:00.");
+      expect(fs.existsSync(runPaths(w.h.root, D).lock)).toBe(false);
+    });
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(w.h.remoteLog()).toEqual([]);
+  }, T);
+
+  it("P10: at 10:59:58 with deadline 12:00 against a hook that sleeps 5 s and rejects, the push is killed at 11:00 and push thrown within about 3 s", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    const head = w.h.git("rev-parse", "HEAD");
+    w.h.pushes({ slowSeconds: 5, reject: true });
+    w.h.clock.set(at(D, "10:59") + 58_000);
+    await inRoot(w.h, async () => {
+      const t0 = Date.now();
+      const err = await dataOnly(w, [rec(w)], { deadline: at(D, "12:00") }).catch((e: unknown) => e);
+      const took = Date.now() - t0;
+      expect(err).toBeInstanceOf(PublishError);
+      expect((err as PublishError).code).toBe("push");
+      // Killed at the deadline, not answered by the hook (which sleeps 5 s before it rejects).
+      expect(took).toBeGreaterThan(1_000);
+      expect(took).toBeLessThan(4_500);
+    });
+    // No receive-pack or hook of this remote outlives the call (they share the push's process group).
+    const lingering = () => execFileSync("ps", ["-eo", "args"], { encoding: "utf8" }).split("\n").filter((l) => l.includes(w.h.remote));
+    for (let i = 0; i < 10 && lingering().length; i++) await new Promise((r) => setTimeout(r, 100));
+    expect(lingering()).toEqual([]);
+    expect(w.h.remoteLog()).toEqual([]);
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+  }, T);
+
+  it("P11: a local brief: above a local status: makes pushPending() refuse; after dropPendingEditions() one status: commit lands", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      w.h.pushes("reject");
+      await expect(status(w, [r0], { kind: "started" }, { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      localBriefCommit(w);
+      w.h.pushes("accept");
+      await expect(pushPending(git(w.h.root))).rejects.toMatchObject({ code: "pending edition" });
+      expect(w.h.remoteLog()).toEqual([]);
+      const dropped = await dropPendingEditions(git(w.h.root), { root: w.h.root, config: w.config, now: w.h.clock, repo: w.h.remote });
+      expect(dropped).toEqual({ dropped: 2, remade: 0, failed: [] });
+      expect(w.h.git("rev-list", "--count", "origin/main..HEAD")).toBe("0");
+      await status(w, [r0], { kind: "started" });
+    });
+    const log = w.h.remoteLog();
+    expect(log.map((c) => c.subject)).toEqual([`status: ${D} · run 20261015-043702 started`]);
+    expect(w.h.remoteFile(`content/briefs/${D}.json`)).toBeNull();
+  }, T);
+
+  it("P12: a local correction: below a local brief: are both dropped, the withhold is made again, and every stored brief holding the item marks it withheld (A17)", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    const ITEM = "inc-transport-jp-2026-10";
+    await inRoot(w.h, async () => {
+      const r0 = rec(w);
+      w.h.pushes("reject");
+      await expect(withhold(w, [r0], { deadline: w.h.clock() + 5_000 })).rejects.toMatchObject({ code: "push" });
+      localBriefCommit(w);
+      w.h.pushes("accept");
+      const dropped = await dropPendingEditions(git(w.h.root), { root: w.h.root, config: w.config, now: w.h.clock, repo: w.h.remote }, composers(w));
+      expect(dropped).toEqual({ dropped: 2, remade: 1, failed: [] });
+      await status(w, [r0], { kind: "started" });
+    });
+    expect(subjects(w.h)).toEqual([`correction: ${D} · withheld ${ITEM}`, `status: ${D} · run 20261015-043702 started`]);
+    expect(w.h.remoteFile(`content/briefs/${D}.json`)).toBeNull();
+    const cf = CorrectionsFile.parse(JSON.parse(w.h.remoteFile("content/corrections.json")!));
+    const c = cf.corrections.find((x) => x.item_id === ITEM && x.type === "name_removed");
+    expect(c).toMatchObject({ date: D, edition_date: "2026-10-14", dispute_id: "D-0002" });
+    expect(cf.disputes.find((d) => d.id === "D-0002")!.correction_id).toBe(c!.id);
+    // A17: the item is withheld in every stored brief that holds it, and every region row naming it is marked.
+    let holding = 0;
+    for (const rel of [...treeBefore(D).keys()].filter((k) => k.startsWith("briefs/"))) {
+      const b = Brief.parse(JSON.parse(w.h.remoteFile(`content/${rel}`)!));
+      const it = b.items.find((x) => x.id === ITEM);
+      if (it) {
+        holding += 1;
+        expect(it.withheld, rel).toEqual({ correction_id: c!.id, since: D });
+        expect(it.headline).toBe(WITHHELD_HEADLINE);
+      }
+      for (const r of b.regions.rows) if (r.item_ids.includes(ITEM)) expect(r.reason, rel).toBe(WITHHELD_MARK);
+    }
+    expect(holding).toBeGreaterThan(0);
+  }, T);
+
+  it("P13: a dry run leaves HEAD and content/ unchanged; the fresh copy replaces an older one and later calls reuse it; its status file is mirrored", async () => {
+    const w = world("2026-10-14");
+    const D = w.D;
+    const head = w.h.git("rev-parse", "HEAD");
+    const P = runPaths(w.h.root, D);
+    fs.mkdirSync(P.dryRunCopy, { recursive: true });
+    fs.writeFileSync(path.join(P.dryRunCopy, "older.txt"), "an older copy\n");
+    await inRoot(w.h, async () => {
+      const r0 = rec(w, "04:37:02", { trigger: "dry_run" });
+      const d = await dataOnly(w, [r0], { dryRun: true, freshCopy: true });
+      expect(d.sha).toBeNull();
+      expect(fs.existsSync(path.join(P.dryRunCopy, "older.txt"))).toBe(false);
+      w.h.clock.jump(20 * MIN);
+      const f = await full(w, [d.record], { dryRun: true });
+      expect(f.sha).toBeNull();
+      const b = Brief.parse(JSON.parse(read(path.join(P.dryRunCopy, "briefs", `${D}.json`))));
+      expect(b).toMatchObject({ edition: "full", published_at: f.publishedAt, data_only_published_at: d.publishedAt });
+      expect(read(P.statusMirror)).toBe(read(path.join(P.dryRunCopy, "status", `${D}.json`)));
+      const s = StatusFile.parse(JSON.parse(read(P.statusMirror)));
+      expect(s.runs.at(-1)).toMatchObject({ trigger: "dry_run", edition: "full", data_only_published_at: d.publishedAt, full_published_at: f.publishedAt });
+      expect(validateAll(P.dryRunCopy, { publishing: D, config: w.config }).errors).toEqual([]);
+      // Neither the cap nor the too-late refusal applies to a dry run.
+      w.h.clock.set(at(D, "11:30"));
+      await expect(full(w, [f.record], { dryRun: true }, true)).resolves.toMatchObject({ sha: null });
+    });
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(fs.existsSync(contentFile(w, `briefs/${D}.json`))).toBe(false);
+    expect(fs.existsSync(contentFile(w, `status/${D}.json`))).toBe(false);
+    expect(w.h.remoteLog()).toEqual([]);
+  }, T);
+
+  it("P14: the CLI refuses every mode while a live pid holds logs/.lock, and on a non-arm64 arch, with nothing written", async () => {
+    const w = world("2026-10-15");
+    const D = w.D;
+    const head = w.h.git("rev-parse", "HEAD");
+    const io = captureOutput();
+    const modes = [[], ["--data-only"], ["--state"], ["--dry-run"], ["--data-only", "--dry-run"], ["--force"]];
+    await inRoot(w.h, async () => {
+      const lock = runPaths(w.h.root, D).lock;
+      fs.mkdirSync(path.dirname(lock), { recursive: true });
+      const holder = JSON.stringify({ pid: process.pid, started: new Date(w.h.clock()).toISOString() });
+      fs.writeFileSync(lock, holder);
+      for (const mode of modes) {
+        io.clear();
+        expect(await main(["--date", D, ...mode], { arch: "arm64", now: w.h.clock, repo: w.h.remote }), mode.join(" ")).toBe(1);
+        expect(io.err.join("")).toBe(`CyberTracker ${D}: another run is in progress (started 04:37); nothing done.\n`);
+      }
+      expect(read(lock)).toBe(holder);
+      fs.rmSync(lock);
+      for (const mode of modes) {
+        io.clear();
+        expect(await main(["--date", D, ...mode], { arch: "x64", now: w.h.clock, repo: w.h.remote }), mode.join(" ")).toBe(1);
+        expect(io.err.join("")).toBe("Not native arm64: put /opt/homebrew/bin first on the PATH (SPEC Appendix C).\n");
+      }
+      expect(NOT_ARM64).toBe("Not native arm64: put /opt/homebrew/bin first on the PATH (SPEC Appendix C).");
+      expect(fs.existsSync(lock)).toBe(false);
+      io.clear();
+      expect(await main(["--date", D, "--data-only", "--state"], { arch: "arm64", now: w.h.clock })).toBe(2);
+      expect(io.err.join("")).toMatch(/^--data-only and --state cannot be used together\.\nUsage: tsx scripts\/publish\.ts /);
+      expect(fs.existsSync(runPaths(w.h.root, D).dryRunCopy)).toBe(false);
+    });
+    expect(w.h.git("rev-parse", "HEAD")).toBe(head);
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    expect(fs.existsSync(contentFile(w, `briefs/${D}.json`))).toBe(false);
+    expect(w.h.remoteLog()).toEqual([]);
+  }, T);
+});
+
+describe("publishState", () => {
+  /** Stages state files in cache/staged/backfill/state/: days.json and kev-index.json a day newer, series.json as committed. */
+  function stage(h: Harness): string {
+    const dir = path.join(h.root, "cache", "staged", "backfill");
+    fs.mkdirSync(path.join(dir, "state"), { recursive: true });
+    for (const name of ["days.json", "kev-index.json"] as const) {
+      const v = STATE_SCHEMAS[name].parse(JSON.parse(read(path.join(h.root, "content", "state", name))));
+      fs.writeFileSync(path.join(dir, "state", name), jsonText({ ...v, updated_at: "2026-10-12" }, STATE_SCHEMAS[name]));
+    }
+    fs.copyFileSync(path.join(h.root, "content", "state", "series.json"), path.join(dir, "state", "series.json"));
+    // A staged metrics file is never published by publishState.
+    fs.mkdirSync(path.join(dir, "metrics"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "metrics", "2026-10-14.json"), "{}\n");
+    return dir;
+  }
+  const call = (h: Harness, config: LoadedConfig, stagedDir: string, mode: "catch-up" | "backfill") =>
+    publishState({ root: h.root, date: h.date, deadline: h.clock() + 60_000, now: h.clock, dryRun: false, repo: h.remote, config, mode, stagedDir, cutoff: "2026-10-12" });
+
+  it("G4: commits only the changed staged state files, and kev-index.json only while no brief exists", async () => {
+    const empty = makeHarness();
+    made.push(empty);
+    const dir = stage(empty);
+    await inRoot(empty, async () => {
+      const r = await call(empty, worldConfig(empty), dir, "backfill");
+      expect([...r.files].sort()).toEqual(["content/state/days.json", "content/state/kev-index.json"]);
+      expect(r.sha).toBe(empty.remoteLog()[0]!.sha);
+      await expect(call(empty, worldConfig(empty), dir, "backfill")).resolves.toEqual({ sha: null, files: [] });
+    });
+    expect(empty.remoteLog().map((c) => [c.subject, [...c.files].sort()])).toEqual([
+      ["state: 2026-10-12 · backfill", ["content/state/days.json", "content/state/kev-index.json"]],
+    ]);
+    for (const name of ["days.json", "kev-index.json"]) expect(empty.remoteFile(`content/state/${name}`)).toBe(read(path.join(dir, "state", name)));
+
+    const w = world("2026-10-15");
+    const kev = read(contentFile(w, "state/kev-index.json"));
+    const staged = stage(w.h);
+    await inRoot(w.h, async () => {
+      const r = await call(w.h, w.config, staged, "catch-up");
+      expect(r.files).toEqual(["content/state/days.json"]);
+    });
+    expect(w.h.remoteLog().map((c) => [c.subject, c.files])).toEqual([["state: 2026-10-12 · catch-up", ["content/state/days.json"]]]);
+    expect(read(contentFile(w, "state/kev-index.json"))).toBe(kev);
+    expect(w.h.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+  }, T);
+});
+
+describe("cveFactsFor (A5)", () => {
+  it("CF2: after collect on the fixture world, the facts give the fixture KEV catalog's due date and catalog version", async () => {
+    const h = makeHarness();
+    made.push(h);
+    const D = h.date;
+    const catalog = JSON.parse(read(path.join(REPO, "fixtures", "feeds", "kev", "known_exploited_vulnerabilities.json"))) as {
+      catalogVersion: string; vulnerabilities: { cveID: string; dateAdded: string; dueDate: string; knownRansomwareCampaignUse: string }[];
+    };
+    const row = catalog.vulnerabilities[0]!;
+    await inRoot(h, async () => {
+      expect(cveFactsFor(h.root, D).kev(row.cveID)).toBeNull();
+      await collect({ date: D, deadline: h.clock() + 300_000, root: h.root, deps: { now: h.clock } });
+      const facts = cveFactsFor(h.root, D);
+      expect(facts.kev(row.cveID)).toEqual({
+        dateAdded: row.dateAdded, dueDate: row.dueDate, catalogVersion: catalog.catalogVersion,
+        ransomware: row.knownRansomwareCampaignUse.toLowerCase() === "known" ? "known" : "unknown",
+      });
+      for (const v of catalog.vulnerabilities.slice(0, 20)) expect(facts.kev(v.cveID)?.dueDate, v.cveID).toBe(v.dueDate);
+      expect(facts.kev("CVE-2026-0000001")).toBeNull();
+      expect(facts.record("../x")).toBeNull();
+      expect(facts.ghsaIds("CVE-2026-0000001")).toEqual([]);
+    });
+  }, T);
+});
