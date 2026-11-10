@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-10 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-11 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -64,8 +64,12 @@ faster?
   morning pipeline (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its
   tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. An independent review in the
   container (two verify passes, 22 findings, one a duplicate) and the build's 11 known items were then
-  fixed there, with rows 95 to 120. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and `file -L`
-  says arm64. Kobol checks next: JL stores the agent's token
+  fixed there, with rows 95 to 120. A second fix pass in the container then closed the edge cases those
+  fixes left open (a same-day withhold whose item the draft drops, later copies of a withheld item, the
+  URL rule, shared source titles, intake's reuse of a non-binding correction, the draft-mode `first_seen`,
+  the not-composed next step and the sample's blocks), editing rows 29, 79, 84, 87, 95, 96, 98, 100, 102
+  and 103 and adding rows 121 to 125. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
+  `file -L` says arm64. Kobol checks next: JL stores the agent's token
   (SPEC §9.6), most simply with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which
   reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
   transcript re-record and the dry runs of SPEC §10 P3, whose report
