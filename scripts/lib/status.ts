@@ -66,6 +66,8 @@ export interface Notes {
   notRun(reason: NotRunReason): string;
   /** whatHappened(code, facts) from lib/chat.ts */
   failure(code: string, facts: WhatFacts): string;
+  /** Preflight step 5 (an addition to G9): pushPending() refused or failed; the commits stay local for the next run. */
+  pendingNotPushed: string;
 }
 
 /** Every stage note text; each ends with a full stop. */
@@ -111,6 +113,7 @@ export const NOTES: Notes = {
     }
   },
   failure: (code, facts) => whatHappened(code, facts),
+  pendingNotPushed: "Commits left unpushed by an earlier run could not be pushed; the next run tries again.",
 };
 
 /** StageRecord.note's limit (§4.8). */
