@@ -318,7 +318,8 @@ function closeStatus(e: IssueEntry): Dispute["status"] | null {
  * open or upheld victim or attribution dispute without a correction, oldest first, at most 10 (one per
  * item, edition and kind; one already answered by a stored name_removed correction that still binds gets
  * that correction's id instead). Reports: open fact and link disputes, and rejected victim or attribution disputes on items
- * still withheld with no `update` correction since. When the read fails (`ok: false`), the stored list
+ * still withheld with no `update` correction since and no other open or upheld victim or attribution dispute or
+ * binding withhold on the item. When the read fails (`ok: false`), the stored list
  * still gives withholds and reports.
  */
 export async function intakeDisputes(o: {
@@ -403,14 +404,20 @@ export async function intakeDisputes(o: {
     else waiting++;
   }
 
-  // Reports to the agent (§8.9 step 5).
+  // Reports to the agent (§8.9 step 5). A rejected dispute's restore report waits while the item is still disputed:
+  // another open or upheld victim or attribution dispute on it, or a withhold that still binds it, keeps the name
+  // out of every edition, and an update correction restoring the text would print it in the corrections list.
+  const disputed = new Set([
+    ...disputes.filter((x) => (x.kind === "victim" || x.kind === "attribution") && (x.status === "open" || x.status === "upheld")).map((x) => x.item_id),
+    ...corrections.filter((c) => c.type === "name_removed" && binds.has(c.id)).map((c) => c.item_id),
+  ]);
   const reports: AgentContext["corrections"]["reports"] = [];
   for (const d of disputes) {
     if (d.status === "open" && (d.kind === "fact" || d.kind === "link")) {
       reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
       continue;
     }
-    if (d.status !== "rejected" || (d.kind !== "victim" && d.kind !== "attribution")) continue;
+    if (d.status !== "rejected" || (d.kind !== "victim" && d.kind !== "attribution") || disputed.has(d.item_id)) continue;
     const edition = d.edition_date ?? index.datesFor(d.item_id).at(-1) ?? null;
     const item = edition ? index.item(d.item_id, edition) : null;
     if (!item?.withheld) continue;

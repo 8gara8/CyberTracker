@@ -641,6 +641,12 @@ describe("withholds, failures, pages, closures and since (R13 to R19)", () => {
     const r = await intake(w, issuesApi([[issue(11, body, "2026-10-15T01:00:00Z")]]).impl);
     expect(r.withhold).toEqual([{ item_id: "inc-health-us-2026-10", edition_date: "2026-10-12", kind: "victim", dispute_id: "D-0002", since: D }]);
     expect(r.disputes.find((d) => d.issue_number === 11)).toMatchObject({ id: "D-0002", status: "open", correction_id: null });
+    // While the new dispute is open, the agent is not told it may restore the text for the rejected one: an update
+    // correction would print the name in the corrections list.
+    expect(r.reports).toEqual([]);
+    // Once nothing else disputes the item, the rejected dispute's report comes back.
+    const alone = await intake(w, issuesApi([[]]).impl);
+    expect(alone.reports).toEqual([{ item_id: "inc-health-us-2026-10", type: "victim", evidence_url: null }]);
   });
 });
 
