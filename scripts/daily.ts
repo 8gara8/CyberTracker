@@ -870,8 +870,10 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       setStage(cur(), "publish", { status: "ok", ended: now() });
       const masked = new Set((res.masked ?? []).filter((m) => m.match !== "carried").map((m) => m.item_id)).size;
       if (masked) addNote(cur(), "publish", NOTES.maskedRepeats(masked));
-      const kept = new Set((res.masked ?? []).filter((m) => m.match === "carried").map((m) => m.item_id)).size;
+      const kept = new Set((res.masked ?? []).filter((m) => m.match === "carried" && !m.draft_id).map((m) => m.item_id)).size;
       if (kept) addNote(cur(), "publish", NOTES.keptWithheld(kept));
+      const inSlot = new Set((res.masked ?? []).filter((m) => m.match === "carried" && m.draft_id).map((m) => m.item_id)).size;
+      if (inSlot) addNote(cur(), "publish", NOTES.keptInSlot(inSlot));
       if (dryRun) return;
       state.pushedBrief = true;
       const at = hhmm(Date.parse(res.publishedAt));

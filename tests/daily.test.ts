@@ -553,13 +553,16 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
-  it("D40 a same-day victim dispute on a data-only item the draft leaves out: the full edition keeps the item withheld, masks the draft item that cites its page, exit 0", async () => {
-    // Before W1, the draft's brief lacked the item C-0001 names in this edition: XREF_UNRESOLVED and E_PUBLISH.
+  it("D40 a same-day victim dispute on a data-only item the draft re-reports as another kind: the kept item takes the re-report's slot, the story shows once, exit 0", async () => {
+    // Before W1, the draft's brief lacked the item C-0001 names in this edition: XREF_UNRESOLVED and E_PUBLISH. Before
+    // T2 the edition kept the item at the end and masked the patch batch, which cites its record page, in place: the
+    // story showed twice, both masked.
     const h = harness();
     okAgent(h);
     const ITEM = "cve-2026-96951";
     const PATCHES = "pt-microsoft-2026-10";
-    expect((DRAFT as { items: { id: string }[] }).items.map((x) => x.id)).not.toContain(ITEM);
+    const draftIds = (DRAFT as { items: { id: string }[] }).items.map((x) => x.id);
+    expect(draftIds).not.toContain(ITEM);
     h.issues([correctionIssue({ number: 7, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
     expect(await run(h, ["--trigger", "schedule"])).toBe(0);
     const s = subjects(h);
@@ -567,20 +570,23 @@ describe("daily.ts end to end", () => {
     expect(s.some((x) => x.startsWith(`brief: ${D} · full edition`))).toBe(true);
     const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
     expect(stored.edition).toBe("full");
-    // The story appears masked under its own id, and the draft item citing its record page is masked too.
-    expect(stored.items.filter((x) => x.id === ITEM)).toHaveLength(1);
-    for (const id of [ITEM, PATCHES]) {
-      expect(stored.items.find((x) => x.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
-    }
+    // The story appears once, masked under its own id in the patch batch's slot; the patch batch is gone.
+    expect(stored.items.map((x) => x.id)).toEqual(draftIds.map((id) => (id === PATCHES ? ITEM : id)));
+    const kept = stored.items.find((x) => x.id === ITEM)!;
+    expect(kept).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
+    expect(stored.sources.filter((x) => kept.source_ids.includes(x.id)).map((x) => x.title)).toEqual(kept.source_ids.map(() => WITHHELD_MARK));
+    for (const l of stored.lead) if (l.item_ids.includes(ITEM)) expect(l.text).toBe(WITHHELD_MARK);
+    expect(JSON.stringify(stored)).not.toContain(PATCHES);
     expect(stored.corrections.map((c) => [c.id, c.item_id])).toEqual([["C-0001", ITEM]]);
     const r = statusOn(h)!.runs[0]!;
     expect(r.outcome).toBe("published_full");
     expect(r.error_code).toBeNull();
-    expect(stageOf(r, "publish").note).toContain("Withheld 1 re-reported item under reader disputes.");
-    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
-    const log = dailyLog(h);
-    expect(log).toContain(`Kept ${ITEM} in this edition, withheld: C-0001 names it in this edition and the draft left it out.`);
-    expect(log).toContain(`Withheld ${PATCHES} in this edition: it re-reports the item C-0001 withholds (url match).`);
+    const note = stageOf(r, "publish").note;
+    expect(note).toContain("Kept 1 withheld item in the slot of the draft item that re-reports it.");
+    expect(note).not.toContain("re-reported item under reader disputes");
+    expect(dailyLog(h)).toContain(
+      `Kept ${ITEM} in this edition, withheld, in the slot of ${PATCHES}: C-0001 names it in this edition, and ${PATCHES} re-reports it (url match) but cannot take its id.`,
+    );
     // The agent was told: brief D's withheld item is in recent_items, marked, with the withheld headline only.
     const context = AgentContext.parse(JSON.parse(fs.readFileSync(path.join(h.root, "drafts", "context.json"), "utf8")));
     expect(context.recent_items.filter((x) => x.date === D)).toMatchObject([{ id: ITEM, headline: WITHHELD_HEADLINE, withheld: true, dispute_kind: "victim" }]);
@@ -588,9 +594,9 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
-  it("D41 D40's morning, then --force: the replacing edition still withholds the kept item and the draft item its first edition masked by URL", async () => {
-    // The synced archive index still lists the first full edition's references, so the masked patch batch's pages
-    // name an item of brief D: before the fix the rerun printed it in the clear.
+  it("D41 D40's morning, then --force: the replacing edition keeps the withheld item in the patch batch's slot again, with every page it cites masked", async () => {
+    // The synced archive index lists the first full edition's references, the patch batch's pages under the kept
+    // item, so the rerun's patch batch is a re-report of it again and never prints in the clear.
     const h = harness();
     okAgent(h);
     const ITEM = "cve-2026-96951";
@@ -602,15 +608,14 @@ describe("daily.ts end to end", () => {
     expect(await run(h, ["--trigger", "manual", "--force"])).toBe(0);
     const second = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
     expect(second.published_at).not.toBe(first.published_at);
-    for (const id of [ITEM, PATCHES]) {
-      expect(second.items.find((x) => x.id === id)).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
-    }
-    expect(second.items.filter((x) => x.id === ITEM)).toHaveLength(1);
-    const patches = second.items.find((x) => x.id === PATCHES)!;
-    expect(second.sources.filter((s) => patches.source_ids.includes(s.id)).map((s) => s.title)).toEqual(patches.source_ids.map(() => WITHHELD_MARK));
+    expect(second.items.map((x) => x.id)).toEqual(first.items.map((x) => x.id));
+    expect(JSON.stringify(second)).not.toContain(PATCHES);
+    const kept = second.items.find((x) => x.id === ITEM)!;
+    expect(kept).toMatchObject({ headline: WITHHELD_HEADLINE, why_it_matters: null, withheld: { correction_id: "C-0001", since: D } });
+    expect(second.sources.filter((x) => kept.source_ids.includes(x.id)).map((x) => x.title)).toEqual(kept.source_ids.map(() => WITHHELD_MARK));
     const r = statusOn(h)!.runs.at(-1)!;
     expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
-    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item the draft left out, so its correction resolves.");
+    expect(stageOf(r, "publish").note).toContain("Kept 1 withheld item in the slot of the draft item that re-reports it.");
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
     expectContentOnly(h);
   }, TIMEOUT);

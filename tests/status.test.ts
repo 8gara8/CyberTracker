@@ -110,7 +110,8 @@ describe("stage notes", () => {
       NOTES.flagsSkipped(["kev"]), NOTES.flagsSkipped(["kev", "cvelist"]), NOTES.tooLittleTime("05:30"), NOTES.notInDryRun,
       NOTES.missedTarget("data_only", "04:55", "04:50"), NOTES.missedTarget("full", "05:21", "05:15"), NOTES.siteNotShowing(1),
       NOTES.siteNotShowing(8), NOTES.notReached(1), NOTES.notReached(12), NOTES.simulated, NOTES.notRun("metrics"), NOTES.notRun("cli"),
-      NOTES.notRun("data_only"), NOTES.notRun("hard_stop"), NOTES.pendingNotPushed,
+      NOTES.notRun("data_only"), NOTES.notRun("hard_stop"), NOTES.pendingNotPushed, NOTES.notComposed, NOTES.maskedRepeats(1),
+      NOTES.maskedRepeats(2), NOTES.keptWithheld(1), NOTES.keptWithheld(2), NOTES.keptInSlot(1), NOTES.keptInSlot(2),
       NOTES.failure("E_TIMEOUT", { date: D, errors: 0, repairs: 0, attempts: 1, agentMinutes: null, hardStop: "05:30", publishUntil: "11:00" }),
       NOTES.failure("E_VALIDATION", { date: D, errors: 3, repairs: 2, attempts: 2, agentMinutes: 22, hardStop: "05:30", publishUntil: "11:00" }),
     ];

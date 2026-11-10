@@ -48,7 +48,10 @@ export interface MaskedItem {
    * "carried": a same-day withheld item the draft left out, kept from the stored edition (carryWithheld()).
    */
   match: "id" | "url" | "carried";
-  /** A re-report that took the withheld item's id (adoptWithheldIds()): its id in the draft. */
+  /**
+   * "url": the re-report that took the withheld item's id (adoptWithheldIds()), by its id in the draft;
+   * "carried": the draft item the kept item replaced (replaceReReports()), left out of the edition.
+   */
   draft_id?: string;
 }
 
@@ -271,25 +274,53 @@ export interface AdoptedId {
   correction_id: string;
 }
 
+/** A new draft item left out because the kept same-day withheld item it re-reports takes its slot (replaceReReports()). */
+export interface ReplacedItem {
+  /** The same-day withheld item kept in the slot. */
+  item_id: string;
+  /** The draft item it replaces. */
+  draft_id: string;
+  correction_id: string;
+}
+
 /**
- * For each same-day withhold whose item the draft lacks by id, the first draft item that re-reports it by
- * URL (it cites a page whose archive-index references hold the withheld item's and are all withheld) takes
- * the withheld item's id, in every item_ids list of the draft too, so the story appears once and the
- * correction resolves. Only a new item (no earlier edition holds its id) of the stored item's kind whose
- * fields fit that id (ID_FORMAT) is renamed. Changes the draft in place; returns the renames.
+ * The re-report test adoptWithheldIds() and replaceReReports() share: a draft item re-reports the withheld
+ * item `own` ("YYYY-MM-DD/<id>") when it cites a page whose archive-index references hold `own` and are all
+ * withheld (as maskWithheld() reads them: a reference to any copy of a withheld item counts, by its id).
+ * `ids` holds every withheld reference's item id (a draft item with one is masked by id, never renamed).
  */
-export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
-  const out: AdoptedId[] = [];
-  if (o.sameDay.length === 0) return out;
+function reReportTest(d: AdoptDraft, o: AdoptInput): { reReports: (it: DraftItem, own: string) => boolean; ids: ReadonlySet<string> } {
   const all = [...o.binding, ...o.sameDay.filter((w) => !o.binding.some((x) => x.correction_id === w.correction_id))];
   const refs = withheldRefs(all, o.history);
-  // As maskWithheld() reads them: a reference to any copy of a withheld item counts, by its id.
   const ids = new Set([...refs.keys()].map((ref) => ref.slice(11)));
   const urlOf = new Map(d.sources.map((s) => [s.id, normalizeUrl(s.url)] as const));
   const reReports = (it: DraftItem, own: string) => it.source_ids.some((sid) => {
     const cited = o.archiveIndex?.urls[urlOf.get(sid) ?? ""]?.item_ids ?? [];
     return cited.includes(own) && cited.every((ref) => refs.has(ref) || ids.has(ref.slice(11)));
   });
+  return { reReports, ids };
+}
+
+/** Every item_ids list of the draft (the Lead, the Taiwan Lens and its rows and Japan block, the raises) names `to` for `from`, once. */
+function renameIn(d: AdoptDraft, from: string, to: string): void {
+  const swap = (ids: string[]) => [...new Set(ids.map((x) => (x === from ? to : x)))];
+  for (const l of d.lead) l.item_ids = swap(l.item_ids);
+  d.taiwan_lens.item_ids = swap(d.taiwan_lens.item_ids);
+  for (const row of d.taiwan_lens.rows) row.item_ids = swap(row.item_ids);
+  d.taiwan_lens.japan.item_ids = swap(d.taiwan_lens.japan.item_ids);
+  for (const r of d.region_raises) r.item_ids = swap(r.item_ids);
+}
+
+/**
+ * For each same-day withhold whose item the draft lacks by id, the first draft item that re-reports it by
+ * URL (reReportTest()) takes the withheld item's id, in every item_ids list of the draft too, so the story
+ * appears once and the correction resolves. Only a new item (no earlier edition holds its id) of the stored
+ * item's kind whose fields fit that id (ID_FORMAT) is renamed. Changes the draft in place; returns the renames.
+ */
+export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
+  const out: AdoptedId[] = [];
+  if (o.sameDay.length === 0) return out;
+  const { reReports } = reReportTest(d, o);
   const renamed = new Set<string>();
   for (const w of o.sameDay) {
     if (d.items.some((it) => it.id === w.item_id)) continue;
@@ -300,13 +331,8 @@ export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
       && idProblem({ ...it, id: w.item_id }) === null && reReports(it, own));
     if (!y) continue;
     const from = y.id;
-    const swap = (ids: string[]) => ids.map((x) => (x === from ? w.item_id : x));
     y.id = w.item_id;
-    for (const l of d.lead) l.item_ids = swap(l.item_ids);
-    d.taiwan_lens.item_ids = swap(d.taiwan_lens.item_ids);
-    for (const row of d.taiwan_lens.rows) row.item_ids = swap(row.item_ids);
-    d.taiwan_lens.japan.item_ids = swap(d.taiwan_lens.japan.item_ids);
-    for (const r of d.region_raises) r.item_ids = swap(r.item_ids);
+    renameIn(d, from, w.item_id);
     renamed.add(w.item_id);
     out.push({ item_id: w.item_id, draft_id: from, correction_id: w.correction_id });
   }
@@ -314,16 +340,50 @@ export function adoptWithheldIds(d: AdoptDraft, o: AdoptInput): AdoptedId[] {
 }
 
 /**
- * For each same-day withhold whose item the frozen items still lack, the stored brief's copy (already
- * masked) is kept, after every frozen item (displayOrder() leaves a withheld item's slot free). Its sources are this brief's own where the URL is the
- * same, else appended under the next ids with their frozen fields, and every source id the item names
- * follows. `sources` grows in place; returns the items and the ids kept. The region levels then count the
- * kept item as the stored edition did, and maskWithheld() masks it again by id in the new brief.
+ * After adoptWithheldIds(): for each same-day withhold whose item the draft still lacks by id and brief D
+ * holds, the first new draft item (no earlier edition holds its id, and it has no withheld reference's id)
+ * that re-reports it by URL but could not take its id (another kind, or an id that does not fit) is left
+ * out, and the stored item will take its slot (carryWithheld()), so the story shows once (§0.4 row 127).
+ * The draft's item_ids lists name the kept item for it; the draft item itself stays for carryWithheld() to
+ * replace (its slot and sources). Changes the draft in place; returns the replacements.
  */
-export function carryWithheld(items: readonly Item[], sources: Source[], o: { sameDay: readonly BindingWithhold[]; stored: Pick<Brief, "items" | "sources"> | null }): { items: Item[]; kept: string[] } {
-  const extra: Item[] = [];
+export function replaceReReports(d: AdoptDraft, o: AdoptInput): ReplacedItem[] {
+  const out: ReplacedItem[] = [];
+  if (o.sameDay.length === 0) return out;
+  const { reReports, ids } = reReportTest(d, o);
+  const sameDayIds = new Set(o.sameDay.map((w) => w.item_id));
   for (const w of o.sameDay) {
-    if (items.some((it) => it.id === w.item_id) || extra.some((it) => it.id === w.item_id)) continue;
+    if (d.items.some((it) => it.id === w.item_id) || out.some((r) => r.item_id === w.item_id)) continue;
+    if (!o.stored?.items.some((it) => it.id === w.item_id)) continue;
+    const own = itemRef(w.edition_date, w.item_id);
+    const y = d.items.find((it) => !out.some((r) => r.draft_id === it.id) && !sameDayIds.has(it.id) && !ids.has(it.id)
+      && !o.firstSeen.has(it.id) && reReports(it, own));
+    if (!y) continue;
+    renameIn(d, y.id, w.item_id);
+    out.push({ item_id: w.item_id, draft_id: y.id, correction_id: w.correction_id });
+  }
+  return out;
+}
+
+/**
+ * For each same-day withhold whose item the frozen items still lack, the stored brief's copy (already
+ * masked) is kept: in the slot of the draft item replaceReReports() named for it, which it replaces and
+ * whose source ids it adds to its own, else after every frozen item (displayOrder() leaves a withheld
+ * item's slot free). Its stored sources are this brief's own where the URL is the same, else appended under
+ * the next ids with their frozen fields, and every source id the item names follows. `sources` grows in
+ * place; returns the items and the ids kept. The region levels then count the kept item as the stored
+ * edition did, and maskWithheld() masks it again by id in the new brief.
+ */
+export function carryWithheld(items: readonly Item[], sources: Source[], o: {
+  sameDay: readonly BindingWithhold[];
+  stored: Pick<Brief, "items" | "sources"> | null;
+  replaced?: readonly Pick<ReplacedItem, "item_id" | "draft_id">[];
+}): { items: Item[]; kept: string[] } {
+  const out = [...items];
+  const extra: Item[] = [];
+  const kept: string[] = [];
+  for (const w of o.sameDay) {
+    if (out.some((it) => it.id === w.item_id) || extra.some((it) => it.id === w.item_id)) continue;
     const held = o.stored?.items.find((it) => it.id === w.item_id);
     if (!held || !o.stored) continue;
     const storedSources = o.stored.sources;
@@ -348,10 +408,20 @@ export function carryWithheld(items: readonly Item[], sources: Source[], o: { sa
     if (it.incident) it.incident.status_source_ids = it.incident.status_source_ids.map(idOf);
     it.flaw_evidence = it.flaw_evidence.map((f) => ({ ...f, source_id: idOf(f.source_id) }));
     if (it.exposure) it.exposure = { ...it.exposure, source_id: idOf(it.exposure.source_id) };
-    extra.push(it);
+    kept.push(it.id);
+    const r = o.replaced?.find((x) => x.item_id === w.item_id);
+    const slot = r ? out.findIndex((x) => x.id === r.draft_id) : -1;
+    if (slot < 0) {
+      extra.push(it);
+      continue;
+    }
+    // The re-report's pages are the story's too: the kept item cites them, so their titles are masked with it and
+    // the archive index names it for them (a later item citing one is masked by URL).
+    it.source_ids = [...new Set([...it.source_ids, ...out[slot]!.source_ids])];
+    out[slot] = it;
   }
-  if (extra.length === 0) return { items: [...items], kept: [] };
+  if (kept.length === 0) return { items: out, kept };
   // After every item of the draft: a kept item's slot is free (lib/items.ts displayOrder()), so it never takes a
   // top story's slot from a draft item, which keeps the budgets the draft was validated with (§4.12).
-  return { items: [...items, ...orderItems(extra)], kept: extra.map((it) => it.id) };
+  return { items: [...out, ...orderItems(extra)], kept };
 }

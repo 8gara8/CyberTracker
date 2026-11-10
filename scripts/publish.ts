@@ -604,7 +604,9 @@ function composed<T>(ctx: Ctx, edition: string, compose: () => T): T {
 function logMasked(ctx: Ctx, ch: ContentChanges): MaskedItem[] {
   const masked = ch.masked ?? [];
   for (const x of masked) {
-    if (x.match === "carried") ctx.log(`Kept ${x.item_id} in this edition, withheld: ${x.correction_id} names it in this edition and the draft left it out.`);
+    if (x.match === "carried" && x.draft_id) {
+      ctx.log(`Kept ${x.item_id} in this edition, withheld, in the slot of ${x.draft_id}: ${x.correction_id} names it in this edition, and ${x.draft_id} re-reports it (url match) but cannot take its id.`);
+    } else if (x.match === "carried") ctx.log(`Kept ${x.item_id} in this edition, withheld: ${x.correction_id} names it in this edition and the draft left it out.`);
     else ctx.log(`Withheld ${x.item_id} in this edition: it re-reports the item ${x.correction_id} withholds (${x.match} match${x.draft_id ? `; the draft named it ${x.draft_id}` : ""}).`);
   }
   return masked;

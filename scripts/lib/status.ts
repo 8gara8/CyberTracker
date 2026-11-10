@@ -77,6 +77,11 @@ export interface Notes {
   maskedRepeats(n: number): string;
   /** The full edition kept N items withheld this morning that the draft left out (MaskedItem match "carried"). */
   keptWithheld(n: number): string;
+  /**
+   * The full edition kept N items withheld this morning in the slots of draft items that re-report them under new ids
+   * of another kind (MaskedItem match "carried" with a draft_id; lib/withhold-mask.ts replaceReReports).
+   */
+  keptInSlot(n: number): string;
 }
 
 /** Every stage note text; each ends with a full stop. */
@@ -126,6 +131,8 @@ export const NOTES: Notes = {
   notComposed: STAGE_NOTES.notComposed,
   maskedRepeats: (n) => `Withheld ${plural(n, "re-reported item")} under reader disputes.`,
   keptWithheld: (n) => `Kept ${plural(n, "withheld item")} the draft left out, so its correction resolves.`,
+  keptInSlot: (n) =>
+    n === 1 ? "Kept 1 withheld item in the slot of the draft item that re-reports it." : `Kept ${n} withheld items, each in the slot of the draft item that re-reports it.`,
 };
 
 /** StageRecord.note's limit (§4.8). */

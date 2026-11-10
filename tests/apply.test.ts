@@ -591,26 +591,37 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(validEdition(i, out)).toEqual([]);
   });
 
-  it("C23: a re-report that cannot take the id (another kind, or an id earlier editions used) is masked under its own id, and the withheld item is carried over", () => {
+  it("C23: a new re-report of another kind cannot take the id, so the withheld item is kept in its slot with its sources, and the story shows once", () => {
     const CAMP = "camp-transport-jp-2026-10";
+    const EXTRA = "https://www.security-next.com/ct-sample/logistics-ransomware-claim-campaign";
     const i = sameDay({
       draft: (d) => {
         const it = d.items.find((x) => x.id === TRANSPORT)!;
         Object.assign(it, { id: CAMP, kind: "campaign" });
         d.taiwan_lens.japan.item_ids = [CAMP];
+        // A page only the campaign cites, beside the story's own page s11.
+        const s11 = d.sources.find((x) => x.id === "s11")!;
+        d.sources.push({ ...structuredClone(s11), id: `s${d.sources.length + 1}`, url: EXTRA, title: "SAMPLE campaign page naming the company" });
+        it.source_ids.push(`s${d.sources.length}`);
       },
     });
+    const slot = i.draft.items.findIndex((x) => x.id === CAMP);
+    const extra = `s${i.draft.sources.length}`;
     const out = applyDraft(i);
-    // In the brief's item order: the carried incident follows every draft item.
-    expect(out.masked).toEqual([
-      { item_id: CAMP, correction_id: "C-0003", kind: "victim", match: "url" },
-      { item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried" },
-    ]);
+    expect(out.masked).toEqual([{ item_id: TRANSPORT, correction_id: "C-0003", kind: "victim", match: "carried", draft_id: CAMP }]);
     const b = out.brief!;
-    expect(b.items.find((x) => x.id === CAMP)!.headline).toBe(WITHHELD_HEADLINE);
-    expect(b.items.find((x) => x.id === TRANSPORT)).toEqual(i.stored!.items.find((x) => x.id === TRANSPORT));
+    // The stored item takes the campaign's slot; the campaign is left out, so the story appears once.
+    expect(b.items.map((x) => x.id)).toEqual(i.draft.items.map((x) => (x.id === CAMP ? TRANSPORT : x.id)));
+    const stored = i.stored!.items.find((x) => x.id === TRANSPORT)!;
+    expect(b.items[slot]).toEqual({ ...stored, source_ids: [...stored.source_ids, extra] });
+    // What named the campaign names the kept item, masked; the campaign's own page reads [withheld] and names the
+    // kept item in the archive index, so a later item citing it is masked by URL.
+    expect(b.taiwan_lens.japan).toMatchObject({ text: WITHHELD_MARK, item_ids: [TRANSPORT] });
+    expect(b.sources.find((x) => x.id === extra)!.title).toBe(WITHHELD_MARK);
+    expect(out.archiveIndex.urls[normalizeUrl(EXTRA)]!.item_ids).toEqual([`${D}/${TRANSPORT}`]);
+    expect(JSON.stringify(b)).not.toContain(CAMP);
     expect(validEdition(i, out)).toEqual([]);
-    // An id an earlier edition holds keeps its own story: never renamed.
+    // An id an earlier edition holds keeps its own story: never renamed nor left out, so it is masked under its own id.
     const OLD = "inc-transport-jp-logistics-2026-10";
     const j = sameDay({
       draft: (d) => {
@@ -623,20 +634,22 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
   });
 
   it("C24: a source only withheld items cite reads [withheld], even when two of them share it; one an unwithheld item cites keeps its title", () => {
-    // The carried item and the draft's campaign masked by URL both cite s11, the story's page: neither may leave
+    // The carried item and the draft's older item masked by URL both cite s11, the story's page: neither may leave
     // its title (the stored edition showed [withheld]) in the clear for the other.
-    const CAMP = "camp-transport-jp-2026-10";
+    const OLD = "inc-transport-jp-logistics-2026-10";
     const i = sameDay({
       draft: (d) => {
-        Object.assign(d.items.find((x) => x.id === TRANSPORT)!, { id: CAMP, kind: "campaign" });
-        d.taiwan_lens.japan.item_ids = [CAMP];
+        d.items.find((x) => x.id === TRANSPORT)!.id = OLD;
+        d.taiwan_lens.japan.item_ids = [OLD];
       },
     });
+    i.firstSeen = new Map([[OLD, "2026-10-09"]]);
     expect(i.draft.sources.find((s) => s.id === "s11")!.title).not.toBe(WITHHELD_MARK);
     const b = applyDraft(i).brief!;
-    expect(b.items.filter((x) => x.source_ids.includes("s11")).map((x) => [x.id, x.withheld?.correction_id])).toEqual([[CAMP, "C-0003"], [TRANSPORT, "C-0003"]]);
+    expect(b.items.filter((x) => x.source_ids.includes("s11")).map((x) => [x.id, x.withheld?.correction_id])).toEqual([[OLD, "C-0003"], [TRANSPORT, "C-0003"]]);
     expect(b.sources.find((s) => s.id === "s11")!.title).toBe(WITHHELD_MARK);
     // The same-day item re-reported by id, beside a second draft item citing its page and masked by URL.
+    const CAMP = "camp-transport-jp-2026-10";
     const k = sameDay({
       draft: (d) => {
         const copy = { ...structuredClone(d.items.find((x) => x.id === TRANSPORT)!), id: CAMP, kind: "campaign" as const };

@@ -33,7 +33,7 @@ import type { Claim, ClaimState, ScoreboardEntry, ScoreboardFile } from "./schem
 import type { Recheck } from "./schema/status";
 import { normalizeUrl } from "./urls";
 import { KEV_ABSENCE_NOTE, type ClaimMetricPath, type RecheckFlag } from "./vocab";
-import { adoptWithheldIds, bindingWithholds, carryWithheld, maskWithheld, withholdsOn, type MaskedItem } from "./withhold-mask";
+import { adoptWithheldIds, bindingWithholds, carryWithheld, maskWithheld, replaceReReports, withholdsOn, type MaskedItem } from "./withhold-mask";
 
 /** The issue fields dropUnverified() reads; lib/rules/types.ts's ValidationIssue fits. */
 export interface SoftIssue {
@@ -264,7 +264,8 @@ export interface ApplyInput extends ComposeCommon {
  * attribution dispute (its id, or a cited URL whose archive-index item_ids are all withheld references) is
  * masked as §4.10 masks the archived item, and listed in `masked` (lib/withhold-mask.ts). A withhold made
  * this morning names brief D itself, so its item stays in the edition whatever its dispute's status: a
- * draft item re-reporting it under a new id takes its id, else the stored copy is kept.
+ * draft item re-reporting it under a new id takes its id, else the stored copy is kept, in the slot of a new
+ * draft item that re-reports it under an id it cannot take (that item is left out), else after every item.
  */
 export function applyDraft(i: ApplyInput): ContentChanges {
   const c = i.config;
@@ -275,10 +276,12 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   // The stored brief D's withheld items are withheld references too: the archive index as synced still lists
   // D's items, so a forced rerun must count the items its first publish masked.
   const held = i.stored && i.stored.date === i.date ? [...i.history, i.stored] : i.history;
-  const adopted = adoptWithheldIds(d, {
+  const adoptInput = {
     sameDay, binding, stored: i.stored ?? null, archiveIndex: i.archiveIndex, history: held,
     firstSeen: i.firstSeen ?? firstSeenOf(i.history.filter((b) => b.date < i.date)),
-  });
+  };
+  const adopted = adoptWithheldIds(d, adoptInput);
+  const replaced = replaceReReports(d, adoptInput);
   const sources = d.sources.map((s) => freezeSource(s, seenAsOf(i.evidence, s.url), c));
   const cveInputs: CveBlockInputs = {
     config: c, facts: i.facts, cveList: i.cveList, kevIndex: i.kevIndex, inputs: i.inputs,
@@ -291,7 +294,7 @@ export function applyDraft(i: ApplyInput): ContentChanges {
     blocks: (it) => it.cve_ids.map((cve) => cveBlockOf(cve, it, sources, cveInputs)),
     release: (it) => releaseBlockOf(it, it.release_id ? releases.get(it.release_id) ?? null : null, sources, c, i.cveList),
   });
-  const { items, kept } = carryWithheld(frozen, sources, { sameDay, stored: i.stored ?? null });
+  const { items, kept } = carryWithheld(frozen, sources, { sameDay, stored: i.stored ?? null, replaced });
   const board = updateScoreboard({ date: i.date, config: c, metrics: m, scoreboard: i.scoreboard, reports: d.scoreboard_entries, sources: d.sources });
   const corr = composeCorrections(i, d.corrections, d.sources);
 
@@ -322,7 +325,9 @@ export function applyDraft(i: ApplyInput): ContentChanges {
   const masked = maskWithheld(b, { binding, sameDay, archiveIndex: i.archiveIndex, history: held }).map((x): MaskedItem => {
     const a = adopted.find((y) => y.item_id === x.item_id && y.correction_id === x.correction_id);
     if (a) return { ...x, match: "url", draft_id: a.draft_id };
-    return kept.includes(x.item_id) && sameDay.some((w) => w.correction_id === x.correction_id) ? { ...x, match: "carried" } : x;
+    if (!kept.includes(x.item_id) || !sameDay.some((w) => w.correction_id === x.correction_id)) return x;
+    const r = replaced.find((y) => y.item_id === x.item_id && y.correction_id === x.correction_id);
+    return r ? { ...x, match: "carried", draft_id: r.draft_id } : { ...x, match: "carried" };
   });
   b.late = lateOf(b, c);
   b.computed = computedOf(b, m);
