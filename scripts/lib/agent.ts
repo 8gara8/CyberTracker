@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { run, type RunResult } from "./run";
 import { parseTranscript, type Transcript } from "./transcript";
+import type { AgentContext } from "../../lib/schema/context";
+import type { ValidationIssue } from "../../lib/rules/types";
 
 // The sandboxed drafting agent (SPEC §9.5): a headless `claude -p` started as a child process, with no
 // shell, no git, no MCP, and writes only under drafts/. Flags checked against Claude Code 2.1.319:
@@ -189,4 +191,56 @@ export function renderTemplate(template: string, vars: Record<string, string>): 
   const left = out.match(/\{\{[A-Z_]+\}\}/g);
   if (left) throw new Error(`Unfilled template variables: ${[...new Set(left)].join(", ")}`);
   return out;
+}
+
+// ── P3 exports (SPEC §9.4, §8.5; plan §2.2 and amendment A9) ─────────────────────────────────────
+// Step S0 added these so lanes L6 and I typecheck against them; constants are final, functions are stubs.
+// Lane L1 rewrites this file to §9.4 from here: it removes PASSTHROUGH_CANDIDATES, AGENT_ENV_PASSTHROUGH,
+// FORBIDDEN_ENV, DEFAULT_CONFIG_DIR, prepareConfigDir and whichBin, and gives AgentConfig, agentConfig(),
+// agentEnv(), AgentRun and renderTemplate() the §2.2 signatures (S0 kept the P2 ones above, which
+// scripts/agent-check.ts and tests/agent.test.ts still use).
+
+/** The pinned CLI on Kobol (§9.4); CT_CLAUDE_BIN overrides it. */
+export const DEFAULT_CLAUDE_BIN = "/Users/kobol/.cybertracker/cli/node_modules/.bin/claude";
+/** The agent's own config dir on Kobol, mode 700 (§9.5); CT_CLAUDE_CONFIG_DIR overrides it. */
+export const DEFAULT_CLAUDE_CONFIG_DIR = "/Users/kobol/.cybertracker/claude";
+/** The agent's fixed PATH (§9.4). */
+export const AGENT_PATH = "/opt/homebrew/bin:/usr/bin:/bin";
+/** Exactly the agent's environment names (§9.5). */
+export const AGENT_ENV_KEYS = ["HOME", "PATH", "TZ", "LANG", "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN", "DISABLE_AUTOUPDATER"] as const;
+
+/** `<bin> --version` within timeoutMs (default 30 s): ok when exit 0; version is the first line. */
+export async function cliVersion(bin: string, timeoutMs?: number): Promise<{ ok: boolean; version: string | null }> {
+  throw new Error("P3 stub: cliVersion (lane L1)");
+}
+
+/** The {{NAME}} variables of routine/PROMPT.md (§8.5). */
+export const PROMPT_VARS = ["DATE", "WINDOW_START", "WINDOW_END", "WEEKLY", "DEADLINE_LOCAL", "DRAFT_PATH", "CONTEXT_PATH",
+  "PACK_MD_PATH", "SCHEMA_PATH", "STYLE_PATH", "FETCH_BUDGET", "MAX_ITEMS"] as const;
+/** The {{NAME}} variables of routine/REPAIR.md (§8.5). */
+export const REPAIR_VARS = ["DATE", "DEADLINE_LOCAL", "DRAFT_PATH", "CONTEXT_PATH", "SCHEMA_PATH", "STYLE_PATH", "FETCH_BUDGET",
+  "ERRORS_JSON"] as const;
+
+/**
+ * §8.5's values: paths absolute under root; WINDOW_* "YYYY-MM-DD HH:MM" Taipei from context.window;
+ * DEADLINE_LOCAL HH:MM of context.deadline; WEEKLY "true"|"false". `paths` replaces the draft, context and
+ * pack paths derived from the date (the canary's own files, plan A22).
+ */
+export function promptVars(o: {
+  root: string; date: string; context: AgentContext; fetchBudget: number; maxItems: number;
+  paths?: Partial<{ draft: string; context: string; packMd: string }>;
+}): Record<(typeof PROMPT_VARS)[number], string> {
+  throw new Error("P3 stub: promptVars (lane L1)");
+}
+
+/** REPAIR.md's values; ERRORS_JSON lists the errors first, then the SNAP_* warnings, as pretty-printed ValidationIssue[]. */
+export function repairVars(o: {
+  root: string; date: string; context: AgentContext; fetchBudget: number; issues: readonly ValidationIssue[];
+}): Record<(typeof REPAIR_VARS)[number], string> {
+  throw new Error("P3 stub: repairVars (lane L1)");
+}
+
+/** budgets.web_fetches minus WebFetch calls in these transcripts (never below 0). */
+export function fetchBudgetLeft(budget: number, transcripts: readonly Transcript[]): number {
+  throw new Error("P3 stub: fetchBudgetLeft (lane L1)");
 }

@@ -1,7 +1,19 @@
 // Draft to Brief (SPEC §4.5, §4.12). P1 holds only the soft pass's dropUnverified(); P3 adds applyDraft(),
-// which adds every S and C field. Pure: the input draft is never changed.
+// which adds every S and C field. Pure: the input draft is never changed. Step S0 wrote applyDraft()'s
+// types and a stub (plan §2.4, amendments A5 and A6); lane L3 replaces the stub bodies.
 
+import type { LoadedConfig } from "./config";
+import type { CveLookup, RegionsBase } from "./rules/types";
+import type { Brief, FeedStale } from "./schema/brief";
+import type { Ransomware, Source } from "./schema/common";
+import type { AgentContext, Candidate } from "./schema/context";
 import type { DraftAngle, DraftBrief } from "./schema/draft-brief";
+import type { DraftItem, ReleaseBlock } from "./schema/item";
+import type { InputsManifest, KevIndexFile, Metrics } from "./schema/metrics";
+import type { ArchiveIndex, CorrectionsFile, Dispute, Evidence } from "./schema/misc";
+import type { ScoreboardFile } from "./schema/scoreboard";
+import type { Recheck } from "./schema/status";
+import type { RecheckFlag } from "./vocab";
 
 /** The issue fields dropUnverified() reads; lib/rules/types.ts's ValidationIssue fits. */
 export interface SoftIssue {
@@ -107,4 +119,97 @@ export function dropUnverified(draft: DraftBrief | GatedDraft, issues: readonly 
     for (const r of out.region_raises) r.item_ids = keep(r.item_ids);
   }
   return { draft: out, report };
+}
+
+// ── applyDraft() (§4.4, §4.5, §8.7 step 4; plan §2.4, A5, A6) ───────────────────────────────────
+
+/** Normalised URL → its snapshot's text hash and fetch time (archive-index.json sha256 when first cited). */
+export type SnapshotHashes = Readonly<Record<string, { sha256: string; fetched_at: string }>>;
+
+/**
+ * The facts a frozen CVE block needs beyond CveRecordInfo (plan A5), from the run's feed cache: the raw
+ * CVE JSON 5 record (CNA and ADP containers: cvss, ssvc), the KEV catalog row, the EPSS score and the
+ * reviewed GHSA advisories. scripts/lib/cve-facts.ts cveFactsFor() builds it (lane L2).
+ */
+export interface CveFacts {
+  /** The raw CVE JSON 5 record: CNA and ADP containers (cvss, ssvc). */
+  record(cveId: string): unknown | null;
+  kev(cveId: string): { dateAdded: string; dueDate: string; ransomware: Ransomware; catalogVersion: string } | null;
+  epss(cveId: string): { score: number; percentile: number; date: string } | null;
+  /** Reviewed advisories naming the CVE, at most 5. */
+  ghsaIds(cveId: string): string[];
+}
+
+/** What every composer reads (applyDraft, composeDataOnly). */
+export interface ComposeCommon {
+  date: string;
+  config: LoadedConfig;
+  /** metrics/D.json (committed or staged). */
+  metrics: Metrics;
+  /** kevIndexFor(). */
+  kevIndex: KevIndexFile;
+  /** readHistory(content, D, 30), newest first (first_seen, regions). */
+  history: readonly Brief[];
+  regionsBase: RegionsBase;
+  /** As synced. */
+  archiveIndex: ArchiveIndex | null;
+  scoreboard: ScoreboardFile | null;
+  corrections: CorrectionsFile | null;
+  feedsStale: readonly FeedStale[];
+  /** +08:00 */
+  publishedAt: string;
+  generatedAt: string;
+}
+
+/** The files a composer changes; publish writes each through its schema. */
+export interface ContentChanges {
+  /** briefs/D.json */
+  brief: Brief | null;
+  /** Archived briefs a withhold rewrote. */
+  rewritten: Brief[];
+  /** null: unchanged. */
+  scoreboard: ScoreboardFile | null;
+  /** null: unchanged. */
+  corrections: CorrectionsFile | null;
+  archiveIndex: ArchiveIndex;
+  /** Re-check flags a draft correction answered: publish fills RunRecord.recheck.flagged[].correction_id. */
+  flagCorrections: { item_id: string; edition_date: string; flag: RecheckFlag; correction_id: string }[];
+}
+
+export interface ApplyInput extends ComposeCommon {
+  edition: "full" | "partial";
+  draft: GatedDraft;
+  context: AgentContext;
+  /** seen_as per source (§8.12). */
+  evidence: Evidence;
+  /** Frozen CVE blocks. */
+  cveList: CveLookup;
+  /** archive-index sha256 when first cited. */
+  snapshots: SnapshotHashes;
+  /** Carried from the stored brief. */
+  dataOnlyPublishedAt: string | null;
+  disputes: readonly Dispute[] | null;
+  recheck: Recheck | null;
+  /** cvss, ssvc, KEV due date and catalog version, EPSS, GHSA ids (A5). */
+  facts: CveFacts;
+  /** metrics/inputs/D.json: a CVE's row gives ai_credit, kev.date_added, date_published and vendor.id (A5). */
+  inputs: InputsManifest | null;
+  /** SHA-256 of metrics/D.json as committed: gap.metrics_sha256 (A5). */
+  metricsSha256: string;
+}
+
+/** The brief for D with every S and C field; brief.late = lateOf(); Brief.parse()d. */
+export function applyDraft(i: ApplyInput): ContentChanges {
+  throw new Error("P3 stub: applyDraft (lane L3)");
+}
+
+/**
+ * A patch batch's ReleaseBlock (plan A6, spec gap G24): source_url and title from the item's first cited
+ * source whose publisher is the release's vendor (tier 1); date that source's published_at as a UTC date,
+ * else the newest UTC publication date of the bundle's records; with no such source, title
+ * "<vendor name> security updates, YYYY-MM" and source_url the first bundled record's record_url. The
+ * counts come from the candidate's release (total, critical, exploited). Null when the item has no release.
+ */
+export function releaseBlockOf(item: DraftItem, release: Candidate["release"], sources: readonly Source[], config: LoadedConfig): ReleaseBlock | null {
+  throw new Error("P3 stub: releaseBlockOf (lane L3)");
 }
