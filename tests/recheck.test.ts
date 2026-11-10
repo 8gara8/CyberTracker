@@ -282,7 +282,7 @@ describe("the 14-day flags (R1 to R7)", () => {
 
 // ── R8 to R11: the form parser ───────────────────────────────────────────────────────────────────
 
-interface FormTemplate { body: { type: string; id?: string; attributes: { label?: string; options?: string[] } }[] }
+interface FormTemplate { labels: string[]; body: { type: string; id?: string; attributes: { label?: string; options?: string[] } }[] }
 const TEMPLATE_FORM = parseYaml(fs.readFileSync(path.join(REPO, ".github", "ISSUE_TEMPLATE", "correction.yml"), "utf8")) as FormTemplate;
 
 /** A form body as GitHub renders a submitted issue form: "### <label>", a blank line, the answer. */
@@ -302,6 +302,7 @@ describe("the correction form parser (R8 to R11)", () => {
     expect(Object.fromEntries(fields.map((f) => [f.id, f.attributes.label]))).toEqual(FORM_LABELS);
     const dropdown = fields.find((f) => f.id === "kind")!;
     expect(dropdown.attributes.options).toEqual(DISPUTE_KINDS.map((k) => DISPUTE_FORM_OPTIONS[k]));
+    expect(TEMPLATE_FORM.labels).toContain("correction");
   });
 
   it("R8 parses a real rendered body, with LF or CRLF line ends", () => {
