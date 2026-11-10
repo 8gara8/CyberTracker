@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  ComposeError, applyDraft, claimReading, firstSeenOf, claimStatus, claimZone, cveBlockOf, linkDisputes, markCorrected, releaseBlockOf,
+  ComposeError, applyDraft, claimReading, confirmBlock, findersVersionOf, firstSeenOf, claimStatus, claimZone, cveBlockOf, linkDisputes, markCorrected, releaseBlockOf,
   updateArchiveIndex, updateScoreboard, type ApplyInput, type CveFacts, type SnapshotHashes,
 } from "@/lib/apply";
 import type { LoadedConfig } from "@/lib/config";
@@ -137,12 +137,11 @@ function world(name: "weekday" | "monday", history: readonly Brief[] = BRIEFS): 
   };
 }
 
-/** A6's release title: the vendor source's title, where site.ts hard-codes the release's own name. */
+/** A6's release title: the vendor source's title, which site.ts now takes from releaseBlockOf() too. */
 const MSRC_TITLE = SOURCES["msrc-october"].title;
 function weekdayExpected(): Brief {
   const b = golden("2026-10-14");
-  expect(b.items[1]!.release!.title).toBe("October 2026 Security Update");
-  b.items[1]!.release!.title = MSRC_TITLE;
+  expect(b.items[1]!.release!.title).toBe(MSRC_TITLE);
   return b;
 }
 
@@ -153,7 +152,7 @@ function writeTree(dir: string, files: Record<string, string>): void {
 describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
   const weekday = applyDraft(world("weekday"));
 
-  it("C1: the weekday world equals site-content's 2026-10-14 brief (release title per A6)", () => {
+  it("C1: the weekday world equals site-content's 2026-10-14 brief", () => {
     expect(weekday.brief).toEqual(weekdayExpected());
     expect(weekday.rewritten).toEqual([]);
     expect(weekday.corrections).toBeNull();
@@ -235,6 +234,38 @@ describe("applyDraft on the fixture worlds", { timeout: 120_000 }, () => {
     expect(jsonText(a.scoreboard, ScoreboardFile)).toBe(jsonText(b.scoreboard, ScoreboardFile));
     expect(jsonText(a.archiveIndex, ArchiveIndex)).toBe(jsonText(b.archiveIndex, ArchiveIndex));
     expect(JSON.stringify(i.draft)).toBe(before);
+  });
+
+  it("C22: every CVE and release block in site-content is what cveBlockOf() and releaseBlockOf() compose from the sample's facts", () => {
+    const records = cveLookupFromDir(CVE_RECORDS_DIR);
+    const releases = new Map<string, NonNullable<AgentContext["candidates"][number]["release"]>>();
+    for (const name of ["quiet", "monday", "weekday"] as const) {
+      const ctx = AgentContext.parse(read(path.join(FIXTURES_DIR, "context", `${name}.json`)));
+      for (const c of ctx.candidates) if (c.release) releases.set(`${ctx.date}/${c.release.release_id}`, c.release);
+    }
+    let cves = 0;
+    let rels = 0;
+    for (const b of BRIEFS) {
+      const m = Metrics.parse(read(path.join(SITE, "metrics", `${b.date}.json`)));
+      const version = m.kev!.catalog_version;
+      const x = {
+        config: cfg, facts: siteFacts(version), cveList: records, kevIndex: kevIndexAt(version),
+        inputs: InputsManifest.parse(read(path.join(SITE, "metrics", "inputs", `${b.date}.json`))),
+        findersVersion: findersVersionOf(m, cfg), capturedAt: b.published_at,
+      };
+      for (const it of b.items) {
+        const where = `${b.date}/${it.id}`;
+        expect(it.cves.map((c) => c.cve_id), where).toEqual(it.cve_ids);
+        it.cves.forEach((block, k) => {
+          expect(block, `${where} ${block.cve_id}`).toEqual(confirmBlock(cveBlockOf(it.cve_ids[k]!, it, b.sources, x), it, b.sources, cfg));
+          cves++;
+        });
+        const cand = it.release_id ? releases.get(`${b.date}/${it.release_id}`) ?? null : null;
+        expect(it.release, where).toEqual(releaseBlockOf(it, cand, b.sources, cfg, records));
+        if (it.release) rels++;
+      }
+    }
+    expect([cves, rels]).toEqual([15, 1]);
   });
 
   it("C16: the Microsoft release block comes from the vendor source and the candidate's counts", () => {
@@ -333,7 +364,7 @@ describe("first_seen over every stored brief (XREF_FIRST_SEEN)", { timeout: 120_
   it.each([
     { campaign: 20, transport: 40 },
     { campaign: 40, transport: 20 },
-  ])("C18: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
+  ])("C21: draft mode reads first_seen as publish does (campaign $campaign days back, transport $transport)", (o) => {
     const CAMPAIGN = "camp-tw-semiconductor-2026-10";
     const TRANSPORT = "inc-transport-jp-2026-10";
     const FLAW_13 = "cve-2026-108917";
