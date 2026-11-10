@@ -896,7 +896,7 @@ describe("NEXT_STEP and WHAT_HAPPENED", () => {
     expect(chatGuard(composeStep, SITE)).toBe(composeStep);
     expect(chatGuard(NOT_COMPOSED.what, SITE)).toBe(NOT_COMPOSED.what);
     const validStep = NOT_VALID.nextStep.replaceAll("{date}", "2026-11-14");
-    expect(validStep).not.toMatch(/—|\{date\}/);
+    expect(validStep).not.toMatch(/\u2014|\{date\}/);
     expect(NOT_VALID.what).toMatch(/^[A-Z].*\.$/);
     expect(chatGuard(validStep, SITE)).toBe(validStep);
     expect(chatGuard(NOT_VALID.what, SITE)).toBe(NOT_VALID.what);
