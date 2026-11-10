@@ -36,6 +36,7 @@ import { blockedReason, publisherFor } from "@/lib/sources";
 import { extractUrls } from "@/lib/urls";
 import { BLOCKED_HOSTS, CANARY_URL_MARK, CANARY_URL_PREFIX } from "@/lib/vocab";
 import { NAMESPACE_PREFIXES } from "../fixtures/src/scrub-feed";
+import { MODEL_SAMPLES, modelRe } from "./helpers/model-names";
 
 const ROOT = path.join(__dirname, "..");
 const config = loadConfig({ root: ROOT });
@@ -337,8 +338,8 @@ function authorProblems(texts: readonly FixtureText[]): string[] {
   return texts.filter((x) => /\.(?:xml|rdf|atom)$/.test(x.file)).flatMap((t) => personProblems(t.file, t.text, []));
 }
 
-// Built from parts so this file does not hold the patterns tests/no-europe-strings.test.ts looks for.
-const MODEL_RE = new RegExp(`claude-(?:opus|sonnet|haiku)|${"-".repeat(2)}model\\b`, "i");
+/** Any model identifier or model flag (tests/helpers/model-names.ts, shared with the other scans). */
+const MODEL_RE = modelRe("i");
 
 /** A model identifier, a credential-shaped string, a scanner query or a PAYLOAD_PATTERNS match. */
 function contentProblems(texts: readonly FixtureText[]): string[] {
@@ -465,6 +466,15 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
   it("a credit is checked whole: a real name beside SAMPLE Researcher fails, the exact forms pass", () => {
     const t = planted("fixtures/ai-credit/records/CVE-2026-104935.json", cveText(["OpenAI Codex Security - Jane Realperson and SAMPLE Researcher", "SAMPLE Researcher", "XBOW"]));
     expect(creditProblems([t])).toEqual(["fixtures/ai-credit/records/CVE-2026-104935.json: OpenAI Codex Security - Jane Realperson and SAMPLE Researcher"]);
+  });
+
+  it("a model identifier of any family, the generic claude-<word>-<digit> form or a model flag fails; the CLI's package name does not", () => {
+    for (const sample of MODEL_SAMPLES) {
+      expect(contentProblems([planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ message: { note: `ran on ${sample.toUpperCase()}` } }))]), sample)
+        .toEqual(["fixtures/agent/transcript-ok.jsonl: a model identifier"]);
+    }
+    const ok = planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ cli: "@anthropic-ai/claude-code@2.1.316", item: "cybertracker-claude-oauth", model: "<model>" }));
+    expect(contentProblems([ok])).toEqual([]);
   });
 
   it("GHSA credits are checked like CVE credits: an OSV name, a GitHub login and a bare string", () => {
