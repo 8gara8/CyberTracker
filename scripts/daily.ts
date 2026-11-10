@@ -538,7 +538,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       }
       setStage(cur(), "recheck", { status: recheckFailed ? "failed" : "ok", ended: now() });
       try {
-        writeRecheckLog(root, D, { intake, flagged: cur().recheck, reports: intake?.reports ?? [] });
+        writeRecheckLog(root, D, { intake, flagged: cur().recheck, shown, reports: intake?.reports ?? [] });
       } catch (e) {
         line(errorText(e));
       }
@@ -604,7 +604,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       state.linkResults = lk.results;
       setStage(cur(), "links", { status: "ok", ended: now(), note: lk.notReached > 0 ? NOTES.notReached(lk.notReached) : undefined });
       try {
-        writeRecheckLog(root, D, { intake, flagged: cur().recheck, reports: intake?.reports ?? [], links: lk });
+        writeRecheckLog(root, D, { intake, flagged: cur().recheck, shown, reports: intake?.reports ?? [], links: lk });
       } catch (e) {
         line(errorText(e));
       }

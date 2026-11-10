@@ -18,6 +18,7 @@ import { AgentContext } from "@/lib/schema/context";
 import type { Correction, CorrectionsFile, Dispute } from "@/lib/schema/misc";
 import { BANNED_WORDS, WITHHELD_HEADLINE } from "@/lib/vocab";
 import { main } from "@/scripts/build-context";
+import { writeRecheckLog } from "@/scripts/recheck";
 import { REPO } from "./helpers/harness";
 import { buildPipelineWorld, type PipelineWorld } from "./helpers/pipeline-world";
 
@@ -211,16 +212,26 @@ describe("scripts/build-context.ts", () => {
     }
   });
 
-  it("X6 reads logs/D.recheck.json when present: the shown flags and the reports", async () => {
+  it("X6 reads logs/D.recheck.json as daily writes it (writeRecheckLog): the shown flags and the reports, as in memory", async () => {
     const restore = quiet();
-    const shown = [{ date: addDays(w.date, -3), item_id: "cve-2026-104935", check: "cvss_changed", before: "9.1", after: "9.8", evidence_url: null }];
-    const reports = [{ item_id: "cve-2026-104935", type: "fact", evidence_url: "https://example.org/ct-sample/evidence" }];
+    const shown = [{ date: addDays(w.date, -3), item_id: "cve-2026-104935", check: "cvss_changed" as const, before: "9.1", after: "9.8", evidence_url: null }];
+    const reports = [{ item_id: "cve-2026-104935", type: "fact" as const, evidence_url: "https://example.org/ct-sample/evidence" }];
+    // The run record's list, which has no before and after: the context's flags come only from `shown`.
+    const flagged = { from: addDays(w.date, -14), to: addDays(w.date, -1), items_checked: 9, flagged: [
+      { item_id: "cve-2026-104935", edition_date: addDays(w.date, -3), flag: "cvss_changed" as const, detail: "CVSS 9.1 to 9.8.", correction_id: null },
+    ] };
     try {
-      fs.mkdirSync(path.dirname(w.paths.recheck), { recursive: true });
-      fs.writeFileSync(w.paths.recheck, JSON.stringify({ intake: null, flagged: null, shown, reports }));
+      writeRecheckLog(w.root, w.date, { intake: null, flagged, shown, reports });
+      expect(Object.keys(JSON.parse(fs.readFileSync(w.paths.recheck, "utf8")))).toEqual(["intake", "flagged", "shown", "reports"]);
       expect(await main(["--date", w.date, "--out", "logs/ctx-recheck.json"], { now: () => w.start, root: w.root })).toBe(0);
-      const c = AgentContext.parse(JSON.parse(fs.readFileSync(path.join(w.root, "logs", "ctx-recheck.json"), "utf8")));
+      const text = fs.readFileSync(path.join(w.root, "logs", "ctx-recheck.json"), "utf8");
+      const c = AgentContext.parse(JSON.parse(text));
       expect(c.corrections).toEqual({ flagged: shown, reports });
+      // Exactly what the orchestrator builds in memory from the same re-check (§8.5).
+      const inMemory = buildContext({
+        ...input, corrections: readCorrections(w.paths.content), scoreboard: readScoreboard(w.paths.content), recheck: { flagged: shown, reports },
+      }).text;
+      expect(text).toBe(inMemory);
     } finally {
       fs.rmSync(w.paths.recheck, { force: true });
       restore();

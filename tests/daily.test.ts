@@ -193,6 +193,11 @@ describe("daily.ts end to end", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]!.argv).toContain("--session-id");
     expect(calls[0]!.envKeys).not.toContain("CT_FIXTURE_FEEDS");
+    // logs/D.recheck.json carries the flags the agent was shown, so the build-context CLI rebuilds its context (§8.5).
+    const recheckLog = JSON.parse(fs.readFileSync(path.join(h.root, "logs", `${D}.recheck.json`), "utf8")) as Record<string, unknown>;
+    const contextLog = JSON.parse(fs.readFileSync(path.join(h.root, "logs", `${D}.context.json`), "utf8")) as { corrections: { flagged: unknown } };
+    expect(Object.keys(recheckLog)).toEqual(["intake", "flagged", "shown", "reports", "links"]);
+    expect(recheckLog.shown).toEqual(contextLog.corrections.flagged);
     const runsJsonl = fs.readFileSync(path.join(h.root, "logs", "runs.jsonl"), "utf8").trim().split("\n");
     expect(runsJsonl).toHaveLength(1);
     expect(JSON.parse(runsJsonl[0]!)).toMatchObject({ date: D, trigger: "schedule", outcome: "published_full", edition: "full", attempts: 1, repairs: 0, error_code: null });

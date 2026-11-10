@@ -957,13 +957,18 @@ export function applyLinkResults(ix: ArchiveIndex, date: string, results: readon
 
 // ── The run log ──────────────────────────────────────────────────────────────────────────────────
 
-/** logs/D.recheck.json: intake and flags (§8.9). `links` (an addition) is written when the CLI's --links ran. */
+/**
+ * logs/D.recheck.json: intake and flags (§8.9). `shown` (an addition) is the context's flag list after
+ * suppression, what the agent was shown, so the build-context CLI rebuilds exactly the orchestrator's context
+ * (§8.5); written when given. `links` (an addition) is written when the link check ran.
+ */
 export function writeRecheckLog(root: string, date: string, x: {
-  intake: IntakeResult | null; flagged: Recheck | null; reports: AgentContext["corrections"]["reports"]; links?: LinksOutcome | null;
+  intake: IntakeResult | null; flagged: Recheck | null; shown?: AgentContext["corrections"]["flagged"] | null;
+  reports: AgentContext["corrections"]["reports"]; links?: LinksOutcome | null;
 }): void {
   const file = runPaths(root, date).recheck;
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const out: Record<string, unknown> = { intake: x.intake, flagged: x.flagged, reports: x.reports };
+  const out: Record<string, unknown> = { intake: x.intake, flagged: x.flagged, ...(x.shown !== undefined ? { shown: x.shown } : {}), reports: x.reports };
   if (x.links !== undefined) out.links = x.links;
   const tmp = `${file}.tmp-${process.pid}`;
   fs.writeFileSync(tmp, jsonText(out));
@@ -1050,8 +1055,9 @@ export async function main(argv: string[] = process.argv.slice(2), deps: { now?:
       lines.push(`Links: ${links.record.checked} checked, ${links.record.ok} ok, ${links.record.unknown} unknown, ${links.record.broken.length - changed} broken, ${changed} changed, ${links.notReached} not reached.`);
     }
     const reports = intake?.reports ?? [];
-    const out = { intake, flagged: flagged?.record ?? null, reports, ...(doLinks ? { links } : {}) };
-    if (!dryRun) writeRecheckLog(root, date, { intake, flagged: flagged?.record ?? null, reports, ...(doLinks ? { links } : {}) });
+    const shown = flagged ? flagged.shown : null;
+    const out = { intake, flagged: flagged?.record ?? null, shown, reports, ...(doLinks ? { links } : {}) };
+    if (!dryRun) writeRecheckLog(root, date, { intake, flagged: flagged?.record ?? null, shown, reports, ...(doLinks ? { links } : {}) });
     process.stdout.write(values.json ? jsonText(out) : `${lines.join("\n")}\n`);
     return intake && !intake.ok ? 1 : 0;
   } catch (e) {

@@ -666,13 +666,18 @@ describe("the CLI and the run log", () => {
     expect(JSON.parse(out.join(""))).toMatchObject({ intake: null, reports: [] });
   });
 
-  it("writeRecheckLog writes the three keys, and links when given", () => {
+  it("writeRecheckLog writes the three keys, and shown and links when given", () => {
     const w = world();
     writeRecheckLog(w.root, D, { intake: null, flagged: { from: addDays(D, -14), to: addDays(D, -1), items_checked: 0, flagged: [] }, reports: [] });
     const file = path.join(w.root, "logs", `${D}.recheck.json`);
     expect(readJson(file)).toEqual({ intake: null, flagged: { from: "2026-10-02", to: "2026-10-15", items_checked: 0, flagged: [] }, reports: [] });
     writeRecheckLog(w.root, D, { intake: null, flagged: null, reports: [], links: null });
     expect(readJson(file)).toEqual({ intake: null, flagged: null, reports: [], links: null });
+    // `shown`, the context's flag list, goes between flagged and reports when given (the build-context CLI reads it).
+    const shown = [{ date: addDays(D, -3), item_id: "cve-2026-104935", check: "cvss_changed" as const, before: "9.1", after: "9.8", evidence_url: null }];
+    writeRecheckLog(w.root, D, { intake: null, flagged: null, shown, reports: [] });
+    expect(Object.keys(readJson(file) as object)).toEqual(["intake", "flagged", "shown", "reports"]);
+    expect((readJson(file) as { shown: unknown }).shown).toEqual(shown);
     expect(fs.readdirSync(path.dirname(file))).toEqual([`${D}.recheck.json`]);
     expect(RECHECK_LIMITS.days).toBe(14);
   });

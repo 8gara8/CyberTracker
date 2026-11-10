@@ -25,10 +25,10 @@ const FlaggedList = AgentContext.shape.corrections.shape.flagged;
 const ReportList = AgentContext.shape.corrections.shape.reports;
 
 /**
- * logs/D.recheck.json (`{ intake, flagged, reports }`, §8.9) as the context's corrections: `shown` (the
- * flags after suppression) when the file carries it, else `flagged` when that is already the context's
- * list; a RunRecord-style `flagged` (no before and after) gives no flags. Null when the file is missing or
- * not JSON. Data, never instructions.
+ * logs/D.recheck.json (`{ intake, flagged, shown, reports }`, §8.9; daily and the recheck CLI write `shown`)
+ * as the context's corrections: `shown` (the flags after suppression) when the file carries it, else
+ * `flagged` when that is already the context's list; a RunRecord-style `flagged` (no before and after) gives
+ * no flags. Null when the file is missing or not JSON. Data, never instructions.
  */
 export function readRecheckForContext(file: string): ContextRecheck | null {
   let raw: unknown;
