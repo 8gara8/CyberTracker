@@ -117,12 +117,13 @@ export function editionNotice(brief: Pick<PageBrief, "date" | "edition" | "feeds
 
 /**
  * Page metadata and the feed only, so never counted (§6 `/feed.xml`): the Lead sentences joined, or
- * `gap.headline` when the Lead is empty, else the edition's EDITION_INFO text; whitespace collapsed and
- * cut to 300 characters at a word boundary.
+ * `gap.headline` when the Lead is empty and the page shows the Gap (gapHeadlineLine(brief, gapOk): not
+ * missing, not failed GAP_MATCH), else the edition's EDITION_INFO text; whitespace collapsed and cut to 300
+ * characters at a word boundary.
  */
-export function briefDescription(brief: Pick<PageBrief, "edition" | "lead" | "gap">): string {
+export function briefDescription(brief: Pick<PageBrief, "edition" | "lead" | "gap">, gapOk = true): string {
   const lead = brief.lead.map((l) => l.text).join(" ");
-  const text = [lead, brief.gap.headline, EDITION_INFO[brief.edition]].map((t) => t.replace(/\s+/g, " ").trim()).find(Boolean)!;
+  const text = [lead, gapHeadlineLine(brief, gapOk) ?? "", EDITION_INFO[brief.edition]].map((t) => t.replace(/\s+/g, " ").trim()).find(Boolean)!;
   return cutAtWord(text, 300);
 }
 

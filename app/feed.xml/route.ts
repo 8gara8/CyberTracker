@@ -7,6 +7,7 @@ import { siteUrl } from "@/lib/site";
 export const dynamic = "force-static";
 
 export function GET(): Response {
-  const xml = feedXml(loadContent().briefs, siteUrl());
+  const content = loadContent();
+  const xml = feedXml(content.briefs, siteUrl(), content.gapFailed);
   return new Response(xml, { headers: { "Content-Type": "application/rss+xml; charset=utf-8" } });
 }

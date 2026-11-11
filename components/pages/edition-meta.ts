@@ -14,9 +14,12 @@ export function editionMarker(brief: Pick<Brief, "date" | "edition" | "published
   return `${brief.date} ${brief.edition} ${brief.published_at}`;
 }
 
-/** Description, openGraph and the ct-edition marker for an edition's page (the title is the route's). */
-export function editionMetadata(brief: Brief): Metadata {
-  const description = briefDescription(brief);
+/**
+ * Description, openGraph and the ct-edition marker for an edition's page (the title is the route's). `gapOk`
+ * false (the brief failed GAP_MATCH) keeps the Gap headline the page hides out of the description.
+ */
+export function editionMetadata(brief: Brief, gapOk = true): Metadata {
+  const description = briefDescription(brief, gapOk);
   return {
     description,
     openGraph: { title: `${SITE_NAME}, ${longDate(brief.date)}`, description, type: "article" },

@@ -1539,6 +1539,27 @@ describe("Routes", () => {
       });
     });
 
+    it("a brief that failed GAP_MATCH gets the EDITION_INFO description, never the Gap headline the page hides", async () => {
+      const LAST = "2026-10-15";
+      const headline = briefOf(content, LAST).gap.headline;
+      expect(briefOf(content, LAST).lead).toEqual([]);
+      // With its Gap shown, the Lead-less edition's description is cut from the Gap headline.
+      expect(briefDescription(briefOf(content, LAST)).slice(0, 40)).toBe(headline.slice(0, 40));
+      const dir = sampleFolder((_, d) => fs.rmSync(path.join(d, `metrics/${LAST}.json`)));
+      await inFolder(dir, async () => {
+        expect([...loadContent().gapFailed]).toEqual([LAST]);
+        const home = await homeMetadata();
+        expect(home.description).toBe(EDITION_INFO.data_only);
+        expect(home.openGraph).toMatchObject({ description: EDITION_INFO.data_only });
+        const meta = await briefRoute.generateMetadata(params({ date: LAST }));
+        expect(meta.description).toBe(EDITION_INFO.data_only);
+        const xml = await feedRoute.GET().text();
+        const item = xml.split("<item>").find((x) => x.includes(`/brief/${LAST}<`))!;
+        expect(item).toContain(`<description>${escapeXml(EDITION_INFO.data_only)}</description>`);
+        expect(item).not.toContain(escapeXml(headline.slice(0, 40)));
+      });
+    });
+
     it("feedXml() escapes every value and keeps the 30 newest briefs", () => {
       const base = briefOf(loadContent(), "2026-10-14");
       const odd = { ...structuredClone(base), items: [{ ...structuredClone(base.items[0]!), headline: 'AT&T <b>"x"</b>\u0007 says' }] } as Brief;

@@ -3,7 +3,8 @@
 // en. The last FEED_SIZE valid briefs, newest first, data-only included: title "<longDate>: <items[0].headline
 // or 'No item cleared the bar'>" plus " (data-only edition)" for a data-only edition; link and guid
 // <base>/brief/DATE (a full edition replacing the data-only one keeps the guid); pubDate
-// rfc822(published_at); description briefDescription(). With no briefs, a valid channel with no items.
+// rfc822(published_at); description briefDescription(brief, gapOk), gapOk false for a brief in gapFailed. With no
+// briefs, a valid channel with no items.
 // Owner: pages lane.
 import { longDate, rfc822 } from "@/lib/format";
 import { briefDescription } from "@/lib/page-text";
@@ -30,7 +31,7 @@ export function feedItemTitle(b: Pick<Brief, "date" | "edition" | "items">): str
 }
 
 /** The whole feed for the loaded briefs (oldest first, as loadContent() lists them) and the site address. */
-export function feedXml(briefs: readonly Brief[], base: string): string {
+export function feedXml(briefs: readonly Brief[], base: string, gapFailed: ReadonlySet<string> = new Set()): string {
   const items = briefs.slice(-FEED_SIZE).reverse().map((b) => {
     const link = escapeXml(`${base}/brief/${b.date}`);
     return `    <item>
@@ -38,7 +39,7 @@ export function feedXml(briefs: readonly Brief[], base: string): string {
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
       <pubDate>${escapeXml(rfc822(b.published_at))}</pubDate>
-      <description>${escapeXml(briefDescription(b))}</description>
+      <description>${escapeXml(briefDescription(b, !gapFailed.has(b.date)))}</description>
     </item>`;
   });
   return `<?xml version="1.0" encoding="UTF-8"?>

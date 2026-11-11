@@ -10,8 +10,9 @@ import { noEditionYet } from "@/components/pages/site-text";
 import { loadContent } from "@/lib/content";
 
 export function generateMetadata(): Metadata {
-  const latest = loadContent().briefs.at(-1);
-  return latest ? editionMetadata(latest) : {};
+  const content = loadContent();
+  const latest = content.briefs.at(-1);
+  return latest ? editionMetadata(latest, !content.gapFailed.has(latest.date)) : {};
 }
 
 export default function TodayPage() {

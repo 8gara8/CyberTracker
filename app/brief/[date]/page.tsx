@@ -21,9 +21,10 @@ type Props = { params: Promise<{ date: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { date } = await params;
-  const brief = loadContent().briefs.find((b) => b.date === date);
+  const content = loadContent();
+  const brief = content.briefs.find((b) => b.date === date);
   if (!brief) return {};
-  return { title: longDate(brief.date), ...editionMetadata(brief) };
+  return { title: longDate(brief.date), ...editionMetadata(brief, !content.gapFailed.has(brief.date)) };
 }
 
 export default async function BriefPage({ params }: Props) {
