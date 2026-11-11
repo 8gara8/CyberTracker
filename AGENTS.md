@@ -83,7 +83,8 @@ faster?
   00:31 UTC; `docs/reports/2026-11-11-p3-dry-runs.md`) `agent:check -- --all` passed 13 of 13, the
   transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
   dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
-  plan with rows 133 to 143, and `agent:check -- --canary` and the timed dry run are to be rerun on Kobol.
+  plan with rows 134 to 143 (row 133 came from that `agent:check`, row 144 from the pass's review), and
+  `agent:check -- --canary` and the timed dry run are to be rerun on Kobol.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
