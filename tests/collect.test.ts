@@ -11,7 +11,7 @@ import {
   buildPack, capItems, capRecords, cveIdsIn, cvePackRecords, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn, kevPackRecords,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
-  dayReads, hourlyZip, pinnedRecordIds, wantsStandIn, zipsAsRead, cvdPackRecord, exchangePackRecords, recordKeepOrder, RECORDS_MAX,
+  dayReads, hourlyZip, ITEM_CAPS, pinnedItemIds, pinnedRecordIds, wantsStandIn, zipsAsRead, cvdPackRecord, exchangePackRecords, packEvidence, recordKeepOrder, RECORDS_MAX,
 } from "../lib/collect";
 import { endOfDayAsset, hourlyAsset, REPOS } from "../lib/feeds/github";
 import { loadConfig, matchCredit } from "../lib/config";
@@ -20,9 +20,10 @@ import { parseEpssCsv } from "../lib/feeds/epss";
 import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
 import type { CveRecord, KevEntry, RawItem } from "../lib/feeds/types";
+import { readZip } from "../lib/feeds/zip";
 import { sha256Hex } from "../lib/json";
 import { rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, type AiHit, type RankInput } from "../lib/rank";
-import { collectSignals, givesRegionSignal, previewRegions, regionsConfig } from "../lib/regions";
+import { collectSignals, givesRegionSignal, itemGivesRegionSignal, previewRegions, regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
 import { normalizeUrl } from "../lib/urls";
 import { CANARY_URL_MARK } from "../lib/vocab";
@@ -30,6 +31,7 @@ import { matchRecord } from "../lib/metrics/ai-credit";
 import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, PackSizeCut, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
+import { storedZip } from "../fixtures/src/zip-writer";
 import { collect, CollectTimeout, FixtureGuardError, fixtureGuard, main } from "../scripts/collect";
 import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
 
@@ -684,6 +686,17 @@ describe("items", () => {
     const order = [...m.on.provisional].sort(recordKeepOrder(m.on.referenced, pinned)).map(tierOf);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(order.slice(0, 10)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
+    // A referenced record that is not KEV comes after every pinned one, though by date and source it sorts before them all:
+    // the latest Arcadyan CVE record, referenced here.
+    const cve = [...m.on.provisional].filter((r) => r.source === "cvelist").sort(recordKeepOrder(new Set()))[0]!;
+    const referenced = new Set([...m.on.referenced, cve.id]);
+    const tier2 = (r: PackRecord) => (r.source === "kev" ? 0 : pinned.has(r.id) ? 1 : referenced.has(r.id) ? 2 : 3);
+    const sorted = [...m.on.provisional].sort(recordKeepOrder(referenced, pinned));
+    const at = (id: string) => sorted.findIndex((r) => r.id === id);
+    for (const id of pinned) expect(at(id), id).toBeLessThan(at(cve.id));
+    expect(sorted.slice(0, 11).map(tier2)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2]);
+    const byDate = [...m.on.provisional].sort(recordKeepOrder(new Set()));
+    for (const id of pinned) expect(byDate.findIndex((r) => r.id === id), id).toBeGreaterThan(byDate.findIndex((r) => r.id === cve.id));
   });
 
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
@@ -726,6 +739,51 @@ describe("items", () => {
     expect(toPackItems(c.kept).map((i) => i.id).slice(0, 2)).toEqual(["p0001", "p0002"]);
   });
 
+  it("an item that gives a region signal is never cut by the item caps: a CERT-FR alert on a morning of 34 higher-scored notices (review of row 146)", () => {
+    // The review's s13 case: 34 CERT-FR notices whose titles carry keywords, and one ALE alert, the lowest score of the 35.
+    const rc = regionsConfig(cfg);
+    const ALERT = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-011/";
+    const raws = Array.from({ length: 34 }, (_, i) =>
+      raw(`SAMPLE Multiples vulnérabilités dans le produit ${i} exploit ransomware`, `https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-${1000 + i}/`, `2026-10-13T${String(8 + (i % 12)).padStart(2, "0")}:00:00Z`, "SAMPLE vulnerability exploit"));
+    raws.push(raw("SAMPLE Alerte de sécurité", ALERT, "2026-10-13T07:00:00Z", "SAMPLE"));
+    const drafts = toItemDrafts(feedById("cert-fr"), raws, itemCtx).drafts;
+    expect(drafts.length).toBe(35);
+    const alert = drafts.find((d) => d.url === normalizeUrl(ALERT))!;
+    expect(alert.alert).toBe(true);
+    expect(Math.min(...drafts.map((d) => d.score))).toBe(alert.score);
+    expect(drafts.filter((d) => itemGivesRegionSignal(d, rc, DATE)).map((d) => d.url)).toEqual([alert.url]);
+    const euLevel = (kept: readonly ItemDraft[]) => levels({ items: toPackItems(kept), records: [] }).EU;
+    // Without the predicate, the 30-per-feed cap cuts the alert by score, and Europe loses its agency-alert level.
+    const plain = capItems(drafts);
+    expect(plain.kept.some((d) => d.url === alert.url)).toBe(false);
+    expect(euLevel(plain.kept)![1]).toBeNull();
+    // As collect passes it: the alert is kept first and counts toward CERT-FR's 30; the five lowest notices go.
+    const held = (d: ItemDraft) => itemGivesRegionSignal(d, rc, DATE);
+    const c = capItems(drafts, ITEM_CAPS, held);
+    expect(c.kept.length).toBe(30);
+    expect(c.kept.some((d) => d.url === alert.url)).toBe(true);
+    expect(c.cutByFeed).toEqual({ "cert-fr": 5 });
+    const cmp = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+    const notices = drafts.filter((d) => d !== alert).sort((a, b) => b.score - a.score || cmp(b.published_at, a.published_at) || cmp(a.url, b.url));
+    expect(c.kept.filter((d) => d !== alert).map((d) => d.url).sort()).toEqual(notices.slice(0, 29).map((d) => d.url).sort());
+    expect(euLevel(c.kept)![1]).toBe("agency-alert");
+    expect(collectSignals({ items: toPackItems(c.kept), records: [] }, null, null, rc, DATE).map((s) => [s.type, s.region, s.url])).toEqual([["agency_alert", "EU", alert.url]]);
+    // Nor by the 60 per coverage section or the 200 in all: 300 higher-scored stories in CERT-FR's sections from 20 feeds.
+    const many = Array.from({ length: 300 }, (_, i) => ({ ...drafts[0]!, feed_id: `feed-${i % 20}`, key: `k${i}`, url: `https://therecord.media/ct-sample/held-${i}`, coverage: [i % 2 ? "exploits" : "policy"] as ItemDraft["coverage"], score: 90 - i / 10 }));
+    const full = capItems([...many, alert], ITEM_CAPS, held);
+    // 60 per section, and the alert on top of them: it counts toward its feed's 30 and the 200, not a section's 60.
+    expect(full.kept.length).toBe(121);
+    expect(full.kept.some((d) => d.url === alert.url)).toBe(true);
+    expect(capItems([...many, alert]).kept.some((d) => d.url === alert.url)).toBe(false);
+    const spread = (["exploits", "breaches", "ai", "policy", "taiwan", "japan"] as const);
+    const wide = Array.from({ length: 400 }, (_, i) => ({ ...many[0]!, feed_id: `feed-${i % 20}`, key: `w${i}`, url: `https://therecord.media/ct-sample/wide-${i}`, coverage: [spread[i % 6]!] as ItemDraft["coverage"], score: 90 - i / 10 }));
+    const capped = capItems([...wide, alert], ITEM_CAPS, held);
+    expect(capped.kept.length).toBe(200);
+    expect(capped.kept.some((d) => d.url === alert.url)).toBe(true);
+    // The alert took one of the 200 places: the lowest-scored story that would otherwise have stayed went instead.
+    expect(capItems(wide, ITEM_CAPS, held).kept.filter((d) => !capped.kept.includes(d)).length).toBe(1);
+  });
+
   it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut unreferenced records first (row 146)", () => {
     const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
     const many = (n: number, coverage: (i: number) => ItemDraft["coverage"]) => Array.from({ length: n }, (_, i) => ({
@@ -758,6 +816,44 @@ describe("items", () => {
     const byScore = [...items].sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1));
     expect(built.pack.items.map((i) => i.id).sort()).toEqual(byScore.slice(0, built.pack.items.length).map((i) => i.id).sort());
     expectAudit(built, items, capped.kept);
+  });
+
+  it("the size caps never cut an item that gives a region signal: a CERT-FR alert, the lowest score of 200 long items (review of row 146)", () => {
+    const rc = regionsConfig(cfg);
+    const ALERT = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-011/";
+    const alertDraft = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE Alerte de sécurité", ALERT, "2026-10-13T07:00:00Z", "s".repeat(290))], itemCtx).drafts[0]!;
+    const spread = (["exploits", "breaches", "ai", "policy", "taiwan", "japan"] as const);
+    const news = Array.from({ length: 199 }, (_, i) => ({
+      ...alertDraft, feed_id: `feed-${i % 20}`, publisher: "therecord", alert: false, key: `k${i}`, url: `https://therecord.media/ct-sample/long-${i}`,
+      title: `SAMPLE story ${i} ${"t".repeat(150)}`, coverage: [spread[i % 6]!] as ItemDraft["coverage"], score: 90 - i / 10,
+    }));
+    const items = toPackItems(capItems([...news, alertDraft], ITEM_CAPS, (d) => itemGivesRegionSignal(d, rc, DATE)).kept);
+    expect(items.length).toBe(200);
+    const alert = items.find((i) => i.url === normalizeUrl(ALERT))!;
+    expect(Math.min(...items.map((i) => i.score))).toBe(alert.score);
+    const kev = (i: number) => ({
+      key: `kev:${i}`, source: "kev" as const, record_id: `CVE-2026-${10000 + i}`, url: `https://www.cve.org/CVERecord?id=CVE-2026-${10000 + i}`, advisory_urls: [],
+      title: `SAMPLE ${"t".repeat(190)}`, text: `SAMPLE ${"x".repeat(990)}`, date: "2026-10-13", vendor: null, product: null, cve_ids: [`CVE-2026-${10000 + i}`], facts: {}, flags: [], flagged: 0,
+    });
+    const records = capRecords(provisionalRecords(Array.from({ length: 60 }, (_, i) => kev(i))), new Set()).kept;
+    const input = { date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records, injectionFlags: 0 };
+    const pinned = pinnedItemIds(items, rc, DATE);
+    expect([...pinned]).toEqual([alert.id]);
+    // As row 146 left it, the alert is the first item the size caps cut, and Europe's level falls.
+    const before = buildPack(input, cfg.sources);
+    expect(before.sizeCut.items.map((i) => i.id)).toContain(alert.id);
+    expect(levels(before.pack).EU![1]).toBeNull();
+    // With the pinned ids collect passes, the caps cut other news, never the alert; Europe keeps its level.
+    for (const referenced of [new Set<string>(), new Set(items.map((i) => i.id))]) {
+      const built = buildPack(input, cfg.sources, { pinned, referenced });
+      expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+      expect(built.sizeCut.over).toBe(false);
+      expect(built.sizeCut.items.length).toBeGreaterThan(0);
+      expect(built.sizeCut.items.map((i) => i.id)).not.toContain(alert.id);
+      expect(built.pack.items.map((i) => i.id)).toContain(alert.id);
+      expect(levels(built.pack).EU![1]).toBe("agency-alert");
+      expectAudit(built, items, records);
+    }
   });
 
   it("a planted instruction is flagged, counted and wrapped in the Markdown", async () => {
@@ -1121,7 +1217,11 @@ describe("collect's other runs", () => {
     const pick = (seed: number, n: number) => Array.from({ length: n }, (_, j) => `w${seed}q${j}`).join(" ");
     const feeds = feedsVariant((index) => {
       Object.keys(gen).forEach((url, f) => { index[url] = { file: `rss/gen-${f}.xml`, content_type: "application/rss+xml" }; });
+      index["https://www.cert.ssi.gouv.fr/feed/"] = { file: "rss/cert-fr-alert.xml", content_type: "application/rss+xml" };
     });
+    // And a CERT-FR ALE alert at the start of the window, among the lowest scores: an item that gives a region signal.
+    const alertUrl = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-011/";
+    fs.writeFileSync(path.join(feeds, "rss", "cert-fr-alert.xml"), `<?xml version="1.0" encoding="utf-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://www.cert.ssi.gouv.fr/</link><description>SAMPLE</description>\n<item><title>SAMPLE Alerte de sécurité</title><link>${alertUrl}</link><pubDate>${new Date(Date.parse(window.start) - 11 * 3_600_000).toUTCString()}</pubDate><description>SAMPLE ${pick(99999, 60)}</description></item>\n</channel></rss>\n`);
     Object.entries(gen).forEach(([, host], f) => {
       const items = Array.from({ length: 30 }, (_, k) => {
         const at = new Date(Date.parse("2026-10-13T10:00:00Z") + (f * 30 + k) * 60_000).toUTCString();
@@ -1155,6 +1255,11 @@ describe("collect's other runs", () => {
       "anthropic-cvd revision-37", "exchange-tw 9899-202610140110", "exchange-tw 9998-202610132130", "jpcert at260031", "jpcert wr264101",
       "twcert-tvn TVN-202610012",
     ]);
+    // Nor any item that gives a region signal: the CERT-FR alert stays, below the score of items the caps cut.
+    const alert = r.pack.items.find((i) => i.url === normalizeUrl(alertUrl));
+    expect(alert, "the ALE alert").toBeDefined();
+    expect(sizeCut.items.some((i) => i.score > alert!.score)).toBe(true);
+    expect(levels(r.pack).EU![1]).toBe("agency-alert");
     // The audit names each cut item as the pack held it: a sanitised title, its feed and its score, in id order.
     expect(sizeCut.items.map((i) => i.id)).toEqual([...sizeCut.items.map((i) => i.id)].sort());
     expect(sizeCut.records.map((x) => x.id)).toEqual([...sizeCut.records.map((x) => x.id)].sort());
@@ -1169,6 +1274,81 @@ describe("collect's other runs", () => {
     for (const i of sizeCut.items) byFeed.set(i.feed_id, (byFeed.get(i.feed_id) ?? 0) + 1);
     expect(text).toContain(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${DATE}.candidates.json).`);
     expect(log.filter((l) => l.startsWith("pack: the size caps cut"))).toHaveLength(1);
+  });
+
+  it("a release whose CVE records tag no reference: the pack's member records carry the vendor's own page, as the candidate does (review of row 146)", async () => {
+    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day link, both untagged, as SAP's
+    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it.
+    const zipName = "2026-10-13_delta_CVEs_at_2000Z.zip";
+    const feeds = feedsVariant();
+    const zipPath = path.join(feeds, "cvelist", "zips", zipName);
+    const entries = readZip(fs.readFileSync(zipPath));
+    const sap = Array.from({ length: 6 }, (_, i) => {
+      const id = `CVE-2026-6209${i}`;
+      return { name: `deltaCves/${id}.json`, data: Buffer.from(JSON.stringify({
+        dataType: "CVE_RECORD", dataVersion: "5.2",
+        cveMetadata: { cveId: id, assignerOrgId: "sample-sap", state: "PUBLISHED", assignerShortName: "sap", datePublished: `2026-10-13T0${i}:15:00.000Z`, dateUpdated: `2026-10-13T0${i}:15:00.000Z` },
+        containers: { cna: {
+          title: `SAMPLE SAP NetWeaver flaw ${i}`, affected: [{ vendor: "SAP_SE", product: "SAMPLE NetWeaver" }],
+          descriptions: [{ lang: "en", value: `SAMPLE description ${i}.` }],
+          metrics: [{ cvssV3_1: { version: "3.1", baseScore: 7.1 - i / 10, baseSeverity: "HIGH", vectorString: "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N" } }],
+          references: [{ url: `https://me.sap.com/notes/36943${80 + i}` }, { url: "https://url.sap/sapsecuritypatchday" }],
+        } },
+      })) };
+    });
+    fs.writeFileSync(zipPath, storedZip([...entries, ...sap]));
+    const root = tempRoot(true);
+    const r = await run(root, { feeds });
+    // The fixture world's own SAP fix (CVE-2026-58249, CVSS 9.8, its note on me.sap.com and a page on example.com) joins them.
+    const pt = r.candidates.kept.find((c) => c.id === "pt-sap-2026-10")!;
+    expect(pt.release).toMatchObject({ vendor: "SAP", total: 7, exploited: 0 });
+    const fixtureNote = "https://me.sap.com/ct-sample/cve-2026-58249-1";
+    const notes = [0, 1, 2, 3, 4, 5].map((i) => `https://me.sap.com/notes/36943${80 + i}`);
+    expect(pt.advisory_urls).toEqual([fixtureNote, ...notes.slice(0, 4)]);
+    const byCve = new Map(r.pack.records.filter((x) => x.source === "cvelist").map((x) => [x.record_id, x]));
+    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i]]));
+    expect(byCve.get("CVE-2026-58249")?.advisory_urls).toEqual([fixtureNote]);
+    const md = readOut(root, `packs/${DATE}.md`);
+    for (const u of [fixtureNote, ...notes]) expect(md).toContain(`  advisory: ${u}`);
+    expect(md).not.toContain("url.sap");
+    expect(md).not.toContain("  advisory: https://example.com/");
+    // The pack is the run's evidence: a draft citing the note from the pack is citing a URL the run saw.
+    for (const u of [fixtureNote, ...notes]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
+    // On the fixture morning alone the SAP fix is no release member (one record, under min_records): no vendor page, and no
+    // other record's advisory URLs change either way.
+    const before = await run(tempRoot(true));
+    expect(before.candidates.kept.some((c) => c.kind === "patch_batch" && c.id.startsWith("pt-sap-"))).toBe(false);
+    for (const x of before.pack.records) {
+      const now = r.pack.records.find((y) => y.source === x.source && y.record_id === x.record_id);
+      expect(now?.advisory_urls ?? x.advisory_urls, x.record_id).toEqual(x.record_id === "CVE-2026-58249" ? [fixtureNote] : x.advisory_urls);
+    }
+    expect(before.pack.records.find((x) => x.record_id === "CVE-2026-58249")?.advisory_urls ?? []).toEqual([]);
+  });
+
+  it("a CERT-FR morning of 34 higher-scored notices keeps its ALE alert past the 30-per-feed cap, and Europe its level (review of row 146)", async () => {
+    // The review's s13 case end to end: the alert is the lowest score of CERT-FR's 35 items in the window.
+    const alertUrl = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-011/";
+    const at = (h: number) => new Date(Date.parse("2026-10-13T08:00:00Z") + h * 3_600_000).toUTCString();
+    // Words of their own per notice, so dedupe keeps all 34 (no two titles are near-identical).
+    const words = (i: number) => Array.from({ length: 6 }, (_, j) => `v${i}q${j}`).join(" ");
+    const items = Array.from({ length: 34 }, (_, i) =>
+      `<item><title>SAMPLE ${words(i)} exploit ransomware</title><link>https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-${1000 + i}/</link><pubDate>${at(i % 12)}</pubDate><description>SAMPLE vulnerability exploit</description></item>`);
+    items.push(`<item><title>SAMPLE Alerte de sécurité</title><link>${alertUrl}</link><pubDate>${at(-1)}</pubDate><description>SAMPLE</description></item>`);
+    const feeds = feedsVariant((index) => {
+      index["https://www.cert.ssi.gouv.fr/feed/"] = { file: "rss/cert-fr-many.xml", content_type: "application/rss+xml" };
+    });
+    fs.writeFileSync(path.join(feeds, "rss", "cert-fr-many.xml"), `<?xml version="1.0" encoding="utf-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://www.cert.ssi.gouv.fr/</link><description>SAMPLE</description>\n${items.join("\n")}\n</channel></rss>\n`);
+    const root = tempRoot(true);
+    const log: string[] = [];
+    const r = await run(root, { feeds, log });
+    expect(log).toContain("cert-fr: 5 items over the caps.");
+    const certFr = r.pack.items.filter((i) => i.feed_id === "cert-fr");
+    expect(certFr.length).toBe(30);
+    const alert = certFr.find((i) => i.url === normalizeUrl(alertUrl));
+    expect(alert, "the ALE alert").toBeDefined();
+    expect(Math.min(...certFr.map((i) => i.score))).toBe(alert!.score);
+    expect(collectSignals(r.pack, null, null, regionsConfig(cfg), DATE).filter((s) => s.region === "EU").map((s) => [s.type, s.url])).toEqual([["agency_alert", alert!.url]]);
+    expect(levels(r.pack).EU![1]).toBe("agency-alert");
   });
 
   it("a morning over the 400-record cap keeps a TVN note reporting exploitation that no candidate references (review of row 146)", async () => {
@@ -1196,6 +1376,36 @@ describe("collect's other runs", () => {
     expect(collectSignals(r.pack, null, null, rc, DATE).filter((x) => x.type === "cert_exploitation" && x.region === "TW").map((x) => x.url)).toContain(normalizeUrl(note!.url));
     // Its neighbours by date, the other notes no candidate references, went first.
     expect(r.pack.records.filter((x) => x.source === "twcert-tvn").length).toBeLessThan(460);
+  });
+
+  it("a morning that stays over the size caps cuts every item but the region-signal ones, and logs the exact line (review of row 146)", async () => {
+    // 420 long TVN notes that all report exploitation: 400 stay as pinned records the caps never cut, about 190 KB of
+    // Markdown on their own. And a CERT-FR ALE alert, an item that gives a region signal.
+    const notes = Array.from({ length: 420 }, (_, k) => {
+      const id = `TVN-202610${String(100 + k).padStart(3, "0")}`;
+      const at = new Date(Date.parse("2026-10-13T12:00:00Z") + k * 1000).toUTCString();
+      return `<item><title>${id} SAMPLE 路由器漏洞已遭利用 ${k}</title><link>https://www.twcert.org.tw/ct-sample/${id.toLowerCase()}</link><description>SAMPLE: 此漏洞已遭利用，請儘速更新。${"內容為虛構。".repeat(60)}</description><pubDate>${at}</pubDate></item>`;
+    });
+    const alertUrl = "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-011/";
+    const feeds = feedsVariant((index) => {
+      index["https://www.twcert.org.tw/tw/rss-132-1.xml"] = { file: "twcert-tvn/many.xml", content_type: "application/rss+xml" };
+      index["https://www.cert.ssi.gouv.fr/feed/"] = { file: "rss/cert-fr-alert.xml", content_type: "application/rss+xml" };
+    });
+    fs.writeFileSync(path.join(feeds, "twcert-tvn", "many.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://www.twcert.org.tw/ct-sample/tvn</link><description>SAMPLE</description>\n${notes.join("\n")}\n</channel></rss>\n`);
+    fs.writeFileSync(path.join(feeds, "rss", "cert-fr-alert.xml"), `<?xml version="1.0" encoding="utf-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://www.cert.ssi.gouv.fr/</link><description>SAMPLE</description>\n<item><title>SAMPLE Alerte de sécurité</title><link>${alertUrl}</link><pubDate>Tue, 13 Oct 2026 07:00:00 GMT</pubDate><description>SAMPLE</description></item>\n</channel></rss>\n`);
+    const root = tempRoot(true);
+    const log: string[] = [];
+    const r = await run(root, { feeds, log });
+    const sizeCut = CandidateLogFile.parse(JSON.parse(readOut(root, `logs/${DATE}.candidates.json`))).size_cut;
+    expect(sizeCut.over).toBe(true);
+    expect(log).toContain("pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records and region-signal items left; written as it is.");
+    expect(log.filter((l) => l.startsWith("pack: still over"))).toHaveLength(1);
+    // Every item went but the alert, referenced or not; no record went.
+    expect(r.pack.items.map((i) => i.url)).toEqual([normalizeUrl(alertUrl)]);
+    expect(sizeCut.items.length).toBeGreaterThan(10);
+    expect(sizeCut.records).toEqual([]);
+    expect(levels(r.pack).EU![1]).toBe("agency-alert");
+    expect(Buffer.byteLength(readOut(root, `packs/${DATE}.md`))).toBeGreaterThan(PACK_MD_MAX_BYTES);
   });
 
   it("a deadline already past throws CollectTimeout and writes nothing", async () => {

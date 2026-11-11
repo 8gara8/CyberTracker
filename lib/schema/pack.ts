@@ -193,7 +193,8 @@ export const RankLogEntry = z.strictObject({
 /**
  * What buildPack()'s size caps cut (§4.14 Caps), each as the pack held it (strings already sanitised), in
  * id order: the items with their feed, score and title, the records with their source and record id.
- * `over`: still over a cap with only KEV and referenced records left, so the pack was written as it was.
+ * `over`: still over a cap with nothing left that the caps may cut (KEV records, pinned records: region-signal,
+ * exchange and dashboard ones, referenced records, and region-signal items), so the pack was written as it was.
  */
 export const PackSizeCut = z.strictObject({
   over: z.boolean(),

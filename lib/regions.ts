@@ -271,6 +271,40 @@ export function givesRegionSignal(rec: SignalRecord, config: RegionsConfig, date
   return recordSignals(rec, config, date).length > 0;
 }
 
+/** The pack item fields itemSignals() reads. */
+export type SignalItem = Pick<Pack["items"][number], "url" | "publisher" | "title" | "snippet" | "outlet" | "published_at" | "cve_ids">;
+
+/**
+ * The region signals one pack item gives (§5.11), as collectSignals() builds them, before ids: for each
+ * region in regions.json order, an `agency_alert` when the item's publisher (as collect stamped it) is one
+ * of the region's `agencies` and its normalised URL matches one of the region's `alert_patterns`
+ * (alertRegions(), ruling R36), and a `cert_exploitation` when that publisher is one of the region's
+ * `certs` and its sanitised title or snippet matches CERT_EXPLOITATION_RE. None when the Taipei date of
+ * the item's `published_at` is outside [date − N_max, date].
+ */
+export function itemSignals(it: SignalItem, config: RegionsConfig, date: string): SignalDraft[] {
+  const d = taipeiDay(it.published_at);
+  if (d === null || d < addDays(date, -maxLookbackDays(config.regions)) || d > date) return [];
+  const alerts = alertRegions(it.url, it.publisher, config);
+  const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`));
+  const out: SignalDraft[] = [];
+  for (const r of config.regions.regions) {
+    const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
+    if (alerts.includes(r.code)) out.push({ type: "agency_alert", ...base });
+    if (exploited && r.certs.includes(it.publisher)) out.push({ type: "cert_exploitation", ...base });
+  }
+  return out;
+}
+
+/**
+ * True when the pack item gives a region signal (itemSignals() is not empty): collect's item caps
+ * (capItems()) and size caps (buildPack()) never cut such an item (§4.14 Caps), for the same reason as
+ * givesRegionSignal() for records.
+ */
+export function itemGivesRegionSignal(it: SignalItem, config: RegionsConfig, date: string): boolean {
+  return itemSignals(it, config, date).length > 0;
+}
+
 /** Signal ids order: by edition date, then counter (sig-20261101-3 before sig-20261108-1). */
 export function compareSignalIds(a: string, b: string): number {
   const pa = /^sig-(\d{8})-(\d+)$/.exec(a);
@@ -307,19 +341,9 @@ export function collectSignals(
   const inSpan = (d: string | null): d is string => d !== null && d >= from && d <= date;
   const byType: Record<RegionSignal["type"], SignalDraft[]> = { agency_alert: [], home_vendor_kev: [], cert_exploitation: [] };
 
-  for (const it of pack?.items ?? []) {
-    const d = taipeiDay(it.published_at);
-    if (!inSpan(d)) continue;
-    const alerts = alertRegions(it.url, it.publisher, config);
-    for (const r of config.regions.regions) {
-      const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
-      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
-      if (r.certs.includes(it.publisher) && CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`))) {
-        byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
-      }
-    }
-  }
-  // Records through recordSignals(), the predicate collect's caps read (givesRegionSignal()), so the two cannot drift.
+  // Items through itemSignals() and records through recordSignals(), the predicates collect's caps read
+  // (itemGivesRegionSignal(), givesRegionSignal()), so the caps and the signals cannot drift.
+  for (const it of pack?.items ?? []) for (const s of itemSignals(it, config, date)) byType[s.type].push(s);
   for (const rec of pack?.records ?? []) for (const s of recordSignals(rec, config, date)) byType[s.type].push(s);
 
   const kevRows: { cve: string; added: string; vendorProject: string; title: string }[] = kevCatalog

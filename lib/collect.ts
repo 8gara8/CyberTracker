@@ -16,7 +16,7 @@ import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
 import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
-import { alertRegions, givesRegionSignal, type RegionsConfig } from "./regions";
+import { alertRegions, givesRegionSignal, itemGivesRegionSignal, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
 import type { RunFile, SourceTiersFile } from "./schema/config";
@@ -420,27 +420,39 @@ export function dedupe(items: readonly ItemDraft[]): { kept: ItemDraft[]; droppe
 /**
  * §4.14's caps (feeds plan §12 item 7): at most 30 per feed; then an item stays when it is in the top 60
  * of any of its coverage sections; then at most 200 in all. Ties by score, then newest, then URL.
+ * An item `held` returns true for is never cut (collect passes itemGivesRegionSignal(): an agency's alert
+ * page or a CERT note reporting exploitation, §5.11, since both editions compute the region levels from
+ * the pack): such items are taken first, whatever their score, count toward their feed's 30 and the 200,
+ * and the other items fill what is left. Only the 200 cuts one, which a day's alert pages never reach.
  */
 export function capItems(
   items: readonly ItemDraft[],
   caps: { perFeed: number; perCoverage: number; total: number } = ITEM_CAPS,
+  held: (d: ItemDraft) => boolean = () => false,
 ): { kept: ItemDraft[]; cutByFeed: Record<string, number> } {
   const cutByFeed: Record<string, number> = {};
   const cut = (d: ItemDraft) => { cutByFeed[d.feed_id] = (cutByFeed[d.feed_id] ?? 0) + 1; };
   const sorted = [...items].sort(byScore);
+  // The pack schema allows 200 items, so the held items stop there (by score) too.
+  const keep = new Set(sorted.filter(held).slice(0, caps.total));
   const perFeed = new Map<string, number>();
+  for (const d of keep) perFeed.set(d.feed_id, (perFeed.get(d.feed_id) ?? 0) + 1);
   const afterFeed: ItemDraft[] = [];
   for (const d of sorted) {
+    if (keep.has(d)) { afterFeed.push(d); continue; }
     const n = perFeed.get(d.feed_id) ?? 0;
     if (n >= caps.perFeed) { cut(d); continue; }
     perFeed.set(d.feed_id, n + 1);
     afterFeed.push(d);
   }
-  const chosen = new Set<ItemDraft>();
+  const chosen = new Set<ItemDraft>(keep);
   for (const c of COVERAGE) afterFeed.filter((d) => d.coverage.includes(c)).slice(0, caps.perCoverage).forEach((d) => chosen.add(d));
   const kept: ItemDraft[] = [];
+  let room = caps.total - keep.size;
   for (const d of afterFeed) {
-    if (!chosen.has(d) || kept.length >= caps.total) { cut(d); continue; }
+    if (keep.has(d)) { kept.push(d); continue; }
+    if (!chosen.has(d) || room <= 0) { cut(d); continue; }
+    room -= 1;
     kept.push(d);
   }
   return { kept, cutByFeed: Object.fromEntries(Object.entries(cutByFeed).sort(([a], [b]) => byCodeUnit(a, b))) };
@@ -564,8 +576,15 @@ export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
-/** CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit flag. */
-export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+/**
+ * CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit
+ * flag. `vendorUrls` gives a record further advisory URLs after its tagged ones (collect passes a release
+ * member's vendor pages, releaseMemberUrls() in lib/rank.ts); the five-URL cap and the URL rules still apply.
+ */
+export function cvePackRecords(
+  recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },
+  vendorUrls: (r: CveRecord) => readonly string[] = () => [],
+): RecordDraft[] {
   return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
     const event = r.published_at ?? r.updated_at;
@@ -585,7 +604,7 @@ export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) 
       exploit_reference: r.exploit_reference,
       ...(extra ? extra(r) : {}),
     };
-    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter(recordAdvisoryUrls(r, cfg), cfg), r.title ?? r.description,
+    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter([...recordAdvisoryUrls(r, cfg), ...vendorUrls(r)], cfg), r.title ?? r.description,
       r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
   }));
 }
@@ -729,6 +748,16 @@ export const PINNED_RECORD_SOURCES: ReadonlySet<PackRecordSource> = new Set(["ex
  */
 export function pinnedRecordIds(records: readonly PackRecord[], regions: RegionsConfig, date: string): Set<string> {
   return new Set(records.filter((r) => PINNED_RECORD_SOURCES.has(r.source) || givesRegionSignal(r, regions, date)).map((r) => r.id));
+}
+
+/**
+ * The ids of the items the pack's caps keep whole (§4.14 Caps): every item that gives a region signal
+ * (itemGivesRegionSignal(), §5.11: an agency's alert page such as a CERT-FR ALE alert or a CISA emergency
+ * directive, or a CERT note reporting exploitation), the items capItems() never cuts. `date` is the
+ * edition date. buildPack()'s size caps read it on the final items.
+ */
+export function pinnedItemIds(items: readonly PackItem[], regions: RegionsConfig, date: string): Set<string> {
+  return new Set(items.filter((i) => itemGivesRegionSignal(i, regions, date)).map((i) => i.id));
 }
 
 /**
@@ -902,7 +931,10 @@ export interface BuildPackOptions {
    * record is never cut, such an item only after every unreferenced record and item.
    */
   referenced?: ReadonlySet<string>;
-  /** Final ids of the records the size caps never cut (pinnedRecordIds(): region-signal, exchange and dashboard records). */
+  /**
+   * Final ids of the records and items the size caps never cut (pinnedRecordIds(): region-signal, exchange
+   * and dashboard records; pinnedItemIds(): region-signal items).
+   */
   pinned?: ReadonlySet<string>;
   /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
   recount?: (items: readonly PackItem[], records: readonly PackRecord[]) => { feeds: PackFeed[]; injectionFlags: number };
@@ -914,8 +946,9 @@ export interface BuildPackOptions {
  * capRecords()' keep order (recordKeepOrder()), never a KEV record, never a pinned one (`pinned`:
  * region-signal, exchange and dashboard records) and never one a kept candidate references; then the
  * items no kept candidate references, lowest score first; then the referenced items, lowest score first
- * (§0.4 row 146: news goes only after every record the caps may cut). When only KEV, pinned and
- * referenced records remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags` are
+ * (§0.4 row 146: news goes only after every record the caps may cut); never a pinned item (`pinned`:
+ * region-signal items). When only KEV, pinned and referenced records and pinned items remain and it is
+ * still over, it stops (`over`). `feeds[]` and `injection_flags` are
  * recounted after each cut. Returns the pack, its Markdown and what the size caps cut (`sizeCut`, for
  * logs/D.candidates.json): each cut item's id, feed, score and title and each cut record's id, source and
  * record id, as the pack held them, in id order (§0.4 row 146).
@@ -937,8 +970,8 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
   const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
   const groups: string[][] = [
     [...input.records].sort(recordKeepOrder(referenced, pinned)).reverse().filter((r) => r.source !== "kev" && !pinned.has(r.id) && !referenced.has(r.id)).map((r) => r.id),
-    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
-    lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
+    lowestFirst.filter((i) => !pinned.has(i.id) && !referenced.has(i.id)).map((i) => i.id),
+    lowestFirst.filter((i) => !pinned.has(i.id) && referenced.has(i.id)).map((i) => i.id),
   ];
   const gone = new Set<string>();
   for (const group of groups) {

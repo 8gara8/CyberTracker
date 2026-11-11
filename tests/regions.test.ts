@@ -8,7 +8,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, givesRegionSignal, maxLookbackDays,
+  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, givesRegionSignal, itemGivesRegionSignal, itemSignals, maxLookbackDays,
   previewRegions, publisherCount, recordSignals, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
   type RegionsConfig,
 } from "@/lib/regions";
@@ -575,6 +575,26 @@ describe("collectSignals", () => {
     expect(recordSignals(alertRecord, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["agency_alert", "JP"]]);
     expect(givesRegionSignal({ ...PACK.records[1]!, date: DATE }, CONFIG, DATE)).toBe(true);
     expect(givesRegionSignal({ ...PACK.records[1]!, date: addDays(DATE, 1) }, CONFIG, DATE)).toBe(false);
+  });
+
+  it("itemSignals() is what collectSignals() builds from each item, and itemGivesRegionSignal() says whether it builds any (review of row 146)", () => {
+    const strip = (xs: readonly Omit<RegionSignal, "id">[]) => xs.map((x) => JSON.stringify({ ...x, id: undefined })).sort();
+    // Beside PACK's items: an item from a CERT reporting exploitation, one dated before the span, one dated after D, and a
+    // newsroom item linking an agency's alert page under its own publisher.
+    const certNote = { ...PACK.items[2]!, id: "p0004", publisher: "twcert", url: "https://www.twcert.org.tw/tw/cp-104-0001-1.html", title: "SAMPLE 漏洞已遭利用", snippet: "" };
+    const old = { ...PACK.items[0]!, id: "p0005", url: "https://cisa.gov/news-events/directives/ed-26-01", published_at: "2026-10-20T00:00:00Z" };
+    const ahead = { ...PACK.items[0]!, id: "p0006", url: "https://cisa.gov/news-events/directives/ed-26-02", published_at: "2026-11-08T16:30:00Z" };
+    const newsroom = { ...PACK.items[0]!, id: "p0007", publisher: "therecord", tier: 2 as const, alert: false };
+    const items = [...PACK.items, certNote, old, ahead, newsroom];
+    expect(strip(items.flatMap((i) => itemSignals(i, CONFIG, DATE)))).toEqual(strip(collectSignals({ items, records: [] }, null, null, CONFIG, DATE)));
+    for (const i of items) {
+      expect(itemGivesRegionSignal(i, CONFIG, DATE), i.id).toBe(collectSignals({ items: [i], records: [] }, null, null, CONFIG, DATE).length > 0);
+    }
+    expect(items.map((i) => [i.id, itemGivesRegionSignal(i, CONFIG, DATE)])).toEqual([
+      ["p0001", true], ["p0002", false], ["p0003", true], ["p0004", true], ["p0005", false], ["p0006", false], ["p0007", false],
+    ]);
+    expect(itemSignals(certNote, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["cert_exploitation", "TW"]]);
+    expect(itemSignals(PACK.items[2]!, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["agency_alert", "JP"], ["cert_exploitation", "JP"]]);
   });
 
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {

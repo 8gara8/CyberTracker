@@ -408,19 +408,43 @@ export interface ReleaseBasis<S> {
   vendor: Vendor | null;
   /** The item's first cited source (in `source_ids` order) whose publisher is that vendor, at tier 1. */
   source: S | null;
-  /** The release's exploited CVE ids, else the item's own `cve_ids`. */
+  /**
+   * The release's exploited CVE ids, else those of the item's own `cve_ids` that are the release's fixes
+   * (releaseMember()), in the item's order.
+   */
   bundle: readonly string[];
+  /** The item's `cve_ids` left out of `bundle` because they are not the release's fixes (none for a release with an exploited fix). */
+  ignored: readonly string[];
   /** The source's `published_at` as a UTC date, else the newest UTC publication date of the bundle's CVE List records. */
   date: string | null;
-  /** Why publish cannot build the block: no date, or no page (no vendor source and an empty bundle); null when it can. */
-  problem: "no_date" | "no_page" | null;
+  /**
+   * Why publish cannot build the block: no date. A block with a date always has a page too (the vendor
+   * source the date came from, or a bundled record), so there is no second problem.
+   */
+  problem: "no_date" | null;
+}
+
+/**
+ * Whether a CVE id the item names is one of the release's fixes, so it may date, title and link the block:
+ * one of the release's exploited CVE ids (its candidate's own), or an id whose CVE List record was
+ * assigned by one of the vendor's CNAs (vendors.json `cna`), which is how rank bundles a release (§5.12
+ * step 2). An id with no record, or a record from another CNA, is not.
+ */
+export function releaseMember(
+  cveId: string, release: { exploited_cve_ids: readonly string[] }, vendor: Pick<Vendor, "cna"> | null, records: CveLookup | null,
+): boolean {
+  const id = cveId.toUpperCase();
+  if (release.exploited_cve_ids.some((x) => x.toUpperCase() === id)) return true;
+  const assigner = records?.get(id)?.assigner ?? null;
+  return vendor !== null && assigner !== null && vendor.cna.includes(assigner);
 }
 
 /**
  * The basis of a release block, shared by releaseBlockOf() (lib/apply.ts), which throws ComposeError on a
  * `problem`, and RELEASE_SOURCE, which fails the draft before publish, so the two cannot drift. `viewOf`
  * gives a source's publisher and tier: the frozen fields at publish, publisherFor() on the run's config in
- * draft mode, which is what publish freezes.
+ * draft mode, which is what publish freezes. Only the release's own fixes (releaseMember()) count in the
+ * bundle, so a CVE id of another vendor never dates, titles or links the block.
  */
 export function releaseBasisOf<S extends { id: string; published_at: string | null }>(
   item: { source_ids: readonly string[]; cve_ids: readonly string[] },
@@ -437,11 +461,12 @@ export function releaseBasisOf<S extends { id: string; published_at: string | nu
     return v !== undefined && v.publisher === publisher && v.tier === 1;
   };
   const source = publisher === null ? null : item.source_ids.map((sid) => sources.find((s) => s.id === sid)).find(isVendors) ?? null;
-  const bundle = release.exploited_cve_ids.length > 0 ? release.exploited_cve_ids : item.cve_ids;
+  const exploited = release.exploited_cve_ids.length > 0;
+  const bundle = exploited ? release.exploited_cve_ids : item.cve_ids.filter((id) => releaseMember(id, release, vendor, records));
+  const ignored = exploited ? [] : item.cve_ids.filter((id) => !bundle.includes(id));
   const newest = bundle.map((cve) => records?.get(cve)?.date_published ?? null).filter((d): d is string => d !== null).sort().at(-1) ?? null;
   const date = source?.published_at ? utcDateOf(source.published_at) : newest;
-  const problem = !date ? "no_date" : !source && bundle.length === 0 ? "no_page" : null;
-  return { vendor, source, bundle, date, problem };
+  return { vendor, source, bundle, ignored, date, problem: date ? null : "no_date" };
 }
 
 /**
@@ -473,11 +498,14 @@ const releaseSource = defineRule({
       const recordText = basis.bundle.length === 0
         ? "it names none of the release's CVE ids"
         : `no CVE List record of ${list([...basis.bundle])} gives a publication date`;
+      const one = basis.ignored.length === 1;
+      const ignoredText = basis.ignored.length === 0 ? ""
+        : ` (${list([...basis.ignored])} ${one ? "is" : "are"} not among the release's fixes: ${one ? "it has" : "they have"} no CVE List record from ${vendorName}'s CNA, so ${one ? "it is" : "they are"} ignored)`;
       const own = basis.source
         ? `Give ${basis.source.id} the published_at its page shows`
         : `Cite ${basis.vendor ? `${vendorName}'s own advisory for the release from the pack (a tier 1 source on ${vendorName}'s domain)` : "the vendor's own advisory for the release"}, with its published_at`;
       out.push(error("RELEASE_SOURCE", `items[${i}].source_ids`,
-        `items[${i}] (${it.id}) names release ${it.release_id}, but publish cannot ${basis.problem === "no_date" ? "date" : "link"} its release block: ${sourceText}, and ${recordText}.`,
+        `items[${i}] (${it.id}) names release ${it.release_id}, but publish cannot date its release block: ${sourceText}, and ${recordText}${ignoredText}.`,
         release.exploited_cve_ids.length > 0 ? `${own}.` : `${own}, or name the release's CVE ids (its pack records) in cve_ids.`));
     });
     return out;
