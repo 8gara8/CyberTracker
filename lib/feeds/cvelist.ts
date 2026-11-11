@@ -259,7 +259,8 @@ export function parseCveRecord(raw: unknown): CveRecord | null {
   };
 }
 
-const ADVISORY_TAGS = new Set(["vendor-advisory", "patch", "third-party-advisory"]);
+/** The reference tags recordAdvisoryUrls() takes (§8.3 Advisory URLs). */
+export const ADVISORY_TAGS: ReadonlySet<string> = new Set(["vendor-advisory", "patch", "third-party-advisory"]);
 const MAX_ADVISORY_URLS = 5;
 const MAX_URL_CHARS = 500;
 

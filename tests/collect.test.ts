@@ -11,7 +11,7 @@ import {
   buildPack, capItems, capRecords, cveIdsIn, cvePackRecords, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn, kevPackRecords,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
-  dayReads, hourlyZip, pinnedRecordIds, wantsStandIn, zipsAsRead, cvdPackRecord, exchangePackRecords, recordKeepOrder, RECORDS_MAX,
+  dayReads, hourlyZip, pinnedRecordIds, wantsStandIn, zipsAsRead, cvdPackRecord, exchangePackRecords, packEvidence, recordKeepOrder, RECORDS_MAX,
 } from "../lib/collect";
 import { endOfDayAsset, hourlyAsset, REPOS } from "../lib/feeds/github";
 import { loadConfig, matchCredit } from "../lib/config";
@@ -20,6 +20,7 @@ import { parseEpssCsv } from "../lib/feeds/epss";
 import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
 import type { CveRecord, KevEntry, RawItem } from "../lib/feeds/types";
+import { readZip } from "../lib/feeds/zip";
 import { sha256Hex } from "../lib/json";
 import { rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, type AiHit, type RankInput } from "../lib/rank";
 import { collectSignals, givesRegionSignal, previewRegions, regionsConfig } from "../lib/regions";
@@ -30,6 +31,7 @@ import { matchRecord } from "../lib/metrics/ai-credit";
 import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, PackSizeCut, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
+import { storedZip } from "../fixtures/src/zip-writer";
 import { collect, CollectTimeout, FixtureGuardError, fixtureGuard, main } from "../scripts/collect";
 import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
 
@@ -1169,6 +1171,55 @@ describe("collect's other runs", () => {
     for (const i of sizeCut.items) byFeed.set(i.feed_id, (byFeed.get(i.feed_id) ?? 0) + 1);
     expect(text).toContain(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${DATE}.candidates.json).`);
     expect(log.filter((l) => l.startsWith("pack: the size caps cut"))).toHaveLength(1);
+  });
+
+  it("a release whose CVE records tag no reference: the pack's member records carry the vendor's own page, as the candidate does (review of row 146)", async () => {
+    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day link, both untagged, as SAP's
+    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it.
+    const zipName = "2026-10-13_delta_CVEs_at_2000Z.zip";
+    const feeds = feedsVariant();
+    const zipPath = path.join(feeds, "cvelist", "zips", zipName);
+    const entries = readZip(fs.readFileSync(zipPath));
+    const sap = Array.from({ length: 6 }, (_, i) => {
+      const id = `CVE-2026-6209${i}`;
+      return { name: `deltaCves/${id}.json`, data: Buffer.from(JSON.stringify({
+        dataType: "CVE_RECORD", dataVersion: "5.2",
+        cveMetadata: { cveId: id, assignerOrgId: "sample-sap", state: "PUBLISHED", assignerShortName: "sap", datePublished: `2026-10-13T0${i}:15:00.000Z`, dateUpdated: `2026-10-13T0${i}:15:00.000Z` },
+        containers: { cna: {
+          title: `SAMPLE SAP NetWeaver flaw ${i}`, affected: [{ vendor: "SAP_SE", product: "SAMPLE NetWeaver" }],
+          descriptions: [{ lang: "en", value: `SAMPLE description ${i}.` }],
+          metrics: [{ cvssV3_1: { version: "3.1", baseScore: 7.1 - i / 10, baseSeverity: "HIGH", vectorString: "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N" } }],
+          references: [{ url: `https://me.sap.com/notes/36943${80 + i}` }, { url: "https://url.sap/sapsecuritypatchday" }],
+        } },
+      })) };
+    });
+    fs.writeFileSync(zipPath, storedZip([...entries, ...sap]));
+    const root = tempRoot(true);
+    const r = await run(root, { feeds });
+    // The fixture world's own SAP fix (CVE-2026-58249, CVSS 9.8, its note on me.sap.com and a page on example.com) joins them.
+    const pt = r.candidates.kept.find((c) => c.id === "pt-sap-2026-10")!;
+    expect(pt.release).toMatchObject({ vendor: "SAP", total: 7, exploited: 0 });
+    const fixtureNote = "https://me.sap.com/ct-sample/cve-2026-58249-1";
+    const notes = [0, 1, 2, 3, 4, 5].map((i) => `https://me.sap.com/notes/36943${80 + i}`);
+    expect(pt.advisory_urls).toEqual([fixtureNote, ...notes.slice(0, 4)]);
+    const byCve = new Map(r.pack.records.filter((x) => x.source === "cvelist").map((x) => [x.record_id, x]));
+    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i]]));
+    expect(byCve.get("CVE-2026-58249")?.advisory_urls).toEqual([fixtureNote]);
+    const md = readOut(root, `packs/${DATE}.md`);
+    for (const u of [fixtureNote, ...notes]) expect(md).toContain(`  advisory: ${u}`);
+    expect(md).not.toContain("url.sap");
+    expect(md).not.toContain("  advisory: https://example.com/");
+    // The pack is the run's evidence: a draft citing the note from the pack is citing a URL the run saw.
+    for (const u of [fixtureNote, ...notes]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
+    // On the fixture morning alone the SAP fix is no release member (one record, under min_records): no vendor page, and no
+    // other record's advisory URLs change either way.
+    const before = await run(tempRoot(true));
+    expect(before.candidates.kept.some((c) => c.kind === "patch_batch" && c.id.startsWith("pt-sap-"))).toBe(false);
+    for (const x of before.pack.records) {
+      const now = r.pack.records.find((y) => y.source === x.source && y.record_id === x.record_id);
+      expect(now?.advisory_urls ?? x.advisory_urls, x.record_id).toEqual(x.record_id === "CVE-2026-58249" ? [fixtureNote] : x.advisory_urls);
+    }
+    expect(before.pack.records.find((x) => x.record_id === "CVE-2026-58249")?.advisory_urls ?? []).toEqual([]);
   });
 
   it("a morning over the 400-record cap keeps a TVN note reporting exploitation that no candidate references (review of row 146)", async () => {

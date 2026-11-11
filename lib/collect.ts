@@ -564,8 +564,15 @@ export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
-/** CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit flag. */
-export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+/**
+ * CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit
+ * flag. `vendorUrls` gives a record further advisory URLs after its tagged ones (collect passes a release
+ * member's vendor pages, releaseMemberUrls() in lib/rank.ts); the five-URL cap and the URL rules still apply.
+ */
+export function cvePackRecords(
+  recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },
+  vendorUrls: (r: CveRecord) => readonly string[] = () => [],
+): RecordDraft[] {
   return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
     const event = r.published_at ?? r.updated_at;
@@ -585,7 +592,7 @@ export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) 
       exploit_reference: r.exploit_reference,
       ...(extra ? extra(r) : {}),
     };
-    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter(recordAdvisoryUrls(r, cfg), cfg), r.title ?? r.description,
+    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter([...recordAdvisoryUrls(r, cfg), ...vendorUrls(r)], cfg), r.title ?? r.description,
       r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
   }));
 }

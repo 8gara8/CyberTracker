@@ -11,7 +11,7 @@ import { kevBaseline, parseKev } from "../lib/feeds/kev";
 import type { CveRecord, EpssDay, GhsaAdvisory, KevCatalog, KevEntry } from "../lib/feeds/types";
 import { parseDeltaZip } from "../lib/feeds/zip";
 import { compareCveIds } from "../lib/ids";
-import { activeWatchWindows, buildCandidates, RANK_WEIGHTS, rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, releasePackMembers, type AiHit, type RankInput } from "../lib/rank";
+import { activeWatchWindows, buildCandidates, RANK_WEIGHTS, rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, releaseMemberUrls, releasePackMembers, releaseVendorUrls, type AiHit, type RankInput } from "../lib/rank";
 import { sanitize } from "../lib/sanitize";
 import { Candidate } from "../lib/schema/context";
 import { CandidateLogFile, CandidatesFile, CutEntry, RankLogEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
@@ -419,6 +419,76 @@ describe("rankCandidates() on built cases", () => {
     expect(small.advisory_urls).toEqual([ADOBE_BULLETIN]);
     const critLow: CveRecord = { ...fixes[0]!, cve_id: "CVE-2026-619999", cna_severity: "CRITICAL", cvss: { score: 7.0, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } };
     expect(releasePackMembers({ members: [...eight, critLow], exploited: [eight[1]!.cve_id] }).slice(0, 2)).toEqual([eight[1]!.cve_id, "CVE-2026-619999"]);
+  });
+
+  /** A fix of `vendor` (its CNA `assigner`) whose CNA references carry no tag, as SAP's, Siemens' and Schneider's do. */
+  const untaggedFix = (n: number, assigner: string, vendor: string, urls: string[], score = 7.5) => rec(`CVE-2026-${620000 + n}`, {
+    assigner, affected: [{ vendor, product: "SAMPLE Product" }], cna_severity: "HIGH", cvss: { score, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" },
+    published_at: `2026-10-13T16:${String(n % 60).padStart(2, "0")}:00Z`, references: urls.map((url) => ({ url, tags: [], from: "cna" as const })),
+  });
+
+  it("a release whose CVE records tag no reference still carries the vendor's own page, and no page on another host (review of row 146)", () => {
+    // SAP: each record cites its note on me.sap.com (vendor:sap, tier 1) and the url.sap patch-day link (host:url.sap, tier 3).
+    const sap = Array.from({ length: 6 }, (_, i) => untaggedFix(i, "sap", "SAP", [`https://me.sap.com/notes/36943${80 + i}`, "https://url.sap/sapsecuritypatchday"], 8 - i / 10));
+    const ptSap = rankCandidates(input({ ...empty, records: sap })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(ptSap.id).toBe("pt-sap-2026-10");
+    // Best-scored first (releasePackMembers()), at most five; url.sap is never one.
+    expect(ptSap.advisory_urls).toEqual([0, 1, 2, 3, 4].map((i) => `https://me.sap.com/notes/36943${80 + i}`));
+    // Siemens: one ProductCERT page per record on cert-portal.siemens.com; one record also cites a page on another host.
+    const siemens = Array.from({ length: 5 }, (_, i) => untaggedFix(10 + i, "siemens", "Siemens", [
+      `https://cert-portal.siemens.com/productcert/html/ssa-0635${10 + i}.html`, ...(i === 0 ? ["https://example.com/ct-sample/siemens-writeup"] : []),
+    ]));
+    const ptSiemens = rankCandidates(input({ ...empty, records: siemens })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(ptSiemens.id).toBe("pt-siemens-2026-10");
+    expect(ptSiemens.advisory_urls).toEqual([10, 11, 12, 13, 14].map((n) => `https://cert-portal.siemens.com/productcert/html/ssa-0635${n}.html`));
+    // Schneider Electric's notices sit on download.schneider-electric.com as well as download.se.com: both are its own (vendors.json).
+    const schneider = Array.from({ length: 5 }, (_, i) => untaggedFix(20 + i, "schneider", "Schneider Electric", [
+      `https://download.${i % 2 ? "se" : "schneider-electric"}.com/files?p_Doc_Ref=SEVD-2026-286-0${i}`,
+    ]));
+    const ptSchneider = rankCandidates(input({ ...empty, records: schneider })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(ptSchneider.advisory_urls).toHaveLength(5);
+    expect(ptSchneider.advisory_urls.filter((u) => u.startsWith("https://download.schneider-electric.com/"))).toHaveLength(3);
+    // Only references on another host: no advisory URL. An exploit-tagged reference on the vendor's domain is never taken either.
+    const elsewhere = sap.map((r, i) => ({ ...r, references: [
+      { url: "https://url.sap/sapsecuritypatchday", tags: [], from: "cna" as const },
+      { url: `https://example.com/ct-sample/sap-${i}`, tags: [], from: "cna" as const },
+      { url: `https://me.sap.com/notes/39${i}`, tags: ["exploit"], from: "cna" as const },
+      { url: `https://me.sap.com/notes/38${i}`, tags: [], from: "adp" as const },
+    ] }));
+    expect(rankCandidates(input({ ...empty, records: elsewhere })).kept.find((c) => c.kind === "patch_batch")!.advisory_urls).toEqual([]);
+    // The vendor pages are the release's only: the same records outside a bundle (four, below min_records) carry none.
+    expect(releaseVendorUrls(sap[0]!, { id: "sap" }, cfg)).toEqual(["https://me.sap.com/notes/3694380"]);
+    expect(releaseVendorUrls(sap[0]!, { id: "siemens" }, cfg)).toEqual([]);
+    const base = input({ ...empty, records: sap });
+    expect([...releaseMemberUrls(base).keys()].sort()).toEqual(sap.map((r) => r.cve_id).sort());
+    expect(releaseMemberUrls(input({ ...empty, records: sap.slice(0, 4) })).size).toBe(0);
+    expect(cvePackRecords(sap.slice(0, 1), () => true, cfg.sourceTiers)[0]!.advisory_urls).toEqual([]);
+    // Collect adds them to the member records it writes, after the tagged ones, so the pack holds them.
+    const urls = releaseMemberUrls(base);
+    const drafts = cvePackRecords(sap, () => true, cfg.sourceTiers, undefined, undefined, (r) => urls.get(r.cve_id) ?? []);
+    expect(drafts.map((d) => d.advisory_urls)).toEqual(sap.map((_, i) => [`https://me.sap.com/notes/36943${80 + i}`]));
+  });
+
+  it("a release's advisory URLs start with its exploited fix's own, whatever the fill adds (review of row 146)", () => {
+    // MSRC-style: one per-CVE vendor-advisory page per record. The exploited fix has the highest CVE id, so record id order would put
+    // its page last; the critical fixes come next, then the rest by CVSS.
+    const msrc = (id: string) => `https://msrc.microsoft.com/update-guide/vulnerability/${id}`;
+    const fix = (i: number, severity: string, score: number) => {
+      const r = msFix(i, severity, score);
+      return { ...r, references: [{ url: msrc(r.cve_id), tags: ["vendor-advisory"], from: "cna" as const }] };
+    };
+    for (const n of [90, 8]) {
+      const records = Array.from({ length: n }, (_, i) => fix(i, i === 1 || i === 2 ? "CRITICAL" : "HIGH", i === 1 ? 9.1 : i === 2 ? 9.8 : 8.8 - (i % 9) / 10));
+      const exploitedId = records.at(-1)!.cve_id;
+      const catalog = catalogOf([kevEntry(exploitedId, { vendorProject: "Microsoft", product: "Windows", dateAdded: "2026-09-01" })]);
+      const base = input({ ...empty, records, catalog });
+      const pt = rankCandidates(base).kept.find((c) => c.kind === "patch_batch")!;
+      const members = releasePackMembers({ members: records, exploited: [exploitedId] });
+      expect(members[0], `${n} fixes`).toBe(exploitedId);
+      expect(pt.advisory_urls, `${n} fixes`).toEqual(members.slice(0, 5).map(msrc));
+      expect(pt.advisory_urls[0]).toBe(msrc(exploitedId));
+      expect(pt.advisory_urls.slice(1, 3)).toEqual([msrc(records[2]!.cve_id), msrc(records[1]!.cve_id)]);
+    }
   });
 
   it("bundles schneider-electric once its cna is set", () => {

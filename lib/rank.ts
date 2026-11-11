@@ -5,7 +5,8 @@
 // cve_ids, record kinds, notes without a record, ties, the by_reason keys and advisory_urls).
 
 import { matchVendor, type AiCreditMatch, type CompiledConfig, type LoadedConfig } from "./config";
-import { cveIdsIn } from "./collect";
+import { advisoryUrlFilter, cveIdsIn } from "./collect";
+import { ADVISORY_TAGS } from "./feeds/cvelist";
 import { epssJump } from "./feeds/epss";
 import type { NewKevIdsResult } from "./feeds/kev";
 import type { CveRecord, EpssDay, GhsaAdvisory, KevCatalog, KevEntry } from "./feeds/types";
@@ -17,6 +18,7 @@ import type { TimeWindow } from "./schema/common";
 import type { Vendor, WatchWindow, WatchWindowsFile } from "./schema/config";
 import type { Candidate } from "./schema/context";
 import type { CutEntry, PackItem, PackRecord, RankLogEntry } from "./schema/pack";
+import { publisherFor, type PublisherConfig } from "./sources";
 import type { Coverage, KindId } from "./vocab";
 
 /** §5.12's weights: `base` (the highest that applies) plus each `bonus` that applies, once. */
@@ -129,6 +131,11 @@ interface Work {
   vendor: Vendor | null;
   merges: Merge[];
   exploited: boolean;
+  /**
+   * A release candidate's vendor and the members it references, in releasePackMembers() order: finish()
+   * reads its advisory URLs member by member in that order, so the exploited fixes' pages come first.
+   */
+  release?: { vendor: Vendor; members: string[] };
 }
 
 interface Ctx {
@@ -308,6 +315,42 @@ export function releasePackMembers(b: { members: readonly CveRecord[]; exploited
 }
 
 /**
+ * The release vendor's own pages among a member record's references (§5.12 step 2, §8.3 Advisory URLs):
+ * its CNA references that carry no advisory tag (recordAdvisoryUrls() takes the tagged ones) and no
+ * exploit tag, and whose publisherFor() publisher is the vendor itself (`vendor:<id>`, tier 1), through
+ * advisoryUrlFilter() (https, not blocked, at most 500 characters, normalised, unique, at most 5). SAP,
+ * Siemens, Fortinet, Ivanti and Schneider Electric tag none of their references, so without these a
+ * release of theirs would carry no vendor page; a reference on any other host is left out.
+ */
+export function releaseVendorUrls(rec: CveRecord, vendor: Pick<Vendor, "id">, cfg: PublisherConfig): string[] {
+  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.includes("exploit") && !r.tags.some((t) => ADVISORY_TAGS.has(t)))
+    .map((r) => r.url)
+    .filter((u) => {
+      const p = publisherFor(u, "vendor_advisory", cfg);
+      return p.publisher === `vendor:${vendor.id}` && p.tier === 1;
+    });
+  return advisoryUrlFilter(own, cfg.sourceTiers);
+}
+
+/**
+ * The vendor pages (releaseVendorUrls()) of every member a release candidate references
+ * (releasePackMembers()), by CVE id: collect adds them to those members' CVE List pack records, after
+ * their tagged advisory URLs, so the pack and the run's evidence hold the page the patch batch is dated
+ * from (RELEASE_SOURCE). No other record's advisory URLs change.
+ */
+export function releaseMemberUrls(input: Omit<RankInput, "pack">): Map<string, string[]> {
+  const ctx = context({ ...input, pack: { items: [], records: [] } });
+  const out = new Map<string, string[]>();
+  for (const b of bundles(ctx)) {
+    for (const id of releasePackMembers(b)) {
+      const urls = releaseVendorUrls(ctx.recs.get(id)!, b.vendor, ctx.input.config.loaded);
+      if (urls.length) out.set(id, urls);
+    }
+  }
+  return out;
+}
+
+/**
  * The CVE ids whose CVE List records the pack keeps (§4.14 Records): records published or updated in the
  * record window that meet a §5.12 step 1 test, name a TW or JP vendor or carry an AI-finder match, every
  * new KEV id with a record and, of each release bundle, the members its candidate references
@@ -336,15 +379,43 @@ function cvssReason(c: Unscored): string[] {
   return [`CVSS ${c.cvss.score.toFixed(1)} (${c.cvss.scorer}, ${c.cvss.version})`];
 }
 
+/** The advisory URLs of the pack records `ids`, in record id order, repeats dropped, at most ADVISORY_MAX. */
 function packUrls(ctx: Ctx, ids: readonly string[]): string[] {
+  return firstUrls([...ids].sort(byCodeUnit).map((id) => ctx.packById.get(id)?.advisory_urls ?? []));
+}
+
+function firstUrls(lists: readonly (readonly string[])[]): string[] {
   const out: string[] = [];
-  for (const id of [...ids].sort(byCodeUnit)) {
-    for (const u of ctx.packById.get(id)?.advisory_urls ?? []) {
+  for (const list of lists) {
+    for (const u of list) {
       if (out.length >= ADVISORY_MAX) return out;
       if (!out.includes(u)) out.push(u);
     }
   }
   return out;
+}
+
+/**
+ * A release candidate's advisory URLs (§5.12 step 2): member by member in releasePackMembers() order
+ * (exploited, then critical, then the rest), each member's CVE List pack records' advisory URLs and then
+ * its vendor pages (releaseVendorUrls()); then those of the other records it references (merged notes), in
+ * record id order; repeats dropped, at most ADVISORY_MAX. So the exploited fix's own advisory is never
+ * pushed out by the fill's better-scored fixes, and a vendor that tags no reference still gives its page.
+ */
+function releaseUrls(ctx: Ctx, w: Work, pack: readonly string[]): string[] {
+  const rel = w.release!;
+  const lists: (readonly string[])[] = [];
+  const seen = new Set<string>();
+  for (const id of rel.members) {
+    for (const r of (ctx.packByCve.get(id) ?? []).filter((x) => x.source === "cvelist" && pack.includes(x.id))) {
+      seen.add(r.id);
+      lists.push(r.advisory_urls);
+    }
+    const rec = ctx.recs.get(id);
+    if (rec) lists.push(releaseVendorUrls(rec, rel.vendor, ctx.input.config.loaded));
+  }
+  for (const id of pack) if (!seen.has(id)) lists.push(ctx.packById.get(id)?.advisory_urls ?? []);
+  return firstUrls(lists);
 }
 
 function cveWork(ctx: Ctx, id: string, s: CveSignals): Work {
@@ -427,7 +498,7 @@ function releaseWork(ctx: Ctx, b: Bundle): Work {
     c, origin: "release", bases: [n > 0 ? RANK_WEIGHTS.base.release_exploited : RANK_WEIGHTS.base.release],
     ownReasons: [`release: ${total} fixes, ${n} exploited`, ...(home ? [`${b.vendor.country} vendor`] : [])],
     bonuses: new Set(home ? ["home_vendor"] : []), epss: null, newKev: false, date: b.newest, texts: [title],
-    matchIds: ids, vendor: null, merges: [], exploited: n > 0,
+    matchIds: ids, vendor: null, merges: [], exploited: n > 0, release: { vendor: b.vendor, members: releasePackMembers(b) },
   };
 }
 
@@ -545,7 +616,7 @@ function finish(ctx: Ctx, w: Work, windows: readonly WatchWindow[]): Unscored {
     ...w.c,
     kind: exploited ? "exploited_flaw" : w.c.kind,
     reasons: reasonsOf(w, windows),
-    advisory_urls: packUrls(ctx, pack),
+    advisory_urls: w.release ? releaseUrls(ctx, w, pack) : packUrls(ctx, pack),
     pack_ids: pack,
   };
 }

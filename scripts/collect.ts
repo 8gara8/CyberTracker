@@ -30,7 +30,7 @@ import { jpcertRecords, tvnRecords } from "../lib/feeds/rss";
 import type { CheckLabel, CveRecord, EpssDay, GhsaAdvisory, KevCatalog } from "../lib/feeds/types";
 import { byCodeUnit, compareCveIds } from "../lib/ids";
 import { jsonText } from "../lib/json";
-import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
+import { rankCandidates, recordKeepIds, releaseMemberUrls, type AiHit } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
@@ -419,12 +419,14 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     config: { loaded: config, compiled: config.compiled, watchWindows: activeWindows(config, D) }, kevSource: baseline?.source, ...(aiMatch ? { aiMatch } : {}),
   };
   const keep = recordKeepIds(rankBase);
+  // A release's member records also carry the vendor's own pages their references give untagged (§5.12 step 2).
+  const vendorUrls = releaseMemberUrls(rankBase);
   const cveFacts = (rec: CveRecord) => {
     const s = e?.e?.scores.get(rec.cve_id);
     return { epss: s?.epss ?? null, epss_percentile: s?.percentile ?? null };
   };
   if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers, screen));
-  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts, screen));
+  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts, screen, (r) => vendorUrls.get(r.cve_id) ?? []));
   if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1), screen));
   recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window, screen));
   const jvn = myjvn as Awaited<ReturnType<typeof readMyJvn>> | null;
