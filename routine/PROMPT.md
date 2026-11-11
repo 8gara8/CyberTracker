@@ -73,6 +73,16 @@ word DONE.
 - **Flaw evidence** fits its basis: `"vendor_confirmed"` cites the vendor's own domain;
   `"cert_confirmed"` a national CERT's page, from a CERT (JPCERT/CC, TWCERT/CC, NCSC and the like) or
   CISA, its KEV catalog included, and no other government body; `"news_reported"` a newsroom.
+- **Incident status** is checked against the sources in `status_source_ids`. `"confirmed"` needs a tier 1
+  confirmation among them: the victim's own statement (`"victim"`), a regulator filing such as an SEC
+  filing, a MOPS notice or a TDnet disclosure (`"regulator_filing"`), or a government or CERT notice
+  (`"government"`). A newsroom's report is never one: when only newsrooms report the impact, set
+  `"reported"` and cite a newsroom in `status_source_ids`; when only the attacker says so, `"claimed"`.
+- **A critical flaw above `"watch"`** needs its vendor to confirm the first CVE in `cve_ids`: the CVE was
+  assigned by the vendor itself (its CNA), a `flaw_evidence` entry for that CVE cites the vendor's own
+  advisory, on its own domain, or the item cites a reviewed GitHub advisory page
+  (`github.com/advisories/GHSA-...`). A CVE record from another assigner, a CERT note or a news report
+  does not confirm it: until the vendor does, set `"watch"`.
 - **Victims, attribution, dangerous material, quotes and voice** follow `STYLE.md` §8 to §10.
 - **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
   none of its sources: publish withholds any item that repeats it or cites them.

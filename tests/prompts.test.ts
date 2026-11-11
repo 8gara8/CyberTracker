@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { CONFIRMING_SOURCE_TYPES } from "@/lib/rules/naming";
 import { secretsIn } from "@/lib/rules/safety";
 import type { ValidationIssue } from "@/lib/rules/types";
 import { AgentContext } from "@/lib/schema/context";
@@ -223,5 +224,30 @@ describe("PR9: the cert_confirmed basis as FLAW_EVIDENCE checks it", () => {
     const flat = PROMPT.replace(/\s+/g, " ");
     expect(flat).toContain('`"cert_confirmed"` a national CERT\'s page, from a CERT');
     expect(flat).toContain("CISA, its KEV catalog included, and no other government body");
+  });
+});
+
+describe("PR10: the incident status and vendor confirmation rules as VICTIM_STATUS and VENDOR_CONFIRMED check them", () => {
+  const flat = PROMPT.replace(/\s+/g, " ");
+  const bullet = (title: string) => flat.slice(flat.indexOf(`- **${title}**`)).split(" - **")[0]!;
+
+  it("PR10: confirmed needs a tier 1 victim, regulator filing or government source in status_source_ids; else reported or claimed", () => {
+    // Kobol dry run 2026-11-11: an incident marked "confirmed" on a newsroom's report alone (VICTIM_STATUS).
+    const b = bullet("Incident status");
+    expect(b).toContain("`status_source_ids`");
+    expect(b).toContain('`"confirmed"` needs a tier 1 confirmation among them');
+    for (const t of CONFIRMING_SOURCE_TYPES) expect(b).toContain(`(\`"${t}"\`)`);
+    expect(b).toContain('when only newsrooms report the impact, set `"reported"` and cite a newsroom in `status_source_ids`');
+    expect(b).toContain('when only the attacker says so, `"claimed"`');
+  });
+
+  it("PR10: a critical flaw above watch needs the vendor to confirm its first CVE: its CNA, its own advisory in flaw_evidence, or a reviewed GitHub advisory", () => {
+    // Kobol dry run 2026-11-11: repair 2 could not fix VENDOR_CONFIRMED.
+    const b = bullet("A critical flaw above `\"watch\"`");
+    expect(b).toContain("the first CVE in `cve_ids`");
+    expect(b).toContain("assigned by the vendor itself (its CNA)");
+    expect(b).toContain("a `flaw_evidence` entry for that CVE cites the vendor's own advisory, on its own domain");
+    expect(b).toContain("`github.com/advisories/GHSA-...`");
+    expect(b).toContain('set `"watch"`');
   });
 });
