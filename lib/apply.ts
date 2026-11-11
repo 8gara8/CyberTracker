@@ -6,7 +6,7 @@
 // helpers below the types are exported for lib/data-only.ts and lib/withhold.ts.
 
 import { matchVendor, type LoadedConfig } from "./config";
-import { addDays, utcDateOf } from "./dates";
+import { addDays } from "./dates";
 import { parseCveRecord } from "./feeds/cvelist";
 import { ghsaRecordUrl } from "./feeds/ghsa";
 import type { CveRecord } from "./feeds/types";
@@ -18,6 +18,7 @@ import { computeRegions, regionItems } from "./regions";
 import { mentionsAnthropic } from "./rules/ai";
 import { READING_WORDS_PER_MINUTE, aiLinkedOf, lateOf, manifestFacts, vendorConfirmedByOf } from "./rules/computed";
 import type { CveLookup, RegionsBase } from "./rules/types";
+import { releaseBasisOf } from "./rules/sources";
 import { LEAD_WORDS, pageWords } from "./rules/words";
 import { sanitize } from "./sanitize";
 import { countWords } from "./text";
@@ -432,7 +433,6 @@ export function findersVersionOf(m: Pick<Metrics, "ai_credited"> | null, config:
 type Obj = Record<string, unknown>;
 const obj = (x: unknown): Obj => (x && typeof x === "object" && !Array.isArray(x) ? (x as Obj) : {});
 const arr = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
-const nonNull = <T>(x: T | null | undefined): x is T => x !== null && x !== undefined;
 
 function uniqStrings(xs: readonly (string | null | undefined)[]): string[] {
   const out: string[] = [];
@@ -591,17 +591,11 @@ export function releaseBlockOf(
   item: DraftItem, release: Candidate["release"], sources: readonly Source[], config: LoadedConfig, records: CveLookup | null = null,
 ): ReleaseBlock | null {
   if (!item.release_id || !release || release.release_id !== item.release_id) return null;
-  const v = matchVendor(config, { kevVendorProject: release.vendor });
+  // The basis RELEASE_SOURCE checks before publish (lib/rules/sources.ts), so a draft that passes composes.
+  const { vendor: v, source: src, bundle, date, problem } = releaseBasisOf(item, release, sources, (s) => s, config, records);
   const vendor = vendorRefOf(v, release.vendor);
-  const publisher = v ? `vendor:${v.id}` : null;
-  const src = publisher
-    ? item.source_ids.map((sid) => sources.find((s) => s.id === sid)).find((s) => s !== undefined && s.publisher === publisher && s.tier === 1) ?? null
-    : null;
-  const bundle = release.exploited_cve_ids.length > 0 ? release.exploited_cve_ids : item.cve_ids;
-  const newestRecord = bundle.map((cve) => records?.get(cve)?.date_published ?? null).filter(nonNull).sort().at(-1) ?? null;
-  const date = src?.published_at ? utcDateOf(src.published_at) : newestRecord;
-  if (!date) throw new ComposeError(`No release date for ${release.release_id}: no vendor source with a date and no bundled record`);
-  if (!src && bundle.length === 0) throw new ComposeError(`No release page for ${release.release_id}: no vendor source and no bundled record`);
+  if (problem === "no_date" || !date) throw new ComposeError(`No release date for ${release.release_id}: no vendor source with a date and no bundled record`);
+  if (problem === "no_page") throw new ComposeError(`No release page for ${release.release_id}: no vendor source and no bundled record`);
   return {
     release_id: release.release_id,
     vendor,

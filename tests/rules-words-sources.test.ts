@@ -1,6 +1,6 @@
 // The words and sources rule groups (SPEC §4.12): WORDS_OVER, WORDS_UNDER, QUOTE_MAX_25, BANNED_WORDS,
 // SOURCE_REF, SOURCE_DUP, SOURCE_URL, SOURCE_UNSEEN, SOURCE_TIER, SOURCE_CRITICAL_TWO, SOURCE_SYNDICATED,
-// SOURCE_STATE_LABEL and SOURCE_ORPHAN. Each sub-condition gets a passing and a failing case on a mutated
+// SOURCE_STATE_LABEL, RELEASE_SOURCE and SOURCE_ORPHAN. Each sub-condition gets a passing and a failing case on a mutated
 // SAMPLE draft, run through validateDraft() with only the rules under test; the F fixtures run with every rule.
 // Blocked-URL cases use bare blocked hosts or reserved example domains, never a usable exploit, paste or
 // scanner URL.
@@ -24,6 +24,7 @@ import {
 } from "../lib/rules/words";
 import { countWords } from "../lib/text";
 import { normalizeUrl } from "../lib/urls";
+import { ComposeError, freezeSource, releaseBlockOf } from "../lib/apply";
 import { cardKicker, cveTimeline, releaseLine, scriptText } from "../lib/page-text";
 import type { Brief } from "../lib/schema/brief";
 import type { DraftBrief } from "../lib/schema/draft-brief";
@@ -923,6 +924,114 @@ describe("SOURCE_STATE_LABEL", () => {
     expect(r[0]!.message).toContain('"Russian state media" or "Russian state claim"');
     d.items[c]!.summary = `${d.items[c]!.summary} A Russian state claim adds nothing.`;
     expect(check(d, L)).toEqual([]);
+  });
+});
+
+// ── RELEASE_SOURCE ───────────────────────────────────────────────────────────────────────────────
+
+describe("RELEASE_SOURCE (review of row 146)", () => {
+  const R = ["RELEASE_SOURCE"];
+  const REL = "rel-microsoft-2026-10";
+  /** The weekday inputs with the Microsoft release unexploited, the case the press-only probe hit at publish. */
+  const unexploited = (base = draftInputs("weekday")): DraftInputs => ({
+    ...base,
+    context: {
+      ...base.context!,
+      candidates: base.context!.candidates.map((c) => (c.release?.release_id === REL
+        ? { ...c, cve_ids: [], release: { ...c.release, exploited: 0, exploited_cve_ids: [] } } : c)),
+    },
+  });
+  /** The patch batch citing only SecurityWeek and naming no CVE id. */
+  const pressOnly = () => {
+    const d = weekdayDraft();
+    const p = at(d, I.patchBatch);
+    Object.assign(d.items[p]!, { cve_ids: [], flaw_evidence: [], source_ids: [S["sw-microsoft"]] });
+    return { d, p };
+  };
+  /** Whether releaseBlockOf() composes the item as publish would, from the same inputs. */
+  const composes = (d: DraftBrief, p: number, inputs: DraftInputs): boolean => {
+    const sources = d.sources.map((s) => freezeSource(s, "pack", inputs.config));
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release;
+    try {
+      return releaseBlockOf(d.items[p]!, release, sources, inputs.config, inputs.cveList) !== null;
+    } catch (e) {
+      if (e instanceof ComposeError) return false;
+      throw e;
+    }
+  };
+
+  it("RELEASE_SOURCE: a patch batch of an unexploited release citing only the press and naming no CVE id fails before publish, with the fix in its hint", () => {
+    const { d, p } = pressOnly();
+    const inputs = unexploited();
+    const r = check(d, R, { inputs });
+    expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${p}].source_ids`]);
+    expect(r[0]!.message).toBe(`items[${p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids.`);
+    expect(r[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at, or name the release's CVE ids (its pack records) in cve_ids.");
+    // With every rule, as the morning runs it: the draft is rejected, so the repair round gets the finding.
+    const all = validateDraft(d, { ...inputs });
+    expect(all.ok).toBe(false);
+    expect(all.errors.map((e) => e.code)).toContain("RELEASE_SOURCE");
+    expect(composes(d, p, inputs)).toBe(false);
+  });
+
+  it("citing the vendor's own bulletin, or naming a CVE id of the release, passes; and releaseBlockOf() then composes", () => {
+    const inputs = unexploited();
+    const withBulletin = pressOnly();
+    withBulletin.d.items[withBulletin.p]!.source_ids.unshift(S["msrc-october"]);
+    expect(check(withBulletin.d, R, { inputs })).toEqual([]);
+    expect(composes(withBulletin.d, withBulletin.p, inputs)).toBe(true);
+    const withCve = pressOnly();
+    withCve.d.items[withCve.p]!.cve_ids = ["CVE-2026-96951"];
+    expect(check(withCve.d, R, { inputs })).toEqual([]);
+    expect(composes(withCve.d, withCve.p, inputs)).toBe(true);
+    // The weekday draft as it stands: an exploited release, dated from its bulletin.
+    expect(check(weekdayDraft(), R)).toEqual([]);
+  });
+
+  it("the other ways publish cannot date a release: a bulletin with no published_at, and an exploited release whose records are unknown", () => {
+    const inputs = unexploited();
+    const undated = pressOnly();
+    undated.d.items[undated.p]!.source_ids.unshift(S["msrc-october"]);
+    const ms = undated.d.sources.findIndex((s) => s.id === S["msrc-october"]);
+    undated.d.sources[ms]!.published_at = null;
+    const r1 = check(undated.d, R, { inputs });
+    expect(codesOf(r1)).toEqual([`RELEASE_SOURCE items[${undated.p}].source_ids`]);
+    expect(r1[0]!.message).toContain(`its Microsoft source ${S["msrc-october"]} has no published_at, and it names none of the release's CVE ids.`);
+    expect(r1[0]!.hint).toBe(`Give ${S["msrc-october"]} the published_at its page shows, or name the release's CVE ids (its pack records) in cve_ids.`);
+    // The exploited release (the weekday context) dates from its exploited CVEs: with no CVE List, only the bulletin can.
+    const exploited = pressOnly();
+    const noList = { ...draftInputs("weekday"), cveList: null };
+    const r2 = check(exploited.d, R, { inputs: noList });
+    expect(r2[0]!.message).toContain("no CVE List record of CVE-2026-96951 gives a publication date");
+    expect(r2[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at.");
+    expect(composes(exploited.d, exploited.p, noList)).toBe(false);
+    exploited.d.items[exploited.p]!.source_ids.push(S["msrc-october"]);
+    expect(check(exploited.d, R, { inputs: noList })).toEqual([]);
+    expect(composes(exploited.d, exploited.p, noList)).toBe(true);
+  });
+
+  it("agrees with releaseBlockOf() case by case: the rule fails a draft exactly when publish would throw ComposeError", () => {
+    const cases: Array<[string, (d: DraftBrief, p: number) => void, () => DraftInputs]> = [
+      ["press only, unexploited", () => {}, () => unexploited()],
+      ["bulletin, unexploited", (d, p) => d.items[p]!.source_ids.push(S["msrc-october"]), () => unexploited()],
+      ["CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-96951"]; }, () => unexploited()],
+      ["unknown CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-99999"]; }, () => unexploited()],
+      ["CVE id, no CVE List", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-96951"]; }, () => ({ ...unexploited(), cveList: null })],
+      ["record source only, unexploited", (d, p) => { d.items[p]!.source_ids = [S["rec-96951"]]; }, () => unexploited()],
+      ["press only, exploited", () => {}, () => draftInputs("weekday")],
+      ["press only, exploited, no CVE List", () => {}, () => ({ ...draftInputs("weekday"), cveList: null })],
+      ["bulletin second, exploited, no CVE List", (d, p) => d.items[p]!.source_ids.push(S["msrc-october"]), () => ({ ...draftInputs("weekday"), cveList: null })],
+    ];
+    const seen = cases.map(([name, mutate, inputsOf]) => {
+      const { d, p } = pressOnly();
+      mutate(d, p);
+      const inputs = inputsOf();
+      return [name, check(d, R, { inputs }).length === 0, composes(d, p, inputs)];
+    });
+    expect(seen.map(([name, passes, ok]) => [name, passes === ok])).toEqual(cases.map(([name]) => [name, true]));
+    expect(seen.filter(([, passes]) => !passes).map(([name]) => name)).toEqual([
+      "press only, unexploited", "unknown CVE id, unexploited", "CVE id, no CVE List", "record source only, unexploited", "press only, exploited, no CVE List",
+    ]);
   });
 });
 

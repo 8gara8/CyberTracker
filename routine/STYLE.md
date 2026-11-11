@@ -40,7 +40,8 @@ An item is one news event, of one of nine kinds. Each kind has a bar it must cle
   Japanese vendor, a credible AI-discovery claim, a public exploit reported, an internet-facing product.
   Without vendor confirmation it is labelled so and capped at Watch.
 - **Patch batch:** a vendor's scheduled release, as one item: N fixes, n exploited. Never one item per
-  CVE in the release.
+  CVE in the release. It cites the vendor's own release page, or names the release's CVE ids, so the
+  release can be dated.
 - **Supply chain:** a trusted package, vendor or certificate authority compromised.
 - **Breach or attack:** confirmed or credibly reported impact on a victim, under the naming rules (§8).
 - **Campaign:** a new report on a state or criminal group active in a tracked region.

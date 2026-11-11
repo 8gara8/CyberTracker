@@ -244,6 +244,16 @@ describe("PR9: the cert_confirmed basis as FLAW_EVIDENCE checks it", () => {
   });
 });
 
+describe("PR12: a patch batch's release date, as RELEASE_SOURCE checks it (review of row 146)", () => {
+  it("PR12: PROMPT.md and STYLE.md ask for the vendor's own advisory, or the release's CVE ids", () => {
+    const flat = PROMPT.replace(/\s+/g, " ");
+    expect(flat).toContain("- **A patch batch** is dated from the vendor's own advisory for the release: cite it from the pack, with its `published_at`.");
+    expect(flat).toContain("a release with no exploited fix needs its CVE ids, from its pack records, in `cve_ids`");
+    const style = read("routine/STYLE.md").replace(/\s+/g, " ");
+    expect(style).toContain("It cites the vendor's own release page, or names the release's CVE ids, so the release can be dated.");
+  });
+});
+
 describe("PR10: the incident status and vendor confirmation rules as VICTIM_STATUS and VENDOR_CONFIRMED check them", () => {
   const flat = PROMPT.replace(/\s+/g, " ");
   const bullet = (title: string) => flat.slice(flat.indexOf(`- **${title}**`)).split(" - **")[0]!;
