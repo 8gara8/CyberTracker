@@ -19,6 +19,8 @@ import { namingSafetyComputedCases, sampleSecret } from "@/fixtures/src/invalid/
 import { NO_TEXT_URL, SOFT_CASES, softDraft, softDraftProblems } from "@/fixtures/src/soft";
 import { REPO_ROOT } from "@/fixtures/src/world";
 import { dropUnverified } from "@/lib/apply";
+import { composeHeadline, metricNumbers } from "@/lib/metrics/headline";
+import { displaysFor } from "@/lib/rules/grounding";
 import { actorNexusOf, publicExploitOf } from "@/lib/items";
 import {
   aiLinkedOf, computedIssues, computedRules, gapMetricsFor, lateOf, manifestFacts, READING_WORDS_PER_MINUTE, vendorConfirmedByOf,
@@ -38,7 +40,7 @@ import type { CveBlock, DraftItem } from "@/lib/schema/item";
 import type { InputsManifest, Metrics } from "@/lib/schema/metrics";
 import { publisherFor } from "@/lib/sources";
 import { ARCHIVE_WARNING_CODES, runRules, validateDraft } from "@/lib/validate";
-import { CANARY_TOKEN, UNNAMED_CLAIM } from "@/lib/vocab";
+import { CANARY_TOKEN, NONE_FOUND, UNNAMED_CLAIM } from "@/lib/vocab";
 
 const MINE: readonly Rule[] = [...namingRules, ...safetyRules, ...computedRules, ...snapshotRules];
 const I = WEEKDAY_ITEMS;
@@ -835,6 +837,34 @@ describe("snapshot soft gates", () => {
     const w = warns(r, "SNAP_NUMBER");
     expect(paths(w)).toEqual(["angle.text"]);
     expect(w[0]!.message).toContain("holds 25");
+  });
+
+  it("SNAP_NUMBER reads a metric Angle as the number rules do: its label's 13 weeks is no number, with the Flood and AI blocks null (row 145)", () => {
+    const inputs = draftInputs("weekday");
+    const m = structuredClone(inputs.metrics!);
+    m.flood = null;
+    m.ai_credited = null;
+    m.window!.w13.old_listed_n = 12; // no other display shows 13 either
+    m.window!.w13.after_disclosure_median_ci80 = [14, 30];
+    m.window!.w26.after_disclosure_median_ci80 = [12, 22];
+    m.headline = composeHeadline(m);
+    expect(metricNumbers(m).some((n) => n.value === 13 && !n.percent)).toBe(false); // the second line prints no "13" constant
+    const share = displaysFor(m, "window.w13.at_disclosure_share")[0]!;
+    const d = draftWith((x) => {
+      x.angle = { ...x.angle, source_id: null, metric_path: "window.w13.at_disclosure_share", as_of: m.data_cutoff_utc,
+        text: `In the last 13 weeks, ${share} of recently disclosed flaws on CISA's list were already exploited at disclosure.`,
+        counterpoint: NONE_FOUND, counterpoint_source_ids: [] };
+    });
+    const run = (dd: DraftBrief) => validateDraft(dd, { ...inputs, metrics: m, rules: snapshotRules });
+    expect(warns(run(d), "SNAP_NUMBER")).toEqual([]);
+    // A figure the label does not print is a number the metrics must show.
+    d.angle.text = d.angle.text.replace("in the last 13 weeks", "in the last 9 weeks").replace("In the last 13 weeks", "In the last 9 weeks");
+    expect(warns(run(d), "SNAP_NUMBER").map((x) => [x.path, x.message])).toEqual([["angle.text", expect.stringContaining("holds 9")]]);
+    // The counterpoint is read as before: a "13 weeks" there is a number, and here no metric shows it.
+    d.angle.text = d.angle.text.replace("9 weeks", "13 weeks");
+    d.angle.counterpoint = "The 13 weeks are too short a span to read a trend.";
+    d.angle.counterpoint_source_ids = [];
+    expect(warns(run(d), "SNAP_NUMBER").map((x) => [x.path, x.message])).toEqual([["angle.counterpoint", expect.stringContaining("holds 13")]]);
   });
 
   it("SNAP_MISSING marks an Angle whose source has no seen text", () => {

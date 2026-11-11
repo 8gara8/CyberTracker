@@ -534,7 +534,7 @@ describe("LEAD_GROUNDED", () => {
     expect(only(check(missing, "monday"), "LEAD_GROUNDED").map((e) => e.path)).toEqual(["angle.metric_path"]);
   });
 
-  it("lets a metric Angle name its own window, and no other (row 145)", () => {
+  it("lets a metric Angle print its label's figures, and no other number (row 145)", () => {
     const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days, display 17
     d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
     expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
@@ -542,12 +542,56 @@ describe("LEAD_GROUNDED", () => {
     const r = only(check(d, "monday"), "LEAD_GROUNDED");
     expect(r.map((e) => e.path)).toEqual(["angle.text"]);
     expect(r[0]!.message).toContain("holds 13");
-    expect(r[0]!.hint).toContain('may be named as "26 weeks"');
+    expect(r[0]!.hint).toBe("Write the number exactly as metrics.quotable shows it for that path, or fix metric_path. "
+      + "The figures its label prints (26 weeks) may stand beside it as the label writes them; no other number may.");
+    // The windowed ratios' labels name their window ("new CVE records, pace vs 2023–24, 13 weeks").
     d.angle.metric_path = "flood.vs_reference_ratio";
     d.angle.text = "Over 13 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";
     expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
     d.angle.text = "Over 26 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";
     expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 26")]);
+    d.angle.metric_path = "window.kev_pace_ratio";
+    d.angle.text = "Over the 26-week Window, CISA's KEV additions ran at 1.9 times the 2023–24 pace.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    // A label's range and interval: "n-day race (listed 2 to 30 days after), 26 weeks", "80% interval low, at disclosure, 26 weeks".
+    d.angle.metric_path = "window.w26.n_day_n";
+    d.angle.text = "In the 26 weeks to 6 Nov, CISA listed 62 recently disclosed flaws 2 to 30 days after disclosure.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    d.angle.metric_path = "window.w26.at_disclosure_ci80.0";
+    d.angle.text = "The 80% interval for the 26-week share exploited at disclosure starts at 32%.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+  });
+
+  it("a key names one row: another row's number under a path fails (row 145)", () => {
+    const d = mondayDraft();
+    // 37 is "listed 31 to 365 days after" (window.w26.late_listed_n), not the cohort (157).
+    d.angle.metric_path = "window.w26.cohort_n";
+    d.angle.text = "CISA listed 37 recently disclosed flaws in 26 weeks.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 37")]);
+    d.angle.metric_path = "window.w26.late_listed_n";
+    d.angle.text = "In the 26 weeks to 6 Nov, CISA listed 37 recently disclosed flaws 31 to 365 days after disclosure.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    // 39% is the n-day share (window.w26.n_day_share), not the n-day count (62).
+    d.angle.metric_path = "window.w26.n_day_n";
+    d.angle.text = "In 26 weeks, 39% of recently disclosed flaws on CISA's list were in the n-day race.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 39%")]);
+    d.angle.metric_path = "window.w26.n_day_share";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    // The 2023–24 pace per 13 weeks (11) is not the reference's own count (91) nor the 26-week pace (23).
+    d.angle.text = "At the 2023–24 pace, 11 old flaws would be newly listed in 13 weeks.";
+    for (const p of ["window.reference.old_listed_n", "window.reference.old_listed_pace_26w"]) {
+      d.angle.metric_path = p; // neither label prints "13 weeks"
+      expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message), p).toEqual([expect.stringContaining("holds 11"), expect.stringContaining("holds 13")]);
+    }
+    d.angle.metric_path = "window.reference.old_listed_pace_13w";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+  });
+
+  it("a sourced Angle is read as before, label figures and all (row 145)", () => {
+    const d = weekdayDraft(); // source_id reg-aisle, "Red Hat has credited AISLE with 24 flaws since 1 October."
+    expect(only(check(d), "LEAD_GROUNDED")).toEqual([]);
+    d.angle.text = "Red Hat has credited AISLE with 24 flaws in 26 weeks.";
+    expect(only(check(d), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 26, which is not in the text seen at its source")]);
   });
 
   it("reads a raw metric with the rounding rule when the Gap shows no display for its path", () => {
