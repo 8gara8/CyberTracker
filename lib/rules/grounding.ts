@@ -192,14 +192,26 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/** Two dates as a day range numbersIn() reads as one date: "11 to 12 Nov", "31 Oct to 1 Nov". */
+function dayRangeExample(fromDate: string, toDate: string): string {
+  const [from, to] = [fromDate, toDate].map((d) => ({ day: Number(d.slice(8, 10)), month: MONTHS[Number(d.slice(5, 7)) - 1]! }));
+  return from!.month === to!.month ? `${from!.day} to ${to!.day} ${to!.month}` : `${from!.day} ${from!.month} to ${to!.day} ${to!.month}`;
+}
+
 /**
  * The edition's day as a Gap sentence names it, by its dates: the day before and the edition day ("11 to
  * 12 Nov"; "31 Oct to 1 Nov" across months), both read as dates by numbersIn(). Null for no valid date.
  */
 export function gapDayExample(date: string): string | null {
-  if (!isValidDate(date)) return null;
-  const [from, to] = [addDays(date, -1), date].map((d) => ({ day: Number(d.slice(8, 10)), month: MONTHS[Number(d.slice(5, 7)) - 1]! }));
-  return from!.month === to!.month ? `${from!.day} to ${to!.day} ${to!.month}` : `${from!.day} ${from!.month} to ${to!.day} ${to!.month}`;
+  return isValidDate(date) ? dayRangeExample(addDays(date, -1), date) : null;
+}
+
+/**
+ * The week a Monday edition reviews, by its dates: the Monday seven days before the edition date to the
+ * day before it ("2 to 8 Nov" for 2026-11-09; "26 Oct to 1 Nov" across months). Null for no valid date.
+ */
+export function weekInReviewExample(date: string): string | null {
+  return isValidDate(date) ? dayRangeExample(addDays(date, -7), addDays(date, -1)) : null;
 }
 
 /** LEAD_GROUNDED's hint for a Gap sentence that names the day as a length of hours. */
@@ -208,11 +220,25 @@ const gapDayHint = (date: string): string => {
   return ` When a Gap sentence names the day, it names it by its dates${ex ? ` ("${ex}")` : ""}, never as a length of hours.`;
 };
 
-/** LEAD_GROUNDED's and METRICS_ONLY_NUMBERS' hint for a stray day number before a month or weekday name (dayBeforeDateName()). */
-const dayNumberHint = (date: string): string => {
-  const ex = gapDayExample(date);
-  return ` A day number is read as a number unless written as a date or a date range${ex ? ` like "${ex}"` : ""}.`;
-};
+/**
+ * LEAD_GROUNDED's and METRICS_ONLY_NUMBERS' hint for a stray day number next to a month or weekday name
+ * (dayBeforeDateName()), with an example range (gapDayExample(), or weekInReviewExample() in the week in review).
+ */
+const dayNumberHint = (ex: string | null): string =>
+  ` A day number is read as a number unless written as a date or a date range${ex ? ` like "${ex}"` : ""}.`;
+
+/** The Gap's own words for a ratio of two ("more than twice", "twice"), when its headline prints them; else null. */
+export function gapTwice(metrics: Pick<Metrics, "headline"> | null | undefined): string | null {
+  return metrics ? (/\b(?:more than )?twice\b/u.exec(metrics.headline.text)?.[0] ?? null) : null;
+}
+
+/** The hint for a ratio of two written "two times" or "2 times", when the Gap prints its own "more than twice". */
+const twiceHint = (twice: string | null): string =>
+  twice ? ` If it is the Gap's own ratio, write it as the Gap does, in words: "${twice}".` : "";
+
+/** The number is written "2 times", a ratio of two. */
+const twoTimes = (text: string, n: NumberToken): boolean =>
+  n.value === 2 && !n.percent && /(?<![\p{L}\p{N}.,])2\s+times(?![\p{L}])/u.test(text.normalize("NFKC"));
 
 /** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
 function hoursLength(text: string, n: NumberToken): boolean {
@@ -241,6 +267,7 @@ const leadGrounded = defineRule({
     const gapText = `${metrics.headline.text}\n${metrics.headline.second_line}`;
     const grounded = (k: KnownName) => nameMatches(gapText, k);
     const noItems = (draft.items ?? []).length === 0;
+    const twice = gapTwice(metrics);
 
     (draft.lead ?? []).forEach((s, i) => {
       if (!s || typeof s.text !== "string") return;
@@ -260,7 +287,7 @@ const leadGrounded = defineRule({
       // Numbers.
       const itemNums = [...textPool(cited.flatMap(itemTexts)), ...cited.flatMap((it) => blockNumbers(input, it))];
       for (const n of distinctNumbers(s.text)) {
-        const day = dayBeforeDateName(s.text, n) ? dayNumberHint(input.date) : "";
+        const day = (dayBeforeDateName(s.text, n) ? dayNumberHint(gapDayExample(input.date)) : "") + (twoTimes(s.text, n) ? twiceHint(twice) : "");
         if (s.gap) {
           if (!exactIn(n, quoted)) {
             // With no items there is none to cite, so the hint does not offer gap: false (review of the seventh pass).
@@ -433,6 +460,8 @@ const metricsOnlyNumbers = defineRule({
     const out: ValidationIssue[] = [];
     for (const { field, items } of metricFields(input)) {
       const blocks = items.flatMap((it) => blockNumbers(input, it));
+      // The week in review names the week it reviews, not the edition's day (review of the eighth pass).
+      const dayExample = field.path.startsWith("week_in_review.") ? weekInReviewExample(input.date) : gapDayExample(input.date);
       for (const sentence of splitSentences(field.text)) {
         const terms = metricTermsIn(sentence);
         if (!terms.length) continue;
@@ -441,7 +470,7 @@ const metricsOnlyNumbers = defineRule({
           out.push(error("METRICS_ONLY_NUMBERS", field.path,
             `${field.path}: the sentence "${sentence}" uses "${terms[0]}" and holds ${shown(n)}, which is not a metric number${items.length ? " or a number in the CVE block of the item it is about" : ""}.`,
             "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."
-              + (dayBeforeDateName(sentence, n) ? dayNumberHint(input.date) : "")));
+              + (dayBeforeDateName(sentence, n) ? dayNumberHint(dayExample) : "") + (twoTimes(sentence, n) ? twiceHint(gapTwice(input.metrics)) : "")));
         }
       }
     }
@@ -453,6 +482,8 @@ const metricsOnlyNumbers = defineRule({
 
 /** The fix for a ratio NUMBER_FORM finds: the number as its source gives it, never the miscopied one. */
 const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives it';
+/** The fix for a name NUMBER_FORM reads as a ratio ("Vigor 286x"): never a different model (review of the eighth pass). */
+const NAME_FIX = "If it is a product or version name, write it exactly as the source does and rephrase around it, never a different model.";
 
 /**
  * NUMBER_FORM (draft, §0.4 row 145): a prose field writes a ratio glued to x ("9.9x",
@@ -464,13 +495,13 @@ const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives 
 const numberForm = defineRule({
   code: "NUMBER_FORM",
   scope: "draft",
-  check: ({ draft }) => proseFields(draft).flatMap((f) => [
+  check: ({ draft, metrics }) => proseFields(draft).flatMap((f) => [
     ...[...new Set(gluedRatios(f.text))].map((g) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
-        `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way.`)),
+        `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way. ${NAME_FIX}`)),
     ...[...new Set(wordRatios(f.text))].map((w) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${w}" in words, which the validator does not read as a number, so it cannot check it.`,
-        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.`)),
+        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.${/^two\s+times$/iu.test(w) ? twiceHint(gapTwice(metrics)) : ""}`)),
   ]),
 });
 

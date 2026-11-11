@@ -198,8 +198,10 @@ A `NUMBER_FORM` error is a ratio written glued to x ("9.9x") or in words ("nearl
 pace", "tenfold"), which the validator cannot read as a number and so cannot check: write it in digits
 as the Gap does, "N times", with N exactly as `metrics.quotable` or the cited source gives it, since a
 wrong one is then caught. A product, standard or id name that ends in x ("D-Link DIR-823X", "802.1X",
-"Catalyst 9300X", "3x-ui") is not read as a ratio; if one still fails, keep the name as the vendor
-writes it and note the text in the morning's report.
+"Catalyst 9300X", "3x-ui", "Vigor 286x and 296x") is not read as a ratio; if one still fails, keep the
+name exactly as the vendor writes it and rephrase around it, as the hint says ("the 3x series"), never
+a different model, and note the text in the morning's report. The Gap's own "more than twice" stays in
+words.
 
 ## The Claude CLI and its token
 
