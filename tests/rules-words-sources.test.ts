@@ -964,7 +964,7 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
   /** Whether releaseBlockOf() composes the item as publish would, from the same inputs. */
   const composes = (d: DraftBrief, p: number, inputs: DraftInputs): boolean => {
     const sources = d.sources.map((s) => freezeSource(s, "pack", inputs.config));
-    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release;
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
     try {
       return releaseBlockOf(d.items[p]!, release, sources, inputs.config, inputs.cveList) !== null;
     } catch (e) {
@@ -1076,7 +1076,7 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
     const mixed = pressOnly();
     mixed.d.items[mixed.p]!.cve_ids = [OTHER_CNA, "CVE-2026-96951"];
     expect(check(mixed.d, R, { inputs })).toEqual([]);
-    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release;
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
     const block = releaseBlockOf(mixed.d.items[mixed.p]!, release, mixed.d.sources.map((s) => freezeSource(s, "pack", inputs.config)), inputs.config, inputs.cveList)!;
     expect(block).toMatchObject({ date: "2026-10-13", title: "Microsoft security updates, 2026-10", source_url: "https://www.cve.org/CVERecord?id=CVE-2026-96951" });
     const basis = releaseBasisOf(mixed.d.items[mixed.p]!, release, mixed.d.sources, () => undefined, inputs.config, inputs.cveList);
