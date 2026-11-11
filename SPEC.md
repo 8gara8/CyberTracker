@@ -322,6 +322,16 @@ rows are what review and building found.
 | 131 | P3 | §8.8 | In the chat edition's top three, a withheld item whose `ai_role` is `unassessed` (a data-only item a full edition keeps, row 121) shows no AI chip (`kicker()`, `lib/chat.ts`); with a null severity and no landmark its kicker is its region codes alone, then `WITHHELD_HEADLINE` | Third fix pass, item T6 (row 122's open item): its line read "AI: unassessed", which means a data-only edition. A chat test shows such an item in a top slot and kept last, with no null, no "unassessed" and no stored headline, and `tests/daily.test.ts` D40 checks the morning's chat edition. The chat tests compare exact lines and keep no snapshot files, so no snapshot was added |
 | 132 | P3 | §8.2, §8.7, §8.8 | When brief D as committed is a full or partial edition, the chat edition's `E_PUBLISH` next step gives the hand publish command as `npm run publish -- --date D --force` (`withForce()`, `lib/chat.ts`), in `E_PUBLISH`'s own step and in `NOT_COMPOSED`'s and `NOT_VALID`'s. That is the case after a failed `--force` rerun: the run commits nothing and the earlier full edition stands. With brief D a data-only edition, or none, the steps are as §8.2 gives them | Review of the third fix pass: publish replaces a full or partial edition only with `--force` and refuses otherwise ("already published", §8.7), so the step as written was refused. `tests/chat.test.ts` covers the three steps, a data-only brief, no brief, and `E_AGENT` unchanged. `tests/daily.test.ts` D45 covers a `--force` rerun whose full edition fails whole-tree validation: the earlier edition stands, exit 1, and the summary's next step ends `--force before 11:00` |
 | 133 | P3 | §8.12 | `RESTRICTION_RE` adds the two phrases CLI 2.1.316 prints for its deny rules, `denied by your permission settings` (a Write into `content/`, `config/` or `routine/`) and `covered by a Read deny rule` (a Write into `logs/`), and keeps `don't ask mode`, which 2.1.316 did not print in any test. Kobol's first `agent:check -- --all` (2026-11-11, 08:06 to 08:12 Taipei, 13 of 13 tests passed) printed `--restricted confines` for every Read, Grep and Glob outside the worktree and the Write to `/tmp`, and `denied access to domain:` for the three blocked fetches. Every denial also had a `permission_denials` entry, so every negative test passed without the phrase | Row 108's Kobol check: the regex is the fallback when a transcript lacks `permission_denials`, and it missed four of the thirteen real denials. `tests/agent-check.test.ts` AC1 covers both new phrases |
+| 134 | P3 | §4 (`cvelist` row), §8.3 | When T − 1's end-of-day delta zip answers HTTP 404 (it comes out about 00:33 to 00:42 UTC on T, so a run from 08:00 to about 09:00 Taipei with T = D can find D − 1's missing), collect lists T − 1's tags as it does T's and reads T − 1's newest hourly zip in its place (`hourlyZip()`, `wantsStandIn()`, `zipsAsRead()`, `dayReads()`), logging the missing zip and the tag read. cvelist is not failed for it; with no tag list, no tag or an unreadable stand-in it fails as before and the log says which. A day whose own zip was stood in for is never counted (`days[].ok` false, and `cvelistFeed()` checks the zip kind again); a day whose X + 1 zip is the stand-in counts. An older missing end-of-day zip has no stand-in. `zipsReach()` stops at the first hour no zip covers. The second `ls-remote` runs only after the 404, and the stand-in shows only as the log line (no pack, index or chat note) | Dry run 2026-11-11 on Kobol at 08:25 Taipei (00:25 UTC): cvelist failed on HTTP 404 for `2026-11-10_delta_CVEs_at_end_of_day.zip`, not yet released, while `cve_2026-11-10_2300Z` was out. The 04:30 morning (20:30 UTC, T = D − 1) reads D − 2's end-of-day zip, out by then, so it was never hit. `tests/collect.test.ts` (three pure cases and four end to end) and `tests/metrics-script.test.ts` |
+| 135 | P3 | §8.3 | NVD pages get their own body cap, `FEED_MAX_BYTES.nvd` = 16 MiB, more than twice a full 2,000-record page; `readNvd()` uses it for both pages, and `sources:check` reads through the same reader. A window over 4,000 results (two pages) logs how many records were not read; their tail is not read | Dry run 2026-11-11 on Kobol: the 24-hour window's first page, 1,992 records, was 6,250,875 bytes (about 3.1 KB a record), over the 5 MiB default, so nvd was `too_large`. `tests/feed-readers.test.ts`, `tests/sources-check.test.ts` and `tests/contract.test.ts` |
+| 136 | P3 | §4.12, §4.15, §11 | The context's `config.tiers` gains `cve_record`: the domains of the publishers whose fitting source type is `cve_record` (`cveRecordDomains()`, `lib/context.ts`, from SOURCE_TIER's exported `fittingType()`), and `routine/PROMPT.md` says a page on one is a `"cve_record"`, never a `"vendor_advisory"`, which is only the affected vendor's own page. SOURCE_TIER's message calls a listed publisher of kind `other` "a record or data publisher", not "an unlisted publisher". The rule is unchanged. The context fixtures and the canary context gain the list | Kobol dry run 2026-11-11: both attempts cited a GitHub Advisory Database page as `vendor_advisory`; repair 1 fixed it but the retry's fresh draft repeated it, and the message called a listed publisher unlisted. `tests/context.test.ts` X10, `tests/prompts.test.ts` PR8, `tests/rules-words-sources.test.ts` |
+| 137 | P3 | §4.3, §4.6, §4.11, §4.12, App. B.3, §11 | A `source-tiers.json` publisher may carry `national_cert: true` (set only where true; `false` fails CONFIG_SCHEMA), now on `cisa` and `cisa-kev`. FLAW_EVIDENCE's `cert_confirmed` takes a publisher of kind `cert` or one so flagged (`certConfirms()`, `lib/rules/cves.ts`); no other government entry is flagged, since the other national CERTs are already kind `cert`. The file stays version 2: the flag changes no published number or label. The prompt and the draft schema say a national CERT's page, a CERT or CISA | Kobol dry run 2026-11-11: FLAW_EVIDENCE refused "cert_confirmed" on CISA's page for two flaws CISA had just added to KEV, though CISA runs the US national CERT function. `tests/rules-cves-grounding-ai.test.ts`, `tests/config.test.ts`, `tests/prompts.test.ts` PR9 |
+| 138 | P3 | §4.12, §8.2 | After deleting dropped ids, `dropUnverified()` removes a Lead sentence the deletion leaves citing no item (not a Gap sentence; only while the Lead keeps a sentence and its 15-word minimum, `LEAD_WORDS` in `lib/rules/words.ts`) and a region raise left citing no item. The Lens analysis, rows and Japan block are fixed parts and an emptied list there stays for the next round. Removals are in `DropReport.removed` (path and text, `logs/D.dropped.json`), and the run log adds "Attempt N: the soft pass removed <paths>, left citing no item."; status files are unchanged | Kobol dry run 2026-11-11: dropping `inc-identity-service-us-2026-11` left `lead[2]` with no item ids (LEAD_GROUNDED), so the soft pass took the retry from 4 errors to 5 with no repair round left. `tests/helpers.test.ts` and `tests/validate-loop.test.ts` V5 |
+| 139 | P3 | §1, §4.11, §4.12, §8.2 | `budgets.repair_rounds` (2) is per attempt, not per run: `daily.ts` starts a new validate-loop state for each attempt, so a retry gets its own two rounds, with every time limit kept (`repairBudget`, the hard stop, the retry cutoff). Each record's `repair_rounds` is its attempt's rounds as before; the run's `repairs` (runs.jsonl, the chat line and the `E_VALIDATION` text) adds them up. §1 says two rounds an attempt. The fake agent's `repairs` list writes a draft per `--resume` call | Kobol dry run 2026-11-11: attempt 1 used both rounds, so attempt 2, one repair from valid, failed `E_VALIDATION` with no round left. `tests/daily.test.ts` D46 |
+| 140 | P3 | §11 | `routine/PROMPT.md`'s Rules gain "Incident status" (`confirmed` needs a tier 1 `victim`, `regulator_filing` or `government` source in `status_source_ids`, never a newsroom; `reported` cites a newsroom there; the attacker alone is `claimed`) and "A critical flaw above watch" (the vendor confirms the first CVE: its CNA, its own advisory in `flaw_evidence`, or a reviewed GitHub advisory page; else `watch`), in the terms VICTIM_STATUS and VENDOR_CONFIRMED check. No rule changes. With rows 136 and 137 this is a change to `PROMPT.md`, so `agent:check -- --canary` reruns on Kobol (§9.5) | Kobol dry run 2026-11-11: a newsroom-only incident marked `confirmed`, and VENDOR_CONFIRMED left after repair 2; the retry repeated both. `tests/prompts.test.ts` PR10 |
+| 141 | P3 | §8.2, §8.8 | A dry run's `Next step:` comes from `DRY_RUN_NEXT_STEP` (`lib/chat.ts`, `dryRunNextStepFor()`; `NOT_COMPOSED.dryRunStep` and `NOT_VALID.dryRunStep` for E_PUBLISH): no rerun command, needs-review path or hand publish command, the code's fix "before the next run" where its cause outlives the dry run, then "this was a dry run, so nothing needs rerunning: what it wrote is in logs/D.daily.log, drafts/D.json, logs/D.validation.json and logs/dry-run/D/". `E_SIMULATED` keeps its line; real runs' lines are unchanged | Kobol dry run 2026-11-11: the summary of a dry run that ended `E_VALIDATION` said to rerun with `daily.sh --no-deadline` and pointed at `needs-review/D/`, which a dry run never writes (row 75). `tests/chat.test.ts` and `tests/daily.test.ts` D47 |
+| 142 | P3 | §10 P3 | The forced failure (`--simulate-failure`) runs on 2026-10-21, a date no other dry run uses, in item 6 and the command block | Kobol 2026-11-11: run on 2026-10-22 right after the real 2026-10-22 dry run, it replaced that run's `logs/2026-10-22.status.json`, agent transcripts and `runs.jsonl` rows, so the report took the first run's figures from its console lines |
+| 143 | P3 | §10 P3 | The Done-when count check of `pt-microsoft-2026-10`, as run on Kobol on 2026-11-11 and recorded here; no code changed for it. The brief's release row, from the CVE List bundle at the 2026-10-14 window's end, holds 1,384 fixes, 61 critical and 1 exploited (CVE-2026-96951). MSRC's CVRF document `2026-Oct` (current release 2026-11-10) lists 1,416 entries first released on 2026-10-13 (3,491 in all, since Microsoft adds later entries to the month's document), and the same one exploited. By the CVRF's CNA note the 1,416 are Microsoft 1,408 (one of them the advisory ADV260001, so 1,407 CVEs), GitHub_M 3, redhat 2, mitre 2 and Cisco Talos 1. So of the 32 more, 8 are other CNAs' CVEs Microsoft ships, 1 is an advisory id, and 23 are Microsoft-assigned CVEs the bundle did not hold, most likely records that reached the CVE List only after the window ended (20:30 UTC on 2026-10-13, about three and a half hours after the release at about 17:00 UTC). The exploited count matches; the release-day total is the CVE List's count at the window's end, not Microsoft's | Done-when asks for counts that match Microsoft's October release notes. Whether the release row should say its total is the CVE List's so far is JL's call. The report's "Microsoft October 2026" section gives the split |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -359,9 +369,9 @@ and not a vulnerability database: it links out for everything else.
 A scheduled task in the Claude desktop app on Kobol runs `scripts/daily.sh` at 04:30 Taipei (20:30 UTC
 the day before; about 04:37 in practice). Scripts collect the feeds, compute the metrics and publish a
 data-only edition by about 04:50. A sandboxed headless Claude Code agent then selects and writes;
-scripts validate its draft (at most two repair rounds) and publish the full edition by about 05:15.
-Each publish pushes `content/` to `main` and Vercel rebuilds the site. When the pipeline exits, the task
-replies with the chat edition, rendered by script from the same JSON. A retry starts only before 05:00,
+scripts validate its draft (at most two repair rounds an attempt) and publish the full edition by about
+05:15. Each publish pushes `content/` to `main` and Vercel rebuilds the site. When the pipeline exits,
+the task replies with the chat edition, rendered by script from the same JSON. A retry starts only before 05:00,
 the hard stop is 05:30, nothing is published after 11:00, and the site shows a stale banner when no
 edition is up by 08:00 (`config/run.json` `schedule`, §8.2).
 
@@ -944,7 +954,7 @@ interface FlawEvidence {          // M: statements only a cited page can supply;
   kind: "exploited" | "patched";
   basis: "vendor_confirmed" | "cert_confirmed" | "news_reported" | "vendor_advisory"; // exploited: first three; patched: last
   date: IsoDate;                  // date of the statement
-  source_id: string;              // vendor_*: on the vendor's own domain (vendors.json); cert_confirmed: a CERT; news_reported: tier 2
+  source_id: string;              // vendor_*: on the vendor's own domain (vendors.json); cert_confirmed: a national CERT (kind cert, or national_cert: CISA); news_reported: tier 2
 }
 interface Exposure { text: string; source_id: string } // M: text ≤ 20 words, e.g. "about 12,000 exposed instances, as reported by Shadowserver"
 ```
@@ -1221,9 +1231,10 @@ interface Item {
   block has `exploit_reference` true, else `no`. Null for other kinds.
 - **Flaw evidence check.** Before copying a `flaw_evidence` entry into the CVE block, publish checks the
   source is in `source_ids`, the CVE in `cve_ids`, the URL in the evidence set, and the publisher fits
-  the basis (vendor domain for `vendor_confirmed` and `vendor_advisory`, a CERT for `cert_confirmed`,
-  tier 2 for `news_reported`). A failure is a validation error (`FLAW_EVIDENCE`, or `SOURCE_REF` for a
-  source missing from `source_ids`, §4.12), never a drop.
+  the basis (vendor domain for `vendor_confirmed` and `vendor_advisory`, a national CERT for
+  `cert_confirmed` (kind `cert`, or `national_cert`), tier 2 for `news_reported`). A failure is a
+  validation error (`FLAW_EVIDENCE`, or `SOURCE_REF` for a source missing from `source_ids`, §4.12),
+  never a drop.
 
 **CVE block**, all S: built by publish from the run's feed cache (KEV, CVE List V5, EPSS, GHSA, CISA's
 ADP container) as of `data_cutoff_utc`, plus the checked `flaw_evidence`. Frozen in the brief; the
@@ -1840,6 +1851,7 @@ interface Publisher {
   tier: 1 | 2 | 3; kind: PublisherKind; country: CountryCode | null; domains: string[];
   state_label: string | null;     // e.g. "PRC state source"; shown beside every citation
   sole_newsroom_for_critical: boolean; // false: cannot be the only newsroom behind a critical item
+  national_cert?: true;          // only on a publisher of another kind that runs its country's national CERT function (CISA): cert_confirmed takes its pages
 }
 ```
 
@@ -1953,7 +1965,7 @@ interface RunFile {
   budgets: {
     agent_minutes: number;        // 30, per attempt
     web_fetches: number;          // 40, stated in the prompt and counted, not a kill switch
-    repair_rounds: number;        // 2, per run across both attempts
+    repair_rounds: number;        // 2, per attempt
     candidates_max: number; deep_read_max: number; items_max: number; // 40, 15, 10
     publish_reserve_minutes: number; attempts_max: number; // 4, 2
     deploy_wait_minutes: number;  // 8, the deploy check's limit (§8.2)
@@ -2154,7 +2166,7 @@ Fixtures and tests). † also runs on data-only editions.
 | SOURCE_DUP | E | brief | Two sources share a normalised URL | F |
 | SOURCE_URL † | E | brief | A source URL isn't https, is malformed, or is on a `BLOCKED_HOSTS` entry with reason `redirect` or `archive` (news.google.com, google.com/url, l.facebook.com, out.reddit.com, href.li; archive.org including web.archive.org, archive.today and mirrors such as archive.ph, ghostarchive.org); or carries a user name or password before the host (`user:pass@`, which can hide the real host). Cite the original page | F |
 | SOURCE_UNSEEN | E (W without evidence) | draft | A normalised source URL isn't in `evidence.urls`. URLs already failing SOURCE_URL or NO_EXPLOIT_LINK are skipped, and so are sources a `flaw_evidence` entry cites from its own item (FLAW_EVIDENCE's); with no evidence file the rule only warns that it was skipped | F |
-| SOURCE_TIER | E (W for unlisted domains) | brief; `source_type` fit draft | An item, an Elsewhere link, or an Angle whose `source_id` is set has no tier 1 or 2 source (a metric Angle is grounded by LEAD_GROUNDED; a scoreboard entry's quote source is SCOREBOARD_REF's). An unlisted domain (a tier 3 `host:` publisher, read from the frozen fields in published mode) is tier 3 and warns (not for a URL SOURCE_URL or NO_EXPLOIT_LINK already fails); tier 3 is never cited for facts, only beside a tier 1 or 2 source. A `source_type` that doesn't fit its publisher: `cve_record` needs a record publisher (`cve-org`, `nvd`, `github-advisories`, `jvn` or `twcert` for TVN); `vendor_advisory` kind `vendor`; `government` kind `government`, `cert` or `regulator`; `regulator_filing` kind `regulator`; `press` a tier 2 newsroom; `victim`, `finder_writeup`, `research` tier 1 or 2; `other` tier 3 only | F |
+| SOURCE_TIER | E (W for unlisted domains) | brief; `source_type` fit draft | An item, an Elsewhere link, or an Angle whose `source_id` is set has no tier 1 or 2 source (a metric Angle is grounded by LEAD_GROUNDED; a scoreboard entry's quote source is SCOREBOARD_REF's). An unlisted domain (a tier 3 `host:` publisher, read from the frozen fields in published mode) is tier 3 and warns (not for a URL SOURCE_URL or NO_EXPLOIT_LINK already fails); tier 3 is never cited for facts, only beside a tier 1 or 2 source. A `source_type` that doesn't fit its publisher: `cve_record` needs a record publisher (`cve-org`, `nvd`, `github-advisories`, `jvn` or `twcert` for TVN); `vendor_advisory` kind `vendor`; `government` kind `government`, `cert` or `regulator`; `regulator_filing` kind `regulator`; `press` a tier 2 newsroom; `victim`, `finder_writeup`, `research` tier 1 or 2; `other` tier 3 only. The message names the type that fits (`fittingType()`) and calls a listed publisher of kind `other` "a record or data publisher", never unlisted | F |
 | SOURCE_CRITICAL_TWO | E | brief; fetched and sole-newsroom checks draft | A Critical item has fewer than two publishers, or none of tier 1. A publisher with `sole_newsroom_for_critical: false` (The Hacker News) never counts toward the two. Draft mode: at least one of its sources must be in `evidence.fetched` | F |
 | SOURCE_SYNDICATED | E | brief | A Critical item reaches two publishers only by counting syndicated copies separately (fires instead of SOURCE_CRITICAL_TWO when the bar is met before folding and missed after). A `WITHHELD_MARK` title never folds, here or in SOURCE_CRITICAL_TWO, so a withheld item keeps its publishers (§0.4 row 98) | F |
 | SOURCE_STATE_LABEL | E | draft | An item cites a source whose publisher has a `state_label` (PRC state sources such as CVERC and the PRC ministries, tier 1; PRC state media such as Xinhua, Global Times, CGTN, tier 3; Russian state media) and neither headline nor summary contains that label or "<country> state claim" ("PRC state claim"; `<country>` is the label's first word, matched in any case), or its `claim_type` isn't `government` | F |
@@ -2164,7 +2176,7 @@ Fixtures and tests). † also runs on data-only editions.
 | CVE_IN_SOURCE | E (W when nothing can be checked) | draft | A CVE id in an item's text is neither in a cited URL nor in the seen text of any of the item's sources other than CVE record pages (cve.org, nvd.nist.gov, github.com/CVEProject), which count for neither test. When none of those sources has seen text, a warning at the field; with no evidence file, one warning at `(evidence)` | F |
 | VENDOR_CONFIRMED | E | brief; confirmation-source check draft | A `critical_flaw` item without vendor confirmation has a severity other than `watch`. Confirmation is the CVE block's `vendor_confirmed_by` (§4.6): the assigner is in the matched vendor's `cna` list, a GitHub-reviewed GHSA, or a checked `flaw_evidence` entry on one of the vendor's `domains` (draft mode computes it the same way: `vendor_advisory` needs the entry's source in `source_ids` and `evidence.urls`, and `ghsa_reviewed` a cited github.com/advisories/GHSA- page). It is judged on the first CVE, as the page's chip is; an item with no CVE id is unconfirmed. The page labels such an item `NOT_VENDOR_CONFIRMED`; it never feeds the Gap | F |
 | EXPLOITED_BASIS | E | brief | An `exploited_flaw` item none of whose CVEs is on KEV (draft: a `kev-index.json` row, the record's ADP KEV marker or the candidate's `kev`; published: a block with `kev`) has no `flaw_evidence` entry of kind `exploited` with basis `vendor_confirmed` or `cert_confirmed` | F |
-| FLAW_EVIDENCE | E | brief; evidence-set and source-fit checks draft | A `flaw_evidence` entry fails publish's check (§4.6; a source missing from `source_ids` is SOURCE_REF's): `cve_id` not in the item's `cve_ids`; basis doesn't fit the kind (`patched` takes only `vendor_advisory`; `exploited` takes `vendor_confirmed`, `cert_confirmed` or `news_reported`); source doesn't fit the basis (`vendor_confirmed`, `vendor_advisory`: on the matched vendor's own `domains`; `cert_confirmed`: a publisher of kind `cert`; `news_reported`: a tier 2 newsroom). Draft mode: the source URL isn't in `evidence.urls`; the matched vendor is `matchVendor()` on the KEV `vendorProject`, then the record's vendors, the candidate's vendor, a patch batch's release vendor, and an unmatched CVE fails a `vendor_*` basis | F |
+| FLAW_EVIDENCE | E | brief; evidence-set and source-fit checks draft | A `flaw_evidence` entry fails publish's check (§4.6; a source missing from `source_ids` is SOURCE_REF's): `cve_id` not in the item's `cve_ids`; basis doesn't fit the kind (`patched` takes only `vendor_advisory`; `exploited` takes `vendor_confirmed`, `cert_confirmed` or `news_reported`); source doesn't fit the basis (`vendor_confirmed`, `vendor_advisory`: on the matched vendor's own `domains`; `cert_confirmed`: a publisher of kind `cert`, or one whose source-tiers entry has `national_cert` (`cisa`, `cisa-kev`; `certConfirms()`); `news_reported`: a tier 2 newsroom). Draft mode: the source URL isn't in `evidence.urls`; the matched vendor is `matchVendor()` on the KEV `vendorProject`, then the record's vendors, the candidate's vendor, a patch batch's release vendor, and an unmatched CVE fails a `vendor_*` basis | F |
 | **Grounding and numbers** (`grounding.ts`) | | | | |
 | LEAD_GROUNDED | E | brief; the Angle's source text draft | A Lead sentence cites an id that isn't an item; has empty `item_ids` and `gap: false`; has `gap: true` and a number not in the metrics' `headline.quoted`; has empty `item_ids` and a known name, or a number not in `metricNumbers(metrics)`; holds a number matching neither the text and CVE blocks of the items it cites nor the metrics; holds a known name absent from the text, incident and attribution fields of the items it cites (a name the metrics' `headline.text` or `second_line` uses counts as grounded: "173 excluding Anthropic"). `gap: true` sentences are checked only against `headline.quoted`; in draft mode the CVE-block numbers come from the context candidates. The Angle likewise: with `metric_path`, its one number must equal a display string for that path (`headline.quoted` or the data table), or the raw value under the rounding rule when the path has none, and a path that names no number fails at `angle.metric_path`; with `source_id`, it must match its source's seen text | F |
 | GAP_MATCH † | E | brief, all | The script-copied Gap block (`gap`, §4.5) or `taiwan_lens.kev_lines` differ from the same-date `metrics/D.json`: `gap` must read status `ok` with that `metrics_file`, and its `headline`, `second_line`, `as_of` and `kev_lines` must match (`metrics_sha256`, which no rule can recompute, and `kev_note`, a vocabulary string, are not compared). In `validateAll`, a brief with no valid same-date metrics file fails at `gap`. The model never writes these fields | T |
@@ -2303,21 +2315,25 @@ has no seen text gives SNAP_QUOTE, and folding also removes apostrophes. Item bl
 release counts.
 
 3. **The soft pass.** If the first validation has errors or any `SNAP_*` warning and a repair round is
-   left (`budgets.repair_rounds`, 2 per run, §8.2), round 1 sends both; `routine/REPAIR.md` says to fix
+   left (`budgets.repair_rounds`, 2 per attempt, §8.2), round 1 sends both; `routine/REPAIR.md` says to fix
    each by correcting the text, citing a supporting source, or removing the claim. After round 1 (or at
    once when no round is left), `dropUnverified()` (`lib/apply.ts`) removes every item still carrying
    SNAP_NUMBER, SNAP_NAME or SNAP_QUOTE and every Critical item with SNAP_MISSING (never a non-critical
    one), sets `angle` to null if the Angle still carries any `SNAP_*` code (SNAP_MISSING included, §4.5),
    removes every scoreboard entry whose quote carries SNAP_QUOTE, and deletes dropped ids from every
-   `item_ids` list (`lead`, `taiwan_lens` and its rows and Japan block, `region_raises`). The hard rules
+   `item_ids` list (`lead`, `taiwan_lens` and its rows and Japan block, `region_raises`). A Lead sentence
+   that this leaves citing no item, unless it is a Gap sentence, is removed too, while the Lead keeps at
+   least one sentence and 15 words (`LEAD_WORDS`), and so is a region raise left citing no item; the Lens
+   analysis, rows and Japan block are fixed parts, so a list emptied there stays. The hard rules
    run again on the gated draft (`validateGated()`: the draft schema with a nullable `angle`), and the
    run writes the gated draft back to `drafts/D.json` before round 2, so round 2 repairs what is left;
    what the drop broke goes to round 2 (§0.4 row 73). After round 2 the gates drop again; if the hard rules
    still fail, the full edition fails and the data-only edition stays up (§8.2).
 4. **Recorded.** Counts only in the run record's `soft_gates` (§4.8): `dropped` and `by_code` count the
    dropped item ids the final gated draft still lacks, each once, the Angle only while the final draft has
-   none, and Scoreboard entries as reported (§0.4 row 117). Dropped ids and texts go only to the run log
-   (each drop as it happened) and `logs/D.dropped.json` (the final list; an id can contain a name). The
+   none, and Scoreboard entries as reported (§0.4 row 117). Dropped ids and texts, and the Lead
+   sentences and raises removed with them (`removed`: path and text), go only to the run log (each drop as
+   it happened; removals by path) and `logs/D.dropped.json` (the final list; an id can contain a name). The
    chat edition's Notes line shows "N items dropped (unverified)" when N > 0 (§8.8).
 
 Verify on P3's dry runs: the share of cited URLs with no snapshot, and how many items would drop
@@ -2448,7 +2464,7 @@ from them). The table adds `twcert-tvn` and `jpcert`, `rss` entries whose items 
 | id | Source | Gives | Notes |
 |---|---|---|---|
 | `kev` | `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json` (priority 1, `fresh_days` 7); fallback `https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json` | KEV entries, `catalogVersion`, vendor advisory URLs from `notes` | The mirror's default branch is `develop` (byte-identical to catalog 2026.11.06 on 2026-11-07). Cited by canonical record URLs, never the mirror |
-| `cvelist` | `CVEProject/cvelistV5` release assets: each day's end-of-day delta zip and, for the run's own UTC day, the newest hourly delta zip; per-id records from `https://raw.githubusercontent.com/CVEProject/cvelistV5/<sha>/cves/…` only for KEV ids and, on a new dashboard revision, ledger ids nothing else dates (§8.3). `githubLink` values are data, never fetched | Record state, `datePublished`, assigner, CNA and CISA-ADP scores, SSVC, credits, reference tags | The deltaLog covers 30 days; the P2 baseline is a shallow clone into `cache/` |
+| `cvelist` | `CVEProject/cvelistV5` release assets: each day's end-of-day delta zip and, for the run's own UTC day, the newest hourly delta zip (and T − 1's newest while its end-of-day zip is not out yet, §8.3); per-id records from `https://raw.githubusercontent.com/CVEProject/cvelistV5/<sha>/cves/…` only for KEV ids and, on a new dashboard revision, ledger ids nothing else dates (§8.3). `githubLink` values are data, never fetched | Record state, `datePublished`, assigner, CNA and CISA-ADP scores, SSVC, credits, reference tags | The deltaLog covers 30 days; the P2 baseline is a shallow clone into `cache/` |
 | `epss` | `https://epss.empiricalsecurity.com/epss_scores-YYYY-MM-DD.csv.gz` for E, E − 1, E − 7; fallback `https://api.first.org/data/v1/epss?cve=<up to 100 ids>`, candidate CVEs only | Score and percentile on those days (crossings, rises, movers) | Host confirmed on Kobol 2026-11-09: the registry's `epss_scores-current.csv.gz` redirects to the dated file (`epss.cyentia.com` redirects there too); first line `#model_version:v2026.06.15,score_date:2026-11-08T12:00:26Z`, then `cve,epss,percentile`, about 402,000 lines. `epssUrlFor()` swaps `current` for the date |
 | `ghsa` | Shallow fetch of `github.com/github/advisory-database`, `advisories/github-reviewed/YYYY/MM/GHSA-…/GHSA-….json` | Reviewed advisories, severity, fixed versions | Folder = the `published` month (0 mismatches in 4,474, July to November 2026). No `credits` key (0 of 37,571 on 2026-11-09). The REST `/advisories` API has credits, but as GitHub logins with no AI-finder match, so `ghsa_source` stays `git` and AI-credited counts use CVE records (§5.5, §0.4 row 40) |
 | `nvd` | `https://services.nvd.nist.gov/rest/json/cves/2.0` by `pubStartDate`/`pubEndDate`, keyless, at most 2 calls | NVD score (third in precedence), reference tags | Optional; a failure never blocks or degrades |
@@ -2701,7 +2717,8 @@ interface AgentContext {
     reports: { item_id: string; type: DisputeKind; evidence_url: string | null }[]; // reader issue forms
   };
   config: {
-    tiers: { t1: string[]; t2: string[]; not_sole_newsroom: string[]; state_labelled: string[] };
+    tiers: { t1: string[]; t2: string[]; not_sole_newsroom: string[]; state_labelled: string[];
+             cve_record: string[] }; // cve_record: the record publishers' domains (fittingType() "cve_record")
     home_vendors: { tw: string[]; jp: string[] };
     actors: { name: string; aliases: string[]; related_tracker: "europe" | "me" | null }[];
     ai_finders: { family: string; names: string[] }[];
@@ -2751,7 +2768,8 @@ interface Candidate {
   `computeRegions()` after validation; the agent may only propose one-step `region_raises`.
 - **`corrections`** carries only the re-check's flags and the reader reports' item id, type and evidence
   link, as the re-check passes them (not read from `corrections.json`); free text from GitHub issues never reaches the agent. **`config`** holds short excerpts (domains
-  by tier, Taiwanese and Japanese vendor names, actor aliases with `related_tracker` for actors that
+  by tier, the record publishers' domains in `tiers.cve_record`, built with SOURCE_TIER's `fittingType()`
+  so a page there is cited as a `cve_record`, Taiwanese and Japanese vendor names, actor aliases with `related_tracker` for actors that
   cross-link to EuropeTracker or MEtracker, finder names, banned words): the agent's only view of `config/`.
 
 ## 5. Metrics and region levels
@@ -4365,7 +4383,7 @@ to code that measures `Date.now()` itself is converted with `realDeadline(now, l
 | `publishUntil` | `schedule.publish_until` 11:00 | Nothing is published for D after it. An edition commit reaches GitHub only in the push of the call that made it, which never starts after 11:00 and is cut at 11:00 (§8.7). Status commits, and a withhold commit waiting to be pushed, still go out. No flag overrides it |
 | `staleAfter` | `schedule.stale_after` 08:00 | A brief published after it gets `late: true` |
 | Agent time | `budgets.agent_minutes` 30 | `attemptBudget = min(30 min, hardStop − now − 10 min)`; under 10 min the attempt is not started |
-| Repairs, attempts | `budgets.repair_rounds` 2, `attempts_max` 2 | Repairs per run, across both attempts and the §4.12 soft pass |
+| Repairs, attempts | `budgets.repair_rounds` 2, `attempts_max` 2 | Repairs per attempt, the §4.12 soft pass included; the run's `repairs` (`logs/runs.jsonl`, the chat's "N attempts, M repairs" and the `E_VALIDATION` text) adds the attempts up |
 | Publish reserve | `budgets.publish_reserve_minutes` 4 | `repairBudget`: `left = hardStop − now − 4 min`; under 2 min → 0; else `min(6 min, left)`. Tests: stop − 20 min → 6, stop − 7 → 3, stop − 5 → 0 |
 | Web fetches | `budgets.web_fetches` 40 | Stated in the prompt, counted and recorded; not a kill switch |
 | Targets | `data_only_target` 04:50, `full_target` 05:15 | Not enforced; a miss adds a stage note |
@@ -4522,7 +4540,7 @@ snapshot cited URLs with no seen text (§4.12) within `snapshotRound` (only this
 write `logs/D.evidence.json` from every transcript of the run, the pack and the snapshots; run
 `validateDraft(draft, ctx)` from memory (`ctx`: `context`, `evidence`, `metrics`, `config`, `cveList`,
 `regionsBase`, `packDates`, `fileDate: D`); log `Attempt N: E error(s), W warning(s) (S snapshot).`; write
-`logs/D.validation.json`. Then the soft pass and repairs as §4.12 sets out, on the run's shared budget:
+`logs/D.validation.json`. Then the soft pass and repairs as §4.12 sets out, on the attempt's own rounds:
 while errors (or `SNAP_*` warnings before the first drop) remain, a round is left and `repairBudget > 0`,
 render `routine/REPAIR.md` with `ERRORS_JSON` and `DEADLINE_LOCAL`, log `Attempt N: repair K for E
 error(s) and S snapshot warning(s) (CODE1, CODE2).` (distinct codes; no brackets when there are none),
@@ -4602,6 +4620,11 @@ replaced (`nextStepFor(code, date)`); unknown codes use `E_INTERNAL`'s. Below, `
 `rerun before 10:00: zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`, written out
 in full. The times come from `config/run.json`: "10:00" is `RERUN_BEFORE`, `schedule.publish_until`
 minus one hour, and "11:00" is `publish_until`; `E_CLOCK`'s "08:00" is fixed by the time base (§5.1).
+A dry run gets `DRY_RUN_NEXT_STEP` instead (`dryRunNextStepFor()`, and `NOT_COMPOSED.dryRunStep` and
+`NOT_VALID.dryRunStep` for E_PUBLISH): no `<rerun>`, needs-review path or hand publish command, the
+code's fix where its cause outlives the dry run ("before the next run" in place of "then <rerun>"), then
+"this was a dry run, so nothing needs rerunning: what it wrote is in logs/D.daily.log, drafts/D.json,
+logs/D.validation.json and logs/dry-run/D/"; `E_SIMULATED`'s line is the same in both (§0.4 row 141).
 
 | Code | Stage | Meaning | Retried | Next step |
 |---|---|---|---|---|
@@ -4619,7 +4642,7 @@ minus one hour, and "11:00" is `publish_until`; `E_CLOCK`'s "08:00" is fixed by 
 | `E_LIMIT` | draft, validate | The usage limit stopped the agent or a repair call | no | "the account's usage limit stopped the agent; the data-only edition stands; runs resume when the limit window resets" |
 | `E_AGENT`, `E_TIMEOUT` | draft | No draft; timed out or too little time | yes, if time allows | "<rerun>" |
 | `E_VALIDATION` | validate | Errors left after the repairs | yes | "<rerun>; the draft is in needs-review/D/" |
-| `E_PUBLISH` | publish | The full edition failed whole-tree validation or its push, or could not be composed | no | "the draft is valid: in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00". When the publish stage holds the not-composed note, `NOT_COMPOSED` (`lib/chat.ts`, §0.4 row 102) gives What happened "The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed." and this next step: "in /Users/kobol/Projects/CyberTracker, edit drafts/D.json to fix or drop the item whose block logs/D.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00". When it holds the not-valid note, `NOT_VALID` (§0.4 row 129) gives What happened "The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed." and this next step: "read the Validation lines in logs/D.daily.log: if they name only briefs/D.json, fix drafts/D.json, then in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR". When brief D as committed is a full or partial edition (a failed `--force` rerun, whose earlier edition stands), each of these steps gives the command as `npm run publish -- --date D --force`, since publish replaces such an edition only with `--force` (`withForce()`, §0.4 row 132) |
+| `E_PUBLISH` | publish | The full edition failed whole-tree validation or its push, or could not be composed | no | "the draft is valid: in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00". When the publish stage holds the not-composed note, `NOT_COMPOSED` (`lib/chat.ts`, §0.4 row 102) gives What happened "The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed." and this next step: "in /Users/kobol/Projects/CyberTracker, edit drafts/D.json to fix or drop the item whose block logs/D.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00". When it holds the not-valid note, `NOT_VALID` (§0.4 row 129) gives What happened "The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed." and this next step: "read the Validation lines in logs/D.daily.log: if they name only briefs/D.json, fix drafts/D.json, then in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D before 11:00; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR". When brief D as committed is a full or partial edition (a failed `--force` rerun, whose earlier edition stands), each of these steps gives the command as `npm run publish -- --date D --force`, since publish replaces such an edition only with `--force` (`withForce()`, §0.4 row 132); a dry run gives none of these commands (`dryRunStep`) |
 | `E_TOO_LATE` | data_only, publish | Past 11:00 before the data-only or the full edition | no | "nothing: nothing is published after 11:00; the next morning's run will publish" |
 | `E_SIMULATED` | validate | `--simulate-failure` | no | "nothing: this was a test of the failure path" |
 | `E_INTERNAL` | any | Unexpected exception | no | "read logs/D.daily.log, then <rerun>" |
@@ -4680,7 +4703,9 @@ The run log's fixed lines come from `LINES` in `scripts/lib/run-lines.ts`, with 
 "agent was stopped" for a child stopped by a signal, and as "Attempt N: repair K: agent ..." for a repair
 call a stop ended (stage 7); "Attempt N: no draft was written."; stage 7's
 validation and repair lines; "Attempt N: the soft pass dropped <parts>." with the parts "N unverified
-item(s) (<ids>)", "the Angle" and "N Scoreboard entry (entries)", those present, joined by " and "; the three "No retry" lines; "Dry run complete: drafts/D.json is
+item(s) (<ids>)", "the Angle" and "N Scoreboard entry (entries)", those present, joined by " and ";
+"Attempt N: the soft pass removed <paths>, left citing no item." with the removed Lead sentences' and
+raises' paths (`lead[2]`, `region_raises[0]`) joined by ", "; the three "No retry" lines; "Dry run complete: drafts/D.json is
 valid."; "Full edition published at HH:MM (<sha7>)."; "Restarting on the code synced from main
 (<sha7>)."; "Watchdog: the run passed HH:MM; ending."; and "Run ended: <outcome>.". On stderr, with exit
 2 and no record: "CT_FIXTURE_FEEDS needs --dry-run." (without `--dry-run`, outside tests), the clock
@@ -4720,7 +4745,7 @@ the run pushes touches a path outside `content/`. Cases: a 04:37 normal morning 
 order of "Commits" above, exit 0, every stage `ok`, the published summary); no draft twice (exit 3,
 records `schedule` and `retry`, data-only summary with `(E_AGENT)`); `auth` (`E_AUTH`, one attempt);
 `readToken` null (`E_AUTH` in preflight, the data-only edition still publishes, exit 3); `mcp`
-(`E_SANDBOX`, agent killed); `repair` (published, `repair_rounds` 1); `limit` (`E_LIMIT`, no retry);
+(`E_SANDBOX`, agent killed); `repair` (published, `repair_rounds` 1), with `repairs` listing the drafts written on successive `--resume` calls, across attempts; `limit` (`E_LIMIT`, no retry);
 starts at 05:35 (data-only only) and 11:05 (`skipped`, one `status:` commit); a full edition already on
 GitHub (`skipped`; `--force` replaces it; a data-only commit never follows a full one); `reject-pushes`
 at start (`E_PUSH`, nothing else tried) and after the data-only commit (`E_PUBLISH`, exit 3);
@@ -4793,7 +4818,8 @@ over the GHSA months included) keep 64 MiB (`GIT_STDOUT_MAX_BYTES`), and cut out
 `user_agent`, at most 5 redirects (`https:` only after the first). Timeouts 15 s; 30 s for `kev`, `nvd`
 and each MyJVN page; 60 s per EPSS file; 90 s for `deltaLog.json` and each delta zip. Body caps
 (`maxBytes`, `FEED_MAX_BYTES`; "MB" here is MiB): 5 MiB by default (RSS and the pages collect reads),
-20 MiB (KEV, EPSS, and the `anthropic-cvd` payload, 6.41 MB on Kobol, with the 30 s `kev` timeout), 64 MiB (`deltaLog.json`, zips); a larger body is `too_large` (CISA's all-items feed, 5,685,118
+16 MiB for each NVD page (`nvd`: 1,992 records were 6,250,875 bytes on Kobol on 2026-11-11, about 3.1 KB a
+record, so a full 2,000-record page fits more than twice), 20 MiB (KEV, EPSS, and the `anthropic-cvd` payload, 6.41 MB on Kobol, with the 30 s `kev` timeout), 64 MiB (`deltaLog.json`, zips); a larger body is `too_large` (CISA's all-items feed, 5,685,118
 bytes on Kobol on 2026-11-09, which is why `cisa-advisories` and `cisa-alerts` read the two smaller
 feeds, §0.4 row 50). Snapshots (§4.12) and the link
 check (§8.11) pass 3 MiB with `truncate: true`: a larger body is cut at 3 MiB, not an error. One retry after 2 s on a timeout,
@@ -4830,7 +4856,7 @@ each returns `{ newest, items | records, version, sha256 }`, `sha256` of the raw
 | `cvelist` | `deltaLog.json` at the SHA (freshness); the delta zips below; per-id records for the §5.3 KEV ids (new entries, and index rows from 2023-01-01 with `date_published` null; never cut), then, when the dashboard's revision differs from `state/anthropic-cvd.json`'s or completes a same-revision state with `found_n` null (as `updateAnthropicCvd()` does, §0.4 row 45), its ledger CVE ids that no state file dates (`kev-index.json` rows with `date_published`, `credit-candidates.json`, `ai-credits.json`) and no zip read today holds, newest id first; at most 500 a run in all (`perIdPlan()`, `PER_ID_MAX`). Ledger ids over the cap are counted in `by_id.over_cap`, logged (`CVE_FETCH_CAP`), noted ("CVE List: N ids over the per-id cap of 500.") and wait for the next revision (§0.4 row 57). Cached zips are reused by name when they parse; one that does not is removed and fetched once more (§0.4 row 48) | `parseDeltaLog()` (newest first: `fetchTime`, `numberOfChanges`, `new[]`, `updated[]`, `error[]` of `{ cveId, cveOrgLink, githubLink, dateUpdated }`); `parseDeltaZip()` (`lib/feeds/zip.ts`: central directory, `zlib.inflateRawSync`, stored and deflate only, no new package); `parseCveRecord()` (the fields §4.6 and §5 read) | Newest `fetchTime` within 1 day | Records passing §5.12 step 1 or the pack rules | Flood and AI-credited stale, pack degraded |
 | `epss` | The daily CSV (§4.13; host confirmed on Kobol 2026-11-09, `epssUrlFor()` names the dated file) for the newest score date E (the run's UTC date, then back, at most 3), then E − 1 and E − 7. Fallback: the API `?cve=`, batches of 100, candidates only. A cached file that does not parse is removed and fetched once more | `parseEpssCsv()`: gunzip; `#model_version:…,score_date:…`; `cve,epss,percentile` | E ≥ run's UTC date − 2 | Facts, EPSS-jump signal, `epss_movers` | Fallback: no jump signal, movers empty, block stale. Neither: facts null |
 | `ghsa` | `git clone --depth 1 --filter=blob:none --sparse` into `cache/ghsa`, sparse set `advisories/github-reviewed/YYYY/MM` from 120 days before the cutoff; then (and on later runs) `git fetch --depth 1 origin <ls-remote SHA>` (`main` when `ls-remote` failed) and `reset --hard FETCH_HEAD`, the read failing unless HEAD is that SHA. 120 s | `parseGhsa()`: OSV (`id`, `aliases`, `published`, `modified`, `withdrawn`, `database_specific.severity`, `.github_reviewed`, `affected[].ranges[].events[].fixed`, `credits`) | `HEAD` commit within 2 days | Reviewed advisories published in the window; `CRITICAL` as candidates | Fix-side GHSA figure stale; never degrades the pack |
-| `nvd` | After ranking, only when a kept candidate lacks a CNA or ADP score: `startIndex=0`, then `2000` 6 s later only when `totalResults` is over 2,000; `pubStartDate`/`pubEndDate` = the pack window in UTC with milliseconds and no zone letter (`2026-11-07T20:30:00.000`), `resultsPerPage=2000` | CVE id, NIST's own `cvssMetricV40` or `cvssMetricV31` | Never stale | Scores for records with no CNA or ADP score (§4.6) | Status only |
+| `nvd` | After ranking, only when a kept candidate lacks a CNA or ADP score: `startIndex=0`, then `2000` 6 s later only when `totalResults` is over 2,000, each page under the 16 MiB `nvd` cap; `pubStartDate`/`pubEndDate` = the pack window in UTC with milliseconds and no zone letter (`2026-11-07T20:30:00.000`), `resultsPerPage=2000`; a window over 4,000 results logs how many were not read ("nvd: 4500 records in the window, more than the 4000 two pages hold; the last 500 were not read.") | CVE id, NIST's own `cvssMetricV40` or `cvssMetricV31` | Never stale | Scores for records with no CNA or ADP score (§4.6) | Status only |
 | `twcert-tvn`, `jpcert` | RSS harness | `TVN-\d{9}` and CVE ids; JPCERT RDF, `facts.alert: true` when `alertRegions()` matches the link to Japan's `alert_patterns` | Newest within `fresh_days` | Window entries as records; JPCERT alerts are region signals (§5.11) | Status only |
 | `myjvn` | One GET of the JVNDB new-entries RSS (`jvndb_new.rdf`, about 500 items; every MyJVN API form answered 404 on Kobol, §0.4 row 39). The paged reader (`maxCountItem=50`, at most 10 pages, "MyJVN: n of N read") stays for a `myjvn?method=` URL | cheerio XML: `sec:identifier`, `sec:references`, `sec:cvss`, `dc:date` or `dcterms:issued`, `dcterms:modified` | Newest within 7 days | Entries issued in the window | Status only |
 | `anthropic-cvd` | The dashboard page `https://red.anthropic.com/2026/cvd/`, then its `data/payload.json`. When the payload is not read (timeout, HTTP error, over the cap), a cached payload from an earlier run is removed (before the deadline); the index entry's `sha256` is the payload's when it was read, else the page's, and the metrics use a cached payload only when its SHA-256 is that one (§0.4 row 45) | Revision marker, as-of date, figures (`total_verified`, `total_disclosed`, `total_fixed_in_response`; names as on the page, §5.6), CVE and GHSA ids | The page answers | A record when the revision differs from `state/anthropic-cvd.json` | Fix-side dashboard figures stale |
@@ -4848,11 +4874,23 @@ and myjvn; nvd, exchange and anthropic-cvd follow their own rule above.
 full records changed that day (2026-11-05's end-of-day zip: 5.6 MB, all 450 records published). For each
 UTC day X of the catch-up range (`catchUpRange()`: the 25 UTC days ending at the cutoff, none before
 2023-01-01) that `state/days.json` lacks, oldest first, a gap behind the newest counted day included,
-collect reads X's end-of-day zip and X+1's, or T's newest hourly zip when X+1 is the run's UTC day T. When
+collect reads X's end-of-day zip and X+1's, or T's newest hourly zip when X+1 is the run's UTC day T.
+When T − 1's end-of-day zip answers HTTP 404 (day X's end-of-day release appears about 00:33 to 00:42 UTC
+on X + 1, 08:33 to 08:42 Taipei, sometimes later, so a run from 08:00 to about 09:00 Taipei, where T = D,
+can find D − 1's missing), collect lists T − 1's tags as it does T's (`refs/tags/cve_<T−1>_*`) and reads
+T − 1's newest hourly zip in its place (`wantsStandIn()`, `zipsAsRead()`, `dayReads()`). It logs one line
+naming the missing zip and the tag read ("cvelist: 2026-11-10_delta_CVEs_at_end_of_day.zip is not out yet
+(HTTP 404); read cve_2026-11-10_2300Z instead, so the records changed after 23:00 UTC on 2026-11-10 wait
+for a later run.") and does not count cvelist as failed. With no tag list, no hourly tag for T − 1 or an
+unreadable stand-in, the feed fails as before and the line says which. An older missing end-of-day zip (a
+catch-up day) has no stand-in. When
 the newest counted day is more than 25 days before the cutoff, collect plans none (the metrics count none,
 §8.4; `backfill --catch-up` fills them, §0.4 row 52). A run at about 20:37 UTC on D − 1 counts
-X = D − 2 with T = D − 1. X+1's copy of a record wins. Day X counts only when both zips parsed, and no
-zip the run planned is left out of the metrics' cache read (§8.4), else the Flood block is stale. The pack's CVE records and the credits (§5.5) come from the same zips, which also
+X = D − 2 with T = D − 1. X+1's copy of a record wins. Day X counts only when its own end-of-day zip and
+X+1's zip (an end-of-day zip, T's hourly zip or T − 1's stand-in) parsed, and no zip the run read is left
+out of the metrics' cache read (§8.4), else the Flood block is stale. A day whose own zip was an hourly
+stand-in is never counted: its `days[]` entry in `inputs.json` keeps the planned end-of-day asset with
+`ok: false`, `cvelistFeed()` checks the zip kind again, and the next run reads its end-of-day zip. The pack's CVE records and the credits (§5.5) come from the same zips, which also
 cover every UTC day of the **record window** (§4.14: the pack window with both ends floored to the hour,
 `recordWindow()`), by the same rule (`zipPlan()`); so an afternoon `collect --date D` on Kobol, where T =
 D, reads D − 1's end-of-day zip. Zips go to
@@ -4873,8 +4911,9 @@ or one over 500 characters is dropped; at most 5 per record, normalised.
 
 **Feed status** (`sources:check` label in brackets): `ok` [`OK`] fetched, parsed, fresh; `stale`
 [`STALE`, `NODATE`] older than its rule, or no readable dates; `cvelist` is also `stale` when the zips
-read end before the record window does (X's end-of-day zip reaches X + 1 at 00:00 UTC, T's hourly zip
-its tag's hour; `zipsReach()`), with the note "Stale: the CVE List zips read end at 19:00 UTC on
+read end before the record window does (X's end-of-day zip reaches X + 1 at 00:00 UTC, an hourly zip,
+T's or T − 1's stand-in, its tag's hour, and the reach stops at the first hour no zip read covers;
+`zipsReach()`), with the note "Stale: the CVE List zips read end at 19:00 UTC on
 2026-10-13, before the record window ends at 20:00 UTC on 2026-10-13." and the gap's records in no pack
 (the next edition's window starts at this one's end; a guessed hourly tag or a late release can cause
 it, §0.4 row 55); `failed` [`FAIL`] unreachable, HTTP
@@ -5379,7 +5418,8 @@ First lines: `**CyberTracker D · dry run (<full|partial|data-only> edition)**[ 
 `**CyberTracker D · dry run (failed)** (E_CODE)`, `**CyberTracker D · dry run (skipped).** <reason>`;
 no publish time. The line `Dry run: nothing was published; files in logs/dry-run/D/` replaces the Also
 today or `Full brief:` line (published) and the `Brief:` line (data-only); in the failed format `Dry run:
-nothing was published.` replaces the `Site shows` line. Line limits are unchanged.
+nothing was published.` replaces the `Site shows` line, and there is no needs-review line. `Next step:`
+takes the dry-run line (§8.2 "Error codes and next steps"). Line limits are unchanged.
 
 **`npm run chat -- --date D`** prints D's chat edition from `content/` alone: the last run's records in
 `status/D.json` (the last `schedule`, `manual` or `dry_run` record and any `retry` after it) and the
@@ -6172,12 +6212,20 @@ numbers this PR shows (§0.3).
 validate within budget; the timed dry run fits the morning; a forced failure still leaves a data-only
 edition.
 
-**Status on 2026-11-10:** in progress on draft PR #5. Items 2 to 4 and 7, and the code of item 1, were
-built and tested in the cloud container (§0.4 rows 67 to 94), then an independent review's findings and
-the build's known items were fixed there (rows 95 to 120). On Kobol, `--help` of CLI 2.1.316 lists
-every §9.4 flag and `file -L` says arm64. Still to do on Kobol, after JL's keychain step: the
-transcript re-record (item 1), `agent:check -- --all` (item 5) and the dry runs (item 6), with their
-report (Kobol, P3).
+**Status on 2026-11-11:** in progress on draft PR #5. Items 2 to 4 and 7, and the code of item 1, were
+built and tested in the cloud container (§0.4 rows 67 to 94); an independent review's findings and the
+build's known items were then fixed there (rows 95 to 120), and two more fix passes closed the edge
+cases those fixes left (rows 121 to 132). On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
+`file -L` says arm64. On 2026-11-11, from 08:06 to 08:31 Taipei (00:06 to 00:31 UTC), after JL's
+keychain step, the Kobol checks ran (report `docs/reports/2026-11-11-p3-dry-runs.md`): `npm run check`
+passed on macOS, `agent:check -- --all` passed 13 of 13 (item 5; row 133 then matched CLI 2.1.316's
+deny-rule wording), the transcript was re-recorded on the pinned CLI (item 1), and both backdated dry
+runs and the forced failure passed (item 6). The timed dry run fell back to the data-only edition with
+`E_VALIDATION`, after collect failed `cvelist` and `nvd`. A fourth fix pass in the container fixed its
+causes (rows 134 to 141), gave the forced failure a date of its own (row 142) and recorded the Microsoft
+count check (row 143). Still to do on Kobol: `agent:check -- --canary` again after this pass's
+`PROMPT.md` changes (§9.5), and the timed dry run again, with §4.12's soft-gate measures, added to the
+report.
 
 1. JL's keychain step (§9.6). Then Europe's Kobol harness: `scripts/lib/keychain.ts`;
    `scripts/lib/agent.ts` rewritten as §9.4 (Europe's fixed environment, the keychain token,
@@ -6197,7 +6245,9 @@ report (Kobol, P3).
 6. Dry runs, labelled tests of volume and timing that carry hindsight, inputs rebuilt as of each date
    (§8.3, §8.4): 2026-10-14 (Patch Tuesday), then 2026-10-22 on top of it, in the dry-run tree
    `logs/dry-run/tree` (a copy of `content/` that gains each `logs/dry-run/D/` and ends with both
-   editions, for P4); a forced failure on 2026-10-22; the timed dry run of today through `daily.sh`.
+   editions, for P4); a forced failure on 2026-10-21, a date no other dry run uses, so it replaces no other
+   run's status file, transcripts or `runs.jsonl` rows (§0.4 row 142); the timed dry run of today through
+   `daily.sh`.
    Past-date dry runs keep the real clock, so their editions record their real publish times and `late:
    true`, which P4 must not treat as a site bug (§0.4 row 76). The dry runs may run from the P3 worktree
    with `S=<worktree>/scripts/daily.sh` (after `/opt/homebrew/bin/npm ci` there): no scheduled task exists
@@ -6212,7 +6262,7 @@ S=/Users/kobol/Projects/CyberTracker/scripts/daily.sh
 mkdir -p logs/dry-run && rm -rf logs/dry-run/tree && cp -R content logs/dry-run/tree
 for d in 2026-10-14 2026-10-22; do CT_CONTENT_DIR=logs/dry-run/tree zsh $S --dry-run --date $d --no-deadline && cp -R logs/dry-run/$d/. logs/dry-run/tree/; done
 CT_CONTENT_DIR=logs/dry-run/tree npm run validate:all                     # exit 0: both editions
-zsh $S --dry-run --date 2026-10-22 --no-deadline --simulate-failure       # E_SIMULATED; data-only stands
+zsh $S --dry-run --date 2026-10-21 --no-deadline --simulate-failure       # E_SIMULATED; data-only stands
 zsh $S --dry-run --no-deadline                                            # the timed dry run: today
 ```
 
@@ -6417,7 +6467,16 @@ Rules:
    is reported only when it is the story, never followed; never open `BLOCKED_HOSTS`, `.onion` or `.i2p`
    addresses, paste sites, Telegram, shorteners or exploit repositories, and never clone, install or run
    anything; cite only URLs seen in the pack, search results or a fetch, never invented or rebuilt, no
-   archive or redirect wrappers; victims, attribution, dangerous material, quotes and voice per
+   archive or redirect wrappers; source types fit the publisher (`STYLE.md` §7), and a page on a domain in
+   the context's `config.tiers.cve_record` is a `cve_record`, never a `vendor_advisory`, which is only the
+   affected vendor's own page; flaw evidence fits its basis: `vendor_confirmed` cites the vendor's own
+   domain, `cert_confirmed` a national CERT's page, from a CERT (JPCERT/CC, TWCERT/CC, NCSC and the like)
+   or CISA, its KEV catalog included, and no other government body, `news_reported` a newsroom; incident
+   status as VICTIM_STATUS checks it: `confirmed` needs a tier 1 `victim`, `regulator_filing` or
+   `government` source in `status_source_ids`, never a newsroom; `reported` a newsroom there; an
+   attacker's claim alone is `claimed`; a critical flaw above `watch` needs its vendor to confirm the
+   first CVE in `cve_ids` (its CNA, its own advisory in `flaw_evidence`, or a cited reviewed GitHub
+   advisory page), else `watch` (VENDOR_CONFIRMED); victims, attribution, dangerous material, quotes and voice per
    `STYLE.md` §8 to §10; numbers in prose only from cited sources or `quotable` values, verbatim, with
    their denominators, and the Gap headline never rewritten; every item `mentionsAnthropic()` matches
    carries the Anthropic line, set by script (§4.2, §4.12); a recent item marked `withheld` is left out,
@@ -6631,13 +6690,14 @@ strings cut to their schema limits (row 8), and the B.2, B.3, B.6 and feed-domai
 blocked-host table follows `lib/vocab.ts` (row 12). P2 changed `ai-finders.json` to version 2 (row 32),
 `vendors.json` to version 2 (rows 38 and 60), `source-tiers.json` to version 2 (row 50),
 `annotations.json` (row 60; it carries no version, §4.11) and the registry after Kobol's reads (rows 39
-and 50); SEED-CONFIG.md still holds the seeds as they were.
+and 50); P3 flagged `cisa` and `cisa-kev` with `national_cert` (row 137, `source-tiers.json` still
+version 2); SEED-CONFIG.md still holds the seeds as they were.
 
 | | File | What it holds | Seed, and what is checked later |
 |---|---|---|---|
 | B.1 | `vendors.json` | Vendors: country (parent brand's HQ), `widely_deployed`, aliases, CNA short names, advisory domains | 213 vendors: 162 widely deployed, 27 TW, 26 JP, 19 community projects (`country` null); TW and JP first. `cna` lists checked in P2 against the CVE Program's partner list and the clone's `assignerShortName` values: version 2 gives 68 more vendors a list (126 of 213; `schneider-electric` `["schneider"]`, §0.4 row 38). Domains and HQs, done in P2 session 1 (§0.4 row 60): of 241 domains across the 213 vendors, 178 answered 2xx or 3xx on their own host, 25 gave a 403 bot wall, 3 a 429 and about 20 answered only on www; the five "Verify" notes are settled (AVTECH stays TW, its site names no address; Digiever TW, "a Taiwan-based manufacturer"; Merit LILIN TW, founded in Taiwan in 1980; FXC JP, Taito, Tokyo; Sky JP, head offices in Tokyo and Osaka), and three redirect targets no other vendor holds are added (`global.brother`, `ruijie.com`, `openssh.org`). Version 2, `updated` 2026-11-10 |
 | B.2 | `ai-finders.json` | The AI-credit matcher: `fields`, `prefilter`, `strip`, `lab_context`, finders in match order, each with `examples` that CI runs | `updated` 2026-11-07; fields `cna.credits`, `adp.credits`, `ghsa.credits`; 13 finders: `anthropic-claude`, `anthropic-claude-code`, `openai-codex`, `openai-chatgpt`, `google-big-sleep`, `google-gemini`, `xbow`, `aisle`, `depthfirst`, `zeropath`, `aixcc`, `vulnhuntr`, `generic-ai-assisted` (always last). P1 applies the D.7 `strip` fix as it writes the file (§0.4 row 7). P2's Verify, done: the year's credits gave version 2 (`updated` 2026-11-09), where `aisle` adds "Aisle Research" and "Aisle.com" and `aixcc` "Team-Atlanta" (146 more records, §0.4 row 32); GHSA credits, read from REST on Kobol, are GitHub logins, so `ghsa_source` stays `git` (§0.4 row 40) |
-| B.3 | `source-tiers.json` | Publishers (tier, kind, country, domains, `state_label`, `sole_newsroom_for_critical`) and `github.tier1_paths` | Tier 1: 6 registries, 48 governments, CERTs and regulators, 4 PRC state sources (`state_label` "PRC state source"), 46 research labs (`kind` research); tier 2: 55 newsrooms (The Hacker News alone has `sole_newsroom_for_critical` false); tier 3: 29 never cited for facts (state media labelled "PRC state media" or "Russian state media"). B.1's advisory domains are implicit tier 1. P2 session 1's Verify (§0.4 row 50): the National Cybersecurity Office answers at www.cyber.go.jp (www.nisc.go.jp redirects there); the Administration for Cyber Security at moda.gov.tw, with acs.gov.tw redirecting to moda.gov.tw/ACS/ (`moda-acs` adds `acs.gov.tw`); TDnet at www.release.tdnet.info (bare release.tdnet.info does not answer; `release.tdnet.info` matches it as a parent domain); CVERC www.cverc.org.cn, xbow.com and aisle.com answer (aisle.ai too). Version 2, `updated` 2026-11-10: `mandiant` adds `cloudblog.withgoogle.com/topics/threat-intelligence` (`gtig`'s feed) and `google-security` `feeds.feedburner.com/googleonlinesecurityblog` |
+| B.3 | `source-tiers.json` | Publishers (tier, kind, country, domains, `state_label`, `sole_newsroom_for_critical`, `national_cert` where true) and `github.tier1_paths` | Tier 1: 6 registries, 48 governments, CERTs and regulators, 4 PRC state sources (`state_label` "PRC state source"), 46 research labs (`kind` research); tier 2: 55 newsrooms (The Hacker News alone has `sole_newsroom_for_critical` false); tier 3: 29 never cited for facts (state media labelled "PRC state media" or "Russian state media"). B.1's advisory domains are implicit tier 1. P2 session 1's Verify (§0.4 row 50): the National Cybersecurity Office answers at www.cyber.go.jp (www.nisc.go.jp redirects there); the Administration for Cyber Security at moda.gov.tw, with acs.gov.tw redirecting to moda.gov.tw/ACS/ (`moda-acs` adds `acs.gov.tw`); TDnet at www.release.tdnet.info (bare release.tdnet.info does not answer; `release.tdnet.info` matches it as a parent domain); CVERC www.cverc.org.cn, xbow.com and aisle.com answer (aisle.ai too). Version 2, `updated` 2026-11-10: `mandiant` adds `cloudblog.withgoogle.com/topics/threat-intelligence` (`gtig`'s feed) and `google-security` `feeds.feedburner.com/googleonlinesecurityblog`. P3 (§0.4 row 137, still version 2): `cisa-kev` and `cisa` carry `national_cert: true` |
 | B.4 | `regions.json` | US, EU, TW, JP (countries, agencies, `alert_patterns`, certs, home vendor country), the seven level rules (§5.11), `editor_raise` | EU is the EU 27, Iceland, Liechtenstein, Norway, Switzerland and the UK (Ukraine and candidate states left out). `review_due` 2026-12-02 in the seed; `p5-golive` sets it to about four weeks after the first supervised morning (§10 P5). Alert patterns only for CISA directives, CERT-FR alerts and JPCERT alerts (JPCERT's reach the signals as pack records from P2, §5.11). Other agencies' alert patterns are added only once a real alert matches and an ordinary advisory does not; P2 session 1 read none of their alert pages, so none is added, they cannot fire `agency-alert`, and Methodology says so (P4). Session 1 counted JPCERT's (§5.11) |
 | B.5 | `annotations.json` | Dated chart markers | `nvd-scoring-stop` 2026-04-15 (data change), `us-kev-three-day-deadline` 2026-06-10 (policy), `kernel-batch-2026-07` 2026-07-19 to 07-20 (about 430 records). P2 session 1's Verify (§0.4 row 60): `nvd-scoring-stop` stays (NVD's notice "April 15, 2026: NIST Updates NVD Operations to Address Record CVE Growth" at https://nvd.nist.gov/general/news: priority CVEs enriched, KEV first, no separate score where the CNA gave one); `us-kev-three-day-deadline` is CISA BOD 26-04 "Prioritizing Security Updates Based on Risk", issued 2026-06-10, label "BOD 26-04: US 3-day KEV deadline", `source_url` https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk (the three-day timeline is its forensic-triage tier); `kernel-batch-2026-07` says "The Linux kernel CNA published 429 CVE records on 19 July and 9 on 20 July." (the clone at `67c39b1`), which session 2 confirms from `content/state/days.json` after the backfill. Add `glasswing-launch` (kind `event`, panels `ai` and `window`) once its date is confirmed from Anthropic's announcement (not read in P2) |
 | B.6 | `actors.json` | Canonical actor names, aliases each citing a MITRE ATT&CK group page, `related_tracker`; never a nexus | 25 actors; `europe`: apt28, apt29, sandworm, turla, noname057-16; `me`: apt35, muddywater, cyberav3ngers. Entries without a `mitre_id` start with no aliases. Verify in P5: each alias on its MITRE page (drop any that is not); `related_tracker` kept only where the sibling's site covers the actor (Claude reads the sites) |
