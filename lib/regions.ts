@@ -18,7 +18,7 @@ import { publisherFor } from "./sources";
 import { jaccard } from "./text";
 import { normalizeUrl } from "./urls";
 import {
-  COUNTRY_CODES, LEVELLED_REGIONS, REGION_LEVEL_INFO, REGION_LEVELS, REGION_SIGNAL_TYPES, type CountryCode, type LevelledRegion,
+  COUNTRY_CODES, LEVELLED_REGIONS, REGION_LEVEL_INFO, REGION_LEVELS, REGION_SIGNAL_TYPES, WITHHELD_MARK, type CountryCode, type LevelledRegion,
   type RegionLevel, type RegionRuleType,
 } from "./vocab";
 
@@ -235,6 +235,76 @@ function signalTitle(text: string, fallback: string): string {
 
 type SignalDraft = Omit<RegionSignal, "id">;
 
+/** The pack record fields recordSignals() reads. */
+export type SignalRecord = Pick<Pack["records"][number], "url" | "title" | "text" | "date" | "record_id" | "cve_ids">;
+
+/**
+ * The region signals one pack record gives (§5.11), as collectSignals() builds them, before ids: for each
+ * region in regions.json order, an `agency_alert` when the record's publisher (publisherFor() on its URL)
+ * is one of the region's `agencies` and its normalised URL matches one of the region's `alert_patterns`
+ * (alertRegions(), ruling R36), and a `cert_exploitation` when that publisher is one of the region's
+ * `certs` and its sanitised title or text matches CERT_EXPLOITATION_RE. None when the Taipei date of the
+ * record's `date` is outside [date − N_max, date]. `home_vendor_kev` never comes from a record: it is read
+ * from the KEV catalog or kev-index.json.
+ */
+export function recordSignals(rec: SignalRecord, config: RegionsConfig, date: string): SignalDraft[] {
+  const d = taipeiDay(rec.date);
+  if (d === null || d < addDays(date, -maxLookbackDays(config.regions)) || d > date) return [];
+  const publisher = publisherFor(rec.url, "government", { sourceTiers: config.tiers, vendors: config.vendors }).publisher;
+  const alerts = alertRegions(rec.url, publisher, config);
+  const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
+  const out: SignalDraft[] = [];
+  for (const r of config.regions.regions) {
+    const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
+    if (alerts.includes(r.code)) out.push({ type: "agency_alert", ...base });
+    if (exploited && r.certs.includes(publisher)) out.push({ type: "cert_exploitation", ...base });
+  }
+  return out;
+}
+
+/**
+ * True when the pack record gives a region signal (recordSignals() is not empty): collect keeps such a
+ * record whole under the pack's caps (§4.14 Caps), since both editions compute the region levels from the
+ * pack it writes, and a level must not fall because a record was cut for size.
+ */
+export function givesRegionSignal(rec: SignalRecord, config: RegionsConfig, date: string): boolean {
+  return recordSignals(rec, config, date).length > 0;
+}
+
+/** The pack item fields itemSignals() reads. */
+export type SignalItem = Pick<Pack["items"][number], "url" | "publisher" | "title" | "snippet" | "outlet" | "published_at" | "cve_ids">;
+
+/**
+ * The region signals one pack item gives (§5.11), as collectSignals() builds them, before ids: for each
+ * region in regions.json order, an `agency_alert` when the item's publisher (as collect stamped it) is one
+ * of the region's `agencies` and its normalised URL matches one of the region's `alert_patterns`
+ * (alertRegions(), ruling R36), and a `cert_exploitation` when that publisher is one of the region's
+ * `certs` and its sanitised title or snippet matches CERT_EXPLOITATION_RE. None when the Taipei date of
+ * the item's `published_at` is outside [date − N_max, date].
+ */
+export function itemSignals(it: SignalItem, config: RegionsConfig, date: string): SignalDraft[] {
+  const d = taipeiDay(it.published_at);
+  if (d === null || d < addDays(date, -maxLookbackDays(config.regions)) || d > date) return [];
+  const alerts = alertRegions(it.url, it.publisher, config);
+  const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`));
+  const out: SignalDraft[] = [];
+  for (const r of config.regions.regions) {
+    const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
+    if (alerts.includes(r.code)) out.push({ type: "agency_alert", ...base });
+    if (exploited && r.certs.includes(it.publisher)) out.push({ type: "cert_exploitation", ...base });
+  }
+  return out;
+}
+
+/**
+ * True when the pack item gives a region signal (itemSignals() is not empty): collect's item caps
+ * (capItems()) and size caps (buildPack()) never cut such an item (§4.14 Caps), for the same reason as
+ * givesRegionSignal() for records.
+ */
+export function itemGivesRegionSignal(it: SignalItem, config: RegionsConfig, date: string): boolean {
+  return itemSignals(it, config, date).length > 0;
+}
+
 /** Signal ids order: by edition date, then counter (sig-20261101-3 before sig-20261108-1). */
 export function compareSignalIds(a: string, b: string): number {
   const pa = /^sig-(\d{8})-(\d+)$/.exec(a);
@@ -270,32 +340,11 @@ export function collectSignals(
   const from = addDays(date, -maxLookbackDays(config.regions));
   const inSpan = (d: string | null): d is string => d !== null && d >= from && d <= date;
   const byType: Record<RegionSignal["type"], SignalDraft[]> = { agency_alert: [], home_vendor_kev: [], cert_exploitation: [] };
-  const pubCfg = { sourceTiers: config.tiers, vendors: config.vendors };
 
-  for (const it of pack?.items ?? []) {
-    const d = taipeiDay(it.published_at);
-    if (!inSpan(d)) continue;
-    const alerts = alertRegions(it.url, it.publisher, config);
-    for (const r of config.regions.regions) {
-      const base = { region: r.code, date: d, publisher: it.publisher, url: normalizeUrl(it.url), title: signalTitle(it.title, it.outlet), cve_ids: [...it.cve_ids] };
-      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
-      if (r.certs.includes(it.publisher) && CERT_EXPLOITATION_RE.test(sanitize(`${it.title} ${it.snippet}`))) {
-        byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
-      }
-    }
-  }
-  for (const rec of pack?.records ?? []) {
-    const d = taipeiDay(rec.date);
-    if (!inSpan(d)) continue;
-    const publisher = publisherFor(rec.url, "government", pubCfg).publisher;
-    const alerts = alertRegions(rec.url, publisher, config);
-    const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
-    for (const r of config.regions.regions) {
-      const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
-      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
-      if (exploited && r.certs.includes(publisher)) byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
-    }
-  }
+  // Items through itemSignals() and records through recordSignals(), the predicates collect's caps read
+  // (itemGivesRegionSignal(), givesRegionSignal()), so the caps and the signals cannot drift.
+  for (const it of pack?.items ?? []) for (const s of itemSignals(it, config, date)) byType[s.type].push(s);
+  for (const rec of pack?.records ?? []) for (const s of recordSignals(rec, config, date)) byType[s.type].push(s);
 
   const kevRows: { cve: string; added: string; vendorProject: string; title: string }[] = kevCatalog
     ? kevCatalog.vulnerabilities.map((v) => ({ cve: v.cveID, added: v.dateAdded, vendorProject: v.vendorProject, title: v.vulnerabilityName }))
@@ -442,7 +491,8 @@ const severityOk = (ctx: EvalContext, item: RegionItem): boolean =>
 /**
  * The publishers of an item as §4.12 counts them: the distinct `publisher` values of its tier 1 and 2
  * sources (`source_ids`), syndicated copies folded into one (the same publisher, or titles, `title_en` if
- * present, whose word sets have Jaccard similarity ≥ 0.8).
+ * present, whose word sets have Jaccard similarity ≥ 0.8). A WITHHELD_MARK title never folds, so a withhold
+ * leaves the count, and every region level, as it was.
  */
 export function publisherCount(item: Pick<RegionItem, "source_ids" | "sources">): number {
   const list = [...new Set(item.source_ids)].map((id) => item.sources.get(id)).filter((s): s is RegionSource => !!s && s.tier <= 2);
@@ -452,7 +502,11 @@ export function publisherCount(item: Pick<RegionItem, "source_ids" | "sources">)
     for (let j = i + 1; j < list.length; j += 1) {
       const a = list[i]!;
       const b = list[j]!;
-      if (a.publisher === b.publisher || jaccard(a.title_en ?? a.title, b.title_en ?? b.title) >= 0.8) parent[find(i)] = find(j);
+      const ta = a.title_en ?? a.title;
+      const tb = b.title_en ?? b.title;
+      // A withhold's WITHHELD_MARK titles are not syndicated copies (§4.10; publishersOfItem() in lib/rules/shared.ts).
+      const copies = ta !== WITHHELD_MARK && tb !== WITHHELD_MARK && jaccard(ta, tb) >= 0.8;
+      if (a.publisher === b.publisher || copies) parent[find(i)] = find(j);
     }
   }
   return new Set(list.map((_, i) => find(i))).size;

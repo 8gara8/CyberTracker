@@ -68,12 +68,26 @@ describe("fixtures/feeds/index.json", () => {
     for (const [url, why] of world) expect(index[url], `${why}: ${url}`).toBeDefined();
   });
 
-  it("holds nothing else except the per-id records the no-state run asks for, all answered 404", () => {
+  it("holds nothing else except the per-id records the no-state run asks for (all answered 404) and the pipeline draft's pages", () => {
     const extra = Object.keys(index).filter((u) => !world.has(u));
-    expect(extra.length).toBeGreaterThan(0);
-    for (const u of extra) {
+    const pages = extra.filter((u) => index[u]!.file?.startsWith("pages/"));
+    const records = extra.filter((u) => !pages.includes(u));
+    expect(records.length).toBeGreaterThan(0);
+    for (const u of records) {
       expect(u.startsWith(`https://raw.githubusercontent.com/${REPOS.cvelist}/${cveMain}/cves/`), u).toBe(true);
       expect(index[u]!.status).toBe(404);
+    }
+    // P3: the sample pages the pipeline draft cites (fixtures/agent/drafts/2026-10-14.json) and the two
+    // cve.org record pages of the 2026-10-14 data-only edition, served as HTML so snapshots and the link
+    // check find them.
+    const draft = JSON.parse(fs.readFileSync(path.join(ROOT, "fixtures", "agent", "drafts", "2026-10-14.json"), "utf8")) as {
+      sources: { url: string }[];
+    };
+    const cited = new Set(draft.sources.map((s) => s.url));
+    expect(pages.length).toBeGreaterThan(0);
+    for (const u of pages) {
+      expect(index[u]!.content_type, u).toBe("text/html; charset=utf-8");
+      expect(cited.has(u) || /^https:\/\/www\.cve\.org\/CVERecord\?id=CVE-\d{4}-\d{4,}$/.test(u), u).toBe(true);
     }
   });
 

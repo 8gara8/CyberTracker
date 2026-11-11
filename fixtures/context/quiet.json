@@ -68,7 +68,7 @@
       },
       {
         "key": "window.kev_pace_ratio",
-        "label": "KEV additions, pace vs 2023–24",
+        "label": "KEV additions, pace vs 2023–24, 26 weeks",
         "display": "1.9",
         "as_of": "2026-10-09"
       },
@@ -86,13 +86,13 @@
       },
       {
         "key": "flood.vs_reference_ratio",
-        "label": "new CVE records, pace vs 2023–24",
+        "label": "new CVE records, pace vs 2023–24, 13 weeks",
         "display": "5.2",
         "as_of": "2026-10-09"
       },
       {
         "key": "flood.vs_reference_ex_kernel_ratio",
-        "label": "new CVE records excluding the Linux kernel, pace vs 2023–24",
+        "label": "new CVE records excluding the Linux kernel, pace vs 2023–24, 13 weeks",
         "display": "5.0",
         "as_of": "2026-10-09"
       },
@@ -145,13 +145,13 @@
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.w26.n_day_n",
-        "label": "n-day race share, 26 weeks",
+        "key": "window.w26.n_day_share",
+        "label": "n-day race share (listed 2 to 30 days after), 26 weeks",
         "display": "39%",
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.w26.cohort_n",
+        "key": "window.w26.late_listed_n",
         "label": "listed 31 to 365 days after, 26 weeks",
         "display": "37",
         "as_of": "2026-10-09"
@@ -194,12 +194,12 @@
       },
       {
         "key": "window.w26.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 26 weeks",
+        "label": "old flaws newly listed (more than 365 days old), 26 weeks",
         "display": "22",
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.reference.old_listed_n",
+        "key": "window.reference.old_listed_pace_26w",
         "label": "2023–24 pace of old flaws newly listed, 26 weeks",
         "display": "23",
         "as_of": "2026-10-09"
@@ -253,13 +253,13 @@
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.w13.n_day_n",
-        "label": "n-day race share, 13 weeks",
+        "key": "window.w13.n_day_share",
+        "label": "n-day race share (listed 2 to 30 days after), 13 weeks",
         "display": "37%",
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.w13.cohort_n",
+        "key": "window.w13.late_listed_n",
         "label": "listed 31 to 365 days after, 13 weeks",
         "display": "23",
         "as_of": "2026-10-09"
@@ -308,12 +308,12 @@
       },
       {
         "key": "window.w13.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 13 weeks",
+        "label": "old flaws newly listed (more than 365 days old), 13 weeks",
         "display": "13",
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.reference.old_listed_n",
+        "key": "window.reference.old_listed_pace_13w",
         "label": "2023–24 pace of old flaws newly listed, 13 weeks",
         "display": "11",
         "as_of": "2026-10-09"
@@ -361,13 +361,13 @@
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.reference.n_day_n",
-        "label": "n-day race share, 2023–24",
+        "key": "window.reference.n_day_share",
+        "label": "n-day race share (listed 2 to 30 days after), 2023–24",
         "display": "33%",
         "as_of": "2026-10-09"
       },
       {
-        "key": "window.reference.cohort_n",
+        "key": "window.reference.late_listed_n",
         "label": "listed 31 to 365 days after, 2023–24",
         "display": "84",
         "as_of": "2026-10-09"
@@ -410,7 +410,7 @@
       },
       {
         "key": "window.reference.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 2023–24",
+        "label": "old flaws newly listed (more than 365 days old), 2023–24",
         "display": "91",
         "as_of": "2026-10-09"
       },
@@ -845,6 +845,14 @@
         "tass.com",
         "tass.ru",
         "rt.com"
+      ],
+      "cve_record": [
+        "cve.org",
+        "cve.mitre.org",
+        "nvd.nist.gov",
+        "github.com",
+        "twcert.org.tw",
+        "jvn.jp"
       ]
     },
     "home_vendors": {

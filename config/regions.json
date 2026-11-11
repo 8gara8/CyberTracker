@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "version": 1,
-  "updated": "2026-11-07",
+  "version": 2,
+  "updated": "2026-11-11",
   "review_due": "2026-12-02",
   "regions": [
     {
@@ -19,7 +19,7 @@
         "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO", "CH", "GB"
       ],
       "agencies": ["cert-eu", "ncsc-uk", "bsi", "anssi"],
-      "alert_patterns": ["cert\\.ssi\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+"],
+      "alert_patterns": ["cert\\.ssi\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+", "cert\\.cyber\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+"],
       "certs": [],
       "home_vendor_country": null
     },

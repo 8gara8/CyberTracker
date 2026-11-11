@@ -10,10 +10,11 @@ import { cvdPayloadUrl } from "@/lib/feeds/anthropic-cvd";
 import { cachePaths } from "@/lib/feeds/cache";
 import { epssUrlFor } from "@/lib/feeds/epss";
 import { endOfDayAsset } from "@/lib/feeds/github";
-import { fetchBudget, type FetchResult } from "@/lib/feeds/http";
+import { DEFAULT_MAX_BYTES, FEED_MAX_BYTES, fetchBudget, type FetchOptions, type FetchResult } from "@/lib/feeds/http";
+import { nvdUrls } from "@/lib/feeds/nvd";
 import { sha256Hex } from "@/lib/json";
 import type { FetchedFeed } from "@/lib/schema/registry";
-import { cacheWrite, readCvd, readEpss, readKev, readRss, readZip, type FeedCtx } from "@/scripts/lib/feeds";
+import { cacheWrite, readCvd, readEpss, readKev, readNvd, readRss, readZip, type FeedCtx } from "@/scripts/lib/feeds";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FEEDS = path.join(ROOT, "fixtures", "feeds");
@@ -28,26 +29,33 @@ afterEach(() => {
 /** An answer: a body (status 200), an HTTP status without a body, or an error class. */
 type Answer = Buffer | number | "timeout";
 
-/** A FeedCtx over a fresh temporary root whose fetcher answers from `answers` (anything else is a dns error); `fetched` lists every URL asked. */
+/**
+ * A FeedCtx over a fresh temporary root whose fetcher answers from `answers` (anything else is a dns error); `fetched` lists every
+ * URL asked, `caps` the body cap each was asked with. A body over the cap is `too_large`, as fetchFeed() answers.
+ */
 function harness(answers: Record<string, Answer>) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ct-readers-"));
   roots.push(root);
   const fetched: string[] = [];
+  const caps = new Map<string, number>();
   const log: string[] = [];
-  const fetch = async (url: string): Promise<FetchResult> => {
+  const fetch = async (url: string, opts?: FetchOptions): Promise<FetchResult> => {
     fetched.push(url);
+    const maxBytes = opts?.maxBytes ?? DEFAULT_MAX_BYTES;
+    caps.set(url, maxBytes);
     const a = answers[url];
     const base = { finalUrl: url, detail: null, durationMs: 1, attempts: 1 };
     if (a === undefined) return { ...base, ok: false, status: null, body: null, contentType: null, error: "dns" };
     if (a === "timeout") return { ...base, ok: false, status: null, body: null, contentType: null, error: "timeout" };
     if (typeof a === "number") return { ...base, ok: false, status: a, body: null, contentType: "text/html", error: `http_${a}` };
+    if (a.length > maxBytes && !opts?.truncate) return { ...base, ok: false, status: 200, body: null, contentType: null, error: "too_large" };
     return { ...base, ok: true, status: 200, body: a, contentType: url.endsWith(".json") ? "application/json" : "application/xml", error: null };
   };
   const ctx: FeedCtx = {
     fetch: fetch as FeedCtx["fetch"], budget: fetchBudget(240_000), deadline: Date.now() + 60_000, now: Date.now,
     log: (l) => log.push(l), paths: cachePaths(root), sleep: async () => {},
   };
-  return { root, ctx, fetched, log, paths: ctx.paths };
+  return { root, ctx, fetched, caps, log, paths: ctx.paths };
 }
 
 /** A registry entry of `kind` with every key written out. */
@@ -68,6 +76,49 @@ describe("readRss", () => {
     expect(taipei.data!.newest).toBe("2026-10-13T10:12:00.000Z");
     const utc = await readRss(entry({ id: "ithome-security", kind: "rss", url, date_zone: null }), h.ctx);
     expect(utc.data!.newest).toBe("2026-10-13T18:12:00.000Z");
+  });
+});
+
+// ── NVD: its own body cap and the two pages (Kobol's dry run of 2026-11-11) ─────────────────────
+
+describe("readNvd: NVD's own body cap and its two pages", () => {
+  const nvd = entry({ id: "nvd", kind: "nvd", url: "https://services.nvd.nist.gov/rest/json/cves/2.0", priority: 3, fresh_days: 30 });
+  const window = { start: "2026-11-10T04:30:00+08:00", end: "2026-11-11T04:30:00+08:00" };
+  const [p1, p2] = nvdUrls(nvd.url, window) as [string, string];
+  /** The fixture page's first record (NIST's own scores), its description padded to about 3.1 KB a record. */
+  const template = (JSON.parse(read("nvd/page-1.json").toString("utf8")) as { vulnerabilities: { cve: Record<string, unknown> }[] }).vulnerabilities[0]!.cve;
+  const filler = "A sample record description, padded to the length of a real one in the window. ".repeat(26);
+  /** An NVD page of `n` records from `from`, about 3.1 KB each as on Kobol (1,992 records in 6,250,875 bytes on 2026-11-11). */
+  const page = (total: number, from: number, n: number) => Buffer.from(JSON.stringify({
+    resultsPerPage: n, startIndex: from, totalResults: total, format: "NVD_CVE", version: "2.0",
+    vulnerabilities: Array.from({ length: n }, (_, i) => ({
+      cve: { ...template, id: `CVE-2026-${200000 + from + i}`, descriptions: [{ lang: "en", value: filler }] },
+    })),
+  }));
+
+  it("reads a full page of 2,000 records, over the 5 MiB default, under its own cap", async () => {
+    const full = page(2000, 0, 2000);
+    expect(full.length).toBeGreaterThan(DEFAULT_MAX_BYTES);
+    const h = harness({ [p1]: full });
+    const r = await readNvd(nvd, h.ctx, window);
+    expect(r).toMatchObject({ ok: true, error: null });
+    expect(r.data!.total).toBe(2000);
+    expect(r.data!.scores.size).toBe(2000);
+    expect(h.caps.get(p1)).toBe(FEED_MAX_BYTES.nvd);
+    expect(FEED_MAX_BYTES.nvd).toBeGreaterThanOrEqual(2 * full.length);
+  });
+
+  it("reads the second page under the same cap, and logs when the window holds more than the two pages read", async () => {
+    const h = harness({ [p1]: page(4500, 0, 3), [p2]: page(4500, 2000, 3) });
+    const r = await readNvd(nvd, h.ctx, window);
+    expect(h.fetched).toEqual([p1, p2]);
+    expect(h.caps.get(p2)).toBe(FEED_MAX_BYTES.nvd);
+    expect(r.data!.scores.size).toBe(6);
+    expect(h.log).toContain("nvd: 4500 records in the window, more than the 4000 two pages hold; the last 500 were not read.");
+    const within = harness({ [p1]: page(4000, 0, 3), [p2]: page(4000, 2000, 3) });
+    await readNvd(nvd, within.ctx, window);
+    expect(within.fetched).toEqual([p1, p2]);
+    expect(within.log.filter((l) => l.startsWith("nvd:"))).toEqual([]);
   });
 });
 

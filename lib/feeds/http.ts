@@ -14,6 +14,8 @@ export interface FetchOptions {
   timeoutMs?: number;
   maxBytes?: number;
   accept?: string;
+  /** Sent as Accept-Language only when set (snapshots send a browser-like one, §4.12; plan A11). Fixture mode ignores headers. P3 S0. */
+  acceptLanguage?: string;
   userAgent?: string;
   /** Retry once after this delay on a timeout, network error or 5xx. 0 turns the retry off. */
   retryDelayMs?: number;
@@ -21,6 +23,12 @@ export interface FetchOptions {
   truncate?: boolean;
   /** Epoch ms: each attempt's timeout is min(timeoutMs, deadline − now), and no attempt starts past it (`timeout`). P2 WP1. */
   deadline?: number;
+  /**
+   * Asked about every redirect target before it is requested: a reason ends the fetch with `redirects` and that
+   * hop is never requested. The snapshot fetcher and the link check pass the blocked-host test, so a page that
+   * redirects into a BLOCKED_HOSTS host is not read (§4.12 step 1). Fixture mode has no redirects.
+   */
+  refuseRedirect?: (url: string) => string | null;
 }
 
 export interface FetchResult {
@@ -42,12 +50,17 @@ export const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 
 /** Per-request timeouts (§8.3): 15 s; 30 s for kev, nvd and each MyJVN page; 60 s per EPSS file; 90 s for deltaLog.json and each delta zip. */
 export const FEED_TIMEOUTS = { default: 15_000, kev: 30_000, nvd: 30_000, myjvn: 30_000, epss: 60_000, deltaLog: 90_000, zip: 90_000 } as const;
-/** Body caps (§8.3): 5 MB by default, 20 MB for KEV, EPSS and the disclosure dashboard's payload, 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. */
+/**
+ * Body caps (§8.3): 5 MB by default, 20 MB for KEV, EPSS and the disclosure dashboard's payload, 16 MB for each NVD page,
+ * 64 MB for deltaLog.json and the zips, 3 MB (truncated) for snapshots. An NVD page holds up to 2,000 records of about
+ * 3.1 KB (1,992 records were 6,250,875 bytes on Kobol on 2026-11-11), so 16 MB leaves more than twice a full page.
+ */
 export const FEED_MAX_BYTES = {
   default: 5 * 1024 * 1024,
   kev: 20 * 1024 * 1024,
   epss: 20 * 1024 * 1024,
   payload: 20 * 1024 * 1024,
+  nvd: 16 * 1024 * 1024,
   deltaLog: 64 * 1024 * 1024,
   zip: 64 * 1024 * 1024,
   snapshot: 3 * 1024 * 1024,
@@ -152,7 +165,11 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
         method: "GET",
         redirect: "manual",
         signal,
-        headers: { "User-Agent": opts.userAgent ?? userAgent(), Accept: opts.accept ?? "*/*" },
+        headers: {
+          "User-Agent": opts.userAgent ?? userAgent(),
+          Accept: opts.accept ?? "*/*",
+          ...(opts.acceptLanguage ? { "Accept-Language": opts.acceptLanguage } : {}),
+        },
       });
     } catch (e) {
       return { ok: false, status: null, finalUrl: current, body: null, contentType: null, error: classifyError(e), detail: String((e as Error).cause ?? (e as Error).message).slice(0, 300) };
@@ -163,6 +180,10 @@ async function once(url: string, opts: Required<Pick<FetchOptions, "timeoutMs" |
         current = new URL(res.headers.get("location")!, current).toString();
       } catch {
         return { ok: false, status: res.status, finalUrl: current, body: null, contentType: null, error: "redirects", detail: "a redirect with an invalid Location" };
+      }
+      const refused = opts.refuseRedirect?.(current) ?? null;
+      if (refused !== null) {
+        return { ok: false, status: res.status, finalUrl: current, body: null, contentType: null, error: "redirects", detail: `a redirect to a refused URL (${refused})` };
       }
       continue;
     }

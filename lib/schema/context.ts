@@ -35,6 +35,8 @@ export const Candidate = z.strictObject({
     critical: Count.nullable(),
     exploited: Count,
     exploited_cve_ids: z.array(CveId),
+    first_published: IsoDate.describe("The earliest UTC publication date (cveMetadata.datePublished) of the release's fixes"),
+    last_published: IsoDate.describe("The latest UTC publication date of the release's fixes"),
   }).nullable().describe("Patch-batch bundles only"),
   record_url: z.string().min(1).nullable(),
   advisory_urls: z.array(z.string().min(1)),
@@ -101,7 +103,12 @@ export const AgentContext = z.strictObject({
     headline: z.string().min(1),
     severity: Severity.nullable(),
     source_urls: z.array(z.string().min(1)),
-  })).describe("Last 14 days of editions"),
+    withheld: z.literal(true).optional()
+      .describe("Present on an item withheld while a reader dispute is open or upheld (SPEC §4.10): do not report it or its sources again"),
+    dispute_kind: z.enum(["victim", "attribution"]).optional().describe("With withheld: what the reader disputed"),
+  }).refine((r) => (r.withheld === undefined) === (r.dispute_kind === undefined), {
+    error: "withheld and dispute_kind come together", path: ["dispute_kind"],
+  })).describe("Last 14 days of editions, newest first, and any item of today's data-only edition withheld this morning"),
   yesterday: z.strictObject({
     date: IsoDate,
     edition: Edition,
@@ -141,6 +148,8 @@ export const AgentContext = z.strictObject({
       t2: z.array(z.string().min(1)),
       not_sole_newsroom: z.array(z.string().min(1)),
       state_labelled: z.array(z.string().min(1)),
+      /** The domains of the record publishers (CVE, NVD, GitHub advisories, JVN, TVN): a page on one is source_type "cve_record". */
+      cve_record: z.array(z.string().min(1)),
     }),
     home_vendors: z.strictObject({ tw: z.array(z.string().min(1)), jp: z.array(z.string().min(1)) }),
     actors: z.array(z.strictObject({ name: z.string().min(1), aliases: z.array(z.string().min(1)), related_tracker: SiblingTracker.nullable() })),

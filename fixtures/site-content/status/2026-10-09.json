@@ -556,7 +556,7 @@
         "shows_edition": "data_only"
       },
       "recheck": {
-        "from": "2026-10-02",
+        "from": "2026-09-25",
         "to": "2026-10-08",
         "items_checked": 9,
         "flagged": []

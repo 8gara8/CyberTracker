@@ -8,15 +8,17 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
-  publisherCount, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
+  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, givesRegionSignal, itemGivesRegionSignal, itemSignals, maxLookbackDays,
+  previewRegions, publisherCount, recordSignals, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
   type RegionsConfig,
 } from "@/lib/regions";
 import {
   RegionSignal as RegionSignalSchema, Regions as RegionsSchema, RegionsFile, SourceTiersFile, VendorsFile, type DraftSource, type Item,
   type KevIndexRow, type Pack, type RegionSignal, type Regions, type Source,
 } from "@/lib/schema";
-import { LEVELLED_REGIONS, REGION_RULE_TYPES, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import type { Brief } from "@/lib/schema/brief";
+import { LEVELLED_REGIONS, REGION_RULE_TYPES, WITHHELD_MARK, type LevelledRegion, type RegionLevel } from "@/lib/vocab";
+import { rewriteItem } from "@/lib/withhold-mask";
 import { D6_JP, D6_TW } from "./helpers/d6";
 
 const DATE = "2026-11-08";
@@ -187,6 +189,46 @@ describe("confirmed_disruption (cni-disruption, critical, 72 h)", () => {
   it("ignores tier 3 sources when counting publishers", () => {
     const blog = src("s2", "https://blog.example.com/post", "host:blog.example.com", 3, "A blog post about the grid");
     expect(firedIds(run({ items: [disrupted()], sources: [REUTERS, blog] }), "EU")).not.toContain("cni-disruption");
+  });
+});
+
+describe("a withhold (§4.10) leaves every region level unchanged", () => {
+  // rewriteItem() sets the title of each source only the item cites to WITHHELD_MARK; two such titles must
+  // not fold as syndicated copies (publishersOfItem() in lib/rules/shared.ts already keeps them apart).
+  const disrupted = (first_seen: string) => item({
+    id: "inc-grid", kind: "breach", severity: "critical", regions: ["EU"], source_ids: ["s1", "s2"], first_seen,
+    incident: incident({ disruption: true, victim: "Sample Grid Operator" }),
+  });
+  /** The stored brief a withhold rewrites: just the parts rewriteItem() reads. */
+  const stored = (date: string): Brief => ({
+    date, items: [disrupted(date)], sources: [structuredClone(REUTERS), structuredClone(BLEEPING)], regions: regionsWith({}),
+    lead: [], elsewhere: [], angle: null, week_in_review: null,
+    taiwan_lens: { analysis: "", item_ids: [], source_ids: [], rows: [], japan: { text: null, item_ids: [], source_ids: [] } },
+  }) as unknown as Brief;
+  const levels = (r: Regions) => r.rows.map((x) => [x.code, x.level, x.rule_id]);
+
+  it("counts two publishers whose titles a withhold set to WITHHELD_MARK as two; one publisher still folds", () => {
+    const masked = [{ ...REUTERS, title: WITHHELD_MARK }, { ...BLEEPING, title: WITHHELD_MARK }];
+    expect(publisherCount(regionItems([disrupted(DATE)], masked, CONFIG)[0]!)).toBe(2);
+    const same = [masked[0]!, { ...masked[0]!, id: "s2", url: "https://www.reuters.com/world/grid-operator-hit-update" }];
+    expect(publisherCount(regionItems([disrupted(DATE)], same, CONFIG)[0]!)).toBe(1);
+  });
+
+  it("gives the same levels from today's items and from history, before and after a victim or attribution withhold", () => {
+    for (const kind of ["victim", "attribution"] as const) {
+      const today = stored(DATE);
+      const before = run({ items: today.items, sources: today.sources });
+      expect(row(before, "EU")).toMatchObject({ level: "critical", rule_id: "cni-disruption" });
+      rewriteItem(today, today.items[0]!, { kind, since: DATE }, "C-0001");
+      expect(today.sources.map((x) => x.title)).toEqual([WITHHELD_MARK, WITHHELD_MARK]);
+      expect(levels(run({ items: today.items, sources: today.sources }))).toEqual(levels(before));
+
+      const past = stored(addDays(DATE, -1));
+      const hBefore = run({ history: [brief(past.date, structuredClone(past.items), structuredClone(past.sources))] });
+      expect(row(hBefore, "EU").level).toBe("critical");
+      rewriteItem(past, past.items[0]!, { kind, since: DATE }, "C-0001");
+      expect(levels(run({ history: [brief(past.date, past.items, past.sources)] }))).toEqual(levels(hBefore));
+    }
   });
 });
 
@@ -492,6 +534,11 @@ describe("collectSignals", () => {
     expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "bleepingcomputer", CONFIG)).toEqual([]);
     expect(alertRegions("https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-012/", "anssi", CONFIG)).toEqual(["EU"]);
     expect(alertRegions("https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-0812/", "anssi", CONFIG)).toEqual([]);
+    // CERT-FR's live feed links its alerts under www.cert.cyber.gouv.fr (Kobol, 2026-11-11: CERTFR-2026-ALE-015; row 147).
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/", "anssi", CONFIG)).toEqual(["EU"]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/avis/CERTFR-2026-AVI-0901/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/actualite/CERTFR-2026-ACT-041/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/", "therecord", CONFIG)).toEqual([]);
     expect(alertRegions("https://cisa.gov/news-events/directives/ed-26-03", "cisa", CONFIG)).toEqual(["US"]);
   });
 
@@ -517,6 +564,42 @@ describe("collectSignals", () => {
     expect(row(r, "JP")).toMatchObject({ level: "high", rule_id: "agency-alert" });
     // Without the record, the newsroom item alone raises nothing.
     expect(collectSignals({ items: pack.items, records: [] }, null, null, CONFIG, DATE)).toEqual([]);
+  });
+
+  it("recordSignals() is what collectSignals() builds from each record, and givesRegionSignal() says whether it builds any (review of row 146)", () => {
+    const strip = (xs: readonly Omit<RegionSignal, "id">[]) => xs.map((x) => JSON.stringify({ ...x, id: undefined })).sort();
+    const alertRecord = { ...PACK.records[0]!, id: "r0004", source: "jpcert" as const, record_id: "at260031", url: "https://www.jpcert.or.jp/at/2026/at260031.html", title: "注意喚起", text: "注意喚起" };
+    const records = [...PACK.records, alertRecord];
+    expect(strip(records.flatMap((r) => recordSignals(r, CONFIG, DATE)))).toEqual(strip(collectSignals({ items: [], records }, null, null, CONFIG, DATE)));
+    for (const r of records) {
+      expect(givesRegionSignal(r, CONFIG, DATE), r.id).toBe(collectSignals({ items: [], records: [r] }, null, null, CONFIG, DATE).length > 0);
+    }
+    // The JPCERT note reporting exploitation and the /at/ alert give one; the TVN note dated before the 7-day span and the one
+    // reporting no exploitation give none.
+    expect(records.map((r) => [r.id, givesRegionSignal(r, CONFIG, DATE)])).toEqual([["r0001", true], ["r0002", false], ["r0003", false], ["r0004", true]]);
+    expect(recordSignals(alertRecord, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["agency_alert", "JP"]]);
+    expect(givesRegionSignal({ ...PACK.records[1]!, date: DATE }, CONFIG, DATE)).toBe(true);
+    expect(givesRegionSignal({ ...PACK.records[1]!, date: addDays(DATE, 1) }, CONFIG, DATE)).toBe(false);
+  });
+
+  it("itemSignals() is what collectSignals() builds from each item, and itemGivesRegionSignal() says whether it builds any (review of row 146)", () => {
+    const strip = (xs: readonly Omit<RegionSignal, "id">[]) => xs.map((x) => JSON.stringify({ ...x, id: undefined })).sort();
+    // Beside PACK's items: an item from a CERT reporting exploitation, one dated before the span, one dated after D, and a
+    // newsroom item linking an agency's alert page under its own publisher.
+    const certNote = { ...PACK.items[2]!, id: "p0004", publisher: "twcert", url: "https://www.twcert.org.tw/tw/cp-104-0001-1.html", title: "SAMPLE 漏洞已遭利用", snippet: "" };
+    const old = { ...PACK.items[0]!, id: "p0005", url: "https://cisa.gov/news-events/directives/ed-26-01", published_at: "2026-10-20T00:00:00Z" };
+    const ahead = { ...PACK.items[0]!, id: "p0006", url: "https://cisa.gov/news-events/directives/ed-26-02", published_at: "2026-11-08T16:30:00Z" };
+    const newsroom = { ...PACK.items[0]!, id: "p0007", publisher: "therecord", tier: 2 as const, alert: false };
+    const items = [...PACK.items, certNote, old, ahead, newsroom];
+    expect(strip(items.flatMap((i) => itemSignals(i, CONFIG, DATE)))).toEqual(strip(collectSignals({ items, records: [] }, null, null, CONFIG, DATE)));
+    for (const i of items) {
+      expect(itemGivesRegionSignal(i, CONFIG, DATE), i.id).toBe(collectSignals({ items: [i], records: [] }, null, null, CONFIG, DATE).length > 0);
+    }
+    expect(items.map((i) => [i.id, itemGivesRegionSignal(i, CONFIG, DATE)])).toEqual([
+      ["p0001", true], ["p0002", false], ["p0003", true], ["p0004", true], ["p0005", false], ["p0006", false], ["p0007", false],
+    ]);
+    expect(itemSignals(certNote, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["cert_exploitation", "TW"]]);
+    expect(itemSignals(PACK.items[2]!, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["agency_alert", "JP"], ["cert_exploitation", "JP"]]);
   });
 
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {

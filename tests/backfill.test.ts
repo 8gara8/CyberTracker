@@ -12,11 +12,12 @@ import { sha256Hex, jsonText } from "@/lib/json";
 import { parseKev } from "@/lib/feeds/kev";
 import { InputsManifest, Metrics, STATE_FILES, STATE_SCHEMAS, type StateFiles } from "@/lib/schema/metrics";
 import { CollectInputsFile, FeedIndexFile } from "@/lib/schema/pack";
-import { DEFAULT_OUT, MIN_FREE_BYTES, parseBackfillArgs, PUBLISH_STATE_P3, runBackfill, type BackfillDeps, type BackfillOptions } from "@/scripts/backfill";
+import { DEFAULT_OUT, MIN_FREE_BYTES, parseBackfillArgs, runBackfill, type BackfillDeps, type BackfillOptions } from "@/scripts/backfill";
 import { ensureClone, readClone } from "@/scripts/lib/cvelist-clone";
 import type { GitSource } from "@/scripts/lib/git-source";
 import { REFERENCE_INPUTS } from "@/scripts/lib/appendix-d";
 import { FIXTURE_CLONE_DIR, FIXTURE_COMMIT_TIME, makeCloneRepo } from "./helpers/fixture-clone";
+import { QUIET_PUSH_ARGS } from "./helpers/harness";
 
 const REPO = path.resolve(__dirname, "..");
 const GiB = 1024 ** 3;
@@ -59,8 +60,9 @@ const write = (file: string, data: string | Buffer) => {
   fs.writeFileSync(file, data);
 };
 const read = (file: string) => fs.readFileSync(file, "utf8");
+/** git with the test identity and push negotiation off (a global push.negotiate=true prints noise on every push). */
 const sh = (cwd: string, ...args: string[]) =>
-  execFileSync("git", ["-c", "user.name=ct-test", "-c", "user.email=ct-test@example.invalid", ...args], { cwd, encoding: "utf8", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } }).trim();
+  execFileSync("git", ["-c", "user.name=ct-test", "-c", "user.email=ct-test@example.invalid", ...QUIET_PUSH_ARGS, ...args], { cwd, encoding: "utf8", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } }).trim();
 
 interface Root {
   root: string;
@@ -429,29 +431,96 @@ describe("--catch-up and --credits", () => {
     expect(after["days.json"]).toEqual(full["days.json"]);
     expect(after["series.json"]).toEqual(full["series.json"]);
   }, SLOW);
+});
 
-  it("--push keeps its guards: refused from 04:00 to 06:00 Taipei; otherwise the state is built and publishState() waits for P3 (R34)", async () => {
+describe("--push (SPEC §8.4, §8.7)", () => {
+  /**
+   * A root whose committed content/state/ is an early build (cutoff 2026-11-04), pushed to a bare remote
+   * standing in for GitHub, with collect's cache for C's edition: a catch-up to C then changes the state.
+   */
+  async function pushRoot(): Promise<Root & { remote: string; remoteGit: (...args: string[]) => string }> {
     const r = makeRoot();
+    writeCache(r.root, "2026-11-06", "2026-11-04");
+    expect(await runBackfill(opts(r, { cutoff: "2026-11-04", out: "out/early" }), r.deps)).toBe(0);
+    copyState(path.join(r.root, "out", "early"), path.join(r.root, "content"));
     writeCache(r.root, "2026-11-08", C);
-    expect(await runBackfill(opts(r, { out: "out/full" }), r.deps)).toBe(0);
-    copyState(path.join(r.root, "out", "full"), path.join(r.root, "content"));
     write(path.join(r.root, ".gitignore"), "/cache/\n/logs/\n/src/\n/out/\n");
     sh(r.root, "add", "-A");
     sh(r.root, "commit", "-q", "--no-gpg-sign", "-m", "state");
+    const remoteBase = fs.mkdtempSync(path.join(os.tmpdir(), "ct-backfill-remote-"));
+    temps.push(remoteBase);
+    const remote = path.join(remoteBase, "remote.git");
+    sh(remoteBase, "init", "-q", "--bare", "-b", "main", remote);
+    sh(r.root, "remote", "add", "origin", remote);
+    // backfill --push runs its own git in the clone, which reads this rather than sh()'s -c.
+    sh(r.root, "config", "push.negotiate", "false");
+    sh(r.root, "push", "-q", "-u", "origin", "main");
+    return { ...r, remote, remoteGit: (...args) => sh(remote, ...args) };
+  }
+
+  it("G5: --push keeps its refusals (04:00 to 06:00, off main, a dirty checkout, a held lock, another origin) and publishes nothing (R34)", async () => {
+    const r = await pushRoot();
+    const tip = r.remoteGit("rev-parse", "main");
+    const deps = { ...r.deps, repo: r.remote };
 
     const early = new Date("2026-11-08T20:30:00Z"); // 04:30 Taipei on 2026-11-09
-    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), { ...r.deps, now: () => early })).toBe(1);
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), { ...deps, now: () => early })).toBe(1);
     expect(r.lines.at(-1)).toMatch(/^--push is refused from 04:00 to 06:00 Taipei \(now 04:30\)/);
 
-    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), r.deps)).toBe(1);
-    expect(r.lines.at(-1)).toBe(PUBLISH_STATE_P3);
-    expect(fs.existsSync(path.join(r.root, DEFAULT_OUT, "state", "days.json"))).toBe(true);
-    expect(fs.existsSync(path.join(r.root, "logs", ".lock"))).toBe(false);
+    sh(r.root, "checkout", "-q", "-b", "side");
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), deps)).toBe(1);
+    expect(r.lines.at(-1)).toBe("--push runs on main (this checkout is on side).");
+    sh(r.root, "checkout", "-q", "main");
 
-    write(path.join(r.root, "content", "state", "days.json"), "{}\n");
-    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), r.deps)).toBe(1);
+    const days = path.join(r.root, "content", "state", "days.json");
+    const kept = read(days);
+    write(days, "{}\n");
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), deps)).toBe(1);
     expect(r.lines.at(-1)).toMatch(/^--push needs a clean checkout/);
-  }, SLOW);
+    write(days, kept);
+
+    const lock = path.join(r.root, "logs", ".lock");
+    write(lock, JSON.stringify({ pid: process.pid, started: NOW.toISOString() }));
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), deps)).toBe(1);
+    expect(r.lines.at(-1)).toBe(`The run lock is held (pid ${process.pid} since ${NOW.toISOString()}): nothing was published.`);
+    expect(fs.existsSync(lock)).toBe(true);
+    fs.rmSync(lock);
+
+    // Without Deps.repo the bare remote is not 8gara8/CyberTracker on GitHub.
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), r.deps)).toBe(1);
+    expect(r.lines.at(-1)).toBe("Nothing was published: wrong repository.");
+    expect(fs.existsSync(lock)).toBe(false);
+
+    expect(r.remoteGit("rev-parse", "main")).toBe(tip);
+    expect(sh(r.root, "status", "--porcelain")).toBe("");
+  }, SLOW * 2);
+
+  it("G5: --push --catch-up commits only the changed content/state/ files as one state: commit and pushes it", async () => {
+    const r = await pushRoot();
+    const tip = r.remoteGit("rev-parse", "main");
+    const deps = { ...r.deps, repo: r.remote };
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), deps)).toBe(0);
+    const log = r.remoteGit("log", "--format=%H %s", `${tip}..main`).split("\n");
+    expect(log).toHaveLength(1);
+    const [sha, ...subject] = log[0]!.split(" ");
+    expect(subject.join(" ")).toBe(`state: ${C} · catch-up`);
+    const files = r.remoteGit("diff-tree", "--no-commit-id", "--name-only", "-r", sha!).split("\n");
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) expect(STATE_FILES.map((n) => `content/state/${n}`)).toContain(f);
+    expect(files).toContain("content/state/days.json");
+    // No brief exists, so kev-index.json is published too (§5.3); each file is the staged one, byte for byte.
+    expect(files).toContain("content/state/kev-index.json");
+    for (const f of files) expect(r.remoteGit("show", `main:${f}`) + "\n").toBe(read(path.join(r.root, DEFAULT_OUT, f.replace(/^content\//, ""))));
+    expect(sh(r.root, "rev-parse", "HEAD")).toBe(r.remoteGit("rev-parse", "main"));
+    expect(sh(r.root, "status", "--porcelain")).toBe("");
+    expect(fs.existsSync(path.join(r.root, "logs", ".lock"))).toBe(false);
+    expect(r.lines.at(-1)).toBe(`Published ${files.length} state files to main as ${sha!.slice(0, 7)}.`);
+
+    // The same catch-up again: the staged state matches content/state/, so nothing is committed.
+    expect(await runBackfill(opts(r, { mode: "catch-up", push: true }), deps)).toBe(0);
+    expect(r.lines.at(-1)).toBe("Nothing was published: content/state/ already holds this state.");
+    expect(r.remoteGit("rev-parse", "main")).toBe(sha);
+  }, SLOW * 2);
 });
 
 describe("--check-reference", () => {

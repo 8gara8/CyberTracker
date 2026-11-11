@@ -19,6 +19,8 @@ import { namingSafetyComputedCases, sampleSecret } from "@/fixtures/src/invalid/
 import { NO_TEXT_URL, SOFT_CASES, softDraft, softDraftProblems } from "@/fixtures/src/soft";
 import { REPO_ROOT } from "@/fixtures/src/world";
 import { dropUnverified } from "@/lib/apply";
+import { composeHeadline, metricNumbers } from "@/lib/metrics/headline";
+import { displaysFor } from "@/lib/rules/grounding";
 import { actorNexusOf, publicExploitOf } from "@/lib/items";
 import {
   aiLinkedOf, computedIssues, computedRules, gapMetricsFor, lateOf, manifestFacts, READING_WORDS_PER_MINUTE, vendorConfirmedByOf,
@@ -37,8 +39,10 @@ import type { DraftBrief } from "@/lib/schema/draft-brief";
 import type { CveBlock, DraftItem } from "@/lib/schema/item";
 import type { InputsManifest, Metrics } from "@/lib/schema/metrics";
 import { publisherFor } from "@/lib/sources";
+import { numbersIn } from "@/lib/text";
+import { normalizeUrl } from "@/lib/urls";
 import { ARCHIVE_WARNING_CODES, runRules, validateDraft } from "@/lib/validate";
-import { CANARY_TOKEN, UNNAMED_CLAIM } from "@/lib/vocab";
+import { CANARY_TOKEN, NONE_FOUND, UNNAMED_CLAIM } from "@/lib/vocab";
 
 const MINE: readonly Rule[] = [...namingRules, ...safetyRules, ...computedRules, ...snapshotRules];
 const I = WEEKDAY_ITEMS;
@@ -251,6 +255,19 @@ describe("VICTIM_CLAIMED_UNNAMED", () => {
     });
     expect(paths(e)).toEqual(["items[2]"]);
     expect(e[0]!.message).toMatch(/top story 3/);
+  });
+
+  it("passes a withheld claimed incident in a top slot: its slot is free and its placeholder names nothing (§0.4 row 126)", () => {
+    const top = (fn: (b: Brief) => void) => only(runPublished(handBrief(fn)), "VICTIM_CLAIMED_UNNAMED");
+    const move = (b: Brief) => {
+      const [x] = b.items.splice(idx(b, I.claimedVictim), 1);
+      b.items.splice(2, 0, x!);
+    };
+    expect(paths(top(move))).toEqual(["items[2]"]);
+    expect(top((b) => {
+      move(b);
+      Object.assign(b.items[2]!, { summary: "Details withheld.", withheld: { correction_id: "C-0001", since: b.date } });
+    })).toEqual([]);
   });
 
   it("fails a claimed incident above watch, and passes one at watch", () => {
@@ -817,11 +834,58 @@ describe("snapshot soft gates", () => {
     }
   });
 
+  it("SNAP_NUMBER reads a source's \"10x\" as 10, so a summary written as STYLE asks, \"10 times\", finds it (review of the eighth pass)", () => {
+    const run = (summary: string) => {
+      const d = weekdayDraft();
+      const inputs = draftInputs("weekday");
+      const it = d.items.find((x) => x.ai_evidence.length)!;
+      const url = d.sources.find((x) => x.id === it.ai_evidence[0]!.source_id)!.url;
+      const key = Object.keys(inputs.evidence!.texts).find((u) => normalizeUrl(u) === normalizeUrl(url))!;
+      inputs.evidence!.texts[key] = `${inputs.evidence!.texts[key]} SAMPLE: the model found the bugs 10x faster than our fuzzers.`;
+      it.summary = summary;
+      return warns(validateDraft(d, { ...inputs, rules: MINE }), "SNAP_NUMBER");
+    };
+    expect(run("The firm says its model found the bugs 10 times faster than its fuzzers.")).toEqual([]);
+    // Another ratio still has no source (11 and 12 are weekday metric numbers, so 40).
+    expect(run("The firm says its model found the bugs 40 times faster than its fuzzers.").map((w) => w.message)).toEqual([expect.stringContaining("holds 40")]);
+    // Our own prose never reads "10x" as a number (NUMBER_FORM fails it instead).
+    expect(numbersIn("found the bugs 10x faster")).toEqual([]);
+    expect(numbersIn("found the bugs 10x faster, 5.2x more; DIR-823X", { words: true }).map((n) => n.value)).toEqual([10, 5.2]);
+  });
+
   it("SNAP_NUMBER checks the Angle's text against its sources, and skips NONE_FOUND", () => {
     const r = check(draftWith((d) => { d.angle.text = "Red Hat has credited AISLE with 25 flaws since 1 October."; }));
     const w = warns(r, "SNAP_NUMBER");
     expect(paths(w)).toEqual(["angle.text"]);
     expect(w[0]!.message).toContain("holds 25");
+  });
+
+  it("SNAP_NUMBER reads a metric Angle as the number rules do: its label's 13 weeks is no number, with the Flood and AI blocks null (row 145)", () => {
+    const inputs = draftInputs("weekday");
+    const m = structuredClone(inputs.metrics!);
+    m.flood = null;
+    m.ai_credited = null;
+    m.window!.w13.old_listed_n = 12; // no other display shows 13 either
+    m.window!.w13.after_disclosure_median_ci80 = [14, 30];
+    m.window!.w26.after_disclosure_median_ci80 = [12, 22];
+    m.headline = composeHeadline(m);
+    expect(metricNumbers(m).some((n) => n.value === 13 && !n.percent)).toBe(false); // the second line prints no "13" constant
+    const share = displaysFor(m, "window.w13.at_disclosure_share")[0]!;
+    const d = draftWith((x) => {
+      x.angle = { ...x.angle, source_id: null, metric_path: "window.w13.at_disclosure_share", as_of: m.data_cutoff_utc,
+        text: `In the last 13 weeks, ${share} of recently disclosed flaws on CISA's list were already exploited at disclosure.`,
+        counterpoint: NONE_FOUND, counterpoint_source_ids: [] };
+    });
+    const run = (dd: DraftBrief) => validateDraft(dd, { ...inputs, metrics: m, rules: snapshotRules });
+    expect(warns(run(d), "SNAP_NUMBER")).toEqual([]);
+    // A figure the label does not print is a number the metrics must show.
+    d.angle.text = d.angle.text.replace("in the last 13 weeks", "in the last 9 weeks").replace("In the last 13 weeks", "In the last 9 weeks");
+    expect(warns(run(d), "SNAP_NUMBER").map((x) => [x.path, x.message])).toEqual([["angle.text", expect.stringContaining("holds 9")]]);
+    // The counterpoint is read as before: a "13 weeks" there is a number, and here no metric shows it.
+    d.angle.text = d.angle.text.replace("9 weeks", "13 weeks");
+    d.angle.counterpoint = "The 13 weeks are too short a span to read a trend.";
+    d.angle.counterpoint_source_ids = [];
+    expect(warns(run(d), "SNAP_NUMBER").map((x) => [x.path, x.message])).toEqual([["angle.counterpoint", expect.stringContaining("holds 13")]]);
   });
 
   it("SNAP_MISSING marks an Angle whose source has no seen text", () => {

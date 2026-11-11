@@ -194,7 +194,7 @@ const TOP_LEVEL: [string, z.ZodType, unknown][] = [
     metrics: { gap_headline: "SAMPLE", quotable: [], home_vendor_kev: { tw: { d30_n: 0, d90_n: 1 }, jp: { d30_n: 0, d90_n: 0 } }, stale: [] },
     regions_preview: [], standing_stories: [], watch_windows: [], watch_searches: [], recent_items: [], yesterday: null, scoreboard: [],
     corrections: { flagged: [], reports: [] },
-    config: { tiers: { t1: [], t2: [], not_sole_newsroom: [], state_labelled: [] }, home_vendors: { tw: [], jp: [] }, actors: [], ai_finders: [], banned_words: [...V.BANNED_WORDS] },
+    config: { tiers: { t1: [], t2: [], not_sole_newsroom: [], state_labelled: [], cve_record: [] }, home_vendors: { tw: [], jp: [] }, actors: [], ai_finders: [], banned_words: [...V.BANNED_WORDS] },
     pack: { md: `packs/${D}.md`, json: `packs/${D}.json`, degraded: false, failed_feeds: [] },
   }],
   ["FeedIndexFile", S.FeedIndexFile, { schema_version: 1, date: D, generated_at: T, feeds: [feedIndexEntry] }],
@@ -203,6 +203,7 @@ const TOP_LEVEL: [string, z.ZodType, unknown][] = [
   ["CandidateLogFile", S.CandidateLogFile, {
     schema_version: 1, date: D, ranked: 1, kept: [], cut: [{ id: "cve-2026-0001", score: 10, reason: "below_cap", pack_ids: ["r0001"], cve_ids: ["CVE-2026-0001"] }],
     log: [{ code: "MERGED", detail: "SAMPLE detail" }],
+    size_cut: { over: false, items: [{ id: "p0007", feed_id: "therecord", score: 31.5, title: "SAMPLE title" }], records: [{ id: "r0012", source: "myjvn", record_id: "JVNDB-2026-012901" }] },
   }],
   ["ReferenceJoinFile", S.ReferenceJoinFile, {
     ...refHead, kev_catalog_version: "2026.11.06", kev_data_commit: COMMIT, rows: [["CVE-2026-0001", "2026-11-05", "SAMPLE", null]],

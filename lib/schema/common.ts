@@ -218,7 +218,7 @@ export const FlawEvidence = z.strictObject({
   basis: z.enum(["vendor_confirmed", "cert_confirmed", "news_reported", "vendor_advisory"])
     .describe("exploited: vendor_confirmed, cert_confirmed or news_reported; patched: vendor_advisory"),
   date: IsoDate.describe("Date of the statement"),
-  source_id: z.string().describe("vendor_*: on the vendor's own domain; cert_confirmed: a CERT; news_reported: a tier 2 newsroom"),
+  source_id: z.string().describe("vendor_*: on the vendor's own domain; cert_confirmed: a national CERT (a CERT, or CISA); news_reported: a tier 2 newsroom"),
 });
 
 export const Exposure = z.strictObject({

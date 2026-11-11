@@ -120,21 +120,101 @@ const MONTH = `(?:${MONTH_FORMS.join("|")})`;
 const ORDINAL = "(?:st|nd|rd|th)?";
 const YEAR = "(?:199\\d|20\\d\\d)";
 
-/** What numbersIn() removes before reading digits, in order (§4.12). */
-const NOT_NUMBERS: readonly RegExp[] = [
+/** The hyphen, U+2010 and U+2011 (NFKC makes U+2011 a U+2010) and the en dash. */
+const DASHES = "\\-\\u2010\\u2011\\u2013";
+
+const WEEKDAY_FORMS = [...new Set(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].flatMap((d) => {
+  const forms = [d, d.slice(0, 3)];
+  if (d === "Tuesday") forms.push("Tues");
+  if (d === "Wednesday") forms.push("Weds");
+  if (d === "Thursday") forms.push("Thur", "Thurs");
+  return forms.flatMap((f) => [f, f.toUpperCase()]);
+}))].sort((a, b) => b.length - a.length);
+/** A weekday name, full or short ("Tuesday", "Tue", "Tues"). */
+const WEEKDAY = `(?:${WEEKDAY_FORMS.join("|")})`;
+/** What may stand before a day of a range: a weekday ("Tuesday 11", "Tue., 11") and "the" ("the 14th"). */
+const BEFORE_DAY = `(?:${WEEKDAY}\\.?,?\\s+)?(?:the\\s+)?`;
+/** Between a range's two days: " to ", " and ", " or ", " through " or " thru ", "/", or a hyphen or en dash. */
+const DAY_JOIN = `(?:\\s+(?:to|and|or|through|thru)\\s+|\\s?[${DASHES}/]\\s?)`;
+
+/**
+ * A day range in one month, read as one date (§4.12, §0.4 row 145): the first day, then " to ",
+ * " and ", " or ", " through ", "/", a hyphen or an en dash, then the second day; or "between" the first
+ * "and" the second. A weekday or "the" may stand before each day, and ordinals are allowed.
+ */
+const DAY_RANGE = (d1: string, d2: string): string =>
+  `(?:[Bb]etween\\s+${BEFORE_DAY}${d1}${ORDINAL}\\s+and\\s+|${BEFORE_DAY}${d1}${ORDINAL}${DAY_JOIN})${BEFORE_DAY}${d2}${ORDINAL}`;
+/** "13 to 14 Oct", "13–14 Oct", "between 13 and 14 Oct", "on 11 and 12 Nov", "11/12 Nov", "from Tuesday 11 to Wednesday 12 Nov". */
+const DAY_RANGE_MONTH_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}.,])${DAY_RANGE("(\\d{1,2})", "(\\d{1,2})")}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu");
+/**
+ * "Oct 13 to 14", "Oct 13–14", "Nov 11 and 12.", "Nov 11/12, Taipei", "between Oct 13 and 14". The second day
+ * is not a percentage, a decimal or a count in thousands, millions or billions ("bn", "m"). " to " and an
+ * unspaced dash always join the days; "and", "or", "through", "thru", "/" and a dash with spaces around it
+ * join them only after "between" or at the end of a clause (CLAUSE_END_RE), so "Oct 3 and 12 days later" and
+ * "Oct 2 – 12 critical flaws" keep their 12.
+ */
+const MONTH_DAY_RANGE_RE = new RegExp(
+  `(?<![\\p{L}])([Bb]etween\\s+)?${MONTH}\\.?\\s+(?:the\\s+)?(\\d{1,2})${ORDINAL}` +
+  `(?:\\s+to\\s+${BEFORE_DAY}|[${DASHES}]|(\\s+(?:and|or|through|thru)\\s+${BEFORE_DAY}|\\/|\\s[${DASHES}]\\s))(\\d{1,2})${ORDINAL}` +
+  "(?![\\p{L}\\p{N}])(?![.,]\\d)(?!\\s?(?:%|per\\s?cent|percent))(?!\\s+(?:thousand|million|billion)(?![\\p{L}]))" +
+  "(?!\\s?(?:bn|BN|Bn|m|M)(?![\\p{L}\\p{N}]))", "gu");
+/**
+ * After a month-first range joined by a word, "/" or a spaced dash: the end of the text or of a clause, a year,
+ * or "Taipei" or "UTC" ("Nov 11 and 12 Taipei time").
+ */
+const CLAUSE_END_RE = /^(?:\s*$|[.,;:!?)\]]|\s+(?:199\d|20\d\d)(?!\d)|\s+(?:Taipei|UTC)(?![\p{L}]))/u;
+
+/** A day range's days are 1 to 31, the first before the second; anything else is left for the other patterns. */
+const isDayRange = (a: string, b: string): boolean => {
+  const [x, y] = [Number(a), Number(b)];
+  return x >= 1 && x < y && y <= 31;
+};
+
+/** GHSA ids, whose alphabet holds digits and x ("GHSA-683x-4444-jxh8"): never numbers, never ratios. */
+const GHSA_RE = /\bGHSA(?:-[0-9a-z]{4}){3}\b/giu;
+
+/** What numbersIn() removes before reading digits, in order (§4.12): a pattern, or a function that removes what it reads. */
+const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
   /\bCVE-\d{4}-\d{4,}\b/giu,
-  /\bGHSA(?:-[0-9a-z]{4}){3}\b/giu,
+  GHSA_RE,
   /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?(?![\d])/giu, // ISO dates and timestamps
   /(?<![\p{L}\p{N}])[vV]\d+(?:\.\d+)*(?![\p{L}\p{N}])/gu, // v-prefixed versions
   /(?<![\p{L}\p{N}.])\d+(?:\.\d+){2,}[\p{L}\p{N}+-]*/gu, // versions with two or more dots (and dotted quads)
   /(?<![\p{L}\p{N}])\d{1,2}:\d{2}(?::\d{2})?(?:\s?[aApP]\.?[mM]\.?)?(?![\p{L}\p{N}])/gu, // clock times
   /(?<![\p{L}\p{N}])\d{1,2}\s?[aApP]\.?[mM]\.?(?![\p{L}\p{N}])/gu, // "5 pm"
+  // Day ranges before the single dates, so neither day of "13 to 14 Oct" or "Oct 13 to 14" is read.
+  (s) => s.replace(DAY_RANGE_MONTH_RE, (m, a1?: string, a2?: string, b?: string) => (isDayRange(a1 ?? a2!, b!) ? " " : m)),
+  (s) => s.replace(MONTH_DAY_RANGE_RE, (m, between: string | undefined, a: string, guarded: string | undefined, b: string, at: number,
+    all: string) => (isDayRange(a, b) && (!guarded || between || CLAUSE_END_RE.test(all.slice(at + m.length))) ? " " : m)),
   new RegExp(`(?<![\\p{L}\\p{N}])\\d{1,2}${ORDINAL}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu"), // "21 Oct", "21st October"
   new RegExp(`(?<![\\p{L}])${MONTH}\\.?\\s+\\d{1,2}${ORDINAL}(?![\\p{L}\\p{N}])`, "gu"), // "Oct 21", "October 21st"
   new RegExp(`(?<![\\p{L}\\p{N}.,])${YEAR}\\s?[-–]\\s?(?:${YEAR}|\\d{2})(?!\\d|[.,]\\d)`, "gu"), // "2023-24", "2023–2024"
   new RegExp(`(?<![\\p{L}\\p{N}.,])${YEAR}(?!\\d|[.,]\\d)`, "gu"), // years 1990 to 2099, "2020s" included
   /§\s*\d+(?:\.\d+)*/gu, // section marks
 ];
+
+/** After a day number: at most three words, then a month or weekday name ("12 Nov", "8, 9 or 10 Oct", "12 this Tuesday"). */
+const DATE_NAME_AFTER = new RegExp(`^${ORDINAL}[,;]?(?:\\s+\\S+){0,3}?\\s+(?:of\\s+)?(?:${MONTH}|${WEEKDAY})(?![\\p{L}])`, "u");
+/** Before a day number: a month name, then at most three words ("Nov 11 – 12", "Oct 5 and 9"). */
+const MONTH_NAME_BEFORE = new RegExp(`(?<![\\p{L}])${MONTH}\\.?,?(?:\\s+\\S+?){0,3}?[\\s/${DASHES}]+$`, "u");
+
+/**
+ * The number reads as a day of a date the text writes in another form: a whole number from 1 to 31,
+ * not a percentage, with a month or weekday name after it and at most three words between ("on 8, 9 or
+ * 10 Oct", whose last two days are a range but whose first is a number), or with a month name at most
+ * three words before it ("On Nov 11 – 12 flaws", whose spaced dash in mid-clause leaves 12 a number).
+ * LEAD_GROUNDED and METRICS_ONLY_NUMBERS then add a hint on how a day range is written (§4.12).
+ */
+export function dayBeforeDateName(text: string, n: NumberToken): boolean {
+  if (n.percent || n.decimals || !Number.isInteger(n.value) || n.value < 1 || n.value > 31 || !/^\d{1,2}$/u.test(n.raw)) return false;
+  const s = text.normalize("NFKC");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}.,])${n.raw}(?![\\p{N}])`, "gu");
+  for (const m of s.matchAll(re)) {
+    if (DATE_NAME_AFTER.test(s.slice(m.index + m[0].length)) || MONTH_NAME_BEFORE.test(s.slice(0, m.index))) return true;
+  }
+  return false;
+}
 
 const SMALL_WORDS: Record<string, number> = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
@@ -158,17 +238,26 @@ const MULTIPLIERS: Record<string, number> = { thousand: 1e3, million: 1e6, billi
 
 /**
  * The numbers in a piece of text (§4.12). First removes what is not a quantity: CVE and GHSA ids, ISO
- * dates and timestamps, clock times, day-month dates ("21 Oct", "October 21"), years 1990 to 2099 and
+ * dates and timestamps, clock times, day-month dates ("21 Oct", "October 21") and day ranges in one month
+ * ("13 to 14 Oct", "13–14 Oct", "between 13 and 14 Oct", "on 11 and 12 Nov", "11 or 12 Nov", "11/12 Nov",
+ * "11 through 12 Nov", "from Tuesday 11 to Wednesday 12 Nov", "Oct 13 to 14", "Oct 13-14", "Nov 11 and 12.",
+ * days 1 to 31, the first before the second; a range across months is two dates, "30 Oct to 2 Nov"; a
+ * month-first range joined by "and", "or", "through", "/" or a spaced dash only after "between" or at the end
+ * of a clause), years 1990 to 2099 and
  * year ranges ("2023-24", "2023–24"), version strings (two or more dots, or a leading v) and section
  * marks. Then reads each digit token (thousands separators dropped) with its unit: %, "per cent" or
  * "percent" make a percentage; a following "thousand", "million", "billion", "bn" or an attached "m"
  * multiplies. A digit run glued to letters ("2FA", "x86", "5G", "3rd", "COVID-19") is not a number.
  * With `words: true` (a source's seen text, never our own prose) two to twenty and the tens, and
- * compounds such as "twenty-one", are read as digits.
+ * compounds such as "twenty-one", are read as digits, and so is each ratio glued to x (gluedRatios():
+ * "10x" as 10, "5.2x" as 5.2), so a summary that writes a source's "10x faster" as "10 times faster"
+ * finds it.
  */
 export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberToken[] {
   let s = text.normalize("NFKC");
-  for (const re of NOT_NUMBERS) s = s.replace(re, " ");
+  // The x of each glued ratio becomes a space, so the same positions hold and its digits read as a number.
+  if (opts.words) for (const t of gluedRatioTokens(s)) s = `${s.slice(0, t.end - 1)} ${s.slice(t.end)}`;
+  for (const re of NOT_NUMBERS) s = typeof re === "function" ? re(s) : s.replace(re, " ");
   if (opts.words) {
     s = s.replace(COMPOUND_RE, (_m, tens: string, unit: string) => String(TENS_WORDS[tens.toLowerCase()]! + SMALL_WORDS[unit.toLowerCase()]!));
     s = s.replace(WORD_RE, (w: string) => String(SMALL_WORDS[w.toLowerCase()] ?? TENS_WORDS[w.toLowerCase()]!));
@@ -196,6 +285,293 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
     });
   }
   return out;
+}
+
+/** Words that make a ratio of the number before them: "10x faster", "five times more". */
+const COMPARATIVES = "more|less|fewer|higher|lower|faster|slower|larger|bigger|greater|smaller|quicker|longer|shorter|wider";
+/** "as" before an adjective of degree: "three times as many", "2x as fast"; not "three times as CISA confirmed". */
+const AS_DEGREE = "as\\s+(?:many|much|often|fast|high|large|likely|common|quickly)";
+
+/** Not glued to a letter, digit, "_", ".", ",", "/", "#", "%", hyphen or en dash. */
+const RATIO_START = `(?<![\\p{L}\\p{N}_.,/#%${DASHES}])`;
+/** A ratio range's first number and its dash ("2-3x", "5x–10x"): a bare number or a glued ratio, then a hyphen or en dash. */
+const RANGE_START = `${RATIO_START}\\d+(?:[.,]\\d+)*[xX]?[${DASHES}]`;
+/**
+ * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
+ * no letter, digit, "_", ".", ",", hyphen, en dash, "/", "#" or "%" before it ("DIR-823X", "370/XP/38x"),
+ * unless it ends a range from a bare number or a glued ratio ("2-3x", "5x–10x"), and after it only
+ * whitespace, sentence punctuation and then whitespace, the end, "+" ("10x+"), "/" and a word ("10x/year";
+ * not a unit of time below a year, "10x/day", which counts occurrences), or a hyphen and a comparative
+ * ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as a name.
+ */
+const GLUED_RATIO_RE = new RegExp(
+  `(?:${RATIO_START}|(?<=${RANGE_START}))(\\d+(?:[.,]\\d+)*)([xX])` +
+  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|\\+(?:\\s|$|[.,;:!?)])|\\/(?!(?:day|hour|minute|second|week|month)s?(?![\\p{L}]))\\p{L}|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
+/** The range start before a token, removed before nameBefore() reads the word before the range ("Vigor 286-296x"). */
+const RANGE_START_END_RE = new RegExp(`${RANGE_START}$`, "u");
+/**
+ * After a glued token, a comparison that makes it a ratio whatever word stands before it ("CISA 2x faster",
+ * "In Q3 5x more", "a 3x jump", "10x a year", "10x/year"): a comparative, "the", "than", "as" before an
+ * adjective of degree, or a noun of change.
+ */
+const RATIO_AFTER_RE = new RegExp(
+  `^(?:\\s+(?:${COMPARATIVES}|the|than|${AS_DEGREE}|increase|jump|rise|growth|pace|rate` +
+  `|a\\s+year)(?![\\p{L}])|\\/year(?![\\p{L}])|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "u");
+/** After a glued token, a release word: "the 3x series", "the 2x branch". */
+const RELEASE_AFTER_RE = /^\s+(?:series|branch|branches)(?![\p{L}])/u;
+/** Never a product name: a month, a weekday, a year, or a quarter or half ("In October 5x", "In 2026 5x", "In Q3 5x"). */
+const DATE_LABEL_RE = new RegExp(`^(?:${MONTH}|${WEEKDAY}|${YEAR}|Q[1-4]|H[12])$`, "u");
+/** A sentence's first word may be one of these before a ratio ("Nearly 10x more"); any other capitalised word is a name. */
+const RATIO_LEAD_INS: ReadonlySet<string> = new Set(["a", "about", "almost", "also", "an", "and", "approximately", "around", "at",
+  "but", "by", "close", "down", "even", "for", "from", "in", "just", "less", "more", "nearly", "now", "of", "on", "only", "or",
+  "over", "roughly", "so", "some", "still", "than", "the", "then", "to", "under", "up", "with"]);
+/** Words that name a release before its number: "versions 4.3x", "firmware 2.1x". */
+const RELEASE_WORDS: ReadonlySet<string> = new Set(["build", "builds", "firmware", "model", "models", "release", "releases", "series",
+  "version", "versions"]);
+/** A version range after the token: "4.3x before 5.1". */
+const VERSION_AFTER_RE = /^\s+(?:before|through|until|prior\s+to)\s+v?\d+\.\d/u;
+
+/**
+ * The word right before a glued token names a product, standard or release, so the token is a model
+ * number, not a ratio: it holds a digit ("Ryzen 9 7950X", "4K 12X"), is one of RELEASE_WORDS ("versions
+ * 4.3x") or holds a capital letter ("Catalyst 9300X", "Windows 9x", "iPhone 16x", "HTTP 30x"), unless it
+ * ends a clause ("October,"), is a possessive ("KEV's"), is a month, weekday, year, quarter or half
+ * (DATE_LABEL_RE: "In October 5x", "In 2026 5x", "In Q3 5x") or opens a sentence as one of RATIO_LEAD_INS
+ * ("Nearly 10x more").
+ */
+function nameBefore(before: string): boolean {
+  const m = /(\S+)\s+$/u.exec(before);
+  if (!m) return false;
+  const opener = /^[(\["'“‘]+/u.exec(m[1]!);
+  const word = opener ? m[1]!.slice(opener[0].length) : m[1]!;
+  if (!/[\p{L}\p{N}]$/u.test(word) || /['’]s$/u.test(word) || DATE_LABEL_RE.test(word)) return false;
+  if (/\p{N}/u.test(word) || RELEASE_WORDS.has(word.toLowerCase())) return true;
+  if (!/\p{Lu}/u.test(word)) return false;
+  const opensSentence = opener !== null || /(?:^|[.!?:;]["'”’)\]]*)\s*$/u.test(before.slice(0, m.index));
+  return !opensSentence || !RATIO_LEAD_INS.has(word.toLowerCase());
+}
+
+/**
+ * The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145):
+ * "9.9x the 2023–24 pace", "10x faster", "rose 5x.", "a 3x jump". Not a name: a GHSA id, a token glued to
+ * a hyphen, "/" or a letter ("DIR-823X", "3x-ui", "0x1F", "x86"), a version or standard ("6.0.0x",
+ * "802.1X", "4.3x before 5.1"), a hex prefix ("0x"), three or more digits before a capital X ("9300X",
+ * "7950X"), a token after a name word (nameBefore(): "Windows 9x", "SAP NetWeaver 7.5x", "HTTP 30x"),
+ * before a capitalised one ("10x Genomics") or before "series" or "branch" ("the 3x series"), or a token
+ * joined by "and" or "or" to a name ("Vigor 286x and 296x", "Drupal 10.x and 11x", "2x and 3x branches").
+ * A comparison right after the token (RATIO_AFTER_RE: "CISA 2x faster", "In Q3 5x more", "10x/year") makes
+ * it a ratio whatever word stands before it, and a range from a bare number or a ratio ("2-3x", "5x–10x")
+ * gives its last token.
+ */
+export function gluedRatios(text: string): string[] {
+  return gluedRatioTokens(text.normalize("NFKC")).map((t) => t.raw);
+}
+
+/** gluedRatios() with each token's place in the NFKC text `nfkc`. */
+function gluedRatioTokens(nfkc: string): { at: number; end: number; raw: string }[] {
+  const s = nfkc.replace(GHSA_RE, (m) => " ".repeat(m.length));
+  const tokens = [...s.matchAll(GLUED_RATIO_RE)].map((m) => {
+    const [raw, num, x] = m as unknown as [string, string, string];
+    const before = s.slice(0, m.index).replace(RANGE_START_END_RE, "");
+    const after = s.slice(m.index + raw.length);
+    // "6.0.0x", "802.1X", "0x", "9300X": a version, standard, hex prefix or model whatever stands around it.
+    const fixed = (num.match(/\./gu)?.length ?? 0) > 1 || /^\d{3,}\./u.test(num) || /^0+$/u.test(num) || (x === "X" && /^\d{3,}$/u.test(num));
+    const ratio = !fixed && RATIO_AFTER_RE.test(after);
+    const name = fixed || (!ratio && (nameBefore(before) || /^\s+\p{Lu}/u.test(after) || VERSION_AFTER_RE.test(after) ||
+      RELEASE_AFTER_RE.test(after)));
+    return { at: m.index, end: m.index + raw.length, raw, ratio, name };
+  });
+  // A list of names: a token joined by "and" or "or" to a name is a name ("Vigor 286x and 296x", "2x and 3x branches",
+  // "Drupal 10.x and 11x"), unless a comparison after it makes it a ratio.
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    if (t.name || t.ratio) continue;
+    const prev = tokens[i - 1], next = tokens[i + 1];
+    if (prev?.name && LIST_JOIN_RE.test(s.slice(prev.end, t.at))) t.name = true;
+    else if (listPartnerName(s.slice(0, t.at))) t.name = true;
+    else if (next && LIST_JOIN_RE.test(s.slice(t.end, next.at)) && next.name) t.name = true;
+  }
+  return tokens.filter((t) => !t.name).map(({ at, end, raw }) => ({ at, end, raw }));
+}
+
+/** Between two tokens of a list: " and ", " or " (" & " too). */
+const LIST_JOIN_RE = /^\s+(?:and|or|&)\s+$/u;
+/**
+ * The word before " and " or " or " just before a token is a name, so the token is one too: a version with a
+ * wildcard ("Drupal 10.x and 11x", "the 1.x and 2x lines"), a word with a letter and a digit ("Juniper EX4300
+ * and 4600x", "RAX40 and 120x"), or a number after a name word ("Vigor 3910 and 286x"), but never a year or a
+ * bare ratio, which the token list itself reads.
+ */
+function listPartnerName(before: string): boolean {
+  const m = /(?:^|\s)([^\s]+)\s+(?:and|or|&)\s+$/u.exec(before);
+  if (!m) return false;
+  const word = m[1]!;
+  if (/^\d+(?:[.,]\d+)*[xX]$/u.test(word) || DATE_LABEL_RE.test(word)) return false;
+  if (/^\d+(?:\.\d+)*\.[xX*]$/u.test(word)) return true;
+  if (/\p{L}/u.test(word) && /\p{N}/u.test(word) && /^[\p{L}\p{N}._-]+$/u.test(word)) return true;
+  return /^\d+$/u.test(word) && nameBefore(before.slice(0, m.index + m[0].indexOf(word)));
+}
+
+/** A number word from two up: "ten", "twenty-one", "a hundred", "two thousand"; never "one", "once" or "twice". */
+const NUMBER_WORD = (() => {
+  const units = "one|two|three|four|five|six|seven|eight|nine";
+  const teens = "ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen";
+  const tens = "twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety";
+  const big = "hundred|thousand|million";
+  return `(?:(?:a|${units}|${teens}|${tens})\\s+(?:${big})|(?:${big})|(?:${tens})(?:[\\s${DASHES}](?:${units}))?|${teens}|two|three|four|five|six|seven|eight|nine)`;
+})();
+/** Nouns of quantity: what "the pace", "the usual number" and the like measure. */
+const QUANTITY_NOUN = "(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline|count|share)";
+/** "as <word> as" closing a comparison: "nine times as rapidly as", "five times as numerous as" (review of the ninth pass). */
+const AS_AS = "as\\s+\\p{L}+\\s+as";
+/**
+ * "over" before the thing compared: "over the 2023–24 pace", "over their usual rate" (a number, or a noun of
+ * quantity at most two words on); not "over two weeks", "over October" or "over the Lunar New Year", which are
+ * spans of time (review of the ninth pass).
+ */
+const OVER_QUANTITY = `over\\s+(?:the|its|their)\\s+(?:\\p{N}|(?:\\S+\\s+){0,2}?${QUANTITY_NOUN})`;
+/**
+ * What follows "N times" when it is a ratio: a comparative, "as" before an adjective of degree (AS_DEGREE),
+ * "the" (not "the following", "the same", "the past" and other spans of time), "than", "that of", "those
+ * of", "what", "its", "their", "as <word> as" (AS_AS: "as rapidly as") or "over" before a number or a noun of
+ * quantity (OVER_QUANTITY: "over the 2023–24 pace"). "Three times in October", "updated three times this
+ * year", "three times over two weeks" and "three times as attackers adapted" are counts of occurrences.
+ */
+const RATIO_FOLLOWER =
+  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their|${AS_DEGREE}|${AS_AS}|${OVER_QUANTITY}` +
+  "|the(?!\\s+(?:following|same|past|last|next|previous|first|second|third|other|whole|entire|course|day|days|week|weeks|weekend" +
+  "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}])))(?![\\p{L}])";
+/**
+ * After a sentence-opening "N times the", what makes it a ratio: a number ("Ten times the 2023–24 pace") or
+ * a noun of quantity at most two words on ("Ten times the pace", "Five times the usual number"); otherwise
+ * it counts occurrences ("Three times the vendor said no fix was coming").
+ */
+const OPENING_RATIO_AFTER_RE =
+  /^\s+the\s+(?:\p{N}|(?:\S+\s+){0,2}?(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline|count|share)(?![\p{L}]))/u;
+/** "ten times the 2023–24 pace", "twenty-one times more": a ratio in words. */
+const WORD_TIMES_RE = new RegExp(`(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}\\s+times(?=\\s+${RATIO_FOLLOWER})`, "giu");
+/** "tenfold", "ten-fold", "a hundredfold", but not "twofold: ..." or "a threefold approach", which name parts, not a ratio. */
+const WORD_FOLD_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}[${DASHES}]?fold(?![\\p{L}\\p{N}])(?!\\s*:)` +
+  "(?!\\s+(?:aim|answer|approach|benefit|challenge|concern|effect|goal|impact|issue|mission|nature|objective|plan|problem|process" +
+  "|purpose|question|reason|response|risk|role|strategy|task|test|threat)s?(?![\\p{L}]))", "giu");
+/** "is twofold", "are threefold": a thing of two or three parts. */
+const PARTS_FOLD_RE = /(?:^|[^\p{L}])(?:is|are|was|were|be|been)\s+$/iu;
+
+/**
+ * The ratios a text writes in words, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145): a number word
+ * from two up, or a compound ("twenty-one", "a hundred"), then "times" and a comparison (RATIO_FOLLOWER:
+ * "nearly ten times the 2023–24 pace", "five times more"), or "-fold" in one word or hyphenated ("tenfold",
+ * "ten-fold"). Not "once", "twice" (the Gap headline prints "more than twice"), a count of occurrences
+ * ("three times in October", "three times over two weeks", "three times as CISA confirmed", and at a
+ * sentence's start "Three times the vendor said", OPENING_RATIO_AFTER_RE), or "twofold" or "threefold"
+ * for a thing of two or three parts.
+ */
+export function wordRatios(text: string): string[] {
+  const s = text.normalize("NFKC");
+  const out: { at: number; raw: string }[] = [];
+  for (const m of s.matchAll(WORD_TIMES_RE)) {
+    const opens = /(?:^|[.!?:;]["'”’)\]]*\s)[\s("'“‘\[]*$/u.test(s.slice(0, m.index));
+    if (opens && !OPENING_RATIO_AFTER_RE.test(s.slice(m.index + m[0].length)) && /^\s+the(?![\p{L}])/u.test(s.slice(m.index + m[0].length))) continue;
+    out.push({ at: m.index, raw: m[0] });
+  }
+  for (const m of s.matchAll(WORD_FOLD_RE)) {
+    if (/^(?:two|three)/iu.test(m[0]) && PARTS_FOLD_RE.test(s.slice(0, m.index))) continue;
+    out.push({ at: m.index, raw: m[0] });
+  }
+  return out.sort((a, b) => a.at - b.at).map((x) => x.raw);
+}
+
+// ── Label figures (§4.12, §0.4 row 145) ──────────────────────────────────────────────────────────
+
+/** A figure a quotable label prints with its unit word: "26 weeks", "2 to 30 days", "80% interval". */
+export interface LabelFigure {
+  /** As the label writes it. */
+  text: string;
+  /** Its number, or a range's two. */
+  values: readonly number[];
+  unit: "week" | "day" | "% interval";
+  /** The label writes it as an age ("more than 365 days old"), so the prose may follow it with "old" too. */
+  old: boolean;
+}
+
+/** Between a range's two numbers: " to ", or a hyphen or en dash with or without spaces. */
+const RANGE_JOIN = `(?:\\s+to\\s+|\\s?[${DASHES}]\\s?)`;
+const LABEL_FIGURE_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}.,${DASHES}])(\\d+)(?:${RANGE_JOIN}(\\d+))?(?:\\s+(weeks?|days?)(?:(?:\\s+|[${DASHES}])(old))?|%\\s+(interval))(?![\\p{L}\\p{N}])`, "giu");
+
+const YEAR_ONLY_RE = new RegExp(`^${YEAR}$`, "u");
+
+/**
+ * The figures a quotable label prints, in order: a number or a range ("2 to 30 days") with its unit word,
+ * weeks or days, and the "80% interval" of an interval bound. Years and "2023–24" are not figures, nor is
+ * a unit word without a number ("median days").
+ */
+export function labelFigures(label: string): LabelFigure[] {
+  const out: LabelFigure[] = [];
+  for (const m of label.normalize("NFKC").matchAll(LABEL_FIGURE_RE)) {
+    const [text, a, b, unit, old, interval] = m as unknown as [string, string, string | undefined, string | undefined, string | undefined, string | undefined];
+    if ([a, b].some((x) => x !== undefined && YEAR_ONLY_RE.test(x))) continue; // a year, as numbersIn() reads it
+    out.push({
+      text,
+      values: b === undefined ? [Number(a)] : [Number(a), Number(b)],
+      unit: interval ? "% interval" : unit!.toLowerCase().startsWith("week") ? "week" : "day",
+      old: old !== undefined,
+    });
+  }
+  return out;
+}
+
+/** The unit words in prose: "wk" and "wks" for weeks; "confidence" or "credible" may come before "interval". */
+const UNIT_RES: Readonly<Record<LabelFigure["unit"], string>> = {
+  week: "(?:weeks?|wks?)", day: "days?", "% interval": `(?:(?:confidence|credible)(?:\\s+|[${DASHES}]))?intervals?`,
+};
+/**
+ * The unit word ends there, and is not followed by "long" ("26 weeks long") or, unless the label writes the
+ * figure as an age, by "old" ("26-week-old"; "365 days old" when the label says "more than 365 days old").
+ */
+const unitEnd = (f: LabelFigure): string =>
+  `(?![\\p{L}\\p{N}])(?!(?:\\s+|[${DASHES}])(?:${f.old ? "long" : "old|long"})(?![\\p{L}\\p{N}]))`;
+/** Not glued to a word or a number, and not the end of a range ("13-26 weeks", "13 to 26 weeks", "between 13 and 26 weeks"). */
+const FIGURE_START = `(?<![\\p{L}\\p{N}.,]|\\p{N}\\s?[${DASHES}]\\s?|\\p{N}\\s+to\\s+|between\\s+\\p{N}+(?:[.,]\\p{N}+)?\\s+and\\s+)`;
+
+/**
+ * A figure written as one in prose: any case, a space or a hyphen or dash before its unit, singular or plural.
+ * A range is joined as the label joins it, or written "between 2 and 30 days"; "2 and 30 days" without the
+ * "between" is two numbers.
+ */
+function figureRe(f: LabelFigure): RegExp {
+  const [a, b] = f.values.map((v) => String(v));
+  const num = b === undefined ? a : `(?:between\\s+${a}\\s+and\\s+${b}|${a}${RANGE_JOIN}${b})`;
+  const pct = f.unit === "% interval" ? "(?:\\s?%|\\s?per\\s?cent|\\s?percent)" : "";
+  return new RegExp(`${FIGURE_START}${num}${pct}(?=(?:\\s+|[${DASHES}])${UNIT_RES[f.unit]}${unitEnd(f)})`, "giu");
+}
+
+/**
+ * numbersIn() of `text` without the given label figures where they are written as figures (§4.12, §0.4
+ * row 145): "26 weeks", "26-week", "26–week", "26 wks", "26 Weeks"; "2 to 30 days", "2-30 days",
+ * "2–30 days", "between 2 and 30 days"; "80% interval", "80% confidence interval", "80% credible
+ * interval". Each entry of `figures` leaves out one written occurrence, the first in
+ * text order, so a figure given once and written twice counts the second time ("within 7 days, 7 days
+ * sooner"). A figure followed by "long" ("26 weeks long"), or by "old" ("26-week-old flaws") unless its
+ * label writes it as an age ("more than 365 days old"), still counts, as does any other number, and any
+ * figure not given. A metric Angle reads its text this way with the figures of its path's quotable labels
+ * (lib/rules/grounding.ts angleNumbers()).
+ */
+export function numbersBesideFigures(text: string, figures: readonly LabelFigure[]): NumberToken[] {
+  let s = text.normalize("NFKC");
+  const times = new Map<string, { f: LabelFigure; n: number }>();
+  for (const f of figures) {
+    const t = times.get(f.text);
+    if (t) t.n += 1;
+    else times.set(f.text, { f, n: 1 });
+  }
+  // Ranges first, so a range's own end is never read as a figure on its own.
+  for (const { f, n } of [...times.values()].sort((x, y) => y.f.values.length - x.f.values.length)) {
+    let left = n;
+    s = s.replace(figureRe(f), (m) => (left-- > 0 ? " " : m));
+  }
+  return numbersIn(s);
 }
 
 /** Removes binary noise from a product of a decimal and a power of ten (0.1 * 1e6 is 100000.00000000001). */

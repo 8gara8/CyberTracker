@@ -6,14 +6,14 @@
 // `scoreboard.entries`) the walkers read the right one and give its own path.
 
 import type { LoadedConfig } from "../config";
-import { orderItems } from "../items";
+import { displayOrder as itemDisplayOrder } from "../items";
 import type { Brief } from "../schema/brief";
 import type { Tier } from "../schema/common";
 import type { Finder } from "../schema/config";
 import { publisherFor } from "../sources";
 import { jaccard } from "../text";
 import { normalizeUrl } from "../urls";
-import type { Edition } from "../vocab";
+import { WITHHELD_MARK, type Edition } from "../vocab";
 import type {
   AnyBrief, AnyItem, AnySource, Derived, ItemPublishers, PublisherGroup, PublisherView, RuleInput, RuleMode,
 } from "./types";
@@ -301,7 +301,9 @@ export function publisherView(s: AnySource, mode: RuleMode, config: Pick<LoadedC
 /**
  * The publishers of an item (§4.12): the distinct `publisher` values of the tier 1 and 2 sources in its
  * `source_ids`, then syndicated copies folded into one: the same publisher, or titles whose word sets have
- * Jaccard similarity ≥ 0.8. The same union-find as lib/regions.ts's publisherCount().
+ * Jaccard similarity ≥ 0.8. The same union-find as lib/regions.ts's publisherCount(), except that a title a
+ * withhold masked (WITHHELD_MARK, §4.10) says nothing about syndication and never folds by title, so a
+ * withheld Critical item keeps the publishers it was published with.
  */
 export function publishersOfItem(
   item: Pick<AnyItem, "source_ids">,
@@ -320,7 +322,10 @@ export function publishersOfItem(
     for (let j = i + 1; j < list.length; j += 1) {
       const a = list[i]!;
       const b = list[j]!;
-      if (a.view.publisher === b.view.publisher || jaccard(titleOf(a.source), titleOf(b.source)) >= 0.8) parent[find(j)] = find(i);
+      const ta = titleOf(a.source);
+      const tb = titleOf(b.source);
+      const copies = ta !== WITHHELD_MARK && tb !== WITHHELD_MARK && jaccard(ta, tb) >= 0.8;
+      if (a.view.publisher === b.view.publisher || copies) parent[find(j)] = find(i);
     }
   }
   const groups = new Map<number, PublisherGroup>();
@@ -358,10 +363,10 @@ export function derive(b: AnyBrief, mode: RuleMode, config: Pick<LoadedConfig, "
   return { sourcesById, publisherBySourceId, tierBySourceId, itemsById, publishersByItem, publishersByIndex, order: displayOrder(items) };
 }
 
-/** orderItems(), or the agent's order when an item has no known kind or severity (a best-effort run). */
+/** lib/items.ts displayOrder(), or the agent's order when an item has no known kind or severity (a best-effort run). */
 function displayOrder(items: readonly AnyItem[]): AnyItem[] {
   try {
-    return orderItems(items);
+    return itemDisplayOrder(items);
   } catch {
     return [...items];
   }

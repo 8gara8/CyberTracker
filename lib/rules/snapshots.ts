@@ -7,7 +7,7 @@
 
 import { NONE_FOUND } from "../vocab";
 import { numbersIn, type NumberToken } from "../text";
-import { blockNumbers, exactIn, metricPool, roundIn, type PoolNumber } from "./grounding";
+import { angleNumbers, blockNumbers, distinctTokens, exactIn, metricPool, roundIn, type PoolNumber } from "./grounding";
 import { entriesOf, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type KnownName } from "./shared";
 import { defineRule, list, warning, type AnyItem, type Rule, type RuleInput, type ValidationIssue } from "./types";
 
@@ -63,9 +63,10 @@ const ids = (xs: readonly string[]) => (xs.length ? list(xs) : "none");
 /**
  * SNAP_NUMBER, SNAP_NAME, SNAP_QUOTE and SNAP_MISSING (draft scope, warnings):
  * - SNAP_MISSING: none of an item's sources (or the Angle's source) has seen text;
- * - SNAP_NUMBER: a number in an item's headline, summary or why_it_matters, or in the Angle's text or
- *   counterpoint, matching no number in the seen text of its tier 1 and 2 sources, its CVE block or release
- *   (blockNumbers()) or the metrics (exact, metricNumbers());
+ * - SNAP_NUMBER: a number in an item's headline, summary or why_it_matters, or in the Angle's text (read by
+ *   angleNumbers(), so a metric Angle's label figures are not numbers) or counterpoint, matching no number in
+ *   the seen text of its tier 1 and 2 sources, its CVE block or release (blockNumbers()) or the metrics
+ *   (exact, metricNumbers());
  * - SNAP_NAME: a known name in an item's prose fields found (through any of its forms) in none of its tier 1
  *   or 2 sources' seen text;
  * - SNAP_QUOTE: a quoted field (ai_evidence quote, attribution confidence_text, Scoreboard entry quote) not in
@@ -127,7 +128,9 @@ const snapshotGates = defineRule({
         for (const field of ["text", "counterpoint"] as const) {
           const text = angle[field];
           if (typeof text !== "string" || text === NONE_FOUND) continue;
-          const bad = distinctNumbers(text).filter((n) => !roundIn(n, texts) && !exactIn(n, metricNums));
+          // The text is read as LEAD_GROUNDED and WORDS_OVER read it (angleNumbers()); the counterpoint as any prose.
+          const nums = field === "text" ? distinctTokens(angleNumbers(angle, metrics ?? null)) : distinctNumbers(text);
+          const bad = nums.filter((n) => !roundIn(n, texts) && !exactIn(n, metricNums));
           if (!bad.length) continue;
           out.push(warning("SNAP_NUMBER", `angle.${field}`,
             `angle.${field} holds ${list(bad.map((n) => n.raw))}, which no page seen for the Angle's tier 1 or 2 sources (${ids(tier12(input, own))}) or the metrics shows.`,

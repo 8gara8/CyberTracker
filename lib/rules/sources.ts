@@ -1,17 +1,20 @@
 // Sources (SPEC §4.12): SOURCE_REF, SOURCE_DUP, SOURCE_URL, SOURCE_UNSEEN, SOURCE_TIER, SOURCE_CRITICAL_TWO,
-// SOURCE_SYNDICATED, SOURCE_STATE_LABEL, SOURCE_ORPHAN. Publishers and tiers come from `derived` (shared.ts):
+// SOURCE_SYNDICATED, SOURCE_STATE_LABEL, RELEASE_SOURCE, SOURCE_ORPHAN. Publishers and tiers come from `derived` (shared.ts):
 // publisherFor() on the current config in draft mode, each source's frozen fields in published mode, so an
 // archived brief is never judged against a config change (§4.12 "Archived briefs"). SOURCE_URL reads only the
 // `redirect` and `archive` entries of BLOCKED_HOSTS; the rest are NO_EXPLOIT_LINK's (safety.ts).
 
-import type { SourceTiersFile } from "../schema/config";
+import { matchVendor, type LoadedConfig } from "../config";
+import { utcDateOf } from "../dates";
+import type { SourceTiersFile, Vendor } from "../schema/config";
 import type { SourceType, Tier } from "../schema/common";
 import { blockedReason, GITHUB_ADVISORIES } from "../sources";
 import { blockedEntry, hostOf, isHttpsUrl, normalizeUrl } from "../urls";
 import { exploitLinkProblem } from "./safety";
 import { entriesOf, isBrief, sourceIdFields } from "./shared";
 import {
-  defineRule, error, list, plural, warning, type AnyItem, type AnySource, type PublisherView, type Rule, type RuleInput, type ValidationIssue,
+  defineRule, error, list, plural, warning, type AnyItem, type AnySource, type CveLookup, type PublisherView, type Rule, type RuleInput,
+  type ValidationIssue,
 } from "./types";
 
 const ids = (xs: readonly string[]) => list(xs);
@@ -204,8 +207,11 @@ const TYPE_NEEDS: Record<SourceType, string> = {
   other: "a tier 3 publisher",
 };
 
-/** The source_type that fits a publisher best, for the message. */
-function fittingType(v: PublisherView): SourceType {
+/**
+ * The source_type that fits a publisher best: SOURCE_TIER's message, and the context's
+ * `config.tiers.cve_record` (lib/context.ts, §4.15), so what the agent is told and what the rule asks agree.
+ */
+export function fittingType(v: Pick<PublisherView, "tier" | "publisher" | "kind">): SourceType {
   if (v.tier === 3) return "other";
   if (RECORD_PUBLISHERS.includes(v.publisher)) return "cve_record";
   if (v.kind === "vendor") return "vendor_advisory";
@@ -213,6 +219,12 @@ function fittingType(v: PublisherView): SourceType {
   if (v.kind === "regulator") return "regulator_filing";
   if (v.kind === "newsroom" && v.tier === 2) return "press";
   return "research";
+}
+
+/** "an unlisted publisher", "a record or data publisher" (a listed publisher of kind other: CVE, GHSA, OSV, EPSS) or "a <kind> publisher". */
+function publisherKindText(v: PublisherView): string {
+  if (unlisted(v)) return "an unlisted publisher";
+  return v.kind === "other" ? "a record or data publisher" : `a ${v.kind} publisher`;
 }
 
 /** "s5 (example.org, tier 3)". */
@@ -265,7 +277,7 @@ const sourceTier = defineRule({
       }
       if (mode === "draft" && v.kind !== null && !sourceTypeFits(s.source_type, v)) {
         out.push(error("SOURCE_TIER", `sources[${i}].source_type`,
-          `${s.id} has source_type "${s.source_type}", which needs ${TYPE_NEEDS[s.source_type]}, but ${v.publisher_name} is ${v.kind === "other" ? "an unlisted publisher" : `a ${v.kind} publisher`} of tier ${v.tier}. Use "${fittingType(v)}", or cite a source that fits.`));
+          `${s.id} has source_type "${s.source_type}", which needs ${TYPE_NEEDS[s.source_type]}, but ${v.publisher_name} is ${publisherKindText(v)} of tier ${v.tier}. Use "${fittingType(v)}", or cite a source that fits.`));
       }
     });
     return out;
@@ -388,6 +400,130 @@ const sourceStateLabel = defineRule({
   },
 });
 
+// ── RELEASE_SOURCE ───────────────────────────────────────────────────────────────────────────────
+
+/** What a patch batch's release block is dated and linked from (§4.6, §5.12; plan A6). */
+export interface ReleaseBasis<S> {
+  /** The release's vendor in vendors.json, matched by the candidate's vendor name; null when none matches. */
+  vendor: Vendor | null;
+  /** The item's first cited source (in `source_ids` order) whose publisher is that vendor, at tier 1. */
+  source: S | null;
+  /**
+   * The release's exploited CVE ids, else those of the item's own `cve_ids` that are the release's fixes
+   * (releaseMember()), in the item's order.
+   */
+  bundle: readonly string[];
+  /** The item's `cve_ids` left out of `bundle` because they are not the release's fixes (none for a release with an exploited fix). */
+  ignored: readonly string[];
+  /** The source's `published_at` as a UTC date, else the newest UTC publication date of the bundle's CVE List records. */
+  date: string | null;
+  /**
+   * Why publish cannot build the block: no date. A block with a date always has a page too (the vendor
+   * source the date came from, or a bundled record), so there is no second problem.
+   */
+  problem: "no_date" | null;
+}
+
+/** The release's own fixes' publication dates, as the candidate carries them (§4.15). */
+export type ReleaseSpan = { first_published: string; last_published: string };
+
+/** "on 2026-10-13", or "from 2026-10-12 to 2026-10-13": the dates a release's fixes were published. */
+export const releaseSpanText = (r: ReleaseSpan): string =>
+  r.first_published === r.last_published ? `on ${r.first_published}` : `from ${r.first_published} to ${r.last_published}`;
+
+/**
+ * Whether a CVE id the item names is one of the release's fixes, so it may date, title and link the block:
+ * one of the release's exploited CVE ids (its candidate's own), or an id whose published CVE List record
+ * was assigned by one of the vendor's CNAs (vendors.json `cna`) and published within the release's span
+ * (its fixes' first and last UTC publication dates), which is how rank bundles a release: a record of the
+ * vendor's CNA published in the record window (§5.12 step 2). An id with no record, a record from another
+ * CNA, and an older (or later) record of the vendor's own CNA are not, so none of them dates the block
+ * outside the release.
+ */
+export function releaseMember(
+  cveId: string, release: { exploited_cve_ids: readonly string[] } & ReleaseSpan, vendor: Pick<Vendor, "cna"> | null, records: CveLookup | null,
+): boolean {
+  const id = cveId.toUpperCase();
+  if (release.exploited_cve_ids.some((x) => x.toUpperCase() === id)) return true;
+  const rec = records?.get(id);
+  if (!rec || rec.state !== "PUBLISHED" || vendor === null || rec.assigner === null || !vendor.cna.includes(rec.assigner)) return false;
+  const d = rec.date_published;
+  return d !== null && release.first_published <= d && d <= release.last_published;
+}
+
+/**
+ * The basis of a release block, shared by releaseBlockOf() (lib/apply.ts), which throws ComposeError on a
+ * `problem`, and RELEASE_SOURCE, which fails the draft before publish, so the two cannot drift. `viewOf`
+ * gives a source's publisher and tier: the frozen fields at publish, publisherFor() on the run's config in
+ * draft mode, which is what publish freezes. Only the release's own fixes (releaseMember()) count in the
+ * bundle, so a CVE id of another vendor never dates, titles or links the block.
+ */
+export function releaseBasisOf<S extends { id: string; published_at: string | null }>(
+  item: { source_ids: readonly string[]; cve_ids: readonly string[] },
+  release: { vendor: string; exploited_cve_ids: readonly string[] } & ReleaseSpan,
+  sources: readonly S[],
+  viewOf: (s: S) => { publisher: string; tier: number } | undefined,
+  config: Pick<LoadedConfig, "vendors">,
+  records: CveLookup | null,
+): ReleaseBasis<S> {
+  const vendor = matchVendor(config, { kevVendorProject: release.vendor });
+  const publisher = vendor ? `vendor:${vendor.id}` : null;
+  const isVendors = (s: S | undefined): s is S => {
+    const v = s === undefined ? undefined : viewOf(s);
+    return v !== undefined && v.publisher === publisher && v.tier === 1;
+  };
+  const source = publisher === null ? null : item.source_ids.map((sid) => sources.find((s) => s.id === sid)).find(isVendors) ?? null;
+  const exploited = release.exploited_cve_ids.length > 0;
+  const bundle = exploited ? release.exploited_cve_ids : item.cve_ids.filter((id) => releaseMember(id, release, vendor, records));
+  const ignored = exploited ? [] : item.cve_ids.filter((id) => !bundle.includes(id));
+  const newest = bundle.map((cve) => records?.get(cve)?.date_published ?? null).filter((d): d is string => d !== null).sort().at(-1) ?? null;
+  const date = source?.published_at ? utcDateOf(source.published_at) : newest;
+  return { vendor, source, bundle, ignored, date, problem: date ? null : "no_date" };
+}
+
+/**
+ * RELEASE_SOURCE (draft): an item with a release_id whose release block publish cannot build
+ * (releaseBasisOf() gives a problem), so applyDraft() would throw ComposeError and fail the morning at
+ * publish. The usual case is a release with no exploited fix whose patch batch cites only the press and
+ * names no CVE id: the block has no vendor page to date it and no CVE List record either.
+ */
+const releaseSource = defineRule({
+  code: "RELEASE_SOURCE",
+  scope: "draft",
+  check: (input) => {
+    const { draft, derived, context, cveList, config } = input;
+    const out: ValidationIssue[] = [];
+    const sources = [...derived.sourcesById.values()];
+    ((draft.items ?? []) as AnyItem[]).forEach((it, i) => {
+      if (!it || typeof it.release_id !== "string" || !Array.isArray(it.source_ids) || !Array.isArray(it.cve_ids)) return;
+      const release = context?.candidates.find((c) => c.release?.release_id === it.release_id)?.release;
+      if (!release) return;
+      let basis: ReleaseBasis<AnySource>;
+      try {
+        basis = releaseBasisOf(it, release, sources, (s) => derived.publisherBySourceId.get(s.id), config, cveList);
+      } catch {
+        return; // a published_at the schema already fails
+      }
+      if (basis.problem === null) return;
+      const vendorName = basis.vendor?.name ?? release.vendor;
+      const sourceText = basis.source ? `its ${vendorName} source ${basis.source.id} has no published_at` : `it cites no tier 1 source of ${vendorName}`;
+      const recordText = basis.bundle.length === 0
+        ? "it names none of the release's CVE ids"
+        : `no CVE List record of ${list([...basis.bundle])} gives a publication date`;
+      const one = basis.ignored.length === 1;
+      const ignoredText = basis.ignored.length === 0 ? ""
+        : ` (${list([...basis.ignored])} ${one ? "is" : "are"} not among the release's fixes: ${one ? "it has" : "they have"} no CVE List record from ${vendorName}'s CNA published ${releaseSpanText(release)}, so ${one ? "it is" : "they are"} ignored)`;
+      const own = basis.source
+        ? `Give ${basis.source.id} the published_at its page shows`
+        : `Cite ${basis.vendor ? `${vendorName}'s own advisory for the release from the pack (a tier 1 source on ${vendorName}'s domain)` : "the vendor's own advisory for the release"}, with its published_at`;
+      out.push(error("RELEASE_SOURCE", `items[${i}].source_ids`,
+        `items[${i}] (${it.id}) names release ${it.release_id}, but publish cannot date its release block: ${sourceText}, and ${recordText}${ignoredText}.`,
+        release.exploited_cve_ids.length > 0 ? `${own}.` : `${own}, or name the release's CVE ids (its pack records) in cve_ids.`));
+    });
+    return out;
+  },
+});
+
 // ── SOURCE_ORPHAN ────────────────────────────────────────────────────────────────────────────────
 
 /** SOURCE_ORPHAN (warning): a source no source-id field references (a Brief's Scoreboard entries and corrections cite by URL). */
@@ -409,4 +545,4 @@ const sourceOrphan = defineRule({
   },
 });
 
-export const sourceRules: Rule[] = [sourceRef, sourceDup, sourceUrl, sourceUnseen, sourceTier, sourceCritical, sourceStateLabel, sourceOrphan];
+export const sourceRules: Rule[] = [sourceRef, sourceDup, sourceUrl, sourceUnseen, sourceTier, sourceCritical, sourceStateLabel, releaseSource, sourceOrphan];

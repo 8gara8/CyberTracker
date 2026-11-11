@@ -12,7 +12,7 @@ import { SourceTiersFile, VendorsFile } from "@/lib/schema/config";
 import { DraftBrief } from "@/lib/schema/draft-brief";
 import type { DraftItem } from "@/lib/schema/item";
 import { blockedReason, compileTier1Paths, isGithubTier1, publisherFor, urlOnAnyDomain, urlOnDomain, type PublisherConfig } from "@/lib/sources";
-import { countWords, jaccard, numberMatches, numbersIn, splitSentences, wordSet } from "@/lib/text";
+import { countWords, jaccard, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordSet } from "@/lib/text";
 import { TAIWAN_LENS_ROWS, type KindId, type Severity } from "@/lib/vocab";
 
 // ── format ───────────────────────────────────────────────────────────────────────────────────────
@@ -98,6 +98,102 @@ describe("splitSentences", () => {
   });
 });
 
+describe("labelFigures and numbersBesideFigures (row 145)", () => {
+  const figs = (label: string) => labelFigures(label).map((f) => [f.text, f.values, f.unit]);
+  it("reads each figure a quotable label prints, with its unit word; years, 2023–24 and bare unit words are not figures", () => {
+    expect(figs("share already exploited at disclosure, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    expect(figs("AI-credited records excluding Anthropic, 13 weeks")).toEqual([["13 weeks", [13], "week"]]);
+    expect(figs("share listed within 7 days, 26 weeks")).toEqual([["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("n-day race (listed 2 to 30 days after), 26 weeks")).toEqual([["2 to 30 days", [2, 30], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("listed 31 to 365 days after, 2023–24")).toEqual([["31 to 365 days", [31, 365], "day"]]);
+    expect(figs("old flaws newly listed (more than 365 days old), 13 weeks")).toEqual([["365 days old", [365], "day"], ["13 weeks", [13], "week"]]);
+    expect(figs("80% interval low, listed within 7 days, 26 weeks")).toEqual([["80% interval", [80], "% interval"], ["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("KEV additions for Taiwanese vendors, 30 days")).toEqual([["30 days", [30], "day"]]);
+    expect(figs("KEV additions for Japanese vendors, 90 days")).toEqual([["90 days", [90], "day"]]);
+    expect(figs("2023–24 pace of old flaws newly listed, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    expect(figs("KEV additions, pace vs 2023–24, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    for (const none of ["median days to listing for the rest, 2023–24", "weeks in the window", "share already exploited at disclosure, 2023–24",
+      "KEV additions, 2023 weeks", "2023–24 days"]) expect(figs(none), none).toEqual([]);
+  });
+
+  const raw = (t: string, label: string) => numbersBesideFigures(t, labelFigures(label)).map((n) => n.raw);
+  const W26 = "share already exploited at disclosure, 26 weeks";
+  it("leaves out a figure written as one: any case, singular or plural, a space or any hyphen or dash, wk and wks", () => {
+    for (const t of ["37% over the last 26 weeks.", "In the 26-week Window, 37% were exploited.", "37% (26 Weeks).", "37% IN 26 WEEKS.",
+      "37% in the 26\u2010week view.", "37% in the 26\u2011week view.", "37% in the 26–week view.", "37% over 26 week.", "37% over 26 wks.",
+      "37% over 26-wk.", "37% in 26  weeks.", "37% in 26 weeks’ data.", "37% in ２６ weeks."]) expect(raw(t, W26), t).toEqual(["37%"]);
+    // A range: "N to M", or a hyphen or en dash, with or without spaces.
+    const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
+    for (const t of ["39% were listed 2 to 30 days after, in 26 weeks.", "39% were listed 2-30 days after.", "39% were listed 2–30 days after.",
+      "39% were listed 2 – 30 days after.", "39% were listed 2 TO 30 DAYS after."]) expect(raw(t, nDay), t).toEqual(["39%"]);
+    expect(raw("The 80% interval of the 26-week share starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
+    expect(raw("The 80 per cent interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
+    // "between 2 and 30 days" is the range too, and "confidence" or "credible" may stand before "interval" (review of row 145).
+    for (const t of ["39% were listed between 2 and 30 days after.", "39% were listed Between 2 And 30 days after.", "39% were listed between 2  and  30 days after."])
+      expect(raw(t, nDay), t).toEqual(["39%"]);
+    expect(raw("37 were listed between 31 and 365 days after.", "listed 31 to 365 days after, 26 weeks")).toEqual(["37"]);
+    for (const t of ["The 80% confidence interval starts at 32%.", "The 80% credible interval starts at 32%.", "The 80 per cent confidence interval starts at 32%.",
+      "The 80% Confidence Intervals start at 32%.", "The 80%-confidence interval starts at 32%."])
+      expect(raw(t, "80% interval low, at disclosure, 26 weeks"), t).toEqual(["32%"]);
+    expect(raw("CISA listed 1 in the past 30 days.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1"]);
+    expect(raw("55% were listed within a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+  });
+  it("leaves out each figure only as many times as it is given, the first ones written, and counts any later one", () => {
+    // A label prints each figure once, so a second "7 days" is a number of its own (review of row 145).
+    const P7 = "share listed within 7 days, 26 weeks";
+    expect(raw("55% were listed within 7 days, a 7-day window.", P7)).toEqual(["55%", "7"]);
+    expect(raw("In the 26 weeks to 12 Oct, 55% were listed within 7 days, 7 days sooner than in 2023–24.", P7)).toEqual(["55%", "7"]);
+    expect(raw("37% in 26 weeks, and 26 weeks more.", W26)).toEqual(["37%", "26"]);
+    expect(raw("39% were listed 2 to 30 days after, and fixes took 2 to 30 days.", "n-day race (listed 2 to 30 days after), 26 weeks"))
+      .toEqual(["39%", "2", "30"]);
+    expect(raw("An 80% interval from 32%, and 80% intervals are wide.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%", "80%"]);
+    expect(raw("22 flaws more than 365 days old, some unpatched for 365 days.", "old flaws newly listed (more than 365 days old), 26 weeks"))
+      .toEqual(["22", "365"]);
+    // Text order: the first one written is the label's, whatever comes between.
+    expect(raw("Within 7 days: 55% were listed within 7 days.", P7)).toEqual(["55%", "7"]);
+    // A figure given twice is left out twice.
+    const twice = [...labelFigures(P7), ...labelFigures(P7)];
+    expect(numbersBesideFigures("55% within 7 days, 7 days sooner, in 26 weeks, 26 weeks on.", twice).map((n) => n.raw)).toEqual(["55%"]);
+  });
+  it("counts the figure when its unit runs on into old or long, or it is part of another number or range", () => {
+    expect(raw("37% of 26-week-old flaws.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37%, in a window 26 weeks long.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37%, in a 26-week-long window.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37% in 13 weeks.", W26)).toEqual(["37%", "13"]);
+    expect(raw("37% of 26 flaws in 26 days.", W26)).toEqual(["37%", "26", "26"]);
+    expect(raw("37% over 126 weeks or 26.5 weeks or 1,26 weeks.", W26)).toEqual(["37%", "126", "26.5"]);
+    expect(raw("37% over 26 weekdays.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37% over 13-26 weeks, or 13 to 26 weeks, or 26 to 52 weeks.", W26)).toEqual(["37%", "13", "26", "13", "26", "26", "52"]);
+    // A range's ends are not figures on their own, and the label's 80% is only "80% interval".
+    const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
+    expect(raw("39% were listed 30 days after.", nDay)).toEqual(["39%", "30"]);
+    expect(raw("80% of flaws, 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+    // "and" joins a range only after "between": "2 and 30 days" is two numbers, and a "between" range's end is not a figure alone.
+    expect(raw("39% were listed 2 and 30 days after.", nDay)).toEqual(["39%", "2", "30"]);
+    expect(raw("39% were listed between 2 or 30 days after.", nDay)).toEqual(["39%", "2", "30"]);
+    expect(raw("37% over between 13 and 26 weeks.", W26)).toEqual(["37%", "13", "26"]);
+    expect(raw("1 flaw, listed between 2 and 30 days after.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1", "2", "30"]);
+    // Only "confidence" or "credible" may stand between the percent and "interval".
+    expect(raw("An 80% wide interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+    expect(raw("An 80% confidence level starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+  });
+  it("lets a figure run on into old when its label writes it as an age, and only then", () => {
+    const OLD = "old flaws newly listed (more than 365 days old), 26 weeks";
+    for (const t of ["CISA newly listed 22 flaws more than 365 days old in the last 26 weeks.", "22 flaws over 365 days old, in 26 weeks.",
+      "22 365-day-old flaws in 26 weeks.", "22 flaws older than 365 days in 26 weeks."]) expect(raw(t, OLD), t).toEqual(["22"]);
+    // The label's 26 weeks is a window, not an age, and "long" never labels.
+    expect(raw("22 flaws, 26 weeks old.", OLD)).toEqual(["22", "26"]);
+    expect(raw("22 flaws, a 365 days long wait.", OLD)).toEqual(["22", "365"]);
+    // A label that prints 365 days without "old" lets no "365 days old" through.
+    expect(raw("37 flaws 365 days old.", "listed 31 to 365 days after, 26 weeks")).toEqual(["37", "365"]);
+    expect(raw("22 flaws 365 days old.", "old flaws newly listed (more than 365 days), 26 weeks")).toEqual(["22", "365"]);
+  });
+  it("with no figures, or for a label without any, is numbersIn()", () => {
+    expect(numbersBesideFigures("37% in 26 weeks.", [])).toEqual(numbersIn("37% in 26 weeks."));
+    expect(raw("37% in 26 weeks.", "share already exploited at disclosure, 2023–24")).toEqual(["37%", "26"]);
+  });
+});
+
 describe("numbersIn", () => {
   const read = (text: string, words = false) => numbersIn(text, { words }).map((n) => [n.raw, n.value, n.percent, n.approx]);
 
@@ -114,6 +210,84 @@ describe("numbersIn", () => {
     const text = "CVE-2026-104935 and GHSA-abcd-efgh-ijkl on 2026-11-05T04:50:12+08:00, 2026-11-05, at 05:12 and 9 pm, "
       + "on 21 Oct, 21st October, October 21 and Nov. 3, in 2024, the 2020s, 2023-24, 2023–2024, version 4.2.7, v2.1, 10.0.0.1, §4.12.";
     expect(read(text)).toEqual([]);
+  });
+
+  it("reads a day range before or after a month name as one date, and nothing that is not a date (review of row 145)", () => {
+    for (const text of [
+      "13 to 14 Oct", "from 11 to 12 Nov", "between 10 and 11 Nov", "Between 10 and 11 Nov", "11-12 Nov", "11–12 Nov", "11 – 12 Nov",
+      "11‑12 Nov", "2–3 Nov", "from 12 to 13 Oct", "13 to 14 October", "13 to 14 OCT", "1 to 30 Sept", "13th to 14th Oct",
+      "13th to 14th of October", "from the 13th to the 14th of October", "between the 13th and the 14th of Oct", "13 to 14 Oct.",
+      "Oct 13 to 14", "Oct. 13 to 14", "October 13th to 14th", "Oct 13 to the 14th", "Oct 13-14", "Oct 13–14", "between Oct 13 and 14",
+      "1 to 31 Dec", "Oct 1 to 31",
+      // A range across months is two dates.
+      "30 Oct to 2 Nov", "from 31 Oct to 1 Nov", "30 Oct–2 Nov", "between 30 Oct and 2 Nov", "Oct 30 to Nov 2", "Oct 30–Nov 2",
+      "Oct 30 to 2 Nov", "13 Oct to 14 Oct",
+    ]) expect(read(text), text).toEqual([]);
+    expect(read("Nothing published between 13 and 14 Oct cleared the bar; 37% were exploited at disclosure.")).toEqual([["37%", 37, true, false]]);
+    expect(read("13 to 14 October's 26 weeks")).toEqual([["26", 26, false, false]]);
+    // Not dates: no month, the days out of order or past 31, a percentage, a decimal, a count.
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    expect(raws("rose from 12 to 40")).toEqual(["12", "40"]);
+    expect(raws("12 to 14 flaws")).toEqual(["12", "14"]);
+    expect(raws("2 to 30 days")).toEqual(["2", "30"]);
+    expect(raws("between 2 and 30 days")).toEqual(["2", "30"]);
+    expect(raws("between 13 and 26 weeks")).toEqual(["13", "26"]);
+    expect(raws("14 to 13 Oct")).toEqual(["14"]);
+    expect(raws("0 to 3 Nov")).toEqual(["0"]);
+    expect(raws("from 12 to 40 Nov")).toEqual(["12"]);
+    expect(raws("1.13 to 14 Oct")).toEqual(["1.13"]);
+    expect(raws("Oct 14 to 13")).toEqual(["13"]);
+    expect(raws("Oct 13 to 32")).toEqual(["32"]);
+    expect(raws("Oct 13 to 14%")).toEqual(["14%"]);
+    expect(raws("Oct 13 to 14.5")).toEqual(["14.5"]);
+    expect(raws("Oct 13 to 14 million")).toEqual(["14 million"]);
+  });
+
+  it("reads the natural forms of a day range as one date: and, or, /, through, weekdays (review of the seventh pass)", () => {
+    // Each failed LEAD_GROUNDED in a zero-item Gap sentence, or METRICS_ONLY_NUMBERS in the Monday week in review, on its first day.
+    for (const text of [
+      "on 11 and 12 Nov", "Nov 11 and 12", "on 11 or 12 Nov", "Nov 11 or 12", "from Tuesday 11 to Wednesday 12 Nov",
+      "between Tuesday 11 and Wednesday 12 Nov", "overnight on 11/12 Nov", "Nov 11/12", "11 / 12 Nov", "11 through 12 Nov",
+      "Nov 11 through 12", "11 thru 12 Nov", "from Friday 7 to Monday 10 Nov", "From Monday 2 to Sunday 8 Nov",
+      "between Monday 2 and Sunday 8 Nov", "Tue 11 to Wed 12 Nov", "Tues. 11 to Weds 12 Nov", "Thursday, 13 to Friday, 14 Nov",
+      "from Friday the 7th to Monday the 10th of November", "TUESDAY 11 to WEDNESDAY 12 NOV", "Nov 11 to Wednesday 12",
+      "13 and 14 Oct", "Oct 13 and 14",
+      // A spaced dash after the month joins the days at the end of a clause.
+      "Oct 13 – 14.", "Oct 13 – 14, the pace", "Oct 13 - 14 2026", "Oct 13 – 14",
+    ]) expect(read(text), text).toEqual([]);
+    expect(read("From Monday 2 to Sunday 8 Nov, KEV grew 15% in 26 weeks.").map((n) => n[0])).toEqual(["15%", "26"]);
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    // Not dates: a count after a spaced dash or with a multiplier, no month, days out of order, a weekday before a count.
+    expect(raws("Patch Tuesday, Oct 2 - 12 critical flaws")).toEqual(["12"]);
+    expect(raws("Oct 2 – 12 critical flaws were fixed")).toEqual(["12"]);
+    expect(raws("Oct 13 to 14 bn records")).toEqual(["14 bn"]);
+    expect(raws("Oct 13 to 14bn")).toEqual(["14bn"]);
+    expect(raws("Oct 13 to 14 m records")).toEqual(["14"]);
+    expect(raws("Oct 13 and 14 million")).toEqual(["14 million"]);
+    expect(raws("11/12")).toEqual(["11", "12"]);
+    expect(raws("3 and 4 flaws")).toEqual(["3", "4"]);
+    expect(raws("between 2 and 30 days")).toEqual(["2", "30"]);
+    expect(raws("Monday 2 flaws")).toEqual(["2"]);
+    expect(raws("Wednesday 12 to 14 flaws")).toEqual(["12", "14"]);
+    expect(raws("12 or 11 Nov")).toEqual(["12"]);
+    expect(raws("from Friday 10 to Monday 7 Nov")).toEqual(["10"]);
+  });
+
+  it("month first, joins two days by and, or, through or / only after between or at the end of a clause (review of the eighth pass)", () => {
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    // A count after the second day is a number, as it was at 3e511f6.
+    expect(raws("Fortinet disclosed it on Oct 3 and 12 days later CISA listed it.")).toEqual(["12"]);
+    expect(raws("CISA added two on Nov 4 and 12 more on Nov 6.")).toEqual(["12"]);
+    expect(raws("On Nov 11 or 12 vendors may ship fixes.")).toEqual(["12"]);
+    expect(raws("Listed Oct 3 through 19 days after disclosure.")).toEqual(["19"]);
+    expect(raws("Oct 3 thru 19 flaws")).toEqual(["19"]);
+    expect(raws("Released Nov 11/12 hours later.")).toEqual(["12"]);
+    expect(raws("Mar 3 and 10 more")).toEqual(["10"]);
+    // After "between", at the end of the text or a clause, before a year, "Taipei" or "UTC": one date.
+    for (const text of ["between Oct 3 and 4", "between Oct 3 and 4 flaws were listed", "on Nov 11 and 12.", "Nov 11/12, Taipei",
+      "Nov 11 or 12", "Nov 11 or 12; then", "Nov 11 through 12 2026", "Nov 11 and 12 Taipei time", "Nov 11/12 UTC", "Nov 11 thru 12)"]) {
+      expect(read(text), text).toEqual([]);
+    }
   });
 
   it("reads units and multipliers, and skips digits glued to words", () => {
@@ -430,11 +604,66 @@ describe("dropUnverified", () => {
   it("changes nothing without soft-gate issues, and accepts dotted index paths", () => {
     const { draft: same, report } = dropUnverified(draft(), [{ code: "SNAP_MISSING", path: "items[3]" }]);
     expect(same).toEqual(draft());
-    expect(report).toEqual({ items: [], angle: null, scoreboard_entries: [] });
+    expect(report).toEqual({ items: [], angle: null, scoreboard_entries: [], removed: [] });
     const dotted = dropUnverified(draft(), [{ code: "SNAP_NAME", path: "items.2.headline" }, { code: "SNAP_NUMBER", path: "angle.text" }]);
     expect(dotted.draft.items.map((i) => i.id)).toEqual(["vuln-a", "cve-2026-104935", "pol-b"]);
     expect(dotted.draft.angle).toBeNull();
-    expect(dotted.draft.region_raises[0]!.item_ids).toEqual([]);
+    expect(dotted.draft.region_raises).toEqual([]); // the raise cited only the dropped item
     expect(dropUnverified(dotted.draft, []).draft.angle).toBeNull(); // a gated draft goes round again
+  });
+
+  /** The 2026-11-11 Kobol dry run's Lead: lead[2] cites only the item the soft pass drops. */
+  function kobolLead(): DraftBrief {
+    const d = draft();
+    d.lead = [
+      { text: "SAMPLE lead sentence one about the exploited flaw and the vendor's own patch today.", item_ids: ["cve-2026-104935"], gap: false },
+      { text: "SAMPLE lead sentence two about the policy move.", item_ids: ["pol-b"], gap: false },
+      { text: "SAMPLE lead sentence three about the breach.", item_ids: ["inc-retail-nl-2026-10"], gap: false },
+    ];
+    return d;
+  }
+  const breachDropped: SoftIssue[] = [{ code: "SNAP_NAME", path: "items[2].summary" }];
+
+  it("removes a Lead sentence the drop leaves citing no item, when the Lead keeps its minimum (Kobol dry run, 2026-11-11)", () => {
+    const { draft: out, report } = dropUnverified(kobolLead(), breachDropped);
+    expect(out.items.map((i) => i.id)).toEqual(["vuln-a", "cve-2026-104935", "pol-b"]);
+    expect(out.lead.map((s) => s.item_ids)).toEqual([["cve-2026-104935"], ["pol-b"]]);
+    expect(countWords(out.lead.map((s) => s.text).join(" "))).toBeGreaterThanOrEqual(15);
+    // The raise that cited only the dropped item goes too; the Lens rows stay (six fixed rows), emptied, for the next round.
+    expect(out.region_raises).toEqual([]);
+    expect(report.removed).toEqual([
+      { path: "lead[2]", text: "SAMPLE lead sentence three about the breach." },
+      { path: "region_raises[0]", text: "TW: SAMPLE raise." },
+    ]);
+    expect(out.taiwan_lens.rows[0]).toMatchObject({ row: "gov_infra", text: "SAMPLE row.", item_ids: [] });
+  });
+
+  it("keeps an emptied Lead sentence when removing it would take the Lead under 15 words or leave none, and never removes a Gap sentence", () => {
+    const short = kobolLead();
+    short.lead[0]!.text = "SAMPLE short one.";
+    const a = dropUnverified(short, breachDropped);
+    expect(a.draft.lead).toHaveLength(3);
+    expect(a.draft.lead[2]!.item_ids).toEqual([]); // left for the next repair round or the failure, as before
+    expect(a.report.removed.map((r) => r.path)).toEqual(["region_raises[0]"]);
+
+    const alone = kobolLead();
+    alone.lead = [alone.lead[2]!];
+    expect(dropUnverified(alone, breachDropped).draft.lead).toHaveLength(1);
+
+    const gap = kobolLead();
+    gap.lead[2]!.gap = true;
+    const g = dropUnverified(gap, breachDropped);
+    expect(g.draft.lead).toHaveLength(3);
+    expect(g.report.removed.map((r) => r.path)).toEqual(["region_raises[0]"]);
+  });
+
+  it("keeps a raise that still cites an item, and a Lead sentence that already cited none", () => {
+    const d = kobolLead();
+    d.region_raises[0]!.item_ids = ["inc-retail-nl-2026-10", "pol-b"];
+    d.lead.push({ text: "SAMPLE sentence that cited nothing before the drop.", item_ids: [], gap: false });
+    const { draft: out, report } = dropUnverified(d, breachDropped);
+    expect(out.region_raises.map((r) => r.item_ids)).toEqual([["pol-b"]]);
+    expect(report.removed.map((r) => r.path)).toEqual(["lead[2]"]);
+    expect(out.lead.map((s) => s.text)).toEqual([d.lead[0]!.text, d.lead[1]!.text, d.lead[3]!.text]);
   });
 });

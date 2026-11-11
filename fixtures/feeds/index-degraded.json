@@ -1,4 +1,8 @@
 {
+  "https://access.redhat.com/ct-sample/cve-2026-110036": {
+    "file": "pages/access-redhat-com--cve-2026-110036.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://blog.google/security/rss/": {
     "file": "rss/nodate.xml",
     "content_type": "application/xml"
@@ -37,6 +41,10 @@
     "file": "rss/must-match.xml",
     "content_type": "application/rss+xml"
   },
+  "https://focustaiwan.tw/ct-sample/chip-equipment-makers-phishing": {
+    "file": "pages/focustaiwan-tw--chip-equipment-makers-phishing.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://github.com/CVEProject/cvelistV5/releases/download/cve_2026-10-12_at_end_of_day/2026-10-12_delta_CVEs_at_end_of_day.zip": {
     "file": "cvelist/zips/2026-10-12_delta_CVEs_at_end_of_day.zip",
     "content_type": "application/zip"
@@ -55,6 +63,10 @@
   },
   "https://krebsonsecurity.com/feed/": {
     "error": "timeout"
+  },
+  "https://msrc.microsoft.com/ct-sample/october-2026-security-update": {
+    "file": "pages/msrc-microsoft-com--october-2026-security-update.html",
+    "content_type": "text/html; charset=utf-8"
   },
   "https://openai.com/news/rss.xml": {
     "file": "rss/must-match.xml",
@@ -132,12 +144,24 @@
     "file": "anthropic-cvd/payload.json",
     "content_type": "application/json"
   },
+  "https://red.anthropic.com/ct-sample/glasswing-partner-update": {
+    "file": "pages/red-anthropic-com--glasswing-partner-update.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=2026-10-12T20:30:00.000&pubEndDate=2026-10-13T20:30:00.000&resultsPerPage=2000&startIndex=0": {
     "file": "nvd/page-1.json",
     "content_type": "application/json"
   },
+  "https://teamt5.org/ct-sample/paper-kestrel-invoice-phishing": {
+    "file": "pages/teamt5-org--paper-kestrel-invoice-phishing.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://techcrunch.com/category/security/feed/": {
     "status": 403,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://therecord.media/ct-sample/anthropic-glasswing-disclosures": {
+    "file": "pages/therecord-media--anthropic-glasswing-disclosures.html",
     "content_type": "text/html; charset=utf-8"
   },
   "https://therecord.media/feed": {
@@ -147,6 +171,10 @@
   "https://unit42.paloaltonetworks.com/feed/": {
     "file": "rss/stale.xml",
     "content_type": "application/rss+xml"
+  },
+  "https://www.bleepingcomputer.com/ct-sample/ivanti-connect-secure-flaw-exploited-in-attacks": {
+    "file": "pages/bleepingcomputer-com--ivanti-connect-secure-flaw-exploited-in-attacks.html",
+    "content_type": "text/html; charset=utf-8"
   },
   "https://www.bleepingcomputer.com/feed/": {
     "file": "rss/flood.xml",
@@ -171,13 +199,41 @@
   "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json": {
     "error": "timeout"
   },
+  "https://www.cve.org/CVERecord?id=CVE-2026-104935": {
+    "file": "pages/cve-org--cverecord-cve-2026-104935.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.cve.org/CVERecord?id=CVE-2026-108917": {
+    "file": "pages/cve-org--cverecord-cve-2026-108917.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.cve.org/CVERecord?id=CVE-2026-110036": {
+    "file": "pages/cve-org--cverecord-cve-2026-110036.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.cve.org/CVERecord?id=CVE-2026-96951": {
+    "file": "pages/cve-org--cverecord-cve-2026-96951.html",
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www.ey.gov.tw/ct-sample/cyber-security-act-amendment-one-hour-reporting": {
+    "file": "pages/ey-gov-tw--cyber-security-act-amendment-one-hour-reporting.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://www.ipa.go.jp/security/alert-rss.rdf": {
     "file": "rss/zoneless.rdf",
     "content_type": "application/rdf+xml"
   },
+  "https://www.ithome.com.tw/ct-sample/edimax-br-6208ac-command-injection": {
+    "file": "pages/ithome-com-tw--edimax-br-6208ac-command-injection.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://www.ithome.com.tw/rss/security": {
     "file": "rss/format-ithome.xml",
     "content_type": "application/rss+xml"
+  },
+  "https://www.ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935": {
+    "file": "pages/ivanti-com--connect-secure-security-advisory-cve-2026-104935.html",
+    "content_type": "text/html; charset=utf-8"
   },
   "https://www.jpcert.or.jp/rss/jpcert.rdf": {
     "file": "jpcert/jpcert.rdf",
@@ -194,16 +250,32 @@
     "file": "rss/must-match.xml",
     "content_type": "application/rss+xml"
   },
+  "https://www.security-next.com/ct-sample/logistics-ransomware-claim": {
+    "file": "pages/security-next-com--logistics-ransomware-claim.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://www.security-next.com/feed": {
     "file": "rss/zoneless.xml",
     "content_type": "application/rss+xml"
   },
+  "https://www.securityweek.com/ct-sample/microsoft-october-2026-patch-tuesday": {
+    "file": "pages/securityweek-com--microsoft-october-2026-patch-tuesday.html",
+    "content_type": "text/html; charset=utf-8"
+  },
   "https://www.securityweek.com/feed/": {
     "error": "timeout"
+  },
+  "https://www.taipeitimes.com/ct-sample/cabinet-backs-one-hour-incident-reporting": {
+    "file": "pages/taipeitimes-com--cabinet-backs-one-hour-incident-reporting.html",
+    "content_type": "text/html; charset=utf-8"
   },
   "https://www.taipeitimes.com/xml/index.rss": {
     "file": "rss/must-match.xml",
     "content_type": "application/rss+xml"
+  },
+  "https://www.theregister.com/ct-sample/red-hat-aisle-ai-bug-credits": {
+    "file": "pages/theregister-com--red-hat-aisle-ai-bug-credits.html",
+    "content_type": "text/html; charset=utf-8"
   },
   "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O": {
     "file": "exchange-tw/tpex.json",
@@ -215,6 +287,10 @@
   },
   "https://www.volexity.com/feed/": {
     "status": 404,
+    "content_type": "text/html; charset=utf-8"
+  },
+  "https://www3.nhk.or.jp/news/ct-sample/local-government-backup-checks": {
+    "file": "pages/nhk-or-jp--local-government-backup-checks.html",
     "content_type": "text/html; charset=utf-8"
   }
 }

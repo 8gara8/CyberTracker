@@ -17,10 +17,10 @@
     "ghsa_source": "git",
     "ghsa_commit": null,
     "config_versions": {
-      "vendors": 2,
+      "vendors": 4,
       "ai_finders": 2,
       "source_tiers": 2,
-      "regions": 1,
+      "regions": 2,
       "actors": 1
     },
     "reference": {

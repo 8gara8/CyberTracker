@@ -1,11 +1,13 @@
-// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS. Our numbers come from
-// numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers() (the Gap
-// panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a source's
-// seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a percentage.
+// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS, NUMBER_FORM. Our numbers
+// come from numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers()
+// (the Gap panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a
+// source's seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a
+// percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x", "ten times the pace").
 
-import { gapTableDisplays, kevLines, metricNumbers } from "../metrics/headline";
+import { addDays, isValidDate } from "../dates";
+import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { numberMatches, numbersIn, splitSentences, type NumberToken } from "../text";
+import { dayBeforeDateName, gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordRatios, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -108,13 +110,65 @@ function textPool(texts: readonly string[], opts: { words?: boolean } = {}): Poo
 
 /** Numbers of a text, one per written form. */
 function distinctNumbers(text: string): NumberToken[] {
+  return distinctTokens(numbersIn(text));
+}
+
+/** Tokens, one per written form. */
+export function distinctTokens(tokens: readonly NumberToken[]): NumberToken[] {
   const seen = new Set<string>();
-  return numbersIn(text).filter((n) => {
+  return tokens.filter((n) => {
     const k = `${n.raw}|${n.approx}`;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
+}
+
+/** The Gap's window lengths as figures ("26 weeks", "13 weeks"): what a metric Angle may print when no metrics file is read. */
+const GAP_WINDOW_FIGURES: readonly LabelFigure[] = WINDOW_LENGTHS.flatMap((w) => labelFigures(w));
+
+/**
+ * The figures a metric Angle may print beside its number (§4.12, §0.4 row 145): those the labels of its
+ * `metric_path`'s quotable rows print (quotableRows(); "26 weeks", "7 days", "2 to 30 days", "80%
+ * interval"), in label order, each as many times as one label prints it (once, for every label today):
+ * numbersBesideFigures() leaves out that many written occurrences and counts any later one. With no
+ * metrics file, the Gap's window lengths, 26 weeks and 13 weeks, once each. A sourced Angle, or a path
+ * with no quotable row, has none.
+ */
+export function angleFigures(angle: { metric_path?: string | null }, metrics: Metrics | null): LabelFigure[] {
+  if (!angle.metric_path) return [];
+  if (!metrics) return [...GAP_WINDOW_FIGURES];
+  return rowFigures(angle.metric_path, quotableRows(metrics));
+}
+
+/**
+ * angleFigures() on given rows: the figures the labels of the rows keyed `metricPath` print, in label
+ * order, each as many times as one of those labels prints it (the most of any one row, not the sum, so two
+ * rows that each print "26 weeks" give it once).
+ */
+export function rowFigures(metricPath: string, rows: readonly { readonly key: string; readonly label: string }[]): LabelFigure[] {
+  const most = new Map<string, LabelFigure[]>();
+  for (const r of rows) {
+    if (r.key !== metricPath) continue;
+    const here = new Map<string, LabelFigure[]>();
+    for (const f of labelFigures(r.label)) here.set(f.text, [...(here.get(f.text) ?? []), f]);
+    for (const [text, fs] of here) if ((most.get(text)?.length ?? 0) < fs.length) most.set(text, fs);
+  }
+  return [...most.values()].flat();
+}
+
+/** "26 weeks, 7 days": figures for a message, each named once. */
+export const figureList = (figures: readonly LabelFigure[]): string => [...new Set(figures.map((f) => f.text))].join(", ");
+
+/**
+ * The numbers the Angle's text holds (§4.12, §0.4 row 145): numbersIn(), except that with a
+ * `metric_path` the figures its quotable label prints (angleFigures()), written as figures, label the
+ * number rather than add one (numbersBesideFigures()). WORDS_OVER and WORDS_UNDER count these,
+ * LEAD_GROUNDED checks them against the path and SNAP_NUMBER against the metrics, so with
+ * `window.w26.p7` "55% listed within 7 days in 26 weeks" is one number and "55% in 13 weeks" two.
+ */
+export function angleNumbers(angle: { text: string; metric_path?: string | null }, metrics: Metrics | null): NumberToken[] {
+  return numbersBesideFigures(angle.text, angleFigures(angle, metrics));
 }
 
 /** The value at a dotted metrics path (`window.w26.at_disclosure_share`, `window.w26.at_disclosure_ci80.0`), or undefined. */
@@ -136,6 +190,73 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 
 // ── LEAD_GROUNDED ────────────────────────────────────────────────────────────────────────────────
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Two dates as a day range numbersIn() reads as one date: "11 to 12 Nov", "31 Oct to 1 Nov". */
+function dayRangeExample(fromDate: string, toDate: string): string {
+  const [from, to] = [fromDate, toDate].map((d) => ({ day: Number(d.slice(8, 10)), month: MONTHS[Number(d.slice(5, 7)) - 1]! }));
+  return from!.month === to!.month ? `${from!.day} to ${to!.day} ${to!.month}` : `${from!.day} ${from!.month} to ${to!.day} ${to!.month}`;
+}
+
+/**
+ * The edition's day as a Gap sentence names it, by its dates: the day before and the edition day ("11 to
+ * 12 Nov"; "31 Oct to 1 Nov" across months), both read as dates by numbersIn(). Null for no valid date.
+ */
+export function gapDayExample(date: string): string | null {
+  return isValidDate(date) ? dayRangeExample(addDays(date, -1), date) : null;
+}
+
+/**
+ * The week a Monday edition reviews, by its dates: the Monday seven days before the edition date to the
+ * day before it ("2 to 8 Nov" for 2026-11-09; "26 Oct to 1 Nov" across months). Null for no valid date.
+ */
+export function weekInReviewExample(date: string): string | null {
+  return isValidDate(date) ? dayRangeExample(addDays(date, -7), addDays(date, -1)) : null;
+}
+
+/** LEAD_GROUNDED's hint for a Gap sentence that names the day as a length of hours. */
+const gapDayHint = (date: string): string => {
+  const ex = gapDayExample(date);
+  return ` When a Gap sentence names the day, it names it by its dates${ex ? ` ("${ex}")` : ""}, never as a length of hours.`;
+};
+
+/**
+ * LEAD_GROUNDED's and METRICS_ONLY_NUMBERS' hint for a stray day number next to a month or weekday name
+ * (dayBeforeDateName()), with an example range (gapDayExample(), or weekInReviewExample() in the week in review).
+ */
+const dayNumberHint = (ex: string | null): string =>
+  ` A day number is read as a number unless written as a date or a date range${ex ? ` like "${ex}"` : ""}.`;
+
+/** The Gap's own words for a ratio of two ("more than twice", "twice"), when its headline prints them; else null. */
+export function gapTwice(metrics: Pick<Metrics, "headline"> | null | undefined): string | null {
+  return metrics ? (/\b(?:more than )?twice\b/u.exec(metrics.headline.text)?.[0] ?? null) : null;
+}
+
+/**
+ * The Gap's own pace multiple in words ("three times" to "ten times", pacePhrase()), when its headline prints
+ * one; else null. A Lead sentence that copies it as the Gap prints it ("more than three times the 2023–24
+ * pace") is not a ratio NUMBER_FORM fails: the digits it would ask for are no quoted number, so LEAD_GROUNDED
+ * would fail them (review of the ninth pass).
+ */
+export function gapMultiple(metrics: Pick<Metrics, "headline"> | null | undefined): string | null {
+  const m = metrics ? /\b(three|four|five|six|seven|eight|nine|ten) times\b/u.exec(metrics.headline.text) : null;
+  return m ? m[0] : null;
+}
+
+/** The hint for a ratio of two written "two times" or "2 times", when the Gap prints its own "more than twice". */
+const twiceHint = (twice: string | null): string =>
+  twice ? ` If it is the Gap's own ratio, write it as the Gap does, in words: "${twice}".` : "";
+
+/** The number is written "2 times", a ratio of two. */
+const twoTimes = (text: string, n: NumberToken): boolean =>
+  n.value === 2 && !n.percent && /(?<![\p{L}\p{N}.,])2\s+times(?![\p{L}])/u.test(text.normalize("NFKC"));
+
+/** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
+function hoursLength(text: string, n: NumberToken): boolean {
+  const raw = n.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{N}.,])${raw}(?:\\s+|[-\\u2010\\u2011\\u2013])(?:hours?|hrs?)(?![\\p{L}\\p{N}])`, "iu").test(text.normalize("NFKC"));
+}
+
 /**
  * LEAD_GROUNDED (the Angle's source text draft only): each Lead sentence cites real items, or is a Gap
  * sentence; a Gap sentence quotes only `headline.quoted` numbers; every other number matches the cited
@@ -156,6 +277,8 @@ const leadGrounded = defineRule({
     const known = knownNamesFor(input);
     const gapText = `${metrics.headline.text}\n${metrics.headline.second_line}`;
     const grounded = (k: KnownName) => nameMatches(gapText, k);
+    const noItems = (draft.items ?? []).length === 0;
+    const twice = gapTwice(metrics);
 
     (draft.lead ?? []).forEach((s, i) => {
       if (!s || typeof s.text !== "string") return;
@@ -175,11 +298,13 @@ const leadGrounded = defineRule({
       // Numbers.
       const itemNums = [...textPool(cited.flatMap(itemTexts)), ...cited.flatMap((it) => blockNumbers(input, it))];
       for (const n of distinctNumbers(s.text)) {
+        const day = (dayBeforeDateName(s.text, n) ? dayNumberHint(gapDayExample(input.date)) : "") + (twoTimes(s.text, n) ? twiceHint(twice) : "");
         if (s.gap) {
           if (!exactIn(n, quoted)) {
+            // With no items there is none to cite, so the hint does not offer gap: false (review of the seventh pass).
             out.push(error("LEAD_GROUNDED", `${p}.text`,
               `${p} is a Gap sentence (gap: true) but holds ${shown(n)}, which is not one of the Gap's quoted numbers (${list(metrics.headline.quoted.map((q) => q.display))}).`,
-              "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from."));
+              `${noItems ? "Copy the number exactly as metrics.quotable shows it, or remove it." : "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from."}${hoursLength(s.text, n) ? gapDayHint(input.date) : ""}${day}`));
           }
           continue;
         }
@@ -188,7 +313,7 @@ const leadGrounded = defineRule({
           ids.length
             ? `${p} holds ${shown(n)}, which matches no number in the text or CVE blocks of the items it cites (${list(ids)}) and no metric number exactly.`
             : `${p} holds ${shown(n)}, which is not a metric number, and the sentence cites no item.`,
-          "Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it."));
+          `Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it.${day}`));
       }
 
       // Names.
@@ -208,10 +333,11 @@ const leadGrounded = defineRule({
     // The Angle.
     const a = draft.angle;
     if (a && typeof a.text === "string") {
-      const nums = distinctNumbers(a.text);
+      const nums = distinctTokens(angleNumbers(a, metrics));
       if (a.metric_path) {
         const displays = displaysFor(metrics, a.metric_path);
         const raw = valueAt(metrics, a.metric_path);
+        const figures = angleFigures(a, metrics);
         if (!displays.length && typeof raw !== "number") {
           out.push(error("LEAD_GROUNDED", "angle.metric_path",
             `angle.metric_path "${a.metric_path}" names no number in metrics/${metrics.date}.json. Use a path the Gap shows (metrics.quotable lists them), or cite a source instead.`));
@@ -222,7 +348,7 @@ const leadGrounded = defineRule({
             if (!ok) {
               out.push(error("LEAD_GROUNDED", "angle.text",
                 `angle.text holds ${shown(n)}, but angle.metric_path "${a.metric_path}" is ${displays.length ? list(displays) : String(raw)} as the Gap shows it.`,
-                "Write the number exactly as metrics.quotable shows it for that path, or fix metric_path."));
+                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them, each at most once; no other number may.` : ""}`));
             }
           }
         }
@@ -345,6 +471,8 @@ const metricsOnlyNumbers = defineRule({
     const out: ValidationIssue[] = [];
     for (const { field, items } of metricFields(input)) {
       const blocks = items.flatMap((it) => blockNumbers(input, it));
+      // The week in review names the week it reviews, not the edition's day (review of the eighth pass).
+      const dayExample = field.path.startsWith("week_in_review.") ? weekInReviewExample(input.date) : gapDayExample(input.date);
       for (const sentence of splitSentences(field.text)) {
         const terms = metricTermsIn(sentence);
         if (!terms.length) continue;
@@ -352,7 +480,8 @@ const metricsOnlyNumbers = defineRule({
           if (exactIn(n, metricNums) || roundIn(n, blocks)) continue;
           out.push(error("METRICS_ONLY_NUMBERS", field.path,
             `${field.path}: the sentence "${sentence}" uses "${terms[0]}" and holds ${shown(n)}, which is not a metric number${items.length ? " or a number in the CVE block of the item it is about" : ""}.`,
-            "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."));
+            "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."
+              + (dayBeforeDateName(sentence, n) ? dayNumberHint(dayExample) : "") + (twoTimes(sentence, n) ? twiceHint(gapTwice(input.metrics)) : "")));
         }
       }
     }
@@ -360,4 +489,32 @@ const metricsOnlyNumbers = defineRule({
   },
 });
 
-export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers];
+// ── NUMBER_FORM ──────────────────────────────────────────────────────────────────────────────────
+
+/** The fix for a ratio NUMBER_FORM finds: the number as its source gives it, never the miscopied one. */
+const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives it';
+/** The fix for a name NUMBER_FORM reads as a ratio ("Vigor 286x"): never a different model (review of the eighth pass). */
+const NAME_FIX = "If it is a product or version name, write it exactly as the source does and rephrase around it, never a different model.";
+
+/**
+ * NUMBER_FORM (draft, §0.4 row 145): a prose field writes a ratio glued to x ("9.9x",
+ * gluedRatios()) or in words ("nearly ten times the 2023–24 pace", "tenfold", wordRatios()), which
+ * numbersIn() does not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong
+ * one through. Quoted fields and titles, the sources' own words, are not read. One error per ratio as
+ * written, per field. The hint never proposes the number as written, which may be the miscopied one.
+ * The Gap's own pace multiple in words (gapMultiple(): "more than three times the 2023–24 pace") is not failed.
+ */
+const numberForm = defineRule({
+  code: "NUMBER_FORM",
+  scope: "draft",
+  check: ({ draft, metrics }) => proseFields(draft).flatMap((f) => [
+    ...[...new Set(gluedRatios(f.text))].map((g) =>
+      error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
+        `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way. ${NAME_FIX}`)),
+    ...[...new Set(wordRatios(f.text))].filter((w) => w.toLowerCase().replace(/\s+/gu, " ") !== gapMultiple(metrics)).map((w) =>
+      error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${w}" in words, which the validator does not read as a number, so it cannot check it.`,
+        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.${/^two\s+times$/iu.test(w) ? twiceHint(gapTwice(metrics)) : ""}`)),
+  ]),
+});
+
+export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers, numberForm];

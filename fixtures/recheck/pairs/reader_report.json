@@ -1,0 +1,19 @@
+{
+  "flag": "reader_report",
+  "edition_date": "2026-10-14",
+  "item_id": "cve-2026-104935",
+  "cve_id": "CVE-2026-104935",
+  "dispute": {
+    "id": "D-0002",
+    "received": "2026-10-15T11:00:00+08:00",
+    "issue_number": 6,
+    "item_id": "cve-2026-104935",
+    "edition_date": "2026-10-14",
+    "kind": "fact",
+    "evidence_url": null,
+    "status": "open",
+    "resolved_on": null,
+    "correction_id": null
+  },
+  "detail": "Reader report D-0002 (fact)."
+}

@@ -12,10 +12,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
-  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
-  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
-  type ItemDraft, type LinkScreen, type RecordDraft,
+  buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dayReads, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
+  freshColumn, ghsaPackRecords, hourlyZip, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
+  ITEM_CAPS, pinnedItemIds, pinnedRecordIds, provisionalRecords, RECORDS_MAX, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
+  type FeedOutcome, type ItemDraft, type LinkScreen, type PlannedZip, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
 import { addDays, at, dataCutoffFor, isValidDate, taipeiTimestamp, taipeiToday, utcDateOf } from "../lib/dates";
@@ -23,7 +23,7 @@ import { cachePaths, type CachePaths } from "../lib/feeds/cache";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { epssMovers } from "../lib/feeds/epss";
 import { ghsaMonths } from "../lib/feeds/ghsa";
-import { newestHourlyTag, REPOS } from "../lib/feeds/github";
+import { newestHourlyTag, REPOS, tagTime } from "../lib/feeds/github";
 import { fetchBudget, fetchFeed, pool, type FetchErrorClass } from "../lib/feeds/http";
 import { kevBaseline } from "../lib/feeds/kev";
 import { jpcertRecords, tvnRecords } from "../lib/feeds/rss";
@@ -31,7 +31,7 @@ import type { CheckLabel, CveRecord, EpssDay, GhsaAdvisory, KevCatalog } from ".
 import { byCodeUnit, compareCveIds } from "../lib/ids";
 import { jsonText } from "../lib/json";
 import { rankCandidates, recordKeepIds, type AiHit } from "../lib/rank";
-import { regionsConfig } from "../lib/regions";
+import { itemGivesRegionSignal, regionsConfig } from "../lib/regions";
 import { AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
   CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord,
@@ -42,6 +42,7 @@ import {
   cacheWrite, readCveById, readCvd, readDeltaLog, readEpss, readEpssApi, readExchange, readGhsa, readKev, readMyJvn, readNvd,
   readRss, readZip, type FeedCtx, type Read,
 } from "./lib/feeds";
+import { realDeadline } from "./lib/clock";
 import { fixtureGit, liveGit, type GitSource } from "./lib/git-source";
 
 export interface CollectOptions {
@@ -242,8 +243,12 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   fs.rmSync(paths.recordsDir, { recursive: true, force: true });
   for (const d of [paths.feedsDir, paths.zipsDir, paths.recordsDir, path.dirname(paths.epssFile(D))]) fs.mkdirSync(d, { recursive: true });
 
+  const fetchImpl = o.deps?.fetch ?? fetchFeed;
   const ctx: FeedCtx = {
-    fetch: o.deps?.fetch ?? fetchFeed, budget: fetchBudget(BUDGET_MS), deadline: o.deadline, now, log, paths,
+    // The run's deadline and the budget are on `now`; fetchFeed measures its deadline with Date.now(), so it
+    // gets realDeadline() (plan §3.2, G7). In production the two clocks are the same.
+    fetch: (url, opts) => fetchImpl(url, opts?.deadline === undefined ? opts : { ...opts, deadline: realDeadline(now, opts.deadline) }),
+    budget: fetchBudget(BUDGET_MS), deadline: o.deadline, now, log, paths,
     sleep: o.deps?.sleep ?? (fixtures ? async () => {} : (ms) => new Promise((r) => setTimeout(r, ms))),
   };
   const feeds = config.sources.feeds.filter((f): f is FetchedFeed => f.kind !== "search");
@@ -274,6 +279,28 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   let catalog: KevCatalog | null = null;
   let kevRead: Read<KevCatalog> | null = null;
   const zipReads = new Map<string, Read<{ raws: unknown[]; reused: boolean }>>();
+  // Planned end-of-day asset → the hourly zip read in its place (ruling R37's stand-in, §8.3).
+  const standIns = new Map<string, PlannedZip>();
+  // T − 1's end-of-day zip answered 404 (not out yet): its newest hourly zip, found as T's is (ls-remote on its
+  // tags), is read instead. With no tag list or no tag, nothing stands in and the read fails as before.
+  const standIn = async (z: PlannedZip): Promise<void> => {
+    const x = z.utc_day;
+    const refs = await git.lsRemote(REPOS.cvelist, [`refs/tags/cve_${x}_*`]);
+    const sub = hourlyZip(x, refs ? newestHourlyTag(refs, x) : null);
+    const why = `cvelist: ${z.asset} is not out yet (HTTP 404)`;
+    if (!sub) {
+      log(`${why}, and ${refs ? `${x} has no hourly tag` : `the hourly tags of ${x} could not be listed`}, so no hourly zip stands in for it.`);
+      return;
+    }
+    const r = await readZip(ctx, sub);
+    if (!r.ok) {
+      log(`${why}, and ${sub.asset}, which would stand in for it, was not read (${r.error}).`);
+      return;
+    }
+    zipReads.set(sub.asset, r);
+    standIns.set(z.asset, sub);
+    log(`${why}; read ${sub.tag} instead, so the records changed after ${tagTime(sub.tag)!.slice(11, 16)} UTC on ${x} wait for a later run.`);
+  };
   let deltaLog: Read<{ newest: string | null; entries: unknown[] }> | null = null;
   let epss: Read<Awaited<ReturnType<typeof readEpss>>["data"] & object> | null = null;
   let ghsa: Read<NonNullable<Awaited<ReturnType<typeof readGhsa>>["data"]>> | null = null;
@@ -296,17 +323,22 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   for (const entry of byKind("rss")) light.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
   for (const entry of byKind("cvelist")) heavy.push(async () => {
     deltaLog = await readDeltaLog(entry, ctx, commits.cvelist);
-    for (const z of plan.zips) zipReads.set(z.asset, await readZip(ctx, z));
+    for (const z of plan.zips) {
+      const r = await readZip(ctx, z);
+      zipReads.set(z.asset, r);
+      if (!r.ok && wantsStandIn(z, runUtcDay, r.error)) await standIn(z);
+    }
   });
   for (const entry of byKind("epss")) heavy.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
   if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months, commits.ghsa); });
   await inTwoWaves(light, heavy, (t) => t());
   const fetchedAt = generatedAt;
+  const asRead = zipsAsRead(plan.zips, standIns);
 
   // CVE records: oldest zip first, so X + 1's copy wins.
   const records = new Map<string, { rec: CveRecord; raw: unknown }>();
   const zipsRead: ZipRead[] = [];
-  for (const z of plan.zips) {
+  for (const z of asRead) {
     const r = zipReads.get(z.asset);
     if (!r?.ok || !r.data) continue;
     let n = 0;
@@ -375,7 +407,8 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}${d.unsafeLinks ? `, ${d.unsafeLinks} dropped for a malformed link (flagged)` : ""}.`);
   }
   const deduped = dedupe(itemDrafts);
-  const capped = capItems(deduped.kept);
+  // An item that gives a region signal (an agency's alert page, a CERT note reporting exploitation) is never cut (§4.14 Caps).
+  const capped = capItems(deduped.kept, ITEM_CAPS, (d) => itemGivesRegionSignal(d, regions, D));
   for (const [id, n] of Object.entries(capped.cutByFeed)) log(`${id}: ${n} items over the caps.`);
   const items: PackItem[] = toPackItems(capped.kept);
 
@@ -392,7 +425,8 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     return { epss: s?.epss ?? null, epss_percentile: s?.percentile ?? null };
   };
   if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers, screen));
-  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config.sourceTiers, cveFacts, screen));
+  // A record with no tagged advisory URL of its own also carries its vendor's own pages, one per host (vendorPageUrls(), §8.3).
+  recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config, cveFacts, screen));
   if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1), screen));
   recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window, screen));
   const jvn = myjvn as Awaited<ReturnType<typeof readMyJvn>> | null;
@@ -442,8 +476,9 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   }
 
   // Step 10: the record cap, final ids, rewritten pack_ids.
+  // Records the caps keep whole (§4.14 Caps): region-signal records, exchange filings and the dashboard record.
   const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id)));
-  const capR = capRecords(provisional, referenced);
+  const capR = capRecords(provisional, referenced, RECORDS_MAX, pinnedRecordIds(provisional, regions, D));
   if (capR.cut) log(`records: ${capR.cut} over the cap of 400.`);
   const remapped = remapIds(kept, ranked.cut, ranked.log, capR.idMap);
   kept = remapped.kept;
@@ -455,7 +490,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const cveEntry = byKind("cvelist")[0];
   const dl = deltaLog as Read<{ newest: string | null; entries: unknown[] }> | null;
   if (cveEntry && dl) {
-    const windowZips = plan.zips.filter((z) => z.utc_day >= utcDateOf(rw.start));
+    const windowZips = asRead.filter((z) => z.utc_day >= utcDateOf(rw.start));
     const zipFail = windowZips.map((z) => zipReads.get(z.asset)).find((r) => r && !r.ok);
     const notes = windowZips.filter((z) => !zipReads.get(z.asset)?.ok).map((z) => `CVE List: ${z.asset} not read.`);
     if (perId.overCap) notes.push(`CVE List: ${perId.overCap} ids over the per-id cap of ${PER_ID_MAX}.`);
@@ -524,13 +559,21 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     );
     return { feeds: packFeeds(indexFeedsFor(recs), keptBy), injectionFlags };
   };
-  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last.
+  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last;
+  // nor a pinned record or item (pinnedRecordIds() on the final records, pinnedItemIds() on the items).
   const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+  const pinnedFinal = new Set([...pinnedRecordIds(capR.kept, regions, D), ...pinnedItemIds(items, regions, D)]);
   const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
-    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, recount,
+    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, pinned: pinnedFinal, recount,
   });
-  if (built.sizeCut.items || built.sizeCut.records) log(`pack: the size caps cut ${built.sizeCut.items} items and ${built.sizeCut.records} records.`);
-  if (built.sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
+  const sizeCut = built.sizeCut;
+  if (sizeCut.items.length || sizeCut.records.length) log(`pack: the size caps cut ${sizeCut.items.length} items and ${sizeCut.records.length} records.`);
+  if (sizeCut.items.length) {
+    const byFeed = new Map<string, number>();
+    for (const it of sizeCut.items) byFeed.set(it.feed_id, (byFeed.get(it.feed_id) ?? 0) + 1);
+    log(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => byCodeUnit(a, b)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${D}.candidates.json).`);
+  }
+  if (sizeCut.over) log("pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records and region-signal items left; written as it is.");
   const pack = built.pack;
   const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
@@ -546,7 +589,8 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     ...remapped.log,
     ...(perId.overCap ? [{ code: "CVE_FETCH_CAP" as const, detail: `${perId.overCap} dashboard ledger ids over the per-id cap of ${PER_ID_MAX}; ${perId.ledger.length} fetched after the KEV ids.` }] : []),
   ];
-  const candidateLog = { schema_version: 1 as const, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog };
+  // The size caps' cuts (§0.4 row 146): every item and record buildPack() cut, as the pack held it, in id order.
+  const candidateLog: CandidateLogFile = { schema_version: 1, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog, size_cut: sizeCut };
 
   const kevData = kr?.data ?? null;
   const er = epss as Read<{ e: EpssDay | null; files: { role: "e" | "e1" | "e7"; date: string; sha256: string }[] }> | null;
@@ -556,7 +600,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     commits,
     cvelist: {
       zips: zipsRead,
-      days: plan.days.map((d) => ({ date: d.date, zips: d.zips, ok: d.zips.every((a) => zipReads.get(a)?.ok === true) })),
+      days: dayReads(plan.days, standIns, (a) => zipReads.get(a)?.ok === true),
       newest_hourly_tag: hourlyTag,
       delta_log_newest: newestOf(dl?.data?.newest ?? null) && /T/.test(newestOf(dl?.data?.newest ?? null)!) ? newestOf(dl!.data!.newest)! : null,
       by_id: { fetched, not_found: notFound, over_cap: perId.overCap },

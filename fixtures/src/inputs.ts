@@ -5,9 +5,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { cveRecordDomains } from "../../lib/context";
 import { loadConfig, matchCredit, matchVendor, type LoadedConfig } from "../../lib/config";
 import { addDays, isMonday, isoWeekStart, newestCompleteWeek, windowEnding } from "../../lib/dates";
-import { composeHeadline, gapTableDisplays, kevLines } from "../../lib/metrics/headline";
+import { composeHeadline, kevLines, quotableRows } from "../../lib/metrics/headline";
 import { homeVendorKev } from "../../lib/metrics/home-vendors";
 import { referenceWindowStats } from "../../lib/metrics/reference";
 import { round4 } from "../../lib/metrics/stats";
@@ -285,51 +286,27 @@ function kevIndexFor(name: EditionName) {
   return { entries: KEV_ROWS.filter((r) => r[1] <= through).map((r) => [...r] as typeof r) };
 }
 
+/**
+ * The regions input. `firstSeen` is firstSeenBefore() over the editions before this one (PREVIOUS, the
+ * stored briefs the context's recent_items list): each id's earliest edition date.
+ */
 function buildRegionsInput(name: EditionName): RegionsInputFile {
   const t = EDITIONS[name];
   const cfg = fixtureConfig();
   const kevIndex = kevIndexFor(name);
   const signals = collectSignals(parts(name).pack, null, kevIndex, regionsConfig(cfg), t.date);
-  return RegionsInputFile.parse(regionsInputFile({ date: t.date, history: [], signals, kevIndex, config: regionsConfig(cfg) }));
+  const firstSeen: Record<string, string> = {};
+  for (const d of PREVIOUS[name].map((n) => editionDraft(n)).sort((a, b) => a.date.localeCompare(b.date))) {
+    for (const it of d.items) if (!(it.id in firstSeen)) firstSeen[it.id] = d.date;
+  }
+  return RegionsInputFile.parse(regionsInputFile({ date: t.date, history: [], signals, kevIndex, config: regionsConfig(cfg), firstSeen }));
 }
 
 // ── Context ──────────────────────────────────────────────────────────────────────────────────────
 
-const LABELS: Record<string, string> = {
-  constant: "weeks in the window",
-  "window.w26.at_disclosure_share": "share already exploited at disclosure, 26 weeks",
-  "window.reference.at_disclosure_share": "share already exploited at disclosure, 2023–24",
-  "window.w26.after_disclosure_median_days": "median days to listing for the rest, 26 weeks",
-  "window.reference.after_disclosure_median_days": "median days to listing for the rest, 2023–24",
-  "window.w26.cohort_n": "recently disclosed flaws on CISA's list, 26 weeks",
-  "window.kev_pace_ratio": "KEV additions, pace vs 2023–24",
-  "window.volume_ratio": "recently disclosed flaws listed, pace vs 2023–24",
-  "flood.n": "new CVE records, 13 weeks",
-  "flood.vs_reference_ratio": "new CVE records, pace vs 2023–24",
-  "flood.vs_reference_ex_kernel_ratio": "new CVE records excluding the Linux kernel, pace vs 2023–24",
-  "ai_credited.w13.total": "AI-credited records, 13 weeks",
-  "ai_credited.w13.ex_anthropic": "AI-credited records excluding Anthropic, 13 weeks",
-};
-
-/** metrics.quotable: every number the headline quotes, then every Gap table display, then the Lens KEV counts. */
+/** metrics.quotable: quotableRows() of the edition's metrics, as lib/context.ts builds it. */
 function quotable(m: Metrics): AgentContext["metrics"]["quotable"] {
-  const out: AgentContext["metrics"]["quotable"] = [];
-  const seen = new Set<string>();
-  const add = (key: string, label: string, display: string) => {
-    const k = `${key}\0${display}`;
-    if (seen.has(k)) return;
-    seen.add(k);
-    out.push({ key, label, display, as_of: m.data_cutoff_utc });
-  };
-  for (const q of m.headline.quoted) add(q.path, LABELS[q.path] ?? q.path, q.display);
-  if (m.window) for (const d of gapTableDisplays(m.window)) add(d.key, d.label, d.display);
-  const lines = kevLines(m);
-  for (const key of ["tw", "jp"] as const) {
-    const word = key === "tw" ? "Taiwanese" : "Japanese";
-    add(`home_vendors.${key}.d30_n`, `KEV additions for ${word} vendors, 30 days`, String(lines[key].d30_n));
-    add(`home_vendors.${key}.d90_n`, `KEV additions for ${word} vendors, 90 days`, String(lines[key].d90_n));
-  }
-  return out;
+  return quotableRows(m).map((r) => ({ ...r, as_of: m.data_cutoff_utc }));
 }
 
 function thresholdText(th: Threshold): string {
@@ -355,7 +332,10 @@ function candidates(name: EditionName, items: readonly DraftItem[]): Candidate[]
     const vendor = rec ? matchVendor(cfg, { affectedVendors: [rec.vendor] }) : null;
     const kevRow = cve ? KEV_ROWS.find((r) => r[0] === cve && r[1] <= EDITIONS[name].kev.version.replace(/\./g, "-")) : undefined;
     const credit = rec?.credits.map((c) => matchCredit(c, cfg.compiled.aiFinders)).find((x) => x !== null) ?? null;
-    const release = it.release_id ? { release_id: it.release_id, vendor: "Microsoft", total: 1384, critical: 60, exploited: 1, exploited_cve_ids: [...it.cve_ids] } : null;
+    // Every fix of the fixture release was published on Patch Tuesday, CVE-2026-96951's day.
+    const release = it.release_id
+      ? { release_id: it.release_id, vendor: "Microsoft", total: 1384, critical: 60, exploited: 1, exploited_cve_ids: [...it.cve_ids], first_published: "2026-10-13", last_published: "2026-10-13" }
+      : null;
     const rank = out.length + 1;
     const reasons = [
       ...(kevRow ? ["new KEV"] : []),
@@ -452,6 +432,7 @@ function buildContext(name: EditionName): AgentContext {
         t2: domains((p) => p.tier === 2),
         not_sole_newsroom: domains((p) => !p.sole_newsroom_for_critical),
         state_labelled: domains((p) => p.state_label !== null),
+        cve_record: cveRecordDomains(cfg.sourceTiers),
       },
       home_vendors: {
         tw: cfg.vendors.vendors.filter((v) => v.country === "TW").map((v) => v.name),

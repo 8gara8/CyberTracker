@@ -5,7 +5,7 @@
 // run's regionsBase.
 
 import { at, isValidDate } from "../dates";
-import { firstOutOfOrder, orderItems, TOP_STORY_COUNT } from "../items";
+import { displayOrder, firstOutOfOrder, isWithheld, TOP_STORY_COUNT } from "../items";
 import { computeRegions, regionItems, type RegionItemInput } from "../regions";
 import type { Regions } from "../schema/brief";
 import type { Claim } from "../schema/scoreboard";
@@ -32,7 +32,9 @@ const aKind = (kind: string) => `${/^[aeiou]/.test(kind) ? "an" : "a"} ${kind}`;
 
 function checkCap(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
-  const n = itemsOf(input).length;
+  // A withheld item (§4.10) is the composer's placeholder, never the agent's: a same-day withhold can keep one the
+  // draft left out (lib/withhold-mask.ts carryWithheld()), so withheld items fall outside the cap. Drafts have none.
+  const n = itemsOf(input).filter((it) => !isWithheld(it)).length;
   if (n > ITEMS_MAX) {
     out.push(error("ITEM_CAP", "items", `items has ${n} entries; the limit is ${ITEMS_MAX}. Cut at least ${n - ITEMS_MAX}, starting with the lowest-ranked Also-today rows.`));
   }
@@ -53,7 +55,7 @@ function checkOrder(input: RuleInput): ValidationIssue[] {
   const first = firstOutOfOrder(items);
   if (!first) return [];
   const label = first.id ? ` (${first.id})` : "";
-  const expected = orderItems(items).map((it) => it.id);
+  const expected = displayOrder(items).map((it) => it.id);
   return [error("ITEM_ORDER", `items[${first.index}]`,
     `items[${first.index}]${label} is out of display order; it belongs at items[${first.expected_index}]. Reorder items as: ${list(expected)}.`,
     ORDER_HINT)];
@@ -66,7 +68,7 @@ function checkTop3(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   itemsOf(input).slice(0, TOP_STORY_COUNT).forEach((it, i) => {
     // A withheld item (§4.10) has why_it_matters null by design.
-    if (!it || ("withheld" in it && it.withheld)) return;
+    if (!it || isWithheld(it)) return;
     const p = `items[${i}].why_it_matters`;
     const why = it.why_it_matters;
     if (typeof why !== "string" || why.trim() === "") {
@@ -84,6 +86,9 @@ function checkTop3(input: RuleInput): ValidationIssue[] {
 
 // ── SEVERITY_NULL_FOR_NONTHREAT, SEVERITY_KIND ───────────────────────────────────────────────────
 
+/** A data-only item a full edition keeps withheld, unread (carryWithheld()): no one set its severity, so null stands. */
+const keptUnread = (it: object): boolean => isWithheld(it) && "ai_role" in it && it.ai_role === "unassessed";
+
 function checkSeverityNull(input: RuleInput): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   itemsOf(input).forEach((it, i) => {
@@ -92,7 +97,7 @@ function checkSeverityNull(input: RuleInput): ValidationIssue[] {
     if (need === "none" && it.severity !== null) {
       out.push(error("SEVERITY_NULL_FOR_NONTHREAT", `items[${i}].severity`,
         `${AKind(it.kind)} item has no severity, but this one is "${it.severity}"; set severity to null${it.kind === "policy" ? " (set landmark true to rank a major policy item as elevated)" : ""}.`));
-    } else if (need === "required" && it.severity === null) {
+    } else if (need === "required" && it.severity === null && !keptUnread(it)) {
       out.push(error("SEVERITY_NULL_FOR_NONTHREAT", `items[${i}].severity`,
         `${AKind(it.kind)} item needs a severity (critical, high, elevated or watch), but it is null; set one from the severity definitions.`));
     }
@@ -173,10 +178,19 @@ function checkLens(input: RuleInput): ValidationIssue[] {
 
 // ── REGION_RAISE ─────────────────────────────────────────────────────────────────────────────────
 
-/** A draft item's first_seen (§4.6): the earliest earlier edition holding its id (recent_items, history), else today. */
-export function draftFirstSeen(input: Pick<RuleInput, "date" | "context" | "regionsBase">, id: string): string {
+/**
+ * A draft item's first_seen (§4.6), as publish gives it: the base's `firstSeen` map (firstSeenBefore(),
+ * every stored brief before D), else today. Read from the run inputs only, never the context. A base
+ * without the map falls back to its history (the earliest history brief holding the id, or the
+ * first_seen stored there when earlier).
+ */
+export function draftFirstSeen(input: Pick<RuleInput, "date" | "regionsBase">, id: string): string {
+  const map = input.regionsBase?.firstSeen;
+  if (map) {
+    const d = Object.hasOwn(map, id) ? map[id] : undefined;
+    return d !== undefined && d < input.date ? d : input.date;
+  }
   const dates: string[] = [];
-  for (const r of input.context?.recent_items ?? []) if (r.id === id && r.date < input.date) dates.push(r.date);
   for (const h of input.regionsBase?.history ?? []) {
     if (h.date >= input.date) continue;
     for (const it of h.items) if (it.id === id) dates.push(it.first_seen && it.first_seen < h.date ? it.first_seen : h.date);

@@ -40,7 +40,8 @@ An item is one news event, of one of nine kinds. Each kind has a bar it must cle
   Japanese vendor, a credible AI-discovery claim, a public exploit reported, an internet-facing product.
   Without vendor confirmation it is labelled so and capped at Watch.
 - **Patch batch:** a vendor's scheduled release, as one item: N fixes, n exploited. Never one item per
-  CVE in the release.
+  CVE in the release. It cites the vendor's own release page, or names the release's CVE ids, so the
+  release can be dated.
 - **Supply chain:** a trusted package, vendor or certificate authority compromised.
 - **Breach or attack:** confirmed or credibly reported impact on a victim, under the naming rules (§8).
 - **Campaign:** a new report on a state or criminal group active in a tracked region.
@@ -50,8 +51,9 @@ An item is one news event, of one of nine kinds. Each kind has a bar it must cle
 - **Policy:** laws, takedowns, sanctions and government moves on AI and cyber.
 
 **How many.** Typically 5 to 8 items, never more than 10. A quiet day is never padded: three strong
-items beat seven thin ones, and a day with nothing that clears a bar has no items at all. Fewer items
-are fine; filler is not.
+items beat seven thin ones, and a day with nothing that clears a bar has no items at all, and a Lead of
+Gap sentences only (§6); when a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"),
+never as a length of hours. Fewer items are fine; filler is not.
 
 **Item ids.** A flaw item with a CVE uses its first CVE id in lower case. Other items use their kind's
 prefix and a short slug of lower-case words. An incident slug names the sector, the country and the
@@ -155,15 +157,24 @@ database. The written brief never computes a number of its own.
 
 **Quoting the metrics.** The draft may quote only the values the context marks as quotable, verbatim,
 and only as displayed. A Lead sentence that quotes Gap numbers is flagged as such and may use only the
-numbers in the Gap headline. The headline sentence itself is never rewritten. "Faster" and "slower"
-appear only in the script's own sentence, which says them only when the data clears its test; there is
-no figure from fewer than 30 cases.
+numbers in the Gap headline. A Lead sentence that cites no item is a Gap sentence: `gap: true` with
+`item_ids` empty, quoting only the Gap headline's numbers, or none. On a day with no items, every Lead
+sentence is one. When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as
+a length of hours ("the 24 hours to 04:30"), which is not a Gap number. The headline sentence itself is
+never rewritten. "Faster" and "slower" appear only in the script's own sentence, which says them only
+when the data clears its test; there is no figure from fewer than 30 cases.
 
 **Every number names its denominator and date.** "37% of the 157 flaws CISA listed in the 26 weeks to 6
-Nov", not "37% of flaws". A number in the prose must appear in a cited source or in the metrics file,
-and the validator checks it. "About" or "nearly" allows rounding at the last non-zero digit, nothing
-more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or the Gap may hold
-only numbers from the metrics or the item's CVE record.
+Nov", not "37% of flaws". The Angle holds exactly one number, so it names its window and date instead of
+a denominator ("37% in the 26 weeks to 6 Nov", §12). A ratio is written as the Gap writes it, in digits,
+"1.9 times", never "1.9x" or "ten times the pace", even where a source writes it so, in every field but a
+verbatim quote, which keeps the source's words: the validator cannot read a ratio glued to x or in words,
+so it fails any it finds. The Gap's own "twice" stays in words, as the Gap prints it ("more than twice
+the 2023–24 pace"), never "2 times", and so does any pace multiple the Gap prints in words ("more than
+three times"). A number in the prose must appear in a cited source or in the
+metrics file, and the validator checks it. "About" or "nearly" allows rounding at the last non-zero
+digit, nothing more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or
+the Gap may hold only numbers from the metrics or the item's CVE record.
 
 **Self-reported figures** stay claims: "the vendor says it blocked 2 million attempts".
 
@@ -314,7 +325,12 @@ Every full edition has a Taiwan Lens: what today's events mean for Taiwan, then 
 over-reading it, and the claim it bears on.
 
 - At most 30 words holding exactly one number, from either a cited source or a metrics path (exactly
-  one of the two), with its date.
+  one of the two), with its date. With a metrics path you may repeat the figures its quotable label
+  prints, as the label writes them ("26 weeks", "within 7 days", "80% interval"), once each, and they
+  are not counted. Any other number counts, a label figure written a second time included, so the
+  Angle's one number stands without its denominator: name the window and date, not the count ("37% in
+  the 26 weeks to 6 Nov", not "37% of the 157 flaws"). Write a ratio as the Gap does, "1.9 times",
+  never "1.9x".
 - The counterpoint, at most 30 words, is the strongest evidence against over-reading the number, with its
   sources, or exactly "none found" with none.
 - Tie it to an open Scoreboard claim when it bears on one; otherwise leave the claim empty.

@@ -9,8 +9,9 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  CHAT_MAX_LINES, CHAT_NOTES, ERROR_CODES, NEXT_STEP, RERUN_BEFORE, STAGE_NOTES, WHAT_HAPPENED, chatGuard, chatInputFor,
-  fallbackChat, gapLines, heldLockLine, lastRunRecords, nextStepFor, orderNotes, renderChat, safePath, whatHappened,
+  CHAT_MAX_LINES, CHAT_NOTES, DRY_RUN_FILES, DRY_RUN_NEXT_STEP, ERROR_CODES, NEXT_STEP, NOT_COMPOSED, NOT_VALID, RERUN_BEFORE, STAGE_NOTES,
+  WHAT_HAPPENED, chatGuard, chatInputFor, dryRunNextStepFor, fallbackChat, gapLines, heldLockLine, lastRunRecords, nextStepFor, orderNotes,
+  renderChat, safePath, whatHappened,
   type ChatInput, type WhatFacts,
 } from "@/lib/chat";
 import { Brief, type RegionRow } from "@/lib/schema/brief";
@@ -19,7 +20,7 @@ import type { CveBlock, Item } from "@/lib/schema/item";
 import type { Correction } from "@/lib/schema/misc";
 import { RunRecord, StatusFile, type RunStage, type StageRecord } from "@/lib/schema/status";
 import { siteUrl } from "@/lib/site";
-import { CANARY_TOKEN, KEV_ABSENCE_NOTE, RUN_STAGES, TAIWAN_LENS_ROWS, TAIWAN_NO_NEWS } from "@/lib/vocab";
+import { CANARY_TOKEN, KEV_ABSENCE_NOTE, RUN_STAGES, TAIWAN_LENS_ROWS, TAIWAN_NO_NEWS, WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { chatFromContent, main as chatMain, newestEdition } from "@/scripts/chat";
 import { SITE_CONTENT_DIR } from "@/fixtures/src/site";
 
@@ -234,6 +235,56 @@ describe("chat edition: published format", () => {
     ));
   });
 
+  it("a full edition holding a carried data-only item, withheld this morning: no null, no unassessed chip, no stored headline", () => {
+    // The same-day withhold kept the data-only item (severity null, AI role unassessed) in the slot of the draft item
+    // that re-reported it (§0.4 row 127), so it is the second top story. Before T6 its kicker read "AI: unassessed".
+    const D = "2026-11-10";
+    const STORED = "SAMPLE: Fortinet FortiOS flaw added to CISA's list";
+    const carried = {
+      ...kevItem(D, "CVE-2026-96951", "Fortinet", "FortiOS"),
+      regions: ["US"] as Item["regions"],
+      headline: WITHHELD_HEADLINE, summary: WITHHELD_TEXT.replace("{date}", "10 November"),
+      withheld: { correction_id: "C-0004", since: D },
+    };
+    expect([carried.severity, carried.ai_role, carried.why_it_matters]).toEqual([null, "unassessed", null]);
+    const b = brief(D, {
+      lead: [
+        { text: "SAMPLE: Attackers hit a FortiOS flaw within days of disclosure.", item_ids: ["cve-2026-104935"], gap: false },
+        { text: WITHHELD_MARK, item_ids: ["cve-2026-96951"], gap: false },
+      ],
+      items: [
+        item(D, { id: "cve-2026-104935", kind: "exploited_flaw", severity: "critical", regions: ["US", "GLOBAL"], cve_ids: ["CVE-2026-104935"], headline: "SAMPLE: FortiOS flaw exploited before a patch" }),
+        carried,
+        item(D, { id: "inc-retail-nl-2026-11", kind: "breach", severity: "elevated", regions: ["EU"], headline: "SAMPLE: Dutch retailer reports a breach" }),
+        item(D, { id: "eco-nvd-backlog-2026-11", kind: "ecosystem", why_it_matters: null, headline: "SAMPLE: NVD backlog grows again" }),
+      ],
+      corrections: [correction(4, "name_removed", "cve-2026-96951", D)],
+    });
+    const runs = [record(D, { data_only_published_at: b.data_only_published_at, full_published_at: b.published_at })];
+    const text = render(chatInputFor({ date: D, brief: b, runs }));
+    const out = text.split("\n");
+    expect(out.slice(3, 7)).toEqual([
+      `SAMPLE: Attackers hit a FortiOS flaw within days of disclosure. ${WITHHELD_MARK}`,
+      `1. ●●●● CRITICAL · US GLOBAL · SAMPLE: FortiOS flaw exploited before a patch · ${SITE}/brief/2026-11-10#cve-2026-104935`,
+      `2. US · ${WITHHELD_HEADLINE} · ${SITE}/brief/2026-11-10#cve-2026-96951`,
+      `3. ●●○○ ELEVATED · EU · SAMPLE: Dutch retailer reports a breach · ${SITE}/brief/2026-11-10#inc-retail-nl-2026-11`,
+    ]);
+    expect(out).toContain("Corrections: C-0004 name withheld to cve-2026-96951 (10 Nov)");
+    expect(text).not.toMatch(/\bnull\b|unassessed|undefined/i);
+    expect(text).not.toContain(STORED);
+    // Kept last, after every draft item (§0.4 row 126): the top stories are the draft's, and the count holds it.
+    // Its stored headline, were it left in place, is never printed either: the line reads the withheld headline.
+    const last = brief(D, { ...b, items: [b.items[0]!, b.items[2]!, b.items[3]!, { ...carried, headline: STORED }] });
+    const lastText = render(chatInputFor({ date: D, brief: last, runs }));
+    expect(lastText).toContain(`3. GLOBAL · SAMPLE: NVD backlog grows again · ${SITE}/brief/2026-11-10#eco-nvd-backlog-2026-11`);
+    expect(lastText).toContain(`Also today (1): ${SITE}/brief/2026-11-10#also-today`);
+    expect(lastText).not.toMatch(/\bnull\b|unassessed|undefined/i);
+    expect(lastText).not.toContain(STORED);
+    const top = render(chatInputFor({ date: D, brief: brief(D, { ...b, items: b.items.map((x) => (x.id === carried.id ? { ...x, headline: STORED } : x)) }), runs }));
+    expect(top).toContain(`2. US · ${WITHHELD_HEADLINE} · ${SITE}/brief/2026-11-10#cve-2026-96951`);
+    expect(top).not.toContain(STORED);
+  });
+
   it("a partial edition after a retry, with every rebuilt note", () => {
     const D = "2026-11-12";
     const b = brief(D, {
@@ -443,6 +494,126 @@ describe("chat edition: data-only format", () => {
     expect(kevLine({ date: D, kev: null })).toMatch(/\(7\): .* and 2 more$/);
   });
 
+  it("gives a compose failure (E_PUBLISH with the not-composed note on the publish stage) a next step that edits the draft", () => {
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const failed = (publishNote: string, dataOnlyNote: string | null = null) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: publishNote }, ...(dataOnlyNote ? { data_only: { note: dataOnlyNote } } : {}) },
+    })];
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const notComposed = chatInputFor({ date: D, brief: b, runs: failed(`${what} ${STAGE_NOTES.notComposed}`) });
+    expect(notComposed).toMatchObject({ kind: "data_only", code: "E_PUBLISH" });
+    const text = render(notComposed).split("\n");
+    expect(text).toContain("What happened: The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed.");
+    expect(text).toContain(`Next step: in /Users/kobol/Projects/CyberTracker, edit drafts/${D}.json to fix or drop the item whose block logs/${D}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date ${D} before 11:00`);
+    // A push failure keeps E_PUBLISH's own lines, even when the data-only stage was the one not composed.
+    for (const runs of [failed(what), failed(what, STAGE_NOTES.notComposed)]) {
+      const plain = chatInputFor({ date: D, brief: b, runs });
+      expect(plain).toMatchObject({ what, nextStep: nextStepFor("E_PUBLISH", D) });
+    }
+    // The failed format (a dry run that left no copy) reads the same note, with the dry-run step: no hand publish.
+    const dry = chatInputFor({ date: D, brief: null, runs: failed(`${what} ${STAGE_NOTES.notComposed}`).map((r) => ({ ...r, trigger: "dry_run" as const, outcome: "dry_run" as const, edition: null })) });
+    expect(dry).toMatchObject({ kind: "failed", nextStep: NOT_COMPOSED.dryRunStep.replaceAll("{date}", D), what: NOT_COMPOSED.what });
+  });
+
+  it("gives a whole-tree validation failure (E_PUBLISH with the not-valid note on the publish stage) its own lines: the Validation lines decide draft or PR", () => {
+    // Before T4 it said "the draft is valid" and to publish again, which fails the same way.
+    const D = "2026-11-12";
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const failed = (publishNote: string) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: publishNote } },
+    })];
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const input = chatInputFor({ date: D, brief: b, runs: failed(`${what} ${STAGE_NOTES.notValid}`) });
+    expect(input).toMatchObject({ kind: "data_only", code: "E_PUBLISH", what: NOT_VALID.what, nextStep: NOT_VALID.nextStep.replaceAll("{date}", D) });
+    const text = render(input).split("\n");
+    expect(text).toContain("What happened: The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed.");
+    expect(text).toContain(`Next step: read the Validation lines in logs/${D}.daily.log: if they name only briefs/${D}.json, fix drafts/${D}.json, then in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date ${D} before 11:00; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`);
+    expect(render(input)).not.toContain("the draft is valid");
+    // The failed format (a dry run that left no copy) reads the same note, with the dry-run step; a push failure
+    // keeps E_PUBLISH's own lines.
+    const dry = chatInputFor({ date: D, brief: null, runs: failed(`${what} ${STAGE_NOTES.notValid}`).map((r) => ({ ...r, trigger: "dry_run" as const, outcome: "dry_run" as const, edition: null })) });
+    expect(dry).toMatchObject({ kind: "failed", what: NOT_VALID.what, nextStep: NOT_VALID.dryRunStep.replaceAll("{date}", D) });
+    expect(chatInputFor({ date: D, brief: b, runs: failed(what) })).toMatchObject({ what, nextStep: nextStepFor("E_PUBLISH", D) });
+    // Another code on the record never takes these lines.
+    const agent = [record(D, { outcome: "published_data_only", edition: "data_only", error_code: "E_AGENT", data_only_published_at: b.data_only_published_at, stage: { publish: { status: "skipped", note: STAGE_NOTES.notValid } } })];
+    expect(chatInputFor({ date: D, brief: b, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
+  });
+
+  it("gives a failed --force run's E_PUBLISH lines a hand publish command with --force: the earlier full edition stands, and publish replaces it only so", () => {
+    // Before the review of the third fix pass the command lacked --force, so publish refused it ("already published").
+    const D = "2026-11-12";
+    const full = brief(D);
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const failedForce = (publishNote: string) => [
+      record(D, { data_only_published_at: full.data_only_published_at, full_published_at: full.published_at }),
+      record(D, {
+        trigger: "manual", started_at: at(D, "06:02:00"), outcome: "failed", edition: "full", error_code: "E_PUBLISH",
+        stage: { publish: { status: "failed", note: publishNote } },
+      }),
+    ];
+    const cmd = `npm run publish -- --date ${D}`;
+    for (const [note, step] of [
+      [what, nextStepFor("E_PUBLISH", D)],
+      [`${what} ${STAGE_NOTES.notComposed}`, NOT_COMPOSED.nextStep.replaceAll("{date}", D)],
+      [`${what} ${STAGE_NOTES.notValid}`, NOT_VALID.nextStep.replaceAll("{date}", D)],
+    ] as const) {
+      expect(step).toContain(`${cmd} before 11:00`);
+      const input = chatInputFor({ date: D, brief: full, runs: failedForce(note) });
+      expect(input).toMatchObject({ kind: "failed", code: "E_PUBLISH", nextStep: step.replaceAll(cmd, `${cmd} --force`) });
+      expect(render(input)).toContain(`${cmd} --force before 11:00`);
+    }
+    // A data-only edition standing (or none) needs no --force: publish replaces a data-only edition as it is.
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const dataOnly = [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_PUBLISH", data_only_published_at: b.data_only_published_at,
+      stage: { publish: { status: "failed", note: `${what} ${STAGE_NOTES.notValid}` } },
+    })];
+    expect(chatInputFor({ date: D, brief: b, runs: dataOnly })).toMatchObject({ nextStep: NOT_VALID.nextStep.replaceAll("{date}", D) });
+    expect(render(chatInputFor({ date: D, brief: null, runs: dataOnly }))).not.toContain("--force");
+    // Another code's next step is never changed.
+    const agent = [record(D, { trigger: "manual", outcome: "failed", edition: "full", error_code: "E_AGENT" })];
+    expect(chatInputFor({ date: D, brief: full, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
+  });
+
+  it("E_WITHHOLD: after a failed --force run the rerun takes --force; a data-only morning keeps the plain rerun and a --data-only or late start its own reason", () => {
+    // §0.4 row 149, from the review of the Codex round 2 fix: without --force the rerun stops at preflight step 6
+    // (already published), so intake never asks for the withhold again; and the sentence alone named the withhold
+    // as the reason for a data-only edition the operator had asked for.
+    const D = "2026-11-12";
+    const full = brief(D);
+    const what = WHAT_HAPPENED.E_WITHHOLD({} as WhatFacts);
+    expect(what).toBe("A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.");
+    const rerun = "zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline";
+    const step = nextStepFor("E_WITHHOLD", D);
+    expect(step).toBe(`read logs/${D}.daily.log, then rerun before 10:00: ${rerun}; if the withhold fails again, its fix goes through a PR`);
+    const failedForce = [
+      record(D, { data_only_published_at: full.data_only_published_at, full_published_at: full.published_at }),
+      record(D, {
+        trigger: "manual", started_at: at(D, "06:02:00"), outcome: "failed", edition: "full", error_code: "E_WITHHOLD",
+        stage: { recheck: { status: "failed" }, ...skippedStages(["draft", "validate", "publish"], "Not run: a reader dispute's withhold was not made.") },
+      }),
+    ];
+    const forced = chatInputFor({ date: D, brief: full, runs: failedForce });
+    expect(forced).toMatchObject({ kind: "failed", code: "E_WITHHOLD", what, nextStep: step.replace(rerun, `${rerun} --force`) });
+    expect(render(forced)).toContain(`${rerun} --force; if the withhold fails again`);
+    // A data-only edition standing: the plain rerun resumes it and reaches intake.
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const dataOnly = (notes: Partial<Record<RunStage, Partial<StageRecord>>>) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_WITHHOLD", data_only_published_at: b.data_only_published_at,
+      stage: { recheck: { status: "failed" }, ...notes },
+    })];
+    const plain = chatInputFor({ date: D, brief: b, runs: dataOnly(skippedStages(["draft", "validate", "publish"], "Not run: a reader dispute's withhold was not made.")) });
+    expect(plain).toMatchObject({ kind: "data_only", code: "E_WITHHOLD", what, nextStep: step });
+    expect(render(plain)).not.toContain("--force");
+    for (const reason of [STAGE_NOTES.dataOnlyRequested, STAGE_NOTES.startedAfterHardStop("05:30")]) {
+      const input = chatInputFor({ date: D, brief: b, runs: dataOnly(skippedStages(["draft", "validate", "publish"], reason)) });
+      expect(input).toMatchObject({ kind: "data_only", code: "E_WITHHOLD", what: `${reason} ${what}`, nextStep: step });
+    }
+  });
+
   it("keeps the metrics KEV count when the data-only brief holds no items", () => {
     const D = "2026-11-12";
     const b = dataOnlyBrief(D, []);
@@ -618,7 +789,7 @@ describe("chat edition: failed format", () => {
       "**CyberTracker 2026-11-17 · dry run (failed)** (E_AGENT)",
       "What happened: The agent wrote no draft in 1 attempt.",
       "Dry run: nothing was published.",
-      `Next step: ${RERUN}`,
+      "Next step: this was a dry run, so nothing needs rerunning: what it wrote is in logs/2026-11-17.daily.log, drafts/2026-11-17.json, logs/2026-11-17.validation.json and logs/dry-run/2026-11-17/",
       "Run: started 14:00, ended 14:35 · attempts 1, repairs 0",
     ));
   });
@@ -793,6 +964,16 @@ describe("NEXT_STEP and WHAT_HAPPENED", () => {
       expect(chatGuard(whatHappened(code, facts), SITE)).toBe(whatHappened(code, facts));
       expect(chatGuard(step, SITE)).toBe(step);
     }
+    const composeStep = NOT_COMPOSED.nextStep.replaceAll("{date}", "2026-11-14");
+    expect(composeStep).not.toMatch(/—|\{date\}/);
+    expect(NOT_COMPOSED.what).toMatch(/^[A-Z].*\.$/);
+    expect(chatGuard(composeStep, SITE)).toBe(composeStep);
+    expect(chatGuard(NOT_COMPOSED.what, SITE)).toBe(NOT_COMPOSED.what);
+    const validStep = NOT_VALID.nextStep.replaceAll("{date}", "2026-11-14");
+    expect(validStep).not.toMatch(/\u2014|\{date\}/);
+    expect(NOT_VALID.what).toMatch(/^[A-Z].*\.$/);
+    expect(chatGuard(validStep, SITE)).toBe(validStep);
+    expect(chatGuard(NOT_VALID.what, SITE)).toBe(NOT_VALID.what);
     expect(RERUN_BEFORE).toBe("10:00");
     expect(nextStepFor("E_PUBLISH", "2026-11-14")).toBe(
       "the draft is valid: in /Users/kobol/Projects/CyberTracker run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date 2026-11-14 before 11:00");
@@ -1116,5 +1297,74 @@ describe("chat edition: the ten §8.8 snapshots on fixtures/site-content", () =>
       "Dry run: nothing was published; files in logs/dry-run/2026-10-15/",
       "Run 15:00–15:31 · data-only 04:51 · 1 attempt · data to 13 Oct UTC",
     ));
+  });
+});
+
+describe("dry-run next steps (C1)", () => {
+  // Kobol dry run 2026-11-11: a dry run's data-only edition after E_VALIDATION said "rerun before 10:00: zsh
+  // .../daily.sh --no-deadline; the draft is in needs-review/2026-11-11/", a real run's step and a folder a dry
+  // run never writes (§0.4 row 75).
+  const D = "2026-11-11";
+  // "scripts/daily.sh's PATH" in E_ARCH's fix is a file to check, not the rerun command.
+  const REAL_ONLY = /needs-review|zsh |--no-deadline|npm run publish|rerun before/;
+
+  it("every code's dry-run step has no rerun, needs-review path or hand publish command, and says where the files are", () => {
+    expect(Object.keys(DRY_RUN_NEXT_STEP).sort()).toEqual([...ERROR_CODES].sort());
+    const files = DRY_RUN_FILES.replaceAll("{date}", D);
+    expect(files).toBe(`this was a dry run, so nothing needs rerunning: what it wrote is in logs/${D}.daily.log, drafts/${D}.json, logs/${D}.validation.json and logs/dry-run/${D}/`);
+    for (const code of ERROR_CODES) {
+      const step = dryRunNextStepFor(code, D);
+      expect(step, code).not.toMatch(REAL_ONLY);
+      expect(step, code).not.toMatch(/\{date\}|\u2014/);
+      expect(chatGuard(step, SITE), code).toBe(step);
+      // E_SIMULATED's line is the same in both: the test of the failure path asks for nothing.
+      if (code === "E_SIMULATED") expect(step).toBe(nextStepFor(code, D));
+      else expect(step.endsWith(files), code).toBe(true);
+    }
+    for (const special of [NOT_COMPOSED, NOT_VALID]) {
+      const step = special.dryRunStep.replaceAll("{date}", D);
+      expect(step).not.toMatch(REAL_ONLY);
+      expect(step.endsWith(files)).toBe(true);
+      expect(chatGuard(step, SITE)).toBe(step);
+    }
+    expect(dryRunNextStepFor("E_VALIDATION", D)).toBe(files);
+    expect(dryRunNextStepFor("E_AUTH", D)).toBe(`the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6) before the next run; ${files}`);
+    expect(dryRunNextStepFor("E_NOPE", D)).toBe(dryRunNextStepFor("E_INTERNAL", D));
+  });
+
+  it("a dry run's data-only edition after E_VALIDATION gives the dry-run step and no needs-review line; a real run's is word for word", () => {
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const over = {
+      outcome: "dry_run" as const, edition: "data_only" as const, error_code: "E_VALIDATION", data_only_published_at: b.data_only_published_at,
+      validation: { errors: 5, warnings: 0, codes: ["LEAD_GROUNDED", "SOURCE_TIER"] },
+    };
+    const dry = [record(D, { ...over, trigger: "dry_run" }), record(D, { ...over, trigger: "retry", attempt: 2, started_at: at(D, "08:29:14") })];
+    const input = chatInputFor({ date: D, brief: b, runs: dry });
+    expect(input).toMatchObject({ kind: "data_only", dryRun: true, code: "E_VALIDATION", nextStep: dryRunNextStepFor("E_VALIDATION", D) });
+    const text = render(input);
+    expect(text.split("\n")).toContain(`Next step: ${DRY_RUN_FILES.replaceAll("{date}", D)}`);
+    expect(text).not.toMatch(REAL_ONLY);
+    // The same records as a real run keep the real lines, word for word.
+    const real = dry.map((r, i) => ({ ...r, trigger: i === 0 ? "schedule" as const : "retry" as const, outcome: "published_data_only" as const }));
+    const realInput = chatInputFor({ date: D, brief: b, runs: real });
+    expect(realInput).toMatchObject({ kind: "data_only", dryRun: false, nextStep: `${RERUN}; the draft is in needs-review/${D}/` });
+    expect(NEXT_STEP.E_VALIDATION).toBe(`${RERUN}; the draft is in needs-review/{date}/`);
+  });
+
+  it("a dry run's E_PUBLISH, plain, not composed or not valid, gives no hand publish command, with --force or without", () => {
+    const what = WHAT_HAPPENED.E_PUBLISH({} as WhatFacts);
+    const full = brief(D);
+    for (const [note, step] of [
+      [what, dryRunNextStepFor("E_PUBLISH", D)],
+      [`${what} ${STAGE_NOTES.notComposed}`, NOT_COMPOSED.dryRunStep.replaceAll("{date}", D)],
+      [`${what} ${STAGE_NOTES.notValid}`, NOT_VALID.dryRunStep.replaceAll("{date}", D)],
+    ] as const) {
+      for (const b of [null, full]) {
+        const runs = [record(D, { trigger: "dry_run", outcome: "dry_run", edition: null, error_code: "E_PUBLISH", stage: { publish: { status: "failed", note } } })];
+        const input = chatInputFor({ date: D, brief: b, runs });
+        expect(input).toMatchObject({ kind: "failed", code: "E_PUBLISH", nextStep: step });
+        expect(render(input)).not.toMatch(/needs-review|npm run publish|--force/);
+      }
+    }
   });
 });

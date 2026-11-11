@@ -1,12 +1,14 @@
-import { extractUrls, normalizeUrl } from "../../lib/urls";
+import { extractUrls } from "../../lib/urls";
 
-// Reads the agent's stream-json transcript (SPEC §8.12). Event shapes checked against Claude Code
-// 2.1.319 on 2026-11-08: a {type:"system",subtype:"init"} event carries session_id, model,
-// claude_code_version, tools, mcp_servers and permissionMode; tool calls are tool_use blocks inside
-// {type:"assistant"} messages; tool output is tool_result blocks inside {type:"user"} messages;
-// {type:"rate_limit_event"} carries rate_limit_info; the run ends with a {type:"result"} event whose
-// is_error flag (not the exit code, and not its subtype) says whether the run failed. Copied from
-// the Europe fork's scripts/lib/transcript.ts and extended.
+// Reads the agent's stream-json transcript (SPEC §8.12). Event shapes were first recorded on Claude Code
+// 2.1.319 in the cloud on 2026-11-08; fixtures/agent/transcript-ok.jsonl was re-recorded on Kobol on the
+// pinned 2.1.316 on 2026-11-11: a {type:"system",subtype:"init"} event carries session_id, model,
+// claude_code_version, tools,
+// mcp_servers and permissionMode; tool calls are tool_use blocks inside {type:"assistant"} messages; tool
+// output is tool_result blocks inside {type:"user"} messages; {type:"rate_limit_event"} carries
+// rate_limit_info; the run ends with a {type:"result"} event whose is_error flag (not the exit code, and
+// not its subtype) says whether the run failed. Copied from the Europe fork's scripts/lib/transcript.ts
+// and extended. The run's evidence is built from these fields by scripts/lib/evidence.ts.
 
 export interface Transcript {
   sessionId: string | null;
@@ -38,7 +40,7 @@ export interface Transcript {
   terminalReason: string | null;
   /** Any rate_limit_event not "allowed" or "allowed_warning", or a result with api_error_status 429. */
   limitHit: boolean;
-  /** The last rate_limit_event's window and utilization. */
+  /** The last rate_limit_event's window and utilization (unifiedWindows[window], else a top-level utilization). */
   rateLimitUsage: { window: string; utilization: number } | null;
   safetyStops: number;
   /** Every tool_use, in order, with whether its result was an error and the denial ids. */
@@ -95,10 +97,13 @@ export function parseTranscript(jsonl: string): Transcript {
     }
     if (e.error === "authentication_failed") t.authFailed = true;
     if (e.type === "rate_limit_event") {
-      const info = (e.rate_limit_info ?? {}) as { status?: string; rateLimitType?: string; unifiedWindows?: Record<string, { utilization?: number }> };
+      const info = (e.rate_limit_info ?? {}) as {
+        status?: string; rateLimitType?: string; utilization?: number; unifiedWindows?: Record<string, { utilization?: number }>;
+      };
       if (info.status && info.status !== "allowed" && info.status !== "allowed_warning") t.limitHit = true;
       const window = info.rateLimitType ?? null;
-      const utilization = window ? info.unifiedWindows?.[window]?.utilization : undefined;
+      // The window's own figure (unifiedWindows, as recorded), else a top-level utilization.
+      const utilization = window ? (info.unifiedWindows?.[window]?.utilization ?? info.utilization) : undefined;
       if (window && typeof utilization === "number") t.rateLimitUsage = { window, utilization };
     }
     const content = (e.message as { content?: unknown } | undefined)?.content;
@@ -148,12 +153,6 @@ export function parseTranscript(jsonl: string): Transcript {
     }
   }
   return t;
-}
-
-/** Evidence URLs: pack URLs ∪ fetched URLs ∪ URLs in tool results, normalised and unique (P3 replaces this with buildEvidence). */
-export function evidenceUrls(transcripts: Transcript[], packUrls: string[]): string[] {
-  const all = [...packUrls, ...transcripts.flatMap((t) => [...t.fetched, ...t.resultUrls])];
-  return [...new Set(all.map(normalizeUrl))].sort();
 }
 
 /**

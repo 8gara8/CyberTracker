@@ -5,7 +5,9 @@
 import { z } from "zod";
 import { FeedParseError } from "./types";
 
-const PAGE_SIZE = 2000;
+/** resultsPerPage, the most NVD returns a page; collect reads two pages, so at most 4,000 records a window. */
+export const NVD_PAGE_SIZE = 2000;
+const PAGE_SIZE = NVD_PAGE_SIZE;
 const NIST = "nvd@nist.gov";
 const CVE_RE = /^CVE-\d{4}-\d{4,}$/;
 

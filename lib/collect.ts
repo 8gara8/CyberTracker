@@ -12,16 +12,16 @@ import { endOfDayAsset, hourlyAsset, tagTime, type ReleaseAsset } from "./feeds/
 import { kevNoteUrls } from "./feeds/kev";
 import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
-import { recordAdvisoryUrls } from "./feeds/cvelist";
+import { ADVISORY_TAGS, recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
 import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
-import { alertRegions, type RegionsConfig } from "./regions";
+import { alertRegions, givesRegionSignal, itemGivesRegionSignal, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
-import type { RunFile, SourceTiersFile } from "./schema/config";
+import type { RunFile, SourceTiersFile, Vendor, VendorsFile } from "./schema/config";
 import type { Evidence } from "./schema/misc";
-import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type RankLogEntry } from "./schema/pack";
+import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type PackSizeCut, type RankLogEntry } from "./schema/pack";
 import type { Candidate } from "./schema/context";
 import type { FetchedFeed, FetchedFeedKind, SourcesFile } from "./schema/registry";
 import { ID_PATTERNS, type TimeWindow } from "./schema/common";
@@ -118,13 +118,51 @@ export const MISSING_DAYS_MAX = CATCH_UP_DAYS;
 
 export type PlannedZip = ReleaseAsset & { kind: "end_of_day" | "hourly"; utc_day: string };
 
+/** UTC day X's hourly zip at `tag` (`cve_X_HHMMZ`), or null when `tag` is not one of X's hourly tags. */
+export function hourlyZip(day: string, tag: string | null): PlannedZip | null {
+  const m = tag ? /^cve_(\d{4}-\d{2}-\d{2})_(\d{4})Z$/.exec(tag) : null;
+  if (!m || m[1] !== day) return null;
+  return { ...hourlyAsset(day, m[2]!), kind: "hourly", utc_day: day };
+}
+
 /** The zip for UTC day X: X's end-of-day asset before the run's UTC day T, T's newest hourly asset on T, nothing after. */
 function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): PlannedZip | null {
   if (day < runUtcDay) return { ...endOfDayAsset(day), kind: "end_of_day", utc_day: day };
-  if (day > runUtcDay || !hourlyTag) return null;
-  const m = /^cve_(\d{4}-\d{2}-\d{2})_(\d{4})Z$/.exec(hourlyTag);
-  if (!m || m[1] !== day) return null;
-  return { ...hourlyAsset(day, m[2]!), kind: "hourly", utc_day: day };
+  if (day > runUtcDay) return null;
+  return hourlyZip(day, hourlyTag);
+}
+
+/**
+ * Ruling R37's stand-in (§8.3): X = T − 1's end-of-day zip comes out about 00:33 to 00:42 UTC on T, and
+ * sometimes later (Kobol, November 2026), so a run in the first part of T finds it missing (HTTP 404). Only
+ * that zip gets a stand-in, X's newest hourly zip; any other error, and a missing older end-of-day zip (a
+ * catch-up day), fail as before.
+ */
+export function wantsStandIn(z: PlannedZip, runUtcDay: string, error: FetchErrorClass | null): boolean {
+  return z.kind === "end_of_day" && z.utc_day === addDays(runUtcDay, -1) && error === "http_404";
+}
+
+/** The plan's zips as read: each end-of-day zip an hourly zip stood in for (`standIns`, keyed by the planned asset) replaced by it. */
+export function zipsAsRead(zips: readonly PlannedZip[], standIns: ReadonlyMap<string, PlannedZip>): PlannedZip[] {
+  return zips.map((z) => standIns.get(z.asset) ?? z);
+}
+
+/**
+ * inputs.json's days (§8.3): each planned day X with the assets read for it, ok when both parsed. X's own
+ * zip must be its end-of-day zip: a day an hourly zip stood in for is never ok, so it stays missing and a
+ * later run reads its end-of-day zip and counts it in full. X + 1's zip may be the stand-in, as T's hourly
+ * zip is X + 1's on every morning.
+ */
+export function dayReads(
+  days: readonly { date: string; zips: readonly [string, string] }[],
+  standIns: ReadonlyMap<string, PlannedZip>,
+  ok: (asset: string) => boolean,
+): { date: string; zips: [string, string]; ok: boolean }[] {
+  return days.map((d) => {
+    const [own, planned] = d.zips;
+    const next = standIns.get(planned)?.asset ?? planned;
+    return { date: d.date, zips: [own, next], ok: !standIns.has(own) && ok(own) && ok(next) };
+  });
 }
 
 /**
@@ -136,7 +174,8 @@ function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): Plann
  * reads D − 2's and D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null or
  * empty), or when its newest day is more than 25 days before the cutoff (the metrics count no day then,
  * §8.4), only the window's zips. `days` lists each counted day with its two assets. Assets come oldest
- * first, end-of-day before hourly.
+ * first, end-of-day before hourly. When T − 1's end-of-day zip is not out yet, collect reads its newest
+ * hourly zip in its place (wantsStandIn(), zipsAsRead(), dayReads()).
  */
 export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: string; hourlyTag: string | null; knownDays: readonly string[] | null; maxDays?: number }): { zips: PlannedZip[]; days: { date: string; zips: [string, string] }[]; missing: string[] } {
   const cutoff = addDays(o.date, -2);
@@ -171,12 +210,14 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
 }
 
 /**
- * The instant the zips read reach (§8.3): an end-of-day zip of X reaches X + 1 at 00:00Z, T's hourly zip
- * its tag's hour; the latest of them, or null when none was read.
+ * The instant the zips read reach without a gap (§8.3), from the oldest zip's day: an end-of-day zip of X
+ * reaches X + 1 at 00:00Z; an hourly zip (T's, or T − 1's standing in for its end-of-day zip) covers its
+ * day from 00:00Z to its tag's hour. The reach stops at the first hour no zip covers; null when none was read.
  */
 export function zipsReach(zips: readonly PlannedZip[]): string | null {
   let reach: string | null = null;
-  for (const z of zips) {
+  for (const z of [...zips].sort((a, b) => byCodeUnit(a.utc_day, b.utc_day))) {
+    if (reach !== null && `${z.utc_day}T00:00:00Z` > reach) break;
     const end = z.kind === "end_of_day" ? `${addDays(z.utc_day, 1)}T00:00:00Z` : tagTime(z.tag);
     if (end && (reach === null || end > reach)) reach = end;
   }
@@ -379,27 +420,39 @@ export function dedupe(items: readonly ItemDraft[]): { kept: ItemDraft[]; droppe
 /**
  * §4.14's caps (feeds plan §12 item 7): at most 30 per feed; then an item stays when it is in the top 60
  * of any of its coverage sections; then at most 200 in all. Ties by score, then newest, then URL.
+ * An item `held` returns true for is never cut (collect passes itemGivesRegionSignal(): an agency's alert
+ * page or a CERT note reporting exploitation, §5.11, since both editions compute the region levels from
+ * the pack): such items are taken first, whatever their score, count toward their feed's 30 and the 200,
+ * and the other items fill what is left. Only the 200 cuts one, which a day's alert pages never reach.
  */
 export function capItems(
   items: readonly ItemDraft[],
   caps: { perFeed: number; perCoverage: number; total: number } = ITEM_CAPS,
+  held: (d: ItemDraft) => boolean = () => false,
 ): { kept: ItemDraft[]; cutByFeed: Record<string, number> } {
   const cutByFeed: Record<string, number> = {};
   const cut = (d: ItemDraft) => { cutByFeed[d.feed_id] = (cutByFeed[d.feed_id] ?? 0) + 1; };
   const sorted = [...items].sort(byScore);
+  // The pack schema allows 200 items, so the held items stop there (by score) too.
+  const keep = new Set(sorted.filter(held).slice(0, caps.total));
   const perFeed = new Map<string, number>();
+  for (const d of keep) perFeed.set(d.feed_id, (perFeed.get(d.feed_id) ?? 0) + 1);
   const afterFeed: ItemDraft[] = [];
   for (const d of sorted) {
+    if (keep.has(d)) { afterFeed.push(d); continue; }
     const n = perFeed.get(d.feed_id) ?? 0;
     if (n >= caps.perFeed) { cut(d); continue; }
     perFeed.set(d.feed_id, n + 1);
     afterFeed.push(d);
   }
-  const chosen = new Set<ItemDraft>();
+  const chosen = new Set<ItemDraft>(keep);
   for (const c of COVERAGE) afterFeed.filter((d) => d.coverage.includes(c)).slice(0, caps.perCoverage).forEach((d) => chosen.add(d));
   const kept: ItemDraft[] = [];
+  let room = caps.total - keep.size;
   for (const d of afterFeed) {
-    if (!chosen.has(d) || kept.length >= caps.total) { cut(d); continue; }
+    if (keep.has(d)) { kept.push(d); continue; }
+    if (!chosen.has(d) || room <= 0) { cut(d); continue; }
+    room -= 1;
     kept.push(d);
   }
   return { kept, cutByFeed: Object.fromEntries(Object.entries(cutByFeed).sort(([a], [b]) => byCodeUnit(a, b))) };
@@ -523,8 +576,105 @@ export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
-/** CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit flag. */
-export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 }): RecordDraft[] {
+/** The vendor in vendors.json whose CNA assigned the record (its `cna` short names, exact), or null. */
+export function cnaVendorOf(rec: Pick<CveRecord, "assigner">, vendors: Pick<VendorsFile, "vendors">): Vendor | null {
+  const a = rec.assigner;
+  return a ? vendors.vendors.find((v) => v.cna.includes(a)) ?? null : null;
+}
+
+/**
+ * The most vendor pages a record takes (§8.3 Advisory URLs): the first in reference order on each of its
+ * vendor's own hosts, so one for nearly every record, and two for SAP's (its note on me.sap.com, then its
+ * patch day page on url.sap, which needs no login).
+ */
+export const VENDOR_PAGES_MAX = 2;
+
+/** Reference tags that mark an exploit, a bug tracker or a mailing list: never a vendor page. */
+const NOT_PAGE_TAGS: ReadonlySet<string> = new Set(["exploit", "issue-tracking", "mailing-list"]);
+/** Hosts of commits, code review, bug trackers and mailing lists (a label, or part of one). */
+const NOT_PAGE_HOST_RE = /^git\.kernel\.org$|(?:^|\.)(?:issues|issuetracker|bug[a-z]*|jira|lists|mail)\.|gerrit|bugzilla|mail-archive|chromium-review/;
+/** Paths of commits, bug trackers and mailing list archives. */
+const NOT_PAGE_PATH_RE = /\/commits?\/|\/stable\/c\/|\/issues\/|\/bug|\/browse\/|\/pipermail\//;
+
+/**
+ * True for a link that looks like a commit, a code review, a bug tracker or a mailing list rather than a
+ * vendor's advisory page: git.kernel.org; a host with a label `issues`, `issuetracker`, `bug...`, `jira`,
+ * `lists` or `mail`, or with gerrit, bugzilla, mail-archive or chromium-review in it; a path with
+ * `/commit/`, `/commits/`, `/stable/c/`, `/issues/`, `/bug`, `/browse/` or `/pipermail/`. An unparsable URL
+ * counts as one, so it is left out.
+ */
+export function notVendorPage(url: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return true;
+  }
+  return NOT_PAGE_HOST_RE.test(u.hostname.toLowerCase()) || NOT_PAGE_PATH_RE.test(u.pathname.toLowerCase());
+}
+
+/**
+ * True when a CVE record has an advisory URL of its own tagged: a reference its CNA tagged with an advisory
+ * tag (not exploit), or one any container tagged that sits on the vendor's own tier 1 host. A URL only an ADP
+ * tagged on another host (CISA's ADP adds a researcher's or vendor's report to KEV-listed records) is not
+ * the vendor's own, so vendorPageUrls() still adds the vendor's page beside it (review of the ninth pass).
+ */
+export function hasOwnTaggedAdvisory(rec: CveRecord, vendorId: string, cfg: PublisherConfig): boolean {
+  return rec.references.some((r) => {
+    if (r.tags.includes("exploit") || !r.tags.some((t) => ADVISORY_TAGS.has(t))) return false;
+    if (r.from === "cna") return true;
+    const p = publisherFor(r.url, "vendor_advisory", cfg);
+    return p.publisher === `vendor:${vendorId}` && p.tier === 1;
+  });
+}
+
+/**
+ * A CVE record's vendor pages (§8.3 Advisory URLs), only for a record with no tagged advisory URL of its
+ * own (hasOwnTaggedAdvisory(): none tagged by its CNA, and none tagged on the vendor's own host; a URL only
+ * an ADP tagged, such as the report CISA's ADP adds to a KEV-listed record, does not count, so a KEV-listed
+ * flaw keeps its vendor's page beside it): its CNA references that carry no advisory tag and no exploit,
+ * issue-tracking or mailing-list tag, are not commit, code review, bug tracker or mailing list links
+ * (notVendorPage()), sit on the own hosts of the vendor whose CNA assigned it (cnaVendorOf(): publisherFor()
+ * gives `vendor:<id>` at tier 1) and pass advisoryUrlFilter() (https, not blocked, at most 500 characters,
+ * normalised); of those, the first in reference order on each host, at most VENDOR_PAGES_MAX (2). SAP,
+ * Siemens, Fortinet, Ivanti and Schneider Electric tag none of their references, so without these their
+ * records, release members and out-of-band exploited flaws alike, would carry no vendor page. A record with
+ * an advisory URL of its own tagged, a reference on any other host, and every reference of a record no
+ * vendor's CNA assigned get none.
+ */
+export function vendorPageUrls(rec: CveRecord, cfg: PublisherConfig): string[] {
+  const vendor = cnaVendorOf(rec, cfg.vendors);
+  if (!vendor || hasOwnTaggedAdvisory(rec, vendor.id, cfg)) return [];
+  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.some((t) => NOT_PAGE_TAGS.has(t) || ADVISORY_TAGS.has(t)))
+    .map((r) => r.url)
+    .filter((u) => {
+      if (notVendorPage(u)) return false;
+      const p = publisherFor(u, "vendor_advisory", cfg);
+      return p.publisher === `vendor:${vendor.id}` && p.tier === 1;
+    });
+  const hosts = new Set<string>();
+  const out: string[] = [];
+  for (const raw of own) {
+    const u = advisoryUrlFilter([raw], cfg.sourceTiers)[0];
+    if (u === undefined) continue;
+    const host = new URL(u).hostname;
+    if (hosts.has(host)) continue;
+    hosts.add(host);
+    out.push(u);
+    if (out.length >= VENDOR_PAGES_MAX) break;
+  }
+  return out;
+}
+
+/**
+ * CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit
+ * flag. Its advisory URLs are its tagged ones (recordAdvisoryUrls()), then, when none of those is its own
+ * (hasOwnTaggedAdvisory()), its vendor's own pages (vendorPageUrls(): one per host, at most two), through
+ * advisoryUrlFilter().
+ */
+export function cvePackRecords(
+  recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: PublisherConfig, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },
+): RecordDraft[] {
   return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
     const event = r.published_at ?? r.updated_at;
@@ -544,7 +694,7 @@ export function cvePackRecords(recs: readonly CveRecord[], keep: (r: CveRecord) 
       exploit_reference: r.exploit_reference,
       ...(extra ? extra(r) : {}),
     };
-    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter(recordAdvisoryUrls(r, cfg), cfg), r.title ?? r.description,
+    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter([...recordAdvisoryUrls(r, cfg.sourceTiers), ...vendorPageUrls(r, cfg)], cfg.sourceTiers), r.title ?? r.description,
       r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
   }));
 }
@@ -675,22 +825,51 @@ function toPackRecord(d: Omit<PackRecord, "id"> & Partial<Pick<RecordDraft, "key
   };
 }
 
+/** Record sources the pack's caps keep whole (§4.14 Caps): a few exchange filings a day and one dashboard record, which no candidate references. */
+export const PINNED_RECORD_SOURCES: ReadonlySet<PackRecordSource> = new Set(["exchange-tw", "anthropic-cvd"]);
+
 /**
- * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `referenced`, then the
- * rest; within each, date descending, then source, then record id. The size caps cut from its end.
+ * The ids of the records the pack's caps keep whole (§4.14 Caps): every record that gives a region signal
+ * (givesRegionSignal(), §5.11: a JPCERT /at/ alert, or a TWCERT or JPCERT note reporting exploitation), so
+ * the region levels both editions compute from the pack stay as the feeds gave them, and every exchange
+ * filing and dashboard record (PINNED_RECORD_SOURCES), which the agent reads and no candidate references.
+ * `date` is the edition date. collect computes it for the provisional records (capRecords()) and again for
+ * the final ones (buildPack()).
  */
-export function recordKeepOrder(referenced: ReadonlySet<string>): (a: PackRecord, b: PackRecord) => number {
-  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
+export function pinnedRecordIds(records: readonly PackRecord[], regions: RegionsConfig, date: string): Set<string> {
+  return new Set(records.filter((r) => PINNED_RECORD_SOURCES.has(r.source) || givesRegionSignal(r, regions, date)).map((r) => r.id));
+}
+
+/**
+ * The ids of the items the pack's caps keep whole (§4.14 Caps): every item that gives a region signal
+ * (itemGivesRegionSignal(), §5.11: an agency's alert page such as a CERT-FR ALE alert or a CISA emergency
+ * directive, or a CERT note reporting exploitation), the items capItems() never cuts. `date` is the
+ * edition date. buildPack()'s size caps read it on the final items.
+ */
+export function pinnedItemIds(items: readonly PackItem[], regions: RegionsConfig, date: string): Set<string> {
+  return new Set(items.filter((i) => itemGivesRegionSignal(i, regions, date)).map((i) => i.id));
+}
+
+/**
+ * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `pinned`
+ * (pinnedRecordIds()), then records whose id is in `referenced`, then the rest; within each, date
+ * descending, then source, then record id. The size caps cut from its end.
+ */
+export function recordKeepOrder(referenced: ReadonlySet<string>, pinned: ReadonlySet<string> = new Set()): (a: PackRecord, b: PackRecord) => number {
+  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : pinned.has(r.id) ? 1 : referenced.has(r.id) ? 2 : 3);
   return (a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id);
 }
 
 /**
- * At most 400 records: KEV records are never cut, then records a kept candidate references, then the rest
- * by date descending, source and record id. The kept records get final ids in display order; `idMap`
- * maps each provisional id to its final one so collect can rewrite the candidates' `pack_ids`.
+ * At most 400 records: KEV records are never cut, then the pinned records (pinnedRecordIds()), then records
+ * a kept candidate references, then the rest by date descending, source and record id. The kept records
+ * get final ids in display order; `idMap` maps each provisional id to its final one so collect can rewrite
+ * the candidates' `pack_ids`.
  */
-export function capRecords(records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
-  const priority = [...records].sort(recordKeepOrder(referenced));
+export function capRecords(
+  records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX, pinned: ReadonlySet<string> = new Set(),
+): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
+  const priority = [...records].sort(recordKeepOrder(referenced, pinned));
   const keep = priority.filter((r, i) => i < max || r.source === "kev");
   const kept = keep.sort(byRecord).map((r, i) => toPackRecord(r, padId("r", i + 1)));
   const idMap = new Map<string, string>();
@@ -839,23 +1018,34 @@ export interface BuildPackOptions {
   lookbackHours?: number;
   /**
    * Final ids of the items and records a kept candidate references (its own id and its pack_ids): such a
-   * record is never cut, such an item only after every other item and record the caps may cut.
+   * record is never cut, such an item only after every unreferenced record and item.
    */
   referenced?: ReadonlySet<string>;
+  /**
+   * Final ids of the records and items the size caps never cut (pinnedRecordIds(): region-signal, exchange
+   * and dashboard records; pinnedItemIds(): region-signal items).
+   */
+  pinned?: ReadonlySet<string>;
   /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
   recount?: (items: readonly PackItem[], records: readonly PackRecord[]) => { feeds: PackFeed[]; injectionFlags: number };
 }
 
 /**
  * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown, §4.14 Caps). Over a cap,
- * cut in this order, about a twentieth of what is left of a group at a time: the items no kept candidate
- * references, lowest score first; then records from the end of capRecords()' keep order (recordKeepOrder()),
- * never a KEV record and never one a kept candidate references; then the referenced items, lowest score
- * first. When only those remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags`
- * are recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
+ * cut in this order, about a twentieth of what is left of a group at a time: records from the end of
+ * capRecords()' keep order (recordKeepOrder()), never a KEV record, never a pinned one (`pinned`:
+ * region-signal, exchange and dashboard records) and never one a kept candidate references; then the
+ * items no kept candidate references, lowest score first; then the referenced items, lowest score first
+ * (§0.4 row 146: news goes only after every record the caps may cut); never a pinned item (`pinned`:
+ * region-signal items). When only KEV, pinned and referenced records and pinned items remain and it is
+ * still over, it stops (`over`). `feeds[]` and `injection_flags` are
+ * recounted after each cut. Returns the pack, its Markdown and what the size caps cut (`sizeCut`, for
+ * logs/D.candidates.json): each cut item's id, feed, score and title and each cut record's id, source and
+ * record id, as the pack held them, in id order (§0.4 row 146).
  */
-export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number; over: boolean } } {
+export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: PackSizeCut } {
   const referenced = opts.referenced ?? new Set<string>();
+  const pinned = opts.pinned ?? new Set<string>();
   let items = [...input.items];
   let records = [...input.records];
   let feeds = input.feeds;
@@ -869,9 +1059,9 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
   const over = () => byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
   const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
   const groups: string[][] = [
-    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
-    [...input.records].sort(recordKeepOrder(referenced)).reverse().filter((r) => r.source !== "kev" && !referenced.has(r.id)).map((r) => r.id),
-    lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
+    [...input.records].sort(recordKeepOrder(referenced, pinned)).reverse().filter((r) => r.source !== "kev" && !pinned.has(r.id) && !referenced.has(r.id)).map((r) => r.id),
+    lowestFirst.filter((i) => !pinned.has(i.id) && !referenced.has(i.id)).map((i) => i.id),
+    lowestFirst.filter((i) => !pinned.has(i.id) && referenced.has(i.id)).map((i) => i.id),
   ];
   const gone = new Set<string>();
   for (const group of groups) {
@@ -887,7 +1077,14 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
       md = renderPackMd(pack, registry, opts);
     }
   }
-  return { pack, md, sizeCut: { items: input.items.length - items.length, records: input.records.length - records.length, over: over() } };
+  const byId = (a: { id: string }, b: { id: string }) => byCodeUnit(a.id, b.id);
+  return {
+    pack, md, sizeCut: {
+      over: over(),
+      items: input.items.filter((i) => gone.has(i.id)).sort(byId).map((i) => ({ id: i.id, feed_id: i.feed_id, score: i.score, title: i.title })),
+      records: input.records.filter((r) => gone.has(r.id)).sort(byId).map((r) => ({ id: r.id, source: r.source, record_id: r.record_id })),
+    },
+  };
 }
 
 /** A schema-valid empty pack, degraded (a crash or timeout, §4.14 Degraded). */

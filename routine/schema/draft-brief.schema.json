@@ -27,11 +27,11 @@
           "item_ids": {
             "type": "array",
             "items": {"type":"string"},
-            "description": "Items this sentence draws on; at least 1 unless gap is true"
+            "description": "Items this sentence draws on; at least 1 unless gap is true. With none, the sentence is a Gap sentence (gap true), as every sentence is on a day with no items"
           },
           "gap": {
             "type": "boolean",
-            "description": "true when it quotes Gap numbers; each must match the metrics' headline.quoted"
+            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so when it names the day, it names it by its dates (\"13 to 14 Oct\"), never as a length of hours"
           }
         },
         "required": ["text","item_ids","gap"],
@@ -42,7 +42,10 @@
     "angle": {
       "type": "object",
       "properties": {
-        "text": {"type":"string","description":"At most 30 words, holding exactly one number"},
+        "text": {
+          "type": "string",
+          "description": "At most 30 words, holding exactly one number. With a metric_path, the figures its quotable label prints (\"26 weeks\", \"within 7 days\", \"80% interval\") are not counted the first time each is written; name the window and date, not a denominator. Write a ratio as the Gap does, \"1.9 times\", never \"1.9x\""
+        },
         "source_id": {
           "description": "The source of the number; exactly one of source_id and metric_path is non-null",
           "type": ["string","null"]
@@ -615,7 +618,7 @@
                 "date": {"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$","description":"Date of the statement"},
                 "source_id": {
                   "type": "string",
-                  "description": "vendor_*: on the vendor's own domain; cert_confirmed: a CERT; news_reported: a tier 2 newsroom"
+                  "description": "vendor_*: on the vendor's own domain; cert_confirmed: a national CERT (a CERT, or CISA); news_reported: a tier 2 newsroom"
                 }
               },
               "required": ["cve_id","kind","basis","date","source_id"],

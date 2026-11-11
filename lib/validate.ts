@@ -19,7 +19,9 @@ import type { Pack } from "./schema/pack";
 import { ScoreboardFile } from "./schema/scoreboard";
 import { StatusFile } from "./schema/status";
 import { RULES } from "./rules";
+import { exploitLinkProblem } from "./rules/safety";
 import { derive, isDataOnly } from "./rules/shared";
+import { blockedReason } from "./sources";
 import {
   error, plural, warning, type CrossFile, type CveLookup, type CveRecordInfo, type RegionsBase, type Rule, type RuleInput,
   type ValidationIssue,
@@ -27,6 +29,7 @@ import {
 import { contentDir, isSampleData } from "./site";
 import { normalizeUrl } from "./urls";
 import { WITHHELD_MARK } from "./vocab";
+import { bindingWithholds, withheldOnlySources } from "./withhold-mask";
 
 export type { CveLookup, CveRecordInfo, RegionsBase, Rule, RuleInput, ValidationIssue } from "./rules/types";
 export { SAFETY_CODES } from "./rules/safety";
@@ -364,13 +367,16 @@ export function cveLookupFromDir(dir: string): CveLookup {
 /**
  * logs/D.regions-input.json and fixtures/regions-input/<name>.json: the validator's regionsBase without
  * its config (§8.2 step 6.2), which the reader rebuilds from config/ (regionsConfig()). History briefs
- * keep only the fields computeRegions() reads; other keys are dropped on reading.
+ * keep only the fields computeRegions() reads; other keys are dropped on reading. `firstSeen` is the
+ * base's first_seen map (firstSeenBefore(), item id → date), so the validate and publish CLIs give
+ * today's items the first_seen the morning's loop gave them; a file without it falls back to the history.
  */
 export const RegionsInputFile = z.object({
   date: z.string().refine(isValidDate, { error: "Expected a date as YYYY-MM-DD" }),
   history: z.array(z.object({ date: Brief.shape.date, items: Brief.shape.items, sources: Brief.shape.sources, regions: Brief.shape.regions })),
   signals: z.array(RegionSignal),
   kevIndex: z.object({ entries: z.array(KevIndexRow) }),
+  firstSeen: z.record(z.string(), Brief.shape.date).optional(),
 });
 export type RegionsInputFile = z.infer<typeof RegionsInputFile>;
 
@@ -381,6 +387,7 @@ export function regionsInputFile(base: RegionsBase): RegionsInputFile {
     history: base.history.map((h) => ({ date: h.date, items: [...h.items], sources: [...h.sources], regions: h.regions })),
     signals: [...base.signals],
     kevIndex: { entries: [...base.kevIndex.entries] },
+    ...(base.firstSeen ? { firstSeen: { ...base.firstSeen } } : {}),
   };
 }
 
@@ -758,6 +765,10 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
   if (corrections?.data) {
     const cf = corrections.data;
     const file = corrections.file;
+    // A withhold whose stored dispute is open or upheld binds every later edition (§4.10): publish rewrites
+    // or masks each later copy of the item, so those are checked too. A rejected or withdrawn dispute binds
+    // nothing after its edition, so a later copy may stand.
+    const binding = new Set(bindingWithholds(cf).map((w) => w.correction_id));
     cf.corrections.forEach((c, i) => {
       const p = `corrections[${i}]`;
       const target = briefs.get(c.edition_date);
@@ -766,32 +777,93 @@ export function validateAll(dir: string = contentDir(), opts: AllOptions = {}): 
       } else if (!itemViews(target.file, c.edition_date, target.raw).some((v) => v.id === c.item_id)) {
         add(file, error("XREF_UNRESOLVED", `${p}.item_id`, `${c.id} targets ${c.item_id}, which is not an item in ${target.file}.`));
       } else if (c.type === "name_removed" && target.data) {
-        const idx = target.data.items.findIndex((it) => it.id === c.item_id);
-        const it = target.data.items[idx]!;
-        const where = `${target.file} items[${idx}]`;
         const kind = cf.disputes.find((d) => d.id === c.dispute_id)?.kind ?? null;
-        const problems: string[] = [];
-        if (it.withheld === null) problems.push("withheld is not set");
-        if (kind === "victim" && it.incident?.victim != null) problems.push("incident.victim is not null after a victim dispute");
-        if (kind === "attribution" && (it.attribution.length > 0 || it.actor_nexus !== null)) {
-          problems.push("attribution is not [] or actor_nexus is not null after an attribution dispute");
-        }
-        // A region reason embeds the item's headline (§5.11): every row and raise that lists it reads "[withheld]".
-        target.data.regions.rows.forEach((r, k) => {
-          if (r.item_ids.includes(c.item_id) && r.reason !== WITHHELD_MARK) problems.push(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
-          if (r.raised?.item_ids.includes(c.item_id) && r.raised.reason !== WITHHELD_MARK) {
-            problems.push(`regions.rows[${k}].raised.reason is not "${WITHHELD_MARK}"`);
+        // The target brief, and every earlier stored brief holding the item: an item keeps its id in every
+        // edition it appears in (§4.6), so an earlier edition left as it was would still show the name. While
+        // the withhold binds, every later brief holding the item too.
+        const holders = [...briefs].filter(([d, b]) => (d <= c.edition_date || binding.has(c.id)) && b.data?.items.some((it) => it.id === c.item_id))
+          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+        for (const [, held] of holders) {
+          const data = held.data!;
+          const idx = data.items.findIndex((it) => it.id === c.item_id);
+          const it = data.items[idx]!;
+          const where = `${held.file} items[${idx}]`;
+          const problems: string[] = [];
+          if (it.withheld === null) problems.push("withheld is not set");
+          if (kind === "victim" && it.incident?.victim != null) problems.push("incident.victim is not null after a victim dispute");
+          if (kind === "attribution" && (it.attribution.length > 0 || it.actor_nexus !== null)) {
+            problems.push("attribution is not [] or actor_nexus is not null after an attribution dispute");
           }
-        });
-        if (problems.length) {
-          add(file, error("XREF_CORRECTION", p, `${c.id} removes a name but ${where} is not rewritten: ${problems.join("; ")}.`,
-            "A name_removed correction rewrites the archived item as SPEC §4.10 says."));
+          // A region reason embeds the item's headline (§5.11): every row and raise that lists it reads "[withheld]".
+          data.regions.rows.forEach((r, k) => {
+            if (r.item_ids.includes(c.item_id) && r.reason !== WITHHELD_MARK) problems.push(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
+            if (r.raised?.item_ids.includes(c.item_id) && r.raised.reason !== WITHHELD_MARK) {
+              problems.push(`regions.rows[${k}].raised.reason is not "${WITHHELD_MARK}"`);
+            }
+          });
+          if (problems.length) {
+            add(file, error("XREF_CORRECTION", p, `${c.id} removes a name but ${where} is not rewritten: ${problems.join("; ")}.`,
+              "A name_removed correction rewrites the archived item as SPEC §4.10 says."));
+          }
         }
       }
       const prev = cf.corrections[i - 1];
       if (prev && (prev.date > c.date || (prev.date === c.date && prev.id > c.id))) {
         add(file, error("FILE_ORDER", p, `corrections.json must be sorted by date, then id (${c.id} comes after ${prev.id}).`));
       }
+    });
+    // A source only withheld items cite has its title (and English title) masked with them (§4.10 rewriteItem()):
+    // a page title can name the victim or the actor. Every stored brief, whatever correction withheld its items.
+    for (const [date, held] of briefs) {
+      const data = held.data;
+      if (!data || !data.items.some((it) => it.withheld)) continue;
+      for (const [sid, ids] of withheldOnlySources(data)) {
+        const k = data.sources.findIndex((x) => x.id === sid);
+        const src = data.sources[k];
+        if (!src) continue;
+        for (const field of ["title", "title_en"] as const) {
+          const v = src[field];
+          if (v === null || v === WITHHELD_MARK) continue;
+          add(held.file, error("XREF_CORRECTION", `sources[${k}].${field}`,
+            `${sid} is cited only by withheld items (${ids.join(", ")}), but its ${field} is not "${WITHHELD_MARK}" in ${date}'s brief.`,
+            "A withhold masks the title of each source only withheld items cite (SPEC §4.10)."));
+        }
+      }
+    }
+    // NO_EXPLOIT_LINK: a reader's evidence link is published in corrections.json, so it gets the cited-URL check as a
+    // tier 3 page (any exploit word in its path fails, on any host), and no blocked host passes (§8.9 intake keeps neither).
+    cf.disputes.forEach((d, i) => {
+      if (d.evidence_url === null) return;
+      const tiers = config().sourceTiers;
+      const why = exploitLinkProblem(d.evidence_url, 3, tiers) ?? (blockedReason(d.evidence_url, tiers) !== null ? "is on the blocked list" : null);
+      if (why) {
+        add(file, error("NO_EXPLOIT_LINK", `disputes[${i}].evidence_url`, `${d.id}'s evidence link ${why}.`,
+          "Set the dispute's evidence_url to null: dispute intake keeps only a safe https link (SPEC §8.9)."));
+      }
+    });
+    // Links (§4.10, §8.9): a correction's dispute_id names a dispute whose correction_id is that correction, and a
+    // dispute's correction_id names a correction on its item (and its edition, when it names one) that answers a
+    // dispute. Not the strict reverse: intake answers a later dispute on an item and edition a stored name_removed
+    // correction already withholds with that correction's id, so one correction can answer several disputes.
+    // The first record under an id (a repeated id is its own error below).
+    const disputeById = new Map([...cf.disputes].reverse().map((d) => [d.id, d] as const));
+    const correctionById = new Map([...cf.corrections].reverse().map((c) => [c.id, c] as const));
+    const LINK_HINT = "Publish links both records: the correction's dispute_id and the dispute's correction_id (SPEC §4.10, §8.9).";
+    cf.corrections.forEach((c, i) => {
+      if (c.dispute_id === null) return;
+      const d = disputeById.get(c.dispute_id);
+      const why = !d ? "which is not a dispute in corrections.json"
+        : d.correction_id !== c.id ? `but ${d.id}'s correction_id is ${d.correction_id ?? "null"}` : null;
+      if (why) add(file, error("XREF_CORRECTION", `corrections[${i}].dispute_id`, `${c.id} answers ${c.dispute_id}, ${why}.`, LINK_HINT));
+    });
+    cf.disputes.forEach((d, i) => {
+      if (d.correction_id === null) return;
+      const c = correctionById.get(d.correction_id);
+      const why = !c ? "which is not a correction in corrections.json"
+        : c.item_id !== d.item_id || (d.edition_date !== null && c.edition_date !== d.edition_date)
+          ? `which corrects ${c.item_id} in ${c.edition_date}, not ${d.item_id} in ${d.edition_date ?? "any edition"}`
+          : c.dispute_id === null ? "which answers no dispute" : null;
+      if (why) add(file, error("XREF_CORRECTION", `disputes[${i}].correction_id`, `${d.id} names ${d.correction_id}, ${why}.`, LINK_HINT));
     });
     const numbers = cf.corrections.map((c) => Number(c.id.slice(2)));
     const seen = new Set<number>();

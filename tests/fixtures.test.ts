@@ -102,11 +102,11 @@ const CASE_TYPES: Record<string, readonly CaseType[]> = {
   WORDS_OVER: ["F"], WORDS_UNDER: ["F"], QUOTE_MAX_25: ["F"], BANNED_WORDS: ["F"],
   // Sources
   SOURCE_REF: ["F"], SOURCE_DUP: ["F"], SOURCE_URL: ["F"], SOURCE_UNSEEN: ["F"], SOURCE_TIER: ["F"], SOURCE_CRITICAL_TWO: ["F"],
-  SOURCE_SYNDICATED: ["F"], SOURCE_STATE_LABEL: ["F"], SOURCE_ORPHAN: ["T"],
+  SOURCE_SYNDICATED: ["F"], SOURCE_STATE_LABEL: ["F"], RELEASE_SOURCE: ["T"], SOURCE_ORPHAN: ["T"],
   // CVEs and flaws
   CVE_PUBLISHED: ["F"], CVE_IN_SOURCE: ["F"], VENDOR_CONFIRMED: ["F"], EXPLOITED_BASIS: ["F"], FLAW_EVIDENCE: ["F"],
   // Grounding and numbers
-  LEAD_GROUNDED: ["F"], GAP_MATCH: ["T"], METRICS_ONLY_NUMBERS: ["F"],
+  LEAD_GROUNDED: ["F"], GAP_MATCH: ["T"], METRICS_ONLY_NUMBERS: ["F"], NUMBER_FORM: ["F"],
   // AI role
   AI_EVIDENCE_REQUIRED: ["F"], AI_CONFIRMED_NONPRESS: ["F"], SELF_REPORTED_WORDING: ["F"], ANTHROPIC_DISCLOSURE_LINE: ["T"],
   // Victims and attribution
@@ -126,6 +126,7 @@ const CASE_TYPES: Record<string, readonly CaseType[]> = {
 const T_FILES: Record<string, string> = {
   CONFIG_SCHEMA: "tests/config.test.ts", CONFIG_DUP: "tests/config.test.ts", CONFIG_REF: "tests/config.test.ts",
   CONFIG_REGEX: "tests/config.test.ts", ANTHROPIC_DISCLOSURE_LINE: "tests/rules-cves-grounding-ai.test.ts",
+  RELEASE_SOURCE: "tests/rules-words-sources.test.ts",
 };
 
 /**

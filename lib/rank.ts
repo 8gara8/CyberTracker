@@ -5,7 +5,8 @@
 // cve_ids, record kinds, notes without a record, ties, the by_reason keys and advisory_urls).
 
 import { matchVendor, type AiCreditMatch, type CompiledConfig, type LoadedConfig } from "./config";
-import { cveIdsIn } from "./collect";
+import { utcDateOf } from "./dates";
+import { advisoryUrlFilter, cveIdsIn } from "./collect";
 import { epssJump } from "./feeds/epss";
 import type { NewKevIdsResult } from "./feeds/kev";
 import type { CveRecord, EpssDay, GhsaAdvisory, KevCatalog, KevEntry } from "./feeds/types";
@@ -72,6 +73,14 @@ const NOTE_SOURCES: ReadonlySet<PackRecord["source"]> = new Set(["twcert-tvn", "
 const ADVISORY_MAX = 5;
 const PRODUCT_MIN = 4;
 
+/**
+ * The most bundle members whose CVE List records a patch_batch candidate references (§5.12 step 2, §0.4
+ * row 146): enough for every exploited fix of a usual Patch Tuesday and its highest-scored critical ones,
+ * about 10 KB of the pack's 150 KB Markdown. The release block's counts come from every member, never from
+ * these records, so the rest of a 1,000-fix release adds nothing the brief can use and once filled the pack.
+ */
+export const RELEASE_PACK_IDS_MAX = 20;
+
 /** The kind a news candidate proposes from its first coverage (§5.12 step 3). */
 export const NEWS_KIND_HINT: Readonly<Record<Coverage, KindId>> = {
   exploits: "critical_flaw", breaches: "breach", ai: "ai_capability", policy: "policy", taiwan: "campaign", japan: "campaign",
@@ -121,6 +130,11 @@ interface Work {
   vendor: Vendor | null;
   merges: Merge[];
   exploited: boolean;
+  /**
+   * The members a release candidate references, in releasePackMembers() order: finish() reads its advisory
+   * URLs member by member in that order, so the exploited fixes' pages come first.
+   */
+  release?: { members: string[] };
 }
 
 interface Ctx {
@@ -251,6 +265,8 @@ interface Bundle {
   members: CveRecord[];
   exploited: string[];
   critical: number | null;
+  /** The members' earliest and latest published_at (instants). */
+  first: string;
   newest: string;
 }
 
@@ -263,7 +279,9 @@ function bundles(ctx: Ctx): Bundle[] {
     if (!vendor || !vendor.cna.length) continue;
     const members = [...ctx.recs.values()].filter((r) => !!r.assigner && vendor.cna.includes(r.assigner) && ctx.inRecordWindow(r.published_at));
     if (members.length < rel.min_records) continue;
-    const newest = members.map((r) => r.published_at!).sort(byCodeUnit).at(-1)!;
+    const dates = members.map((r) => r.published_at!).sort(byCodeUnit);
+    const first = dates[0]!;
+    const newest = dates.at(-1)!;
     const month = newest.slice(0, 7);
     let releaseId = `rel-${vendor.id}-${month}`;
     let id = `pt-${vendor.id}-${month}`;
@@ -273,16 +291,39 @@ function bundles(ctx: Ctx): Bundle[] {
     }
     const exploited = members.filter((r) => ctx.kev.has(r.cve_id) || r.ssvc?.exploitation === "active").map((r) => r.cve_id).sort(compareCveIds);
     const rated = members.filter((r) => r.cna_severity !== null);
-    const critical = rated.length ? rated.filter((r) => r.cna_severity!.toUpperCase() === "CRITICAL").length : null;
-    out.push({ vendor, releaseId, id, members, exploited, critical, newest });
+    const critical = rated.length ? rated.filter(isCritical).length : null;
+    out.push({ vendor, releaseId, id, members, exploited, critical, first, newest });
   }
   return out;
+}
+
+/** A bundle's critical fix, as `release.critical` counts it: CNA baseSeverity CRITICAL. */
+const isCritical = (r: CveRecord) => r.cna_severity !== null && r.cna_severity.toUpperCase() === "CRITICAL";
+
+/**
+ * The members whose CVE List records a patch_batch candidate references (§5.12 step 2, §0.4 row 146): the
+ * exploited ones in CVE id order, then the critical ones (isCritical()), then the rest, each of these two
+ * by CVSS score descending, unscored last, then CVE id; at most RELEASE_PACK_IDS_MAX in all. The rest fill
+ * the slots the exploited and critical ones leave, so a release with neither (an all-High month) still
+ * names its best-scored fixes, and its candidate their records and vendor advisory URLs. The release
+ * counts still cover every member.
+ */
+export function releasePackMembers(b: { members: readonly CveRecord[]; exploited: readonly string[] }): string[] {
+  const exploited = new Set(b.exploited);
+  const byScore = (x: CveRecord, y: CveRecord) => (y.cvss?.score ?? -1) - (x.cvss?.score ?? -1) || compareCveIds(x.cve_id, y.cve_id);
+  const rest = b.members.filter((r) => !exploited.has(r.cve_id));
+  const critical = rest.filter(isCritical).sort(byScore).map((r) => r.cve_id);
+  const others = rest.filter((r) => !isCritical(r)).sort(byScore).map((r) => r.cve_id);
+  return [...b.exploited, ...critical, ...others].slice(0, RELEASE_PACK_IDS_MAX);
 }
 
 /**
  * The CVE ids whose CVE List records the pack keeps (§4.14 Records): records published or updated in the
  * record window that meet a §5.12 step 1 test, name a TW or JP vendor or carry an AI-finder match, every
- * new KEV id with a record, and every release-bundle member (so the bundle's pack_ids resolve).
+ * new KEV id with a record and, of each release bundle, the members its candidate references
+ * (releasePackMembers()) and every exploited member, which stays a candidate of its own (§0.4 row 146). A
+ * member no test keeps is left out, so a 1,000-fix release cannot fill the 400 records with fixes that
+ * only its counts need; the counts come from the CVE List records, never from the pack.
  */
 export function recordKeepIds(input: Omit<RankInput, "pack">): Set<string> {
   const ctx = context({ ...input, pack: { items: [], records: [] } });
@@ -292,7 +333,7 @@ export function recordKeepIds(input: Omit<RankInput, "pack">): Set<string> {
     const s = signals(ctx, id, byCve);
     if (s.candidate || s.newKev || (s.touched && (s.home || !!s.ai))) keep.add(id);
   }
-  for (const b of bundles(ctx)) for (const r of b.members) keep.add(r.cve_id);
+  for (const b of bundles(ctx)) for (const id of [...b.exploited, ...releasePackMembers(b)]) keep.add(id);
   return keep;
 }
 
@@ -305,15 +346,42 @@ function cvssReason(c: Unscored): string[] {
   return [`CVSS ${c.cvss.score.toFixed(1)} (${c.cvss.scorer}, ${c.cvss.version})`];
 }
 
+/** The advisory URLs of the pack records `ids`, in record id order, repeats dropped, at most ADVISORY_MAX. */
 function packUrls(ctx: Ctx, ids: readonly string[]): string[] {
+  return firstUrls([...ids].sort(byCodeUnit).map((id) => ctx.packById.get(id)?.advisory_urls ?? []));
+}
+
+function firstUrls(lists: readonly (readonly string[])[]): string[] {
   const out: string[] = [];
-  for (const id of [...ids].sort(byCodeUnit)) {
-    for (const u of ctx.packById.get(id)?.advisory_urls ?? []) {
+  for (const list of lists) {
+    for (const u of list) {
       if (out.length >= ADVISORY_MAX) return out;
       if (!out.includes(u)) out.push(u);
     }
   }
   return out;
+}
+
+/**
+ * A release candidate's advisory URLs (§5.12 step 2): member by member in releasePackMembers() order
+ * (exploited, then critical, then the rest), each member's CVE List pack record's advisory URLs (its tagged
+ * ones, then, when none of those is its own, its vendor's own pages, vendorPageUrls() in lib/collect.ts);
+ * then those of the other records it references (merged notes), in record id order; repeats dropped, at
+ * most ADVISORY_MAX. So the exploited fix's own advisory is never pushed out by the fill's better-scored
+ * fixes, a vendor that tags no reference still gives its page, and every URL is one a pack record holds,
+ * after collect's link screen (safeLink()).
+ */
+function releaseUrls(ctx: Ctx, w: Work, pack: readonly string[]): string[] {
+  const lists: (readonly string[])[] = [];
+  const seen = new Set<string>();
+  for (const id of w.release!.members) {
+    for (const r of (ctx.packByCve.get(id) ?? []).filter((x) => x.source === "cvelist" && pack.includes(x.id))) {
+      seen.add(r.id);
+      lists.push(r.advisory_urls);
+    }
+  }
+  for (const id of pack) if (!seen.has(id)) lists.push(ctx.packById.get(id)?.advisory_urls ?? []);
+  return firstUrls(lists);
 }
 
 function cveWork(ctx: Ctx, id: string, s: CveSignals): Work {
@@ -379,7 +447,8 @@ function cveWork(ctx: Ctx, id: string, s: CveSignals): Work {
 
 function releaseWork(ctx: Ctx, b: Bundle): Work {
   const ids = b.members.map((r) => r.cve_id).sort(compareCveIds);
-  const packIds = [...new Set(ids.flatMap((id) => (ctx.packByCve.get(id) ?? []).filter((r) => r.source === "cvelist").map((r) => r.id)))].sort(byCodeUnit);
+  // pack_ids: the bounded members' CVE List records only (§0.4 row 146); merges still match every member id.
+  const packIds = [...new Set(releasePackMembers(b).flatMap((id) => (ctx.packByCve.get(id) ?? []).filter((r) => r.source === "cvelist").map((r) => r.id)))].sort(byCodeUnit);
   const total = b.members.length;
   const n = b.exploited.length;
   const title = `${b.vendor.name} security updates, ${b.newest.slice(0, 7)}: ${total} fixes, ${n} exploited`;
@@ -387,7 +456,11 @@ function releaseWork(ctx: Ctx, b: Bundle): Work {
     id: b.id, kind: "patch_batch", reasons: [], title: candidateTitle(title, "cvelist"), cve_ids: [...b.exploited],
     vendor: b.vendor.name, vendor_country: b.vendor.country, product: null, cvss: null, epss: null, kev: null, ssvc: null,
     ai_credit_match: null, exploit_reference: false,
-    release: { release_id: b.releaseId, vendor: b.vendor.name, total, critical: b.critical, exploited: n, exploited_cve_ids: [...b.exploited] },
+    release: {
+      release_id: b.releaseId, vendor: b.vendor.name, total, critical: b.critical, exploited: n, exploited_cve_ids: [...b.exploited],
+      // The span RELEASE_SOURCE and releaseBlockOf() read membership from (releaseMember(), §0.4 row 146).
+      first_published: utcDateOf(b.first), last_published: utcDateOf(b.newest),
+    },
     record_url: null, advisory_urls: [], pack_ids: packIds,
   };
   const home = b.vendor.country === "TW" || b.vendor.country === "JP";
@@ -395,7 +468,7 @@ function releaseWork(ctx: Ctx, b: Bundle): Work {
     c, origin: "release", bases: [n > 0 ? RANK_WEIGHTS.base.release_exploited : RANK_WEIGHTS.base.release],
     ownReasons: [`release: ${total} fixes, ${n} exploited`, ...(home ? [`${b.vendor.country} vendor`] : [])],
     bonuses: new Set(home ? ["home_vendor"] : []), epss: null, newKev: false, date: b.newest, texts: [title],
-    matchIds: ids, vendor: null, merges: [], exploited: n > 0,
+    matchIds: ids, vendor: null, merges: [], exploited: n > 0, release: { members: releasePackMembers(b) },
   };
 }
 
@@ -513,7 +586,7 @@ function finish(ctx: Ctx, w: Work, windows: readonly WatchWindow[]): Unscored {
     ...w.c,
     kind: exploited ? "exploited_flaw" : w.c.kind,
     reasons: reasonsOf(w, windows),
-    advisory_urls: packUrls(ctx, pack),
+    advisory_urls: w.release ? releaseUrls(ctx, w, pack) : packUrls(ctx, pack),
     pack_ids: pack,
   };
 }

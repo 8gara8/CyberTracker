@@ -299,6 +299,32 @@ describe("runMetrics", () => {
     expect(exists(path.join(root, "content", "metrics"))).toBe(false);
   });
 
+  it("never counts a day whose own zip is an hourly zip, whatever inputs.json says; its X + 1 zip may be one (A1)", async () => {
+    // The world's day C counts with T's hourly zip as its X + 1 copy (the base case above). Here C's own
+    // zip is an hourly stand-in (the same bytes under C's 23:00 tag), and the day is marked ok all the same.
+    const root = repo();
+    const sub = hourlyAsset(C, "2300");
+    const eodBytes = bytesOf(EOD_ZIP_PATH);
+    write(path.join(root, "cache", "cvelist", "zips", sub.asset), eodBytes);
+    editInputs(root, (i) => ({
+      ...i,
+      cvelist: {
+        ...i.cvelist,
+        zips: [{ tag: sub.tag, asset: sub.asset, kind: "hourly", utc_day: C, sha256: sha256Hex(eodBytes), records: 18 }, i.cvelist.zips[1]!],
+        days: [{ date: C, zips: [sub.asset, i.cvelist.days[0]!.zips[1]], ok: true }],
+      },
+    }));
+    const f = loadFeedCache(root, D);
+    expect(f.cvelist.missingZips).toEqual([]);
+    expect(f.cvelist.days).toEqual([expect.objectContaining({ date: C, ok: false })]);
+    const r = await runMetrics({ date: D, root, now: NOW });
+    expect(r.code).toBe(0);
+    expect(r.lines.some((l) => l.startsWith("Counted "))).toBe(false);
+    expect(exists(path.join(root, "cache", "staged", D, "state", "days.json"))).toBe(false);
+    const manifest = InputsManifest.parse(JSON.parse(fs.readFileSync(path.join(root, "cache", "staged", D, "metrics", "inputs", `${D}.json`), "utf8")));
+    expect(manifest.flood.new_days).toEqual([]);
+  });
+
   it("with a zip collect read gone, counts no day, names only a zip it read as the release, and logs it (round 1)", async () => {
     const root = repo();
     const hourly = path.basename(HOURLY_ZIP_PATH);

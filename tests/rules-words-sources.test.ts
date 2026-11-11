@@ -1,28 +1,31 @@
 // The words and sources rule groups (SPEC §4.12): WORDS_OVER, WORDS_UNDER, QUOTE_MAX_25, BANNED_WORDS,
 // SOURCE_REF, SOURCE_DUP, SOURCE_URL, SOURCE_UNSEEN, SOURCE_TIER, SOURCE_CRITICAL_TWO, SOURCE_SYNDICATED,
-// SOURCE_STATE_LABEL and SOURCE_ORPHAN. Each sub-condition gets a passing and a failing case on a mutated
+// SOURCE_STATE_LABEL, RELEASE_SOURCE and SOURCE_ORPHAN. Each sub-condition gets a passing and a failing case on a mutated
 // SAMPLE draft, run through validateDraft() with only the rules under test; the F fixtures run with every rule.
 // Blocked-URL cases use bare blocked hosts or reserved example domains, never a usable exploit, paste or
 // scanner URL.
 
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { invalidDraft } from "../fixtures/src/build";
 import { MONDAY_ITEMS, WEEKDAY_ITEMS, WEEKDAY_SOURCE_KEYS, editionDraft, mondayDraft, weekdayDraft } from "../fixtures/src/drafts";
 import { dropSources, wordsSourcesCases } from "../fixtures/src/invalid/words-sources";
 import { draftInputs, fixtureConfig } from "../fixtures/src/inputs";
-import { sourceIds, type EditionName } from "../fixtures/src/world";
+import { FIXTURES_DIR, sourceIds, type EditionName } from "../fixtures/src/world";
 import { RULES } from "../lib/rules";
 import { derive } from "../lib/rules/shared";
 import {
-  exploitLinkUrl, RECORD_PUBLISHERS, sourceRules, sourceTypeFits, sourceUrlProblem, stateClaimPhrase,
+  exploitLinkUrl, RECORD_PUBLISHERS, releaseBasisOf, releaseMember, sourceRules, sourceTypeFits, sourceUrlProblem, stateClaimPhrase,
 } from "../lib/rules/sources";
-import type { RuleInput, ValidationIssue } from "../lib/rules/types";
+import type { CveRecordInfo, RuleInput, ValidationIssue } from "../lib/rules/types";
 import {
   bannedWordsIn, draftView, modelWords, pageWordCount, pageWords, quotedSpans, wordFields, wordRules,
 } from "../lib/rules/words";
 import { countWords } from "../lib/text";
 import { normalizeUrl } from "../lib/urls";
-import { scriptText } from "../lib/page-text";
+import { ComposeError, freezeSource, releaseBlockOf } from "../lib/apply";
+import { cardKicker, cveTimeline, releaseLine, scriptText } from "../lib/page-text";
 import type { Brief } from "../lib/schema/brief";
 import type { DraftBrief } from "../lib/schema/draft-brief";
 import type { DraftSource } from "../lib/schema/common";
@@ -238,9 +241,80 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(two[0]!.message).toContain("2 numbers (24, 3)");
     d.angle.text = "New CVE records are arriving at 5.2 times the 2023–24 pace.";
     expect(check(d, W)).toEqual([]);
+    expect(none[0]!.hint).not.toContain("1.9 times");
+    // A ratio glued to x is no number; the hint says to write it as the Gap does (review of row 145).
+    for (const t of ["New CVE records are arriving at 5.2x the 2023–24 pace.", "New CVE records are arriving at 5.2X the 2023–24 pace.",
+      "New CVE records are arriving at 5x the 2023–24 pace."]) {
+      d.angle.text = t;
+      const r = check(d, W);
+      expect(codesOf(r), t).toEqual(["WORDS_UNDER angle.text"]);
+      expect(r[0]!.hint, t).toBe("Dates, years, CVE ids and version strings are not counted as numbers. "
+        + 'Write a ratio as the Gap does, "1.9 times", never "1.9x": a number glued to x is not read as a number.');
+    }
+    d.angle.text = "New CVE records on x86 builds are arriving faster than in 2023–24.";
+    expect(check(d, W)[0]!.hint).not.toContain("1.9 times");
     d.angle.text = `${words(30)} 24.`;
     expect(codesOf(check(d, W))).toEqual(["WORDS_OVER angle.text"]);
     expect(check(d, W)[0]!.message).toBe("angle.text has 31 words; the limit is 30. Cut at least 1.");
+  });
+
+  it("a metric Angle may print its label's figures without them counting as numbers (row 145)", () => {
+    const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days, label "median days to listing for the rest, 26 weeks"
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "In the 26-week Window, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "Over the last 13 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    const wrong = check(d, W, { edition: "monday" });
+    expect(codesOf(wrong)).toEqual(["WORDS_OVER angle.text"]);
+    expect(wrong[0]!.message).toContain("2 numbers (13, 17)");
+    expect(wrong[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints "
+      + "(26 weeks) the first time each is written. Write each label figure at most once, as the label writes it: written again, it counts.");
+    d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
+    const under = check(d, W, { edition: "monday" });
+    expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
+    // The Angle holds no number, so its hint does not say a figure written again counts (review of the sixth P3 fix pass).
+    expect(under[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints "
+      + "(26 weeks) the first time each is written.");
+    // Every figure of the label: "share listed within 7 days, 26 weeks".
+    d.angle.metric_path = "window.w26.p7";
+    d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 7 days.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 30 days.";
+    const p7 = check(d, W, { edition: "monday" });
+    expect(p7.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (55%, 30)")]);
+    expect(p7[0]!.hint).toContain("nor the figures the metric's label prints (7 days, 26 weeks) the first time each is written.");
+    // A path whose labels print no figure counts the window like any number.
+    d.angle.metric_path = "window.reference.at_disclosure_share";
+    d.angle.text = "In 2023–24, 37% of recently disclosed flaws on CISA's list were exploited at disclosure, over 26 weeks.";
+    const ref = check(d, W, { edition: "monday" });
+    expect(codesOf(ref)).toEqual(["WORDS_OVER angle.text"]);
+    expect(ref[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers.");
+  });
+
+  it("a sourced Angle is read as before: every figure counts (row 145)", () => {
+    const s = weekdayDraft(); // a sourced Angle: its window is the source's number
+    s.angle.text = "Red Hat has credited AISLE with 24 flaws in 26 weeks.";
+    const r = check(s, W);
+    expect(codesOf(r)).toEqual(["WORDS_OVER angle.text"]);
+    expect(r[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers.");
+    s.angle.text = "Red Hat has credited AISLE with 24 flaws since 1 October.";
+    expect(check(s, W)).toEqual([]);
+  });
+
+  it("without a metrics file, a metric Angle may print the Gap's window lengths only (row 145)", () => {
+    const d = mondayDraft();
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday", inputs: { metrics: null } })).toEqual([]);
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list within 7 days, a median 17 days after it.";
+    const r = check(d, W, { edition: "monday", inputs: { metrics: null } });
+    expect(r.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (7, 17)")]);
+    expect(r[0]!.hint).toContain("nor the Gap's window lengths (26 weeks, 13 weeks) the first time each is written. Write each window length at most once: written again, it counts.");
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a while after it.";
+    const under = check(d, W, { edition: "monday", inputs: { metrics: null } });
+    expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
+    expect(under[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the Gap's window lengths "
+      + "(26 weeks, 13 weeks) the first time each is written.");
   });
 
   it("the page total: WORDS_OVER above budgets.words_max, with the parts in the message", () => {
@@ -316,17 +390,31 @@ describe("pageWords()", () => {
     expect(() => (pageWords as (b: unknown, m: unknown) => number)(weekdayDraft(), null)).toThrow(/draft inputs/);
   });
 
-  it("drops the minimums on what a withholding rewrote (§4.10) in a published brief", () => {
+  it("drops the minimums on a WITHHELD_MARK text, and gives a withheld item (§4.10) no budget and no words in the total", () => {
     const inputs = draftInputs("weekday");
     const brief = asBrief(weekdayDraft(), inputs);
+    const open = pageWordCount(brief, inputs.metrics);
     brief.lead = [{ text: WITHHELD_MARK, item_ids: [I.criticalExploited], gap: false }];
-    brief.items[1] = { ...brief.items[1]!, summary: "Details withheld.", why_it_matters: null, withheld: { correction_id: "C-0001", since: "2026-10-20" } };
+    const before = pageWordCount(brief, inputs.metrics);
+    const held = brief.items[1]!;
+    brief.items[1] = { ...held, summary: "Details withheld.", why_it_matters: null, withheld: { correction_id: "C-0001", since: "2026-10-20" } };
     const f = wordFields(brief);
     expect(f.find((x) => x.path === "lead")!.withheld).toBe(true);
-    expect(f.find((x) => x.path === "items[1]")!.withheld).toBe(true);
+    expect(f.filter((x) => x.path.startsWith("items[1]"))).toEqual([]);
     const rule = wordRules[0]!;
     const out = rule.check({ draft: brief, mode: "published", derived: derive(brief, "published", inputs.config) } as RuleInput);
     expect(out.filter((x) => x.code === "WORDS_UNDER")).toEqual([]);
+    // Its headline, summary, kicker and timeline leave the total; whatever its text, nothing fails (§0.4 row 126).
+    const after = pageWordCount(brief, inputs.metrics);
+    const line = held.release ? releaseLine(held.release, brief.date) : held.cves[0] ? cveTimeline(held.cves[0], brief.date) : null;
+    const card = countWords(cardKicker(held)) + countWords(line);
+    expect(before.model - after.model).toBe(countWords(held.headline) + countWords(held.summary) + countWords(held.why_it_matters)
+      + countWords(held.incident?.impact ?? null) + countWords(held.exposure?.text ?? null));
+    expect(before.script - after.script).toBe(card);
+    expect(open.total).toBeGreaterThan(after.total);
+    brief.items[1] = { ...brief.items[1]!, summary: Array.from({ length: 80 }, () => "word").join(" ") };
+    expect(pageWords(brief, inputs.metrics)).toBe(after.total);
+    expect(rule.check({ draft: brief, mode: "published", derived: derive(brief, "published", inputs.config) } as RuleInput)).toEqual([]);
   });
 });
 
@@ -683,6 +771,16 @@ describe("SOURCE_TIER", () => {
     expect(r[0]!.message).toContain('Use "cve_record"');
   });
 
+  it("a GitHub Advisory Database page cited as a vendor advisory (Kobol dry run, 2026-11-11): a listed record publisher, never \"unlisted\"", () => {
+    const d = weekdayDraft();
+    const id = addSource(d, { url: "https://github.com/advisories/GHSA-2222-3333-4444", source_type: "vendor_advisory" });
+    d.items[0]!.source_ids.push(id);
+    const r = check(d, T);
+    expect(codesOf(r)).toEqual([`SOURCE_TIER sources[${d.sources.length - 1}].source_type`]);
+    expect(r[0]!.message).toContain('needs a vendor\'s own domain, but GitHub Advisory Database is a record or data publisher of tier 1. Use "cve_record"');
+    expect(r[0]!.message).not.toContain("unlisted");
+  });
+
   it("skips the source_type fit in published mode (no publisher kind is frozen)", () => {
     const inputs = draftInputs("weekday");
     const d = weekdayDraft();
@@ -775,6 +873,33 @@ describe("SOURCE_CRITICAL_TWO and SOURCE_SYNDICATED", () => {
     expect(codesOf(check(d, C))).toEqual(["SOURCE_CRITICAL_TWO items[0].source_ids"]);
   });
 
+  it("a withhold's masked titles never fold: a withheld Critical item keeps the publishers it was published with (published mode)", () => {
+    const b = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, "site-content", "briefs", "2026-10-14.json"), "utf8")) as Brief;
+    const it0 = b.items[0]!;
+    expect(it0.severity).toBe("critical");
+    const own = b.sources.filter((s) => it0.source_ids.includes(s.id));
+    expect(own.length).toBeGreaterThanOrEqual(2);
+    const config = fixtureConfig();
+    const groups = (x: Brief) => derive(x, "published", config).publishersByIndex[0]!.groups.length;
+    const before = groups(b);
+    const run = (x: Brief) => sourceRules.filter((r) => r.codes.some((c) => C.includes(c)))
+      .flatMap((r) => r.check({ draft: x, mode: "published", config, derived: derive(x, "published", config) } as unknown as RuleInput));
+    expect(run(b)).toEqual([]);
+    for (const s of own) {
+      s.title = WITHHELD_MARK;
+      if (s.title_en !== null) s.title_en = WITHHELD_MARK;
+    }
+    expect(groups(b)).toBe(before);
+    expect(run(b)).toEqual([]);
+    // Real titles alike still fold as copies of one story.
+    for (const s of own) {
+      s.title = "SAMPLE: Ivanti Connect Secure flaw exploited in attacks";
+      s.title_en = null;
+    }
+    expect(groups(b)).toBe(1);
+    expect(run(b).map((x) => x.code)).toEqual(["SOURCE_SYNDICATED"]);
+  });
+
   it("ignores items below Critical", () => {
     const d = weekdayDraft();
     d.items[0]!.severity = "high";
@@ -819,6 +944,224 @@ describe("SOURCE_STATE_LABEL", () => {
     expect(r[0]!.message).toContain('"Russian state media" or "Russian state claim"');
     d.items[c]!.summary = `${d.items[c]!.summary} A Russian state claim adds nothing.`;
     expect(check(d, L)).toEqual([]);
+  });
+});
+
+// ── RELEASE_SOURCE ───────────────────────────────────────────────────────────────────────────────
+
+describe("RELEASE_SOURCE (review of row 146)", () => {
+  const R = ["RELEASE_SOURCE"];
+  const REL = "rel-microsoft-2026-10";
+  /** The weekday inputs with the Microsoft release unexploited, the case the press-only probe hit at publish. */
+  const unexploited = (base = draftInputs("weekday")): DraftInputs => ({
+    ...base,
+    context: {
+      ...base.context!,
+      candidates: base.context!.candidates.map((c) => (c.release?.release_id === REL
+        ? { ...c, cve_ids: [], release: { ...c.release, exploited: 0, exploited_cve_ids: [] } } : c)),
+    },
+  });
+  /** The patch batch citing only SecurityWeek and naming no CVE id. */
+  const pressOnly = () => {
+    const d = weekdayDraft();
+    const p = at(d, I.patchBatch);
+    Object.assign(d.items[p]!, { cve_ids: [], flaw_evidence: [], source_ids: [S["sw-microsoft"]] });
+    return { d, p };
+  };
+  /** Whether releaseBlockOf() composes the item as publish would, from the same inputs. */
+  const composes = (d: DraftBrief, p: number, inputs: DraftInputs): boolean => {
+    const sources = d.sources.map((s) => freezeSource(s, "pack", inputs.config));
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
+    try {
+      return releaseBlockOf(d.items[p]!, release, sources, inputs.config, inputs.cveList) !== null;
+    } catch (e) {
+      if (e instanceof ComposeError) return false;
+      throw e;
+    }
+  };
+
+  it("RELEASE_SOURCE: a patch batch of an unexploited release citing only the press and naming no CVE id fails before publish, with the fix in its hint", () => {
+    const { d, p } = pressOnly();
+    const inputs = unexploited();
+    const r = check(d, R, { inputs });
+    expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${p}].source_ids`]);
+    expect(r[0]!.message).toBe(`items[${p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids.`);
+    expect(r[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at, or name the release's CVE ids (its pack records) in cve_ids.");
+    // With every rule, as the morning runs it: the draft is rejected, so the repair round gets the finding.
+    const all = validateDraft(d, { ...inputs });
+    expect(all.ok).toBe(false);
+    expect(all.errors.map((e) => e.code)).toContain("RELEASE_SOURCE");
+    expect(composes(d, p, inputs)).toBe(false);
+  });
+
+  it("citing the vendor's own bulletin, or naming a CVE id of the release, passes; and releaseBlockOf() then composes", () => {
+    const inputs = unexploited();
+    const withBulletin = pressOnly();
+    withBulletin.d.items[withBulletin.p]!.source_ids.unshift(S["msrc-october"]);
+    expect(check(withBulletin.d, R, { inputs })).toEqual([]);
+    expect(composes(withBulletin.d, withBulletin.p, inputs)).toBe(true);
+    const withCve = pressOnly();
+    withCve.d.items[withCve.p]!.cve_ids = ["CVE-2026-96951"];
+    expect(check(withCve.d, R, { inputs })).toEqual([]);
+    expect(composes(withCve.d, withCve.p, inputs)).toBe(true);
+    // The weekday draft as it stands: an exploited release, dated from its bulletin.
+    expect(check(weekdayDraft(), R)).toEqual([]);
+  });
+
+  it("the other ways publish cannot date a release: a bulletin with no published_at, and an exploited release whose records are unknown", () => {
+    const inputs = unexploited();
+    const undated = pressOnly();
+    undated.d.items[undated.p]!.source_ids.unshift(S["msrc-october"]);
+    const ms = undated.d.sources.findIndex((s) => s.id === S["msrc-october"]);
+    undated.d.sources[ms]!.published_at = null;
+    const r1 = check(undated.d, R, { inputs });
+    expect(codesOf(r1)).toEqual([`RELEASE_SOURCE items[${undated.p}].source_ids`]);
+    expect(r1[0]!.message).toContain(`its Microsoft source ${S["msrc-october"]} has no published_at, and it names none of the release's CVE ids.`);
+    expect(r1[0]!.hint).toBe(`Give ${S["msrc-october"]} the published_at its page shows, or name the release's CVE ids (its pack records) in cve_ids.`);
+    // The exploited release (the weekday context) dates from its exploited CVEs: with no CVE List, only the bulletin can.
+    const exploited = pressOnly();
+    const noList = { ...draftInputs("weekday"), cveList: null };
+    const r2 = check(exploited.d, R, { inputs: noList });
+    expect(r2[0]!.message).toContain("no CVE List record of CVE-2026-96951 gives a publication date");
+    expect(r2[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at.");
+    expect(composes(exploited.d, exploited.p, noList)).toBe(false);
+    exploited.d.items[exploited.p]!.source_ids.push(S["msrc-october"]);
+    expect(check(exploited.d, R, { inputs: noList })).toEqual([]);
+    expect(composes(exploited.d, exploited.p, noList)).toBe(true);
+  });
+
+  it("agrees with releaseBlockOf() case by case: the rule fails a draft exactly when publish would throw ComposeError", () => {
+    const cases: Array<[string, (d: DraftBrief, p: number) => void, () => DraftInputs]> = [
+      ["press only, unexploited", () => {}, () => unexploited()],
+      ["bulletin, unexploited", (d, p) => d.items[p]!.source_ids.push(S["msrc-october"]), () => unexploited()],
+      ["CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-96951"]; }, () => unexploited()],
+      ["unknown CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-99999"]; }, () => unexploited()],
+      ["CVE id, no CVE List", (d, p) => { d.items[p]!.cve_ids = ["CVE-2026-96951"]; }, () => ({ ...unexploited(), cveList: null })],
+      ["record source only, unexploited", (d, p) => { d.items[p]!.source_ids = [S["rec-96951"]]; }, () => unexploited()],
+      ["press only, exploited", () => {}, () => draftInputs("weekday")],
+      ["press only, exploited, no CVE List", () => {}, () => ({ ...draftInputs("weekday"), cveList: null })],
+      ["bulletin second, exploited, no CVE List", (d, p) => d.items[p]!.source_ids.push(S["msrc-october"]), () => ({ ...draftInputs("weekday"), cveList: null })],
+      // Only the release's own fixes count (review of row 146): a record from another CNA neither dates nor links the block.
+      ["another CNA's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA]; }, () => unexploited()],
+      ["another vendor's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [IVANTI]; }, () => unexploited()],
+      ["another CNA's, then the release's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA, "CVE-2026-96951"]; }, () => unexploited()],
+      ["another CNA's CVE id, exploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA]; }, () => draftInputs("weekday")],
+      ["another CNA's CVE id and the bulletin, unexploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA]; d.items[p]!.source_ids.push(S["msrc-october"]); }, () => unexploited()],
+      // An older (or later) record of the vendor's own CNA is not one of the release's fixes either: rank bundles only records
+      // published in the record window, so it neither dates nor links the block (fourth review of row 146).
+      ["an older record of the vendor's own CNA, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER]; }, () => unexploited(withOwnCna())],
+      ["a later record of the vendor's own CNA, unexploited", (d, p) => { d.items[p]!.cve_ids = [LATER]; }, () => unexploited(withOwnCna())],
+      ["an older own-CNA record, then the release's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER, "CVE-2026-96951"]; }, () => unexploited(withOwnCna())],
+      ["an older own-CNA record and the bulletin, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER]; d.items[p]!.source_ids.push(S["msrc-october"]); }, () => unexploited(withOwnCna())],
+    ];
+    const seen = cases.map(([name, mutate, inputsOf]) => {
+      const { d, p } = pressOnly();
+      mutate(d, p);
+      const inputs = inputsOf();
+      return [name, check(d, R, { inputs }).length === 0, composes(d, p, inputs)];
+    });
+    expect(seen.map(([name, passes, ok]) => [name, passes === ok])).toEqual(cases.map(([name]) => [name, true]));
+    expect(seen.filter(([, passes]) => !passes).map(([name]) => name)).toEqual([
+      "press only, unexploited", "unknown CVE id, unexploited", "CVE id, no CVE List", "record source only, unexploited", "press only, exploited, no CVE List",
+      "another CNA's CVE id, unexploited", "another vendor's CVE id, unexploited",
+      "an older record of the vendor's own CNA, unexploited", "a later record of the vendor's own CNA, unexploited",
+    ]);
+  });
+
+  /** CVE-2026-108917 is a VulDB record and CVE-2026-104935 an Ivanti one in the weekday CVE List; CVE-2026-96951 is Microsoft's. */
+  const OTHER_CNA = "CVE-2026-108917";
+  const IVANTI = "CVE-2026-104935";
+  /**
+   * Records of Microsoft's own CNA outside the release, published 2026-10-13 (CVE-2026-96951's day, the fixture release's
+   * span): an older one (July's), as collect keeps older records the delta zips carry because they were updated in the window,
+   * and a later one; and one rejected on the release's own day.
+   */
+  const OLDER = "CVE-2026-61004";
+  const LATER = "CVE-2026-61007";
+  const REJECTED = "CVE-2026-61008";
+  const withOwnCna = (base = draftInputs("weekday")): DraftInputs => {
+    const ms = base.cveList!.get("CVE-2026-96951")!;
+    const extra = new Map<string, CveRecordInfo>([
+      [OLDER, { ...ms, cve_id: OLDER, date_published: "2026-07-14", date_updated: "2026-10-13" }],
+      [LATER, { ...ms, cve_id: LATER, date_published: "2026-10-14", date_updated: "2026-10-14" }],
+      [REJECTED, { ...ms, cve_id: REJECTED, state: "REJECTED" }],
+    ]);
+    const list = base.cveList!;
+    return { ...base, cveList: { get: (id) => extra.get(id.toUpperCase()) ?? list.get(id) } };
+  };
+
+  it("RELEASE_SOURCE: an older record of the vendor's own CNA neither dates, titles nor links the release (fourth review of row 146)", () => {
+    // Before, any record of Microsoft's CNA counted: July's record dated rel-microsoft-2026-10 2026-07-14, titled it
+    // "Microsoft security updates, 2026-07" and linked its cve.org page.
+    const inputs = unexploited(withOwnCna());
+    const one = pressOnly();
+    one.d.items[one.p]!.cve_ids = [OLDER];
+    const r = check(one.d, R, { inputs });
+    expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${one.p}].source_ids`]);
+    expect(r[0]!.message).toBe(`items[${one.p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids (${OLDER} is not among the release's fixes: it has no CVE List record from Microsoft's CNA published on 2026-10-13, so it is ignored).`);
+    expect(composes(one.d, one.p, inputs)).toBe(false);
+    // Beside a fix of the release, the older record is ignored: the block is dated, titled and linked from the fix.
+    const mixed = pressOnly();
+    mixed.d.items[mixed.p]!.cve_ids = [OLDER, "CVE-2026-96951"];
+    expect(check(mixed.d, R, { inputs })).toEqual([]);
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
+    const block = releaseBlockOf(mixed.d.items[mixed.p]!, release, mixed.d.sources.map((s) => freezeSource(s, "pack", inputs.config)), inputs.config, inputs.cveList)!;
+    expect(block).toMatchObject({ date: "2026-10-13", title: "Microsoft security updates, 2026-10", source_url: "https://www.cve.org/CVERecord?id=CVE-2026-96951" });
+    // The span the candidate carries is what rank bundled: the fixture release's fixes were all published on 2026-10-13.
+    expect([release.first_published, release.last_published]).toEqual(["2026-10-13", "2026-10-13"]);
+  });
+
+  it("RELEASE_SOURCE: a CVE id that is not the release's neither dates nor links it, and the message names it (review of row 146)", () => {
+    // Before, any CVE id with a record dated the block: a VulDB record dated Microsoft's release 2026-10-12, not the 13th, and
+    // its cve.org page became the block's link.
+    const inputs = unexploited();
+    const one = pressOnly();
+    one.d.items[one.p]!.cve_ids = [OTHER_CNA];
+    const r = check(one.d, R, { inputs });
+    expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${one.p}].source_ids`]);
+    expect(r[0]!.message).toBe(`items[${one.p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids (${OTHER_CNA} is not among the release's fixes: it has no CVE List record from Microsoft's CNA published on 2026-10-13, so it is ignored).`);
+    expect(r[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at, or name the release's CVE ids (its pack records) in cve_ids.");
+    expect(composes(one.d, one.p, inputs)).toBe(false);
+    const two = pressOnly();
+    two.d.items[two.p]!.cve_ids = [OTHER_CNA, IVANTI, "CVE-2026-99999"];
+    expect(check(two.d, R, { inputs })[0]!.message).toContain(`(${OTHER_CNA}, ${IVANTI}, CVE-2026-99999 are not among the release's fixes: they have no CVE List record from Microsoft's CNA published on 2026-10-13, so they are ignored)`);
+    // Beside a fix of the release, the other id is ignored: the block is dated, titled and linked from Microsoft's record.
+    const mixed = pressOnly();
+    mixed.d.items[mixed.p]!.cve_ids = [OTHER_CNA, "CVE-2026-96951"];
+    expect(check(mixed.d, R, { inputs })).toEqual([]);
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
+    const block = releaseBlockOf(mixed.d.items[mixed.p]!, release, mixed.d.sources.map((s) => freezeSource(s, "pack", inputs.config)), inputs.config, inputs.cveList)!;
+    expect(block).toMatchObject({ date: "2026-10-13", title: "Microsoft security updates, 2026-10", source_url: "https://www.cve.org/CVERecord?id=CVE-2026-96951" });
+    const basis = releaseBasisOf(mixed.d.items[mixed.p]!, release, mixed.d.sources, () => undefined, inputs.config, inputs.cveList);
+    expect([basis.bundle, basis.ignored, basis.date, basis.problem]).toEqual([["CVE-2026-96951"], [OTHER_CNA], "2026-10-13", null]);
+  });
+
+  it("releaseMember(): the release's exploited ids, or a published record from one of the vendor's CNAs within the release's span; never an unknown id (reviews of row 146)", () => {
+    const { cveList, config } = withOwnCna();
+    const microsoft = config.vendors.vendors.find((v) => v.id === "microsoft")!;
+    type Rel = { exploited_cve_ids: string[]; first_published: string; last_published: string };
+    const span = { first_published: "2026-10-13", last_published: "2026-10-13" };
+    const none: Rel = { exploited_cve_ids: [], ...span };
+    const table: Array<[string, Rel, boolean, boolean]> = [
+      // id, release, with the CVE List, without it
+      ["CVE-2026-96951", none, true, false],
+      ["cve-2026-96951", none, true, false],
+      [OTHER_CNA, none, false, false],
+      [IVANTI, none, false, false],
+      ["CVE-2026-99999", none, false, false],
+      [OTHER_CNA, { exploited_cve_ids: [OTHER_CNA], ...span }, true, true],
+      // The vendor's own CNA, outside the span (rank bundles only records published in the record window), or rejected.
+      [OLDER, none, false, false],
+      [LATER, none, false, false],
+      [REJECTED, none, false, false],
+      // A span that reaches them takes them; its ends are inclusive.
+      [OLDER, { exploited_cve_ids: [], first_published: "2026-07-14", last_published: "2026-10-13" }, true, false],
+      [LATER, { exploited_cve_ids: [], first_published: "2026-10-13", last_published: "2026-10-14" }, true, false],
+      ["CVE-2026-96951", { exploited_cve_ids: [], first_published: "2026-10-14", last_published: "2026-10-15" }, false, false],
+    ];
+    expect(table.map(([id, rel]) => [id, releaseMember(id, rel, microsoft, cveList), releaseMember(id, rel, microsoft, null)]))
+      .toEqual(table.map(([id, , withList, without]) => [id, withList, without]));
+    expect(releaseMember("CVE-2026-96951", none, null, cveList)).toBe(false);
   });
 });
 

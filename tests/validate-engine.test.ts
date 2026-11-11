@@ -100,7 +100,7 @@ function context(date = D2): AgentContext {
     metrics: { gap_headline: "SAMPLE headline.", quotable: [], home_vendor_kev: { tw: { d30_n: 0, d90_n: 0 }, jp: { d30_n: 0, d90_n: 0 } }, stale: [] },
     regions_preview: [], standing_stories: [], watch_windows: [], watch_searches: [], recent_items: [], yesterday: null, scoreboard: [],
     corrections: { flagged: [], reports: [] },
-    config: { tiers: { t1: [], t2: [], not_sole_newsroom: [], state_labelled: [] }, home_vendors: { tw: [], jp: [] }, actors: [], ai_finders: [], banned_words: [] },
+    config: { tiers: { t1: [], t2: [], not_sole_newsroom: [], state_labelled: [], cve_record: [] }, home_vendors: { tw: [], jp: [] }, actors: [], ai_finders: [], banned_words: [] },
     pack: { md: `packs/${date}.md`, json: `packs/${date}.json`, degraded: false, failed_feeds: [] },
   });
 }

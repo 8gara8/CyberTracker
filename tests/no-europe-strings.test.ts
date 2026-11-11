@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { MODEL_ID_SOURCE, MODEL_SAMPLES } from "./helpers/model-names";
 
 const root = path.join(__dirname, "..");
 const DIRS = ["app/", "components/", "lib/", "scripts/", "config/", "routine/", "fixtures/src/", "fixtures/injection/", ".github/", "tests/"];
@@ -20,7 +21,7 @@ const PATTERNS: { name: string; re: RegExp; only?: string }[] = [
   { name: "rung", re: /\brungs?\b/ },
   { name: "pathway", re: /\bpathway\b/ },
   { name: "model flags", re: /--model\b|--fallback-model\b/ },
-  { name: "model identifiers", re: /claude-(opus|sonnet|haiku)/ },
+  { name: "model identifiers", re: new RegExp(MODEL_ID_SOURCE) },
   { name: "Telegram web previews", re: /t\.me\/s\// },
   { name: "Google News RSS", re: /news\.google\.com\/rss/ },
   { name: "Telegram in the registry", re: /t\.me\/|telegram/i, only: "config/sources.yaml" },
@@ -52,6 +53,12 @@ describe("no Europe strings", () => {
     expect(list).toContain("scripts/lib/agent.ts");
     expect(list).toContain("config/run.json");
     expect(list.some((f) => f.startsWith("docs/") || f === "SPEC.md" || f === "AGENTS.md" || f === "package-lock.json")).toBe(false);
+  });
+
+  it("the model patterns catch every planted family, the generic form and both flags", () => {
+    const model = PATTERNS.filter((p) => p.name.startsWith("model "));
+    for (const sample of MODEL_SAMPLES) expect(model.some((p) => p.re.test(`see ${sample} here`)), sample).toBe(true);
+    expect(model.some((p) => p.re.test("npm install @anthropic-ai/claude-code@2.1.316"))).toBe(false);
   });
 
   it("finds no hit for any pattern", () => {

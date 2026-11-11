@@ -84,6 +84,14 @@ export const cvesGroundingAiCases: InvalidCase[] = [
       row.text = "Taiwanese vendors had 4 KEV additions this quarter; details of an unfixed Edimax router flaw are public.";
     },
   },
+  {
+    // A Gap sentence with a wrong ratio glued to x (the display is 5.2): LEAD_GROUNDED reads no number in "9.9x",
+    // and 13 is a quoted Gap number (review of the sixth P3 fix pass).
+    code: "NUMBER_FORM", file: "invalid--NUMBER_FORM.json",
+    mutate: (d) => {
+      d.lead.push({ text: "New CVE records arrived at 9.9x the 2023–24 pace in 13 weeks.", item_ids: [], gap: true });
+    },
+  },
 
   // ── AI role ──
   {

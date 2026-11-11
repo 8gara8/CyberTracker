@@ -191,6 +191,15 @@ describe("AI_UNASSESSED", () => {
       expect(codes(checkPublished(published(d, edition)))).toContain("AI_UNASSESSED");
     }
   });
+
+  it("passes unassessed on a withheld item in a full edition: a data-only item kept withheld, unread (§4.10)", () => {
+    const d = weekdayDraft();
+    const b = published(d, "full");
+    const items = b.items as Record<string, unknown>[];
+    items[0] = { ...items[0], ai_role: "unassessed", withheld: { correction_id: "C-0001", since: "2026-10-14" } };
+    items[1] = { ...items[1], ai_role: "unassessed" };
+    expect(only(checkPublished(b), "AI_UNASSESSED").map((x) => x.path)).toEqual(["items[1].ai_role"]);
+  });
 });
 
 describe("CANARY", () => {
@@ -333,6 +342,19 @@ describe("ITEM_CAP", () => {
     expect(codes(check(quietDraft(), "quiet"))).not.toContain("ITEM_CAP");
   });
 
+  it("leaves withheld items out of the count: ten items and one a same-day withhold kept pass, eleven unwithheld fail (§4.10)", () => {
+    const d = weekdayDraft();
+    const extra = (n: number) => Array.from({ length: n }, (_, k) => ({ ...d.items[6]!, id: `ai-sample-extra-${k + 1}` }));
+    const ten = weekdayDraft();
+    ten.items = [...ten.items, ...extra(2)];
+    const b = published(ten, "full");
+    const items = b.items as Record<string, unknown>[];
+    b.items = [...items, { ...items[9], id: "ai-sample-kept", withheld: { correction_id: "C-0001", since: "2026-10-14" } }];
+    expect(only(checkPublished(b), "ITEM_CAP")).toEqual([]);
+    b.items = [...items, { ...items[9], id: "ai-sample-kept", withheld: null }];
+    expect(only(checkPublished(b), "ITEM_CAP")[0]!.message).toContain("items has 11 entries");
+  });
+
   it("fails 7 Elsewhere rows and passes 6", () => {
     const d = weekdayDraft();
     d.elsewhere = Array.from({ length: 6 }, () => ({ ...d.elsewhere[0]! }));
@@ -373,6 +395,29 @@ describe("ITEM_ORDER", () => {
     expect(codes(check(d))).not.toContain("ITEM_ORDER");
     d.items.reverse();
     expect(codes(check(d))).toContain("ITEM_ORDER");
+  });
+
+  it("leaves a withheld item's slot free in a published brief: kept after the rest, or masked in a top slot, whatever its severity (§0.4 row 126)", () => {
+    const withheld = { correction_id: "C-0001", since: "2026-10-14" };
+    const held = (x: DraftItem) => ({ ...x, withheld });
+    const order = (b: Record<string, unknown>) => only(checkPublished(b), "ITEM_ORDER");
+    // The Critical item kept after every other item: its stored severity no longer pulls it into the top stories.
+    const d = weekdayDraft();
+    const top = { ...structuredClone(d.items[0]!), id: `${d.items[0]!.id}-kept` };
+    expect(top.severity).toBe("critical");
+    const kept = published({ ...d, items: [...d.items, held(top)] });
+    expect(order(kept)).toEqual([]);
+    // The same item unwithheld at the end is out of order.
+    expect(order(published({ ...d, items: [...d.items, top] })).map((e) => e.path)).toEqual(["items[1]"]);
+    // A withheld item rewritten in place in a top slot keeps it, and the items around it still order among themselves:
+    // the other top stories by rank, the rows by head.
+    const inPlace = published({ ...d, items: [d.items[0]!, held(d.items[1]!), ...d.items.slice(2)] });
+    expect(order(inPlace)).toEqual([]);
+    const swapped = weekdayDraft();
+    [swapped.items[0], swapped.items[2]] = [swapped.items[2]!, swapped.items[0]!];
+    const e = order(published({ ...swapped, items: [swapped.items[0]!, held(swapped.items[1]!), ...swapped.items.slice(2)] }));
+    expect(e.map((x) => x.path)).toEqual(["items[0]"]);
+    expect(e[0]!.message).toContain("it belongs at items[2]");
   });
 });
 
@@ -415,6 +460,17 @@ describe("SEVERITY_NULL_FOR_NONTHREAT", () => {
     expect(only(check(a), "SEVERITY_NULL_FOR_NONTHREAT")[0]!.message).toContain("An ai_capability item has no severity");
     expect(only(check(b), "SEVERITY_NULL_FOR_NONTHREAT")[0]!.message).toContain("A breach item needs a severity");
     expect(only(check(c), "SEVERITY_NULL_FOR_NONTHREAT")[0]!.path).toBe(`items[${idx(c, I.chinaAxis)}].landmark`);
+  });
+
+  it("passes a null severity on a withheld, unassessed item in a full edition, and only there", () => {
+    const d = weekdayDraft();
+    const b = published(d, "full");
+    const items = b.items as Record<string, unknown>[];
+    const w = { correction_id: "C-0001", since: "2026-10-14" };
+    items[0] = { ...items[0], ai_role: "unassessed", severity: null, withheld: w };
+    items[1] = { ...items[1], ai_role: "none", severity: null, withheld: w };
+    items[2] = { ...items[2], ai_role: "unassessed", severity: null };
+    expect(only(checkPublished(b), "SEVERITY_NULL_FOR_NONTHREAT").map((x) => x.path)).toEqual(["items[1].severity", "items[2].severity"]);
   });
 
   it("does not run on a data-only edition, whose flaw items have no severity", () => {

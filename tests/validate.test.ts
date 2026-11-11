@@ -21,6 +21,8 @@ import type { StatusFile } from "@/lib/schema/status";
 import { publisherFor } from "@/lib/sources";
 import { validateAll, validateDraft, validatePublished, type AllResult, type ValidationResult } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
+import { composeWithholds } from "@/lib/withhold";
+import { bindingWithholds } from "@/lib/withhold-mask";
 import { WEEKDAY_ITEMS, editionDraft } from "@/fixtures/src/drafts";
 import { CLAIMS_FILE, draftInputs, fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR, SITE_EDITIONS, SITE_FAILED_DATE } from "@/fixtures/src/site";
@@ -238,6 +240,17 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(paths(r, "XREF_STATUS")).toEqual([`status/${WED}.json: runs[0].full_published_at`, `status/${SITE_FAILED_DATE}.json: runs[0].edition`]);
   });
 
+  it("NO_EXPLOIT_LINK: a dispute's evidence link on a blocked host or with an exploit word in its path", () => {
+    for (const [url, says] of [["https://example.net/ct-sample/cve-2026-104935-poc", 'path holds "poc"'], ["https://bit.ly/ct-sample", "link shortener"]] as const) {
+      const dir = copy();
+      edit<CorrectionsFile>(dir, "corrections.json", (c) => { c.disputes[0]!.evidence_url = url; });
+      const r = all(dir);
+      expect(codes(r.errors), url).toEqual(["NO_EXPLOIT_LINK"]);
+      expect(paths(r, "NO_EXPLOIT_LINK")).toEqual(["corrections.json: disputes[0].evidence_url"]);
+      expect(r.errors[0]!.message).toContain(says);
+    }
+  });
+
   it("XREF_CORRECTION: a name_removed correction whose archived item still names the victim", () => {
     const dir = copy();
     editBrief(dir, "2026-10-12", (b) => { b.items[0]!.incident!.victim = "Example Health Group"; });
@@ -260,6 +273,91 @@ describe("validateAll() on a changed copy of the sample", () => {
     expect(r.errors[0]!.message).toContain(`regions.rows[${k}].reason is not "${WITHHELD_MARK}"`);
   });
 
+  it("XREF_CORRECTION: a source only withheld items cite keeps its title (or its English title); one an unwithheld item also cites may", () => {
+    // Before T5 nothing checked rewriteItem()'s source-title rule (§4.10), so a withheld item's page title could name the victim.
+    for (const field of ["title", "title_en"] as const) {
+      const dir = copy();
+      let k = -1;
+      editBrief(dir, "2026-10-12", (b) => {
+        k = b.sources.findIndex((s) => s.id === b.items[0]!.source_ids[0]);
+        b.sources[k]![field] = "SAMPLE named company says an intruder copied patient records";
+      });
+      const r = all(dir);
+      expect(codes(r.errors), field).toEqual(["XREF_CORRECTION"]);
+      expect(paths(r, "XREF_CORRECTION"), field).toEqual([`briefs/2026-10-12.json: sources[${k}].${field}`]);
+      expect(r.errors[0]!.message).toContain(`is cited only by withheld items (inc-health-us-2026-10), but its ${field} is not "${WITHHELD_MARK}"`);
+    }
+    // An unwithheld item citing the page too: the title is that item's, so it may stand.
+    const dir = copy();
+    editBrief(dir, "2026-10-12", (b) => {
+      const sid = b.items[0]!.source_ids[0]!;
+      const k = b.sources.findIndex((s) => s.id === sid);
+      b.sources[k]!.title = "SAMPLE vendor advisory index";
+      b.items[1]!.source_ids = [...b.items[1]!.source_ids, sid];
+    });
+    expect(all(dir).errors.filter((e) => e.code === "XREF_CORRECTION")).toEqual([]);
+  });
+
+  it("XREF_CORRECTION: while its dispute is open or upheld, a withhold covers a later brief holding the item; once rejected, it does not", () => {
+    const FLAW = "cve-2026-108917";
+    const later = (dir: string, through: string, status: "open" | "rejected") => {
+      const briefs = DATES.filter((d) => d >= "2026-10-13" && d <= through).map((d) => sample(dir, d));
+      const cf = read<CorrectionsFile>(dir, "corrections.json");
+      const dispute = {
+        id: "D-0002", received: "2026-10-14T20:00:00+08:00", issue_number: 8, item_id: FLAW, edition_date: "2026-10-13",
+        kind: "victim" as const, evidence_url: null, status: "open" as const, resolved_on: null, correction_id: null,
+      };
+      const ch = composeWithholds({
+        date: "2026-10-15", config, briefs, corrections: cf, disputes: [...cf.disputes, dispute], archiveIndex: read<ArchiveIndex>(dir, "archive-index.json"),
+        metricsFor: (d) => read<Metrics>(dir, `metrics/${d}.json`),
+        requests: [{ item_id: FLAW, edition_date: "2026-10-13", kind: "victim", dispute_id: "D-0002", since: "2026-10-15" }],
+      });
+      for (const b of ch.rewritten) write(dir, `briefs/${b.date}.json`, b);
+      const out = ch.corrections!;
+      if (status === "rejected") out.disputes = out.disputes.map((d) => (d.id === "D-0002" ? { ...d, status: "rejected", resolved_on: "2026-10-15" } : d));
+      write(dir, "corrections.json", out);
+      write(dir, "archive-index.json", ch.archiveIndex);
+    };
+    // Every brief holding the item rewritten, as publishWithholds() writes it: valid.
+    const whole = copy();
+    later(whole, "2026-10-15", "open");
+    expect(all(whole).errors).toEqual([]);
+    // The 14 October brief still holds the item as first published: it would print the name again.
+    const open = copy();
+    later(open, "2026-10-13", "open");
+    const r = all(open);
+    expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
+    expect(paths(r, "XREF_CORRECTION")).toEqual(["corrections.json: corrections[2]"]);
+    expect(r.errors[0]!.message).toContain(`briefs/${WED}.json items[${itemIndex(sample(open, WED), FLAW)}] is not rewritten: withheld is not set`);
+    // Rejected, the withhold binds no later brief: the 14 October copy may stand.
+    const rejected = copy();
+    later(rejected, "2026-10-13", "rejected");
+    expect(all(rejected).errors).toEqual([]);
+  });
+
+  it("XREF_CORRECTION: a new dispute on an item whose first dispute was rejected gets a second withhold, valid and binding again", () => {
+    // Intake gives the new dispute a withhold of its own (scripts/recheck.ts): C-0001 binds nothing once D-0001 is rejected.
+    const HEALTH = "inc-health-us-2026-10";
+    const dir = copy();
+    const cf = read<CorrectionsFile>(dir, "corrections.json");
+    const disputes = [
+      ...cf.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "rejected" as const, resolved_on: "2026-10-14" } : d)),
+      { ...cf.disputes[0]!, id: "D-0002", issue_number: cf.disputes[0]!.issue_number + 1, received: "2026-10-15T09:00:00+08:00", correction_id: null },
+    ];
+    const ch = composeWithholds({
+      date: "2026-10-16", config, briefs: DATES.map((d) => sample(dir, d)), corrections: cf, disputes, archiveIndex: read<ArchiveIndex>(dir, "archive-index.json"),
+      metricsFor: (d) => read<Metrics>(dir, `metrics/${d}.json`),
+      requests: [{ item_id: HEALTH, edition_date: "2026-10-12", kind: "victim", dispute_id: "D-0002", since: "2026-10-16" }],
+    });
+    for (const b of ch.rewritten) write(dir, `briefs/${b.date}.json`, b);
+    write(dir, "corrections.json", ch.corrections!);
+    write(dir, "archive-index.json", ch.archiveIndex);
+    expect(ch.corrections!.corrections.map((c) => [c.id, c.dispute_id])).toEqual([["C-0001", "D-0001"], ["C-0002", null], ["C-0003", "D-0002"]]);
+    expect(ch.corrections!.disputes.map((d) => [d.id, d.correction_id])).toEqual([["D-0001", "C-0001"], ["D-0002", "C-0003"]]);
+    expect(bindingWithholds(ch.corrections).map((w) => w.correction_id)).toEqual(["C-0003"]);
+    expect(all(dir).errors).toEqual([]);
+  });
+
   it("XREF_CORRECTION: correction ids repeated or with a gap", () => {
     const repeated = copy();
     edit<CorrectionsFile>(repeated, "corrections.json", (c) => { c.corrections[1]!.id = "C-0001"; });
@@ -269,6 +367,43 @@ describe("validateAll() on a changed copy of the sample", () => {
     const r = all(gap);
     expect(codes(r.errors)).toEqual(["XREF_CORRECTION"]);
     expect(r.errors[0]!.message).toContain("C-0002 is missing");
+  });
+
+  it("XREF_CORRECTION: a correction's dispute and a dispute's correction must name each other's records (§4.10, §8.9)", () => {
+    const linked = (f: (c: CorrectionsFile) => void) => {
+      const dir = copy();
+      edit<CorrectionsFile>(dir, "corrections.json", f);
+      const r = all(dir);
+      return { codes: codes(r.errors), paths: paths(r, "XREF_CORRECTION"), messages: r.errors.map((e) => e.message) };
+    };
+    // A correction naming a dispute that does not exist, or one linked to another correction.
+    const missing = linked((c) => { c.corrections[0]!.dispute_id = "D-0009"; });
+    expect(missing.codes).toEqual(["XREF_CORRECTION"]);
+    expect(missing.paths).toEqual(["corrections.json: corrections[0].dispute_id"]);
+    expect(missing.messages[0]).toContain("C-0001 answers D-0009, which is not a dispute in corrections.json");
+    const unlinked = linked((c) => { c.disputes[0]!.correction_id = null; });
+    expect(unlinked.paths).toEqual(["corrections.json: corrections[0].dispute_id"]);
+    expect(unlinked.messages[0]).toContain("C-0001 answers D-0001, but D-0001's correction_id is null");
+    // A dispute naming a correction that does not exist, or one on another item.
+    const absent = linked((c) => { c.disputes[0]!.correction_id = "C-0009"; });
+    expect(absent.paths).toEqual(["corrections.json: corrections[0].dispute_id", "corrections.json: disputes[0].correction_id"]);
+    expect(absent.messages[1]).toContain("D-0001 names C-0009, which is not a correction in corrections.json");
+    const other = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, correction_id: "C-0002" });
+    });
+    expect(other.paths).toEqual(["corrections.json: disputes[1].correction_id"]);
+    expect(other.messages[0]).toContain(`D-0002 names C-0002, which corrects pol-jp-active-cyber-defence-2026-10 in 2026-10-12, not inc-health-us-2026-10 in 2026-10-12`);
+    // A dispute naming a correction that answers no dispute (a re-check correction).
+    const recheck = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, item_id: c.corrections[1]!.item_id, correction_id: "C-0002" });
+    });
+    expect(recheck.paths).toEqual(["corrections.json: disputes[1].correction_id"]);
+    expect(recheck.messages[0]).toContain("D-0002 names C-0002, which answers no dispute");
+    // Intake's "already answered" path: a later dispute on the same item and edition takes the stored correction's id. Valid.
+    const answered = linked((c) => {
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: c.disputes[0]!.issue_number + 1, received: "2026-10-13T21:00:00+08:00" });
+    });
+    expect(answered.codes).toEqual([]);
   });
 
   it("XREF_ARCHIVE: a brief missing from archive-index.json, or listed with another publish time", () => {

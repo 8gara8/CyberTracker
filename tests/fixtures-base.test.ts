@@ -27,6 +27,7 @@ import {
   CVE_RECORDS_DIR, draftInputs, editionContext, editionEvidence, editionMetrics, editionPack, editionRegionsInput, fixtureConfig,
 } from "@/fixtures/src/inputs";
 import { EDITION_NAMES, RECORD_IDS } from "@/fixtures/src/world";
+import { modelRe } from "./helpers/model-names";
 
 const root = path.join(__dirname, "..");
 const read = (rel: string): unknown => JSON.parse(fs.readFileSync(path.join(root, rel), "utf8"));
@@ -66,11 +67,11 @@ describe("valid fixture files", () => {
         expect(s.url.includes("/ct-sample/") || s.source_type === "cve_record", s.url).toBe(true);
       }
     }
-    // Built from parts so this file does not hold the patterns tests/no-europe-strings.test.ts looks for.
-    const modelRe = new RegExp(`claude-(?:opus|sonnet|haiku)|${"-".repeat(2)}model\\b`);
+    // Shared with the other scans (tests/helpers/model-names.ts), built from parts as no-europe-strings requires.
+    const re = modelRe();
     for (const o of textOutputs(allOutputs())) {
       expect(o.text, o.path).not.toMatch(/\u2014/);
-      expect(o.text, o.path).not.toMatch(modelRe);
+      expect(o.text, o.path).not.toMatch(re);
     }
   });
 

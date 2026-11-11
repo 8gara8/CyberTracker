@@ -136,7 +136,8 @@ const victimClaimedUnnamed = defineRule({
           `${p} (${it.id}) is only an attacker's claim but names the victim ("${inc.victim}"). Set incident.victim to null and describe the victim in incident.description (e.g. "a Japanese logistics company").`,
           "A claimed victim is never named anywhere in the brief: headline, summary, Lead or Lens."));
       }
-      if (i < TOP_STORY_COUNT) {
+      // A withheld item's slot is free (lib/items.ts displayOrder()): the placeholder in it gives the claim no prominence.
+      if (i < TOP_STORY_COUNT && !isWithheld(it)) {
         out.push(error("VICTIM_CLAIMED_UNNAMED", p,
           `${p} (${it.id}) is only an attacker's claim but is top story ${i + 1}. A claimed incident is never a top story: move it below the top three (at most Watch) or drop it.`));
       }

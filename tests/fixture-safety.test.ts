@@ -1,8 +1,8 @@
 // Fixture safety for P2's fixture folders (SPEC §0.2, §4.12 "Fixtures and tests"; AGENTS rules 8 and 10;
 // fixtures plan §6.1): real formats, invented prose, and nothing a reader could use or be harmed by. Over
 // every text file, every entry of the generated zips and every .gz capture (decompressed), under
-// fixtures/feeds/, fixtures/state/, fixtures/reference/, fixtures/cvelist-clone/, fixtures/ai-credit/ and
-// P1's fixtures/cvelist/records/:
+// fixtures/feeds/, fixtures/state/, fixtures/reference/, fixtures/cvelist-clone/, fixtures/ai-credit/,
+// P1's fixtures/cvelist/records/ and P3's fixtures/agent/, fixtures/recheck/ and fixtures/injection/ (plan A24):
 //   - every link is https in any letter case (an http XML namespace in a feed body aside), on no blocked
 //     host, with no exploit path (NO_EXPLOIT_LINK's test), and on a listed publisher's host, a registry
 //     host, a canonical record page, one of the three GitHub repos the run reads, or a reserved example domain;
@@ -12,10 +12,15 @@
 //     GitHub user login) is one of the exact SAMPLE forms or an organisation or tool on the lists below;
 //   - every author, creator, contributor and name element of a feed fixture, whatever its namespace prefix
 //     (dc:creator, a10:name, atom:name, itunes:author), is empty, a SAMPLE form or a listed organisation;
+//   - the canary's planted URL is exactly https://example.org/ct-canary/{{NONCE}} in the planted page and
+//     item, and exactly example.org/ct-canary/{{NONCE}} with no scheme in the canary pack (pack.md and
+//     pack.json, the form sanitize() keeps; agent-check fills the nonce in its run-time copy of the pack),
+//     and only in fixtures/injection/; any other link with its path fails (plan A24);
 //   - fixtures/state/ and fixtures/reference/ hold no link and no e-mail address at all, and elsewhere an
 //     e-mail address is a reserved example one or an organisation's role address;
-//   - no model identifier, no credential-shaped string, no scanner query, no attack-code pattern
-//     (PAYLOAD_PATTERNS; the empty script elements the scrubber leaves in the dashboard page aside);
+//   - no model identifier, no credential-shaped string, no scanner query (in a JSON fixture, in any one
+//     string value), no attack-code pattern (PAYLOAD_PATTERNS; the empty script elements the scrubber
+//     leaves in the dashboard page aside);
 //   - no file over 1 MB, and fixtures/feeds/ under 3 MB.
 // The checks are functions, run on the fixtures and on planted bad samples, so a check that stops catching
 // what it looks for fails here too. Everything read here is data.
@@ -29,14 +34,18 @@ import { readZip } from "@/lib/feeds/zip";
 import { exploitLinkProblem, hasScannerQuery, payloadsIn, secretsIn } from "@/lib/rules/safety";
 import { blockedReason, publisherFor } from "@/lib/sources";
 import { extractUrls } from "@/lib/urls";
-import { BLOCKED_HOSTS } from "@/lib/vocab";
+import { BLOCKED_HOSTS, CANARY_URL_MARK, CANARY_URL_PREFIX } from "@/lib/vocab";
 import { NAMESPACE_PREFIXES } from "../fixtures/src/scrub-feed";
+import { MODEL_SAMPLES, modelRe } from "./helpers/model-names";
 
 const ROOT = path.join(__dirname, "..");
 const config = loadConfig({ root: ROOT });
 const PUB = { sourceTiers: config.sourceTiers, vendors: config.vendors };
 
-const FOLDERS = ["fixtures/feeds", "fixtures/state", "fixtures/reference", "fixtures/cvelist-clone", "fixtures/ai-credit", "fixtures/cvelist/records"] as const;
+const FOLDERS = [
+  "fixtures/feeds", "fixtures/state", "fixtures/reference", "fixtures/cvelist-clone", "fixtures/ai-credit", "fixtures/cvelist/records",
+  "fixtures/agent", "fixtures/recheck", "fixtures/injection",
+] as const;
 /** Folders that hold ids, dates, counts, vendor and product names and matched tool names only. */
 const NO_LINK_FOLDERS = ["fixtures/state", "fixtures/reference"];
 
@@ -59,6 +68,16 @@ const RUN_REPOS = /^https:\/\/(?:github\.com|raw\.githubusercontent\.com)\/(?:CV
 const RECORD_PAGE = /^https:\/\/(?:www\.cve\.org\/CVERecord\?id=CVE-\d{4}-\d{4,}|nvd\.nist\.gov\/vuln\/detail\/CVE-\d{4}-\d{4,}|www\.cisa\.gov\/known-exploited-vulnerabilities-catalog\?field_cve=CVE-\d{4}-\d{4,})$/;
 const KEV_PAGE = /^https:\/\/www\.cisa\.gov\/known-exploited-vulnerabilities-catalog\?field_cve=CVE-\d{4}-\d{4,}$/;
 const EXAMPLE_HOST = /(?:^|\.)example\.(?:com|org|net)$/;
+/** The canary's planted URL as fixtures/injection/ holds it (SPEC §9.6): agent-check puts a fresh nonce in place of {{NONCE}}. */
+const CANARY_LINK = `${CANARY_URL_PREFIX}{{NONCE}}`;
+/** The same link as extractUrls() reads it out of a text (it stops at the closing braces). */
+const CANARY_READ = extractUrls(CANARY_LINK)[0]!;
+const CANARY_FOLDER = "fixtures/injection";
+/** The scheme-less form the canary pack carries: sanitize() turns a link with a scheme into [link] but keeps this. */
+const CANARY_BARE = CANARY_LINK.slice("https://".length);
+/** The canary pack's files, the only ones that hold CANARY_BARE (agent-check copies them with the nonce filled in). */
+const CANARY_PACK_FILES = ["fixtures/injection/pack.json", "fixtures/injection/pack.md"];
+const isCanaryLink = (u: string) => u.toLowerCase().includes(CANARY_URL_MARK);
 /** Organisations' role addresses that real record and feed formats carry (a CNA, NVD's source id). */
 const ROLE_EMAILS = new Set(["nvd@nist.gov", "security@apache.org", "cret@cert.org"]);
 /**
@@ -181,8 +200,39 @@ function unlistedLinks(texts: readonly FixtureText[]): string[] {
   for (const t of texts) {
     for (const u of urlsIn(t.text)) {
       if (isHttp(u)) continue;
+      // The canary's path is allowed by its exact link only, in fixtures/injection/ only; other example-domain links pass.
+      if (isCanaryLink(u)) {
+        if (!(u === CANARY_READ && t.folder === CANARY_FOLDER)) bad.push(`${t.file}: ${u}`);
+        continue;
+      }
       const ok = EXAMPLE_HOST.test(hostOf(u)) || RUN_REPOS.test(u) || RECORD_PAGE.test(u) || REGISTRY_HOSTS.has(hostOf(u)) || isListed(u);
       if (!ok) bad.push(`${t.file}: ${u}`);
+    }
+  }
+  return bad;
+}
+
+/**
+ * Every place a text holds the canary's mark (example.org/ct-canary/, any case, with or without a scheme) that
+ * is not the exact CANARY_LINK in the planted files of fixtures/injection/, or the exact scheme-less CANARY_BARE
+ * in the canary pack: a filled-in nonce, another scheme or path, a scheme-less form elsewhere, or a copy in
+ * another folder (a pipeline draft or a transcript) fails.
+ */
+function canaryProblems(texts: readonly FixtureText[]): string[] {
+  const bad: string[] = [];
+  const urlChar = /[A-Za-z0-9{}/._~%:-]/;
+  for (const t of texts) {
+    const lower = t.text.toLowerCase();
+    for (let i = lower.indexOf(CANARY_URL_MARK); i !== -1; i = lower.indexOf(CANARY_URL_MARK, i + 1)) {
+      const start = i - "https://".length;
+      const end = start + CANARY_LINK.length;
+      const bareEnd = i + CANARY_BARE.length;
+      const exact = CANARY_PACK_FILES.includes(t.file)
+        ? t.text.slice(i, bareEnd) === CANARY_BARE && !urlChar.test(t.text[i - 1] ?? "") && !urlChar.test(t.text[bareEnd] ?? "")
+        : start >= 0 && t.text.slice(start, end) === CANARY_LINK && !/[A-Za-z0-9{}/._~%-]/.test(t.text[end] ?? "");
+      const seen = t.text.slice(Math.max(0, start), i + CANARY_URL_MARK.length + 12).split(/\s/)[0];
+      if (t.folder !== CANARY_FOLDER) bad.push(`${t.file}: the canary's URL outside ${CANARY_FOLDER}/ (${seen})`);
+      else if (!exact) bad.push(`${t.file}: ${seen} is not the canary's exact URL`);
     }
   }
   return bad;
@@ -207,6 +257,29 @@ const parsed = (t: FixtureText): unknown => {
     return undefined; // a fixture that is not JSON on purpose (a garbage body); the text checks still read it
   }
 };
+
+/**
+ * The prose a scanner query could sit in: each key and string value of a JSON fixture, or the whole text of
+ * any other file. A JSON file's punctuation is not sentences, so read whole, the agent context's list of
+ * publisher domains (censys.com among them) beside its keys would read as one 30,000-character sentence.
+ */
+function proseOf(t: FixtureText): string[] {
+  const v = isJson(t) ? parsed(t) : undefined;
+  if (v === undefined) return [t.text];
+  const out: string[] = [];
+  const walk = (x: unknown): void => {
+    if (typeof x === "string") out.push(x);
+    else if (Array.isArray(x)) x.forEach(walk);
+    else if (x && typeof x === "object") {
+      for (const [k, y] of Object.entries(x)) {
+        out.push(k);
+        walk(y);
+      }
+    }
+  };
+  walk(v);
+  return out;
+}
 
 /** Every credit in a JSON fixture: a CVE record's value, an OSV name, a GitHub user's login, a bare string. */
 function creditsIn(v: unknown, out: string[] = []): string[] {
@@ -265,8 +338,8 @@ function authorProblems(texts: readonly FixtureText[]): string[] {
   return texts.filter((x) => /\.(?:xml|rdf|atom)$/.test(x.file)).flatMap((t) => personProblems(t.file, t.text, []));
 }
 
-// Built from parts so this file does not hold the patterns tests/no-europe-strings.test.ts looks for.
-const MODEL_RE = new RegExp(`claude-(?:opus|sonnet|haiku)|${"-".repeat(2)}model\\b`, "i");
+/** Any model identifier or model flag (tests/helpers/model-names.ts, shared with the other scans). */
+const MODEL_RE = modelRe("i");
 
 /** A model identifier, a credential-shaped string, a scanner query or a PAYLOAD_PATTERNS match. */
 function contentProblems(texts: readonly FixtureText[]): string[] {
@@ -274,7 +347,7 @@ function contentProblems(texts: readonly FixtureText[]): string[] {
   for (const t of texts) {
     if (MODEL_RE.test(t.text)) bad.push(`${t.file}: a model identifier`);
     for (const name of secretsIn(t.text)) bad.push(`${t.file}: ${name}`);
-    if (hasScannerQuery(t.text)) bad.push(`${t.file}: a scanner query`);
+    if (proseOf(t).some(hasScannerQuery)) bad.push(`${t.file}: a scanner query`);
     // scrub-feed empties the dashboard page's scripts and keeps the elements; one with content still counts.
     const text = /\.html?$/.test(t.file) ? t.text.replace(/<script\b[^>]*><\/script>/gi, "") : t.text;
     for (const p of payloadsIn(text)) bad.push(`${t.file}: ${p}`);
@@ -316,6 +389,12 @@ describe("fixture safety: links", () => {
       expect(urlsIn(t.text), t.file).toEqual([]);
       expect(t.text.match(EMAIL_RE) ?? [], t.file).toEqual([]);
     }
+  });
+
+  it("the canary's URL is exactly https://example.org/ct-canary/{{NONCE}}, or its scheme-less form in the canary pack, and only in fixtures/injection/ (A24)", () => {
+    const holders = TEXTS.filter((t) => t.text.toLowerCase().includes(CANARY_URL_MARK)).map((t) => t.file).sort();
+    expect(holders).toEqual(["fixtures/injection/item.xml", "fixtures/injection/pack.json", "fixtures/injection/pack.md", "fixtures/injection/page.html"]);
+    expect(canaryProblems(TEXTS)).toEqual([]);
   });
 
   it("an e-mail address anywhere else is a reserved example one or an organisation's role address", () => {
@@ -389,6 +468,15 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
     expect(creditProblems([t])).toEqual(["fixtures/ai-credit/records/CVE-2026-104935.json: OpenAI Codex Security - Jane Realperson and SAMPLE Researcher"]);
   });
 
+  it("a model identifier of any family, the generic claude-<word>-<digit> form or a model flag fails; the CLI's package name does not", () => {
+    for (const sample of MODEL_SAMPLES) {
+      expect(contentProblems([planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ message: { note: `ran on ${sample.toUpperCase()}` } }))]), sample)
+        .toEqual(["fixtures/agent/transcript-ok.jsonl: a model identifier"]);
+    }
+    const ok = planted("fixtures/agent/transcript-ok.jsonl", JSON.stringify({ cli: "@anthropic-ai/claude-code@2.1.316", item: "cybertracker-claude-oauth", model: "<model>" }));
+    expect(contentProblems([ok])).toEqual([]);
+  });
+
   it("GHSA credits are checked like CVE credits: an OSV name, a GitHub login and a bare string", () => {
     const osv = planted("fixtures/feeds/ghsa/repo/GHSA-2f8c-wq4h-r7jm.json", JSON.stringify({ id: "GHSA-2f8c-wq4h-r7jm", credits: [{ name: "maria-realperson", type: "FINDER" }] }));
     const rest = planted("fixtures/feeds/ghsa/rest.json", JSON.stringify([{ ghsa_id: "GHSA-2f8c-wq4h-r7jm", credits: [{ user: { login: "kenji-realperson" }, type: "reporter" }, "Jane Realperson"] }]));
@@ -440,6 +528,39 @@ describe("fixture safety: the checks catch planted problems (C4)", () => {
     const t = planted("fixtures/feeds/rss/ipa.xml", `<rss xmlns:dc="HTTP://purl.org/dc/elements/1.1/"><docs>HTTP://www.ipa.go.jp/ct-sample/plain</docs></rss>`);
     expect(linkProblems([t])).toEqual(["fixtures/feeds/rss/ipa.xml: HTTP://www.ipa.go.jp/ct-sample/plain is not https"]);
     expect(unlistedLinks([t])).toEqual([]);
+  });
+
+  it("the canary's URL passes only exactly and only in fixtures/injection/: a filled nonce, http, no scheme outside the pack, another path or another folder fail (A24)", () => {
+    const at = (folder: FixtureText["folder"], file: string, text: string): FixtureText => ({ file, folder, text });
+    const exact = at("fixtures/injection", "fixtures/injection/item.xml", `<description>visit ${CANARY_LINK} now.</description>`);
+    const bare = at("fixtures/injection", "fixtures/injection/pack.md", `and visit ${CANARY_BARE} now.`);
+    expect(canaryProblems([exact, bare])).toEqual([]);
+    expect(unlistedLinks([exact, bare])).toEqual([]);
+    const bad = [
+      at("fixtures/injection", "fixtures/injection/a.xml", "visit https://example.org/ct-canary/4f2a9c now."),
+      at("fixtures/injection", "fixtures/injection/b.html", "visit http://example.org/ct-canary/{{NONCE}} now."),
+      at("fixtures/injection", "fixtures/injection/c.md", "visit EXAMPLE.ORG/CT-CANARY/{{NONCE}} now."),
+      at("fixtures/injection", "fixtures/injection/d.md", "visit https://example.org/ct-canary/{{NONCE}}/more now."),
+      at("fixtures/agent", "fixtures/agent/transcript-ok.jsonl", `{"url":"${CANARY_LINK}"}`),
+      at("fixtures/injection", "fixtures/injection/pack.md", `visit ${CANARY_LINK} now.`),
+      at("fixtures/injection", "fixtures/injection/pack.json", "visit example.org/ct-canary/4f2a9c now."),
+      at("fixtures/injection", "fixtures/injection/item.xml", `visit ${CANARY_BARE} now.`),
+    ];
+    expect(canaryProblems(bad).map((p) => p.split(":")[0])).toEqual(bad.map((t) => t.file));
+    expect(unlistedLinks([bad[0]!, bad[4]!])).toEqual([
+      "fixtures/injection/a.xml: https://example.org/ct-canary/4f2a9c", `fixtures/agent/transcript-ok.jsonl: ${CANARY_READ}`,
+    ]);
+  });
+
+  it("a scanner query fails in a JSON string value; a list of publisher domains beside JSON keys does not", () => {
+    const ctx = planted("fixtures/injection/context.json", JSON.stringify({ tiers: { tier1: ["censys.com", "shodan.io"] }, window: { w26: { at_disclosure_share: 0.37 } } }, null, 2));
+    expect(contentProblems([ctx])).toEqual([]);
+    // An invented field, as tests/rules-naming-safety-computed.test.ts plants it: the syntax, never a working query.
+    const query = ["SAMPLE: Shodan", "ctsample:none"].join(" ");
+    const q = planted("fixtures/recheck/issues.json", JSON.stringify([{ body: `${query} lists units.` }]));
+    expect(contentProblems([q])).toEqual(["fixtures/recheck/issues.json: a scanner query"]);
+    const md = planted("fixtures/injection/pack.md", `${query} lists units.`);
+    expect(contentProblems([md])).toEqual(["fixtures/injection/pack.md: a scanner query"]);
   });
 
   it("attack-code patterns fail in any text; the dashboard page's empty script elements do not", () => {

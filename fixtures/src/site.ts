@@ -15,31 +15,34 @@
 //   2026-10-15 Thu  data-only from --data-only: four new KEV items
 //   2026-10-16 Fri  status only: the metrics stage failed (E_METRICS), so no brief
 //
-// Every file holds what publish would write. P3's lib/apply.ts (applyDraft()) and lib/data-only.ts will do
-// the freezing for real; until then the code below stands in for them and computes every script field the
-// way the rules check it: publisherFor() for the source fields, the fixture CVE records and KEV rows for
-// the CVE blocks, computeRegions() over the earlier briefs, kevLines() and the metrics headline for the Lens
-// and the Gap, pageWords() for computed.word_count. The metrics come from fixtures/src/inputs.ts
+// Every file holds what publish would write. The items are frozen by publish's own composers
+// (lib/apply.ts freezeItems(), cveBlockOf() and releaseBlockOf(), as applyDraft() and composeDataOnly() call
+// them), from the fixture CVE records, the day's KEV rows and inputs manifest and the edition context's
+// release candidates, so a sample CVE or release block cannot drift from what publish composes (§0.4 row
+// 79; tests/apply.test.ts C27). The rest of each brief is computed here the way the rules check it:
+// publisherFor() for the source fields, computeRegions() over the earlier briefs, kevLines() and the
+// metrics headline for the Lens and the Gap, pageWords() for computed.word_count. The metrics come from fixtures/src/inputs.ts
 // (metricsFor()); each metrics/inputs/D.json manifest lists rows that add up to its figures, with invented
 // CVE ids in the CVE-YYYY-99NNNN and CVE-2026-98NNNN ranges (the real KEV rows only for the home vendors).
-// The data-only headlines, summaries and CVE titles are placeholders for lib/data-only.ts's templates.
+// The data-only headlines and summaries are the text lib/data-only.ts's templates give (tests/data-only.test.ts
+// C3); their CVE titles come from cveBlockOf() like every other block.
 
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { matchCredit, matchVendor, type LoadedConfig } from "../../lib/config";
-import { addDays, utcDateOf } from "../../lib/dates";
+import {
+  cveBlockOf, findersVersionOf, freezeItems as composeItems, releaseBlockOf, type CveBlockInputs, type CveFacts,
+} from "../../lib/apply";
+import { matchVendor, type LoadedConfig } from "../../lib/config";
+import { addDays } from "../../lib/dates";
 import { longDate, shortDate } from "../../lib/format";
-import { actorNexusOf, publicExploitOf } from "../../lib/items";
 import { kevLines } from "../../lib/metrics/headline";
 import { collectSignals, computeRegions, regionItems, regionsConfig, type HistoryBrief } from "../../lib/regions";
-import { mentionsAnthropic } from "../../lib/rules/ai";
-import { READING_WORDS_PER_MINUTE, aiLinkedOf, vendorConfirmedByOf } from "../../lib/rules/computed";
+import { READING_WORDS_PER_MINUTE, aiLinkedOf } from "../../lib/rules/computed";
 import { pageWords } from "../../lib/rules/words";
 import { Brief, type ActorSeen, type FeedStale, type RegionSignal } from "../../lib/schema/brief";
-import type { Edition, Source, VendorRef } from "../../lib/schema/common";
-import type { Vendor } from "../../lib/schema/config";
+import type { Edition, Source } from "../../lib/schema/common";
 import { DraftBrief, type DraftLensRow } from "../../lib/schema/draft-brief";
-import type { CveBlock, DraftItem, Item, ReleaseBlock } from "../../lib/schema/item";
+import type { DraftItem, Item } from "../../lib/schema/item";
 import {
   AnthropicCvdFile, CreditCandidatesFile, InputsManifest, KevIndexFile, Metrics, type KevIndexRow, type WindowRow,
 } from "../../lib/schema/metrics";
@@ -50,14 +53,14 @@ import {
 } from "../../lib/schema/status";
 import { publisherFor } from "../../lib/sources";
 import { normalizeUrl } from "../../lib/urls";
-import { cveRecordInfo } from "../../lib/validate";
+import { cveRecordInfo, type CveLookup } from "../../lib/validate";
 import {
   KEV_ABSENCE_NOTE, NONE_FOUND, RUN_STAGES, TAIWAN_LENS_ROWS, WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT,
 } from "../../lib/vocab";
 import { STAGE_NOTES } from "../../lib/chat";
 import type { Output } from "./build";
 import { MONDAY_ITEMS, WEEKDAY_ITEMS, editionDraft } from "./drafts";
-import { editionEvidence, editionRegionsInput, fixtureConfig, metricsFor } from "./inputs";
+import { editionContext, editionEvidence, editionRegionsInput, fixtureConfig, metricsFor } from "./inputs";
 import {
   EDITIONS, KEV_DUE, KEV_ROWS, RECORD_IDS, SOURCES, cveRecord, draftSources, seenText, sourceIds,
   type EditionName, type EditionTimes, type SourceKey,
@@ -208,10 +211,13 @@ function runRecord(t: SiteTimes, p: RunPlan, attempt = 1): RunRecord {
     deploy: p.shows
       ? { triggered: true, ready_at: deploy.ended_at, shows_date: p.shows.date, shows_edition: p.shows.edition }
       : { triggered: false, ready_at: null, shows_date: "2026-10-15", shows_edition: "data_only" },
-    recheck: p.checks ? { from: addDays(t.date, -7), to: addDays(t.date, -1), items_checked: 9, flagged: [] } : null,
+    recheck: p.checks ? { from: addDays(t.date, -RECHECK_DAYS), to: addDays(t.date, -1), items_checked: 9, flagged: [] } : null,
     links: p.checks && links.ended_at ? { checked_at: links.ended_at, checked: 31, ok: 31, unknown: 0, broken: [] } : null,
   };
 }
+
+/** SPEC §8.9's re-check window, D − 14 to D − 1 (scripts/recheck.ts RECHECK_LIMITS.days; tests/recheck.test.ts checks they agree). */
+export const RECHECK_DAYS = 14;
 
 const ok = (end: string): StagePlan => ["ok", end];
 const skip = (note?: string): StagePlan => ["skipped", null, note];
@@ -495,130 +501,56 @@ function manifestFor(t: SiteTimes, m: Metrics): InputsManifest {
 
 // ── Freezing a brief ─────────────────────────────────────────────────────────────────────────────
 
-const vendorRef = (v: Vendor | null, fallback: string): VendorRef => (v ? { id: v.id, name: v.name, country: v.country } : { id: null, name: fallback.slice(0, 80), country: null });
-const kevUrl = (cve: string) => `https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=${cve}`;
-
 /** A source as publish freezes it: publisherFor() on the current config, and how the run saw the URL. */
 function freezeSource(s: DraftBrief["sources"][number], seenAs: Source["seen_as"]): Source {
   const p = publisherFor(s.url, s.source_type, cfg());
   return { ...s, publisher: p.publisher, publisher_name: p.publisher_name, tier: p.tier, state_label: p.state_label, seen_as: seenAs };
 }
 
-type Obj = Record<string, unknown>;
-const obj = (x: unknown): Obj => (x && typeof x === "object" ? (x as Obj) : {});
-const utcDate = (ts: string) => utcDateOf(ts);
-
-/** The CVE block of a fixture record as it stood when publish built it (`capturedAt`). */
-function recordBlock(
-  item: DraftItem, cve: string, t: SiteTimes, capturedAt: string, sources: readonly { id: string; url: string }[],
-): Omit<CveBlock, "vendor_confirmed" | "vendor_confirmed_by"> {
-  const c = cfg();
-  const raw = cveRecord(cve);
-  const info = cveRecordInfo(raw)!;
-  const meta = obj(obj(raw).cveMetadata);
-  const cna = obj(obj(obj(raw).containers).cna);
-  const adp = (obj(obj(raw).containers).adp as Obj[] | undefined)?.[0] ?? null;
-  const cvss = obj((cna.metrics as Obj[])[0]).cvssV3_1 as { version: "3.1"; baseScore: number; vectorString: string };
-  const at = Date.parse(capturedAt);
-  const kevRow = KEV_ROWS.find((r) => r[0] === cve && r[1] <= t.kev.version.replace(/\./g, "-")) ?? null;
-  const vendor = matchVendor(c, { kevVendorProject: kevRow?.[2], affectedVendors: info.vendors });
-  const ssvcRaw = adp ? obj(obj((adp.metrics as Obj[])[0]).other).content as { timestamp: string; options: Record<string, string>[] } : null;
-  const ssvcOpt = (k: string) => ssvcRaw!.options.find((o) => k in o)![k]!;
-  const credit = info.credits.map((x) => matchCredit(x, c.compiled.aiFinders)).find((x) => x !== null) ?? null;
-  const patched = item.flaw_evidence.filter((f) => f.cve_id === cve && f.kind === "patched").sort((a, b) => (a.date < b.date ? -1 : 1));
-  const exploited = item.flaw_evidence.filter((f) => f.cve_id === cve && f.kind === "exploited");
-  const sourceUrl = (id: string) => sources.find((s) => s.id === id)!.url;
-  const evidence = [
-    ...(kevRow ? [{ date: kevRow[1], basis: "kev_listed" as const, source_url: kevUrl(cve) }] : []),
-    ...exploited.map((f) => ({ date: f.date, basis: f.basis as CveBlock["exploitation_evidence"][number]["basis"], source_url: sourceUrl(f.source_id) })),
-  ].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+/**
+ * The sample's CVE facts, as scripts/lib/cve-facts.ts's cveFactsFor() gives them to publish from the run's
+ * cache: the fixture records, the KEV rows of the day's catalog (KEV_DUE, else added + 21 days; no
+ * vulnerabilityName, so a title comes from the record), no EPSS or GHSA.
+ */
+function siteFacts(t: SiteTimes): CveFacts {
+  const rows = kevThrough(t.kev.version);
   return {
-    cve_id: cve,
-    date_published: utcDate(String(meta.datePublished)),
-    date_updated: utcDate(Date.parse(String(meta.dateUpdated)) <= at ? String(meta.dateUpdated) : String(meta.datePublished)),
-    assigner: info.assigner!,
-    vendor: vendorRef(vendor, kevRow?.[2] ?? info.vendors[0] ?? ""),
-    product: (kevRow?.[3] ?? info.products[0] ?? "").slice(0, 120),
-    title: (info.title ?? String((cna.descriptions as Obj[])[0]!.value)).slice(0, 200),
-    cvss: { score: cvss.baseScore, version: cvss.version, vector: cvss.vectorString, scorer: "cna" },
-    epss: null,
-    ssvc: ssvcRaw && Date.parse(ssvcRaw.timestamp) <= at
-      ? {
-        exploitation: ssvcOpt("Exploitation") as "none" | "poc" | "active", automatable: ssvcOpt("Automatable") as "yes" | "no",
-        technical_impact: ssvcOpt("Technical Impact") as "partial" | "total", date: utcDate(ssvcRaw.timestamp),
-      }
-      : null,
-    kev: kevRow ? { date_added: kevRow[1], due_date: KEV_DUE[cve] ?? addDays(kevRow[1], 21), ransomware: kevRow[6], catalog_version: t.kev.version } : null,
-    credits: info.credits.slice(0, 10),
-    ai_credit: credit
-      ? { finder_id: credit.finder_id, family: credit.family, kind: credit.kind, field: "cna.credits", matched: credit.matched, rule: credit.rule, finders_version: c.aiFinders.version }
-      : null,
-    discovery_credit: credit ? (credit.kind === "ai_system" ? "ai_autonomous" : "ai_assisted") : info.credits.length ? "human" : "unknown",
-    advisory_date: patched[0]?.date ?? null,
-    patch: patched[0] && patched[0].basis === "vendor_advisory" ? { date: patched[0].date, basis: "vendor_advisory", source_url: sourceUrl(patched[0].source_id) } : null,
-    exploitation_evidence: evidence,
-    exploit_reference: info.exploit_reference,
-    ghsa_ids: [],
-    captured_at: capturedAt,
+    record: (id) => (RECORD_IDS.includes(id) ? cveRecord(id) : null),
+    kev: (id) => {
+      const r = rows.find((x) => x[0] === id);
+      return r ? { dateAdded: r[1], dueDate: KEV_DUE[id] ?? addDays(r[1], 21), ransomware: r[6], catalogVersion: t.kev.version } : null;
+    },
+    epss: () => null,
+    ghsaIds: () => [],
   };
 }
 
-/** The KEV-only CVE block of a data-only item (no fixture record): KEV row facts, the rest null or empty. */
-function kevBlock(row: KevIndexRow, t: SiteTimes, capturedAt: string): Omit<CveBlock, "vendor_confirmed" | "vendor_confirmed_by"> {
-  const [cve, added, vendorProject, product, published, assigner, ransomware] = row;
-  return {
-    cve_id: cve, date_published: published!, date_updated: published!, assigner: assigner!,
-    vendor: vendorRef(matchVendor(cfg(), { kevVendorProject: vendorProject }), vendorProject), product: product.slice(0, 120),
-    title: `${vendorProject} ${product} vulnerability`.slice(0, 200), cvss: null, epss: null, ssvc: null,
-    kev: { date_added: added, due_date: KEV_DUE[cve] ?? addDays(added, 21), ransomware, catalog_version: t.kev.version },
-    credits: [], ai_credit: null, discovery_credit: "unknown", advisory_date: null, patch: null,
-    exploitation_evidence: [{ date: added, basis: "kev_listed", source_url: kevUrl(cve) }],
-    exploit_reference: false, ghsa_ids: [], captured_at: capturedAt,
-  };
-}
-
-const MICROSOFT_RELEASE = {
-  date: "2026-10-13", title: "October 2026 Security Update", fixes_n: 1384, critical_n: 60,
-  source_url: SOURCES["msrc-october"].url,
+/** The CVE List as collect fetched it for the sample: the fixture records (fixtures/cvelist/records/). */
+const SITE_CVE_LIST: CveLookup = {
+  get: (id) => {
+    const cve = id.toUpperCase();
+    return RECORD_IDS.includes(cve) ? cveRecordInfo(cveRecord(cve)) ?? undefined : undefined;
+  },
 };
 
-/** The patch batch's release block, from the release candidate (§5.12). */
-function releaseBlock(item: DraftItem): ReleaseBlock | null {
-  if (!item.release_id) return null;
-  const v = matchVendor(cfg(), { kevVendorProject: "Microsoft" });
-  return {
-    release_id: item.release_id, vendor: vendorRef(v, "Microsoft"), date: MICROSOFT_RELEASE.date, title: MICROSOFT_RELEASE.title,
-    fixes_n: MICROSOFT_RELEASE.fixes_n, critical_n: MICROSOFT_RELEASE.critical_n, exploited_n: item.cve_ids.length,
-    exploited_cve_ids: [...item.cve_ids], counted_from: "cve_list", source_url: MICROSOFT_RELEASE.source_url,
-  };
-}
-
-/** Frozen items: the draft item plus every S field (§4.6). */
-type BlockFn = (it: DraftItem) => ReturnType<typeof recordBlock>[];
-
-function freezeItems(draftItems: readonly DraftItem[], sources: readonly Source[], t: SiteTimes, firstSeen: Map<string, string>, blocks: BlockFn): Item[] {
+/**
+ * Frozen items (§4.6) through publish's own composers (lib/apply.ts freezeItems(), cveBlockOf(),
+ * releaseBlockOf()), as applyDraft() and composeDataOnly() build them: every CVE block from the sample's
+ * facts, the day's KEV rows and inputs manifest; a patch batch's release block from the edition context's
+ * release candidate.
+ */
+function siteItems(draftItems: readonly DraftItem[], sources: readonly Source[], x: BriefContext): Item[] {
   const c = cfg();
-  const bySource = new Map(sources.map((s) => [s.id, { publisher: s.publisher }]));
-  return draftItems.map((it) => {
-    const cves = blocks(it).map((b): CveBlock => {
-      const by = vendorConfirmedByOf({ sources: [...sources] }, it, b, c);
-      return { ...b, vendor_confirmed: by !== null, vendor_confirmed_by: by };
-    });
-    const release = releaseBlock(it);
-    const vendor = cves[0]?.vendor ?? release?.vendor ?? null;
-    const frozen: Item = {
-      ...it,
-      actor_nexus: actorNexusOf(it.attribution),
-      first_seen: firstSeen.get(it.id) ?? t.date,
-      vendor,
-      cves,
-      release,
-      public_exploit: publicExploitOf({ ...it, cves }),
-      anthropic_disclosure: false,
-      withheld: null,
-    };
-    frozen.anthropic_disclosure = mentionsAnthropic(frozen, bySource);
-    return frozen;
+  const t = x.day.t;
+  const inputs: CveBlockInputs = {
+    config: c, facts: siteFacts(t), cveList: SITE_CVE_LIST, kevIndex: { entries: kevThrough(t.kev.version) }, inputs: x.manifest,
+    findersVersion: findersVersionOf(x.metrics, c), capturedAt: x.publishedAt,
+  };
+  const releases = x.day.evidence ? editionContext(x.day.evidence).candidates.flatMap((cand) => (cand.release ? [cand.release] : [])) : [];
+  return composeItems(draftItems, sources, {
+    config: c, date: t.date, history: x.history, firstSeen: firstSeenMap(x.history),
+    blocks: (it) => it.cve_ids.map((cve) => cveBlockOf(cve, it, sources, inputs)),
+    release: (it) => releaseBlockOf(it, releases.find((r) => r.release_id === it.release_id) ?? null, sources, c, SITE_CVE_LIST),
   });
 }
 
@@ -649,6 +581,8 @@ interface BriefContext {
   day: Day;
   metrics: Metrics;
   metricsText: string;
+  /** metrics/inputs/D.json: the CVE blocks read its rows, as publish does. */
+  manifest: InputsManifest;
   history: readonly Brief[];
   corrections: readonly Correction[];
   entries: readonly ScoreboardEntry[];
@@ -708,8 +642,7 @@ function freezeDraft(x: BriefContext): Brief {
   const d = day.draft!;
   const seen = day.evidence ? editionEvidence(day.evidence).seen_as : null;
   const sources = d.sources.map((s) => freezeSource(s, seen?.[normalizeUrl(s.url)] ?? "pack"));
-  const blocks: BlockFn = (it) => it.cve_ids.filter((cve) => RECORD_IDS.includes(cve)).map((cve) => recordBlock(it, cve, day.t, x.publishedAt, sources));
-  const items = freezeItems(d.items, sources, day.t, firstSeenMap(x.history), blocks);
+  const items = siteItems(d.items, sources, x);
   const claimText = (id: string | null) => (id ? cfg().claims.claims.find((c) => c.id === id)!.text : null);
   const { region_raises: raises, scoreboard_entries: _entries, ...rest } = d;
   const b: Brief = {
@@ -765,7 +698,7 @@ function dataOnly(x: BriefContext): Brief {
       standing_story: null, source_ids: [`s${i + 1}`],
     };
   });
-  const items = freezeItems(draftItems, sources, t, firstSeenMap(x.history), (it) => [kevBlock(rows.find((r) => r[0] === it.cve_ids[0])!, t, x.publishedAt)]);
+  const items = siteItems(draftItems, sources, x);
   const b: Brief = {
     schema_version: 1,
     date: t.date,
@@ -970,7 +903,7 @@ function buildSite(): SiteContent {
     const created = newEntries(day, entries.length + 1, i === 0);
     entries.push(...created);
     const ctx: BriefContext = {
-      day, metrics, metricsText, history: briefs, corrections: todays, entries: created,
+      day, metrics, metricsText, manifest, history: briefs, corrections: todays, entries: created,
       last: last ? { entry_id: last.id, date: last.date, claim_id: last.claim_id, claim_text: claimText(last.claim_id) } : null,
       claims: claimStates(entries.slice(0, entries.length - created.length)),
       publishedAt, dataOnlyAt,

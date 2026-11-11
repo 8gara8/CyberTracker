@@ -15,8 +15,8 @@ export const LeadSentence = z.strictObject({
   text: z.string().min(1)
     .regex(/(?:[.?!]["'”’)\]]*|^\[withheld\])$/u, { error: "A Lead sentence ends in . ? or ! (a closing quote or bracket may follow)" })
     .describe("One sentence ending in . ? or !; no URL. All Lead sentences together: 15 to 90 words"),
-  item_ids: refs("Items this sentence draws on; at least 1 unless gap is true"),
-  gap: z.boolean().describe("true when it quotes Gap numbers; each must match the metrics' headline.quoted"),
+  item_ids: refs("Items this sentence draws on; at least 1 unless gap is true. With none, the sentence is a Gap sentence (gap true), as every sentence is on a day with no items"),
+  gap: z.boolean().describe(`true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so when it names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours`),
 });
 
 const exactlyOneBasis = (a: { source_id: string | null; metric_path: string | null }) =>
@@ -24,7 +24,7 @@ const exactlyOneBasis = (a: { source_id: string | null; metric_path: string | nu
 const exactlyOneBasisError = { error: "Exactly one of source_id and metric_path is non-null", path: ["source_id"] };
 
 const angleFields = {
-  text: words("At most 30 words, holding exactly one number"),
+  text: words(`At most 30 words, holding exactly one number. With a metric_path, the figures its quotable label prints ("26 weeks", "within 7 days", "80% interval") are not counted the first time each is written; name the window and date, not a denominator. Write a ratio as the Gap does, "1.9 times", never "1.9x"`),
   source_id: z.string().nullable().describe("The source of the number; exactly one of source_id and metric_path is non-null"),
   metric_path: MetricPath.nullable().describe('A dotted path into the metrics file, e.g. "window.w26.at_disclosure_share"; the number in text equals its display string'),
   as_of: IsoDate.describe("The source's date, or data_cutoff_utc for a metric"),

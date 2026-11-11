@@ -118,7 +118,7 @@
     "second_line": "Flood: 44,944 new CVE records in 13 weeks, 5.2 times the 2023–24 pace (5.0 times excluding the Linux kernel). AI-credited: 502 in 13 weeks, 224 excluding Anthropic (a lower bound).",
     "status": "ok",
     "metrics_file": "metrics/2026-10-12.json",
-    "metrics_sha256": "cee08174ba64f52783a208ef03181acc0f1688ae17b79d0ace6521c23c766a9f",
+    "metrics_sha256": "86abe8d8018bd023de27418165cb4b28a97957b38dd3e4b84f46f13e9c16966c",
     "as_of": "2026-10-10"
   },
   "items": [
@@ -499,7 +499,7 @@
     }
   ],
   "computed": {
-    "word_count": 608,
+    "word_count": 580,
     "reading_minutes": 3,
     "item_count": 3,
     "ai_linked": {

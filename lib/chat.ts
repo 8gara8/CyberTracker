@@ -27,7 +27,7 @@ export const CHAT_MAX_LINES = 15;
 
 /** Every run error code of §8.2's table, in its order. */
 export const ERROR_CODES = [
-  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_SANDBOX", "E_LIMIT",
+  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_DATA_ONLY", "E_WITHHOLD", "E_SANDBOX", "E_LIMIT",
   "E_AGENT", "E_TIMEOUT", "E_VALIDATION", "E_PUBLISH", "E_TOO_LATE", "E_SIMULATED", "E_INTERNAL",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -55,7 +55,9 @@ function clockOf(minutes: number): string {
  * --no-deadline run may last 75 minutes but is cut at publish_until (§8.2), so this leaves it about 50.
  */
 export const RERUN_BEFORE = clockOf(minutesOf(SCHEDULE.publish_until) - 60);
-const RERUN = `rerun before ${RERUN_BEFORE}: zsh ${CHECKOUT}/scripts/daily.sh --no-deadline`;
+/** The rerun command <rerun> names; withForce() adds --force to it for E_WITHHOLD (§0.4 row 149). */
+const RERUN_CMD = `zsh ${CHECKOUT}/scripts/daily.sh --no-deadline`;
+const RERUN = `rerun before ${RERUN_BEFORE}: ${RERUN_CMD}`;
 
 /**
  * One line per code, from §8.2's table ("<rerun>" written out in full). `{date}` stands for the edition
@@ -72,6 +74,8 @@ export const NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
   E_AUTH: `the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6), then ${RERUN}`,
   E_PUSH: `the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6), then ${RERUN}`,
   E_METRICS: `read logs/{date}.metrics.log; fix in a PR, then ${RERUN}`,
+  E_DATA_ONLY: `read logs/{date}.daily.log, then ${RERUN}`,
+  E_WITHHOLD: `read logs/{date}.daily.log, then ${RERUN}; if the withhold fails again, its fix goes through a PR`,
   E_SANDBOX: "the agent's sandbox is wrong; run npm run agent:check -- --sandbox and fix SPEC §9.5's settings before the next run",
   E_LIMIT: "the account's usage limit stopped the agent; the data-only edition stands; runs resume when the limit window resets",
   E_AGENT: RERUN,
@@ -90,6 +94,90 @@ function isErrorCode(code: string): code is ErrorCode {
 /** NEXT_STEP[code] with every `{date}` replaced; an unknown code gets E_INTERNAL's line. */
 export function nextStepFor(code: string, date: string): string {
   return NEXT_STEP[isErrorCode(code) ? code : "E_INTERNAL"].replaceAll("{date}", date);
+}
+
+/**
+ * What a dry run's next step ends with: a dry run pushes nothing and writes no needs-review/D/ (§0.4 row
+ * 75), so there is nothing to rerun or publish by hand, only its own files to read. `{date}` as in NEXT_STEP.
+ */
+export const DRY_RUN_FILES =
+  "this was a dry run, so nothing needs rerunning: what it wrote is in logs/{date}.daily.log, drafts/{date}.json, logs/{date}.validation.json and logs/dry-run/{date}/";
+
+/** A dry run's step: the fix the code still needs before the next run, if any, then DRY_RUN_FILES. */
+const dry = (fix?: string) => (fix ? `${fix}; ${DRY_RUN_FILES}` : DRY_RUN_FILES);
+
+/**
+ * NEXT_STEP's dry-run form (C1): no rerun command, needs-review path or hand publish command. A code whose
+ * cause outlives the dry run (the arch, the config, the CLI, the sign-in, the sandbox) keeps its fix, "before
+ * the next run"; E_SIMULATED's line is the same in both. `{date}` as in NEXT_STEP: use dryRunNextStepFor().
+ */
+export const DRY_RUN_NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
+  E_ARCH: dry("the run isn't native arm64 Node 22 or newer; check scripts/daily.sh's PATH and /opt/homebrew/bin/node (SPEC Appendix C) before the next run"),
+  E_NODE: dry("the run isn't native arm64 Node 22 or newer; check scripts/daily.sh's PATH and /opt/homebrew/bin/node (SPEC Appendix C) before the next run"),
+  E_CONFIG: dry("config/ fails its checks; fix it in a PR before the next run"),
+  E_NET: dry("Kobol had no network"),
+  E_GIT: dry("the checkout can't be synced with GitHub; see docs/RUNBOOK.md before the next run"),
+  E_CLOCK: dry("the data for this date is complete only after 08:00 Taipei on the day before"),
+  E_CLI: dry("the agent CLI is missing; reinstall it (SPEC §9.4) before the next run"),
+  E_AUTH: dry("the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6) before the next run"),
+  E_PUSH: dry("the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6) before the next run"),
+  E_METRICS: dry("read logs/{date}.metrics.log; fix in a PR before the next run"),
+  E_DATA_ONLY: dry(),
+  E_WITHHOLD: dry(),
+  E_SANDBOX: dry(NEXT_STEP.E_SANDBOX),
+  E_LIMIT: dry("the account's usage limit stopped the agent; runs resume when the limit window resets"),
+  E_AGENT: dry(),
+  E_TIMEOUT: dry(),
+  E_VALIDATION: dry(),
+  E_PUBLISH: dry("the draft was valid, and logs/{date}.daily.log says why its edition was not written"),
+  E_TOO_LATE: dry(),
+  E_SIMULATED: NEXT_STEP.E_SIMULATED,
+  E_INTERNAL: dry(),
+};
+
+/** DRY_RUN_NEXT_STEP[code] with every `{date}` replaced; an unknown code gets E_INTERNAL's line. */
+export function dryRunNextStepFor(code: string, date: string): string {
+  return DRY_RUN_NEXT_STEP[isErrorCode(code) ? code : "E_INTERNAL"].replaceAll("{date}", date);
+}
+
+/**
+ * E_PUBLISH's lines after PublishError("compose") (§0.4 row 102): the publish stage of the record that
+ * carries the code holds STAGE_NOTES.notComposed. Publishing the same draft again fails the same way, so
+ * the next step edits the draft first, then publishes by hand. `{date}` as in NEXT_STEP.
+ */
+export const NOT_COMPOSED = {
+  what: "The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed.",
+  nextStep: `in ${CHECKOUT}, edit drafts/{date}.json to fix or drop the item whose block logs/{date}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}`,
+  /** A dry run's form (DRY_RUN_NEXT_STEP): no hand publish. */
+  dryRunStep: dry("logs/{date}.daily.log names the item whose block lacks its facts"),
+} as const;
+
+/**
+ * E_PUBLISH's lines after PublishError("validation") (§0.4 row 129): the publish stage of the record that
+ * carries the code holds STAGE_NOTES.notValid. The draft passed its own checks, but the tree with the
+ * edition in it did not, so publishing the same draft again fails the same way. Publish's daily-log lines
+ * `Validation: <code> at <file>: <path>` name the files, relative to content/: today's brief is made from
+ * the draft, any other file is stored content the fix must reach through a PR. `{date}` as in NEXT_STEP.
+ */
+export const NOT_VALID = {
+  what: "The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed.",
+  nextStep: `read the Validation lines in logs/{date}.daily.log: if they name only briefs/{date}.json, fix drafts/{date}.json, then in ${CHECKOUT} run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`,
+  /** A dry run's form (DRY_RUN_NEXT_STEP): no hand publish; another file under content/ still needs its PR. */
+  dryRunStep: dry("read the Validation lines in logs/{date}.daily.log: if they name another file than briefs/{date}.json, the fix goes through a PR before the next run"),
+} as const;
+
+/** The hand publish command E_PUBLISH's next steps give (NEXT_STEP, NOT_COMPOSED, NOT_VALID), `{date}` filled. */
+const publishCommand = (date: string) => `npm run publish -- --date ${date}`;
+
+/**
+ * E_PUBLISH's and E_WITHHOLD's next step when brief D as committed is a full or partial edition (§0.4 rows 132
+ * and 149): a failed --force run left the earlier edition standing, and publish replaces one only with --force
+ * (§8.7), as a rerun reaches intake past preflight step 6 only with it, so the hand command and the rerun take
+ * it. With brief D a data-only edition, or no brief, the step is as given.
+ */
+export function withForce(nextStep: string, date: string, stored: Pick<Brief, "edition"> | null): string {
+  if (!stored || stored.edition === "data_only") return nextStep;
+  return nextStep.replaceAll(publishCommand(date), `${publishCommand(date)} --force`).replaceAll(RERUN_CMD, `${RERUN_CMD} --force`);
 }
 
 /** What WHAT_HAPPENED's templates are filled from: the run records (chatInputFor() builds it). */
@@ -122,6 +210,8 @@ export const WHAT_HAPPENED: Readonly<Record<ErrorCode, (f: WhatFacts) => string>
   E_AUTH: () => "The agent's sign-in token was missing or expired, so no editorial pass ran.",
   E_PUSH: () => "The start record could not be pushed to GitHub, so nothing else was tried.",
   E_METRICS: () => "No metrics file was written, so nothing could be published.",
+  E_DATA_ONLY: () => "The data-only edition could not be composed, validated or pushed, and no full edition followed.",
+  E_WITHHOLD: () => "A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.",
   E_SANDBOX: () => "The agent started with tools beyond its sandbox and was stopped.",
   E_LIMIT: () => "The account's usage limit stopped the agent before it wrote a valid draft.",
   E_AGENT: (f) => `The agent wrote no draft in ${count(f.attempts, "attempt")}.`,
@@ -161,6 +251,10 @@ export const STAGE_NOTES = {
   floodStops: (date: string) => `Flood counts stop at ${date}: run npm run backfill -- --catch-up --push.`,
   /** preflight step 5. */
   depsChanged: "Dependencies changed since the last npm ci.",
+  /** data_only, publish: publish's PublishError("compose"); on the publish stage it selects NOT_COMPOSED. */
+  notComposed: "Not composed: a release or CVE block lacks its date, page or record facts (see the daily log).",
+  /** publish: publish's PublishError("validation") on the full edition; on the publish stage it selects NOT_VALID. */
+  notValid: "Not valid: the full edition failed whole-tree validation (see the Validation lines in the daily log).",
 } as const;
 
 const NOTE_RES = {
@@ -171,6 +265,8 @@ const NOTE_RES = {
   replaced: /Replaced the (\d\d:\d\d) edition \(--force\)/i,
   floodStops: /Flood counts stop at (\d{4}-\d{2}-\d{2})/,
   depsChanged: /Dependencies changed since the last npm ci/,
+  notComposed: /Not composed: a release or CVE block lacks its date, page or record facts/,
+  notValid: /Not valid: the full edition failed whole-tree validation/,
 } as const;
 
 /** The Notes line's entries (§8.8), each in the spec's words. */
@@ -247,6 +343,8 @@ export interface ChatSource {
   needsReview?: boolean;
   /** The code of a failure that left no record (preflight steps 1 to 5). */
   code?: string | null;
+  /** A dry run, for a failure that left no record; otherwise the records say so. */
+  dryRun?: boolean;
   /** Default siteUrl() (config/run.json). */
   siteUrl?: string;
   /** Default config/run.json schedule. */
@@ -367,7 +465,7 @@ export function chatInputFor(src: ChatSource): ChatInput {
   const schedule = src.schedule ?? SCHEDULE;
   const site = (src.siteUrl ?? configuredSiteUrl()).replace(/\/+$/, "");
   const brief = src.brief && src.brief.date === date ? src.brief : null;
-  const dryRun = runs.some((r) => r.trigger === "dry_run" || r.outcome === "dry_run");
+  const dryRun = src.dryRun === true || runs.some((r) => r.trigger === "dry_run" || r.outcome === "dry_run");
   const notes = allStageNotes(runs);
 
   // Skipped: the outcome says so; a dry run that stopped at preflight step 6 carries the reason as a note.
@@ -382,7 +480,8 @@ export function chatInputFor(src: ChatSource): ChatInput {
     return { kind: "skipped", date, reason, briefUrl: brief ? `${site}/brief/${date}` : null, dryRun };
   }
 
-  const code = [...runs].reverse().find((r) => r.error_code !== null)?.error_code ?? src.code ?? null;
+  const coded = [...runs].reverse().find((r) => r.error_code !== null) ?? null;
+  const code = coded?.error_code ?? src.code ?? null;
   const { attempts, repairs } = runCounts(runs);
   const errorIssues = (src.issues ?? []).filter((i) => i.severity !== "warning");
   const agentSeconds = last?.budgets.agent_seconds ?? 0;
@@ -395,6 +494,19 @@ export function chatInputFor(src: ChatSource): ChatInput {
     hardStop: schedule.hard_stop,
     publishUntil: schedule.publish_until,
   };
+  // E_PUBLISH from a draft the composer could not freeze, or whose edition failed whole-tree validation: only
+  // the publish stage's note says so (a data-only stage that was not composed leaves the full edition's own
+  // failure as it was). A push failure keeps E_PUBLISH's own lines. After a failed --force run the earlier
+  // full edition stands, so the hand publish command takes --force (withForce()).
+  const publishNote = code === "E_PUBLISH" && coded !== null ? stage(coded, "publish")?.note ?? "" : "";
+  const special = NOTE_RES.notComposed.test(publishNote) ? NOT_COMPOSED : NOTE_RES.notValid.test(publishNote) ? NOT_VALID : null;
+  const what = (c: string) => (special ? special.what : whatHappened(c, facts));
+  // A dry run's next step names its own files: nothing to rerun or publish by hand, no needs-review/D/.
+  const next = (c: string) => {
+    if (dryRun) return special ? special.dryRunStep.replaceAll("{date}", date) : dryRunNextStepFor(c, date);
+    const step = special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date);
+    return c === "E_PUBLISH" || c === "E_WITHHOLD" ? withForce(step, date, brief) : step;
+  };
 
   let left: Edition | null = null;
   if (last && dryRun) left = last.edition;
@@ -405,16 +517,21 @@ export function chatInputFor(src: ChatSource): ChatInput {
     return { kind: "published", brief, runs, notes: orderNotes([...rebuiltNotes(date, brief, runs, "published", dryRun), ...(src.notes ?? [])]), dryRun };
   }
   if (brief && left === "data_only") {
-    let what: string;
-    if (code) what = whatHappened(code, facts);
-    else {
+    let said: string;
+    if (code) {
+      said = what(code);
+      // E_WITHHOLD comes from intake, not from the editorial pass: a --data-only or late start keeps its own
+      // reason first (§0.4 row 149).
+      const skip = code === "E_WITHHOLD" ? NOTE_RES.dataOnlyRequested.exec(notes) ?? NOTE_RES.startedAfterHardStop.exec(notes) : null;
+      if (skip) said = `${skip[0]} ${said}`;
+    } else {
       const noted = NOTE_RES.dataOnlyRequested.exec(notes) ?? NOTE_RES.startedAfterHardStop.exec(notes);
-      what = noted?.[0]
+      said = noted?.[0]
         ?? (last && taipeiTime(last.started_at) > schedule.hard_stop ? STAGE_NOTES.startedAfterHardStop(schedule.hard_stop) : STAGE_NOTES.dataOnlyRequested);
     }
     const kev = src.metrics?.date === date ? src.metrics.kev : null;
     return {
-      kind: "data_only", brief, runs, code, what, nextStep: code ? nextStepFor(code, date) : null,
+      kind: "data_only", brief, runs, code, what: said, nextStep: code ? next(code) : null,
       notes: orderNotes([...rebuiltNotes(date, brief, runs, "data_only", dryRun), ...(src.notes ?? [])]), dryRun,
       kevNew: kev ? kev.new_since_last_edition.cve_ids.length : null,
     };
@@ -431,10 +548,10 @@ export function chatInputFor(src: ChatSource): ChatInput {
     kind: "failed",
     date,
     code: failCode,
-    what: unfinished ? "The run left no end record; it may have been stopped before it finished." : whatHappened(failCode, facts),
+    what: unfinished ? "The run left no end record; it may have been stopped before it finished." : what(failCode),
     errors,
     siteShows: src.siteShows ?? null,
-    nextStep: nextStepFor(failCode, date),
+    nextStep: next(failCode),
     runs,
     needsReview: src.needsReview ?? !dryRun,
     notes: orderNotes([...rebuiltNotes(date, brief, runs, "failed", dryRun), ...(src.notes ?? [])]),
@@ -452,12 +569,16 @@ function oneLine(s: string): string {
 const EDITION_WORD: Record<Edition, string> = { full: "full", partial: "partial", data_only: "data-only" };
 const CORRECTION_WORD = { correction: "correction", clarification: "clarification", update: "update", name_removed: "name withheld" } as const;
 
-/** The item kicker (§8.8): severity pips and word (LANDMARK for a landmark), the AI chip, the region codes. */
-export function kicker(item: Pick<Item, "severity" | "landmark" | "ai_role" | "ai_confidence" | "regions">): string {
+/**
+ * The item kicker (§8.8): severity pips and word (LANDMARK for a landmark), the AI chip, the region codes. A
+ * withheld item never assessed (a data-only item a full edition keeps, lib/withhold-mask.ts carryWithheld())
+ * shows no AI chip: "AI: unassessed" means a data-only edition, which this is not.
+ */
+export function kicker(item: Pick<Item, "severity" | "landmark" | "ai_role" | "ai_confidence" | "regions"> & { withheld?: Item["withheld"] }): string {
   const parts: string[] = [];
   if (item.severity) parts.push(`${SEVERITY_INFO[item.severity].pips} ${SEVERITY_INFO[item.severity].word}`);
   else if (item.landmark) parts.push("LANDMARK");
-  const chip = AI_ROLE_INFO[item.ai_role].chip;
+  const chip = item.withheld && item.ai_role === "unassessed" ? null : AI_ROLE_INFO[item.ai_role].chip;
   if (chip) parts.push(item.ai_confidence === "claimed" ? `${chip} (claimed)` : chip);
   parts.push(item.regions.join(" "));
   return parts.join(" · ");

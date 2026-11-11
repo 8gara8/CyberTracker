@@ -1,0 +1,117 @@
+[
+  {
+    "number": 4,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T01:10:00Z",
+    "updated_at": "2026-10-15T01:10:00Z",
+    "closed_at": null,
+    "body": "### Item id\n\ninc-transport-jp-2026-10\n\n### Edition date\n\n2026-10-14\n\n### What is wrong\n\nA named victim is wrong or should not be named\n\n### Evidence link\n\n_No response_"
+  },
+  {
+    "number": 5,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T02:00:00Z",
+    "updated_at": "2026-10-15T02:00:00Z",
+    "closed_at": null,
+    "body": "### Item id\n\ncamp-tw-semiconductor-2026-10\n\n### Edition date\n\n_No response_\n\n### What is wrong\n\nThe attribution to an actor or country is wrong\n\n### Evidence link\n\nhttps://teamt5.org/ct-sample/paper-kestrel-invoice-phishing"
+  },
+  {
+    "number": 6,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T03:00:00Z",
+    "updated_at": "2026-10-15T03:00:00Z",
+    "closed_at": null,
+    "body": "### Item id\n\ncve-2026-104935\n\n### Edition date\n\n2026-10-14\n\n### What is wrong\n\nA fact or number is wrong\n\n### Evidence link\n\nhttps://www.ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935"
+  },
+  {
+    "number": 7,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T04:00:00Z",
+    "updated_at": "2026-10-15T04:00:00Z",
+    "closed_at": null,
+    "body": "### Item id\n\ncve-2026-108917\n\n### Edition date\n\n2026-10-14\n\n### What is wrong\n\nA fact or number is wrong\n\n### Evidence link\n\n_No response_",
+    "pull_request": {
+      "merged_at": null
+    }
+  },
+  {
+    "number": 8,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T05:00:00Z",
+    "updated_at": "2026-10-15T05:00:00Z",
+    "closed_at": null,
+    "body": "The second item looks wrong to me. Please check it."
+  },
+  {
+    "number": 9,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T06:00:00Z",
+    "updated_at": "2026-10-15T06:00:00Z",
+    "closed_at": null,
+    "body": "### Item id\n\ncve-2026-108917\n\n### Edition date\n\n2026-10-14\n\n### What is wrong\n\nSomething else is wrong\n\n### Evidence link\n\n_No response_"
+  },
+  {
+    "number": 10,
+    "title": "Correction",
+    "labels": [
+      {
+        "name": "correction"
+      }
+    ],
+    "state": "open",
+    "state_reason": null,
+    "comments": 0,
+    "created_at": "2026-10-15T07:00:00Z",
+    "updated_at": "2026-10-15T07:00:00Z",
+    "closed_at": null,
+    "body": "Thanks for the brief. I think the second link is wrong.\n\n### Item id\n\npt-microsoft-2026-10\n\nThis is the Microsoft one.\n\n### Edition date\n\n2026-10-14\n\n### Anything else\n\nPlease also look at the headline, it reads oddly.\n\n### What is wrong\n\nA link is broken or goes to the wrong page\n\n### Evidence link\n\nhttps://msrc.microsoft.com/ct-sample/october-2026-security-update\n\nSent from a phone."
+  }
+]

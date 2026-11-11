@@ -9,7 +9,7 @@
 import type { LoadedConfig } from "../config";
 import { matchVendor } from "../config";
 import { KEV_ABSENCE_NOTE, AI_LINKED_ROLES, BANNED_WORDS, WITHHELD_MARK } from "../vocab";
-import { TOP_STORY_COUNT } from "../items";
+import { isWithheld, TOP_STORY_COUNT } from "../items";
 import { kevLineUnavailable, kevLines } from "../metrics/home-vendors";
 import { fmtInt } from "../metrics/stats";
 import { scriptText, type CardItem, type PageBrief, type ScriptOptions, type SummaryRow } from "../page-text";
@@ -20,7 +20,9 @@ import type { AgentContext } from "../schema/context";
 import type { DraftBrief } from "../schema/draft-brief";
 import type { CveBlock, DraftItem, ReleaseBlock } from "../schema/item";
 import type { Metrics } from "../schema/metrics";
-import { countWords, numbersIn } from "../text";
+import { countWords, gluedRatios } from "../text";
+import { angleFigures, angleNumbers, figureList } from "./grounding";
+import { draftFirstSeen } from "./items";
 import { entriesOf, isBrief, proseFields, quotedFields, raisesOf } from "./shared";
 import { defineRule, error, plural, type AnyBrief, type AnyItem, type CveLookup, type RegionsBase, type Rule, type ValidationIssue } from "./types";
 
@@ -41,20 +43,24 @@ export interface WordField {
   max: number | null;
   /** Counted in pageWords(). */
   total: boolean;
-  /** Exempt from `min`: a field a withholding rewrote (§4.10). */
+  /** Exempt from `min`: a WITHHELD_MARK text a withholding wrote (§4.10). */
   withheld: boolean;
 }
+
+/** The Lead's budget, all sentences together (§4.12 Word budgets); dropUnverified() keeps the minimum when it removes a sentence. */
+export const LEAD_WORDS = { min: 15, max: 90 } as const;
 
 /** QUOTE_MAX_25's limit for a quoted field or a quoted span in prose. */
 export const QUOTE_MAX = 25;
 
-const isWithheldItem = (it: AnyItem): boolean => "withheld" in it && it.withheld != null;
 const isMark = (t: string | null | undefined): boolean => typeof t === "string" && t.trim() === WITHHELD_MARK;
 
 /**
  * wordFields(brief): every budget of §4.12's word table, for a draft or a published Brief. Quoted
- * fields are QUOTE_MAX_25's (quotedFields()), not here. Fields a withholding rewrote (a withheld item, a
- * WITHHELD_MARK text) keep their maximums but lose their minimums.
+ * fields are QUOTE_MAX_25's (quotedFields()), not here. A withheld item (§4.10) has no budget and none of
+ * its fields count in the total: its text is the composer's fixed placeholder, so it never fails a word
+ * rule nor takes words from the page (§0.4 row 126). A WITHHELD_MARK text keeps its maximum but loses its
+ * minimum.
  */
 export function wordFields(b: AnyBrief): WordField[] {
   const out: WordField[] = [];
@@ -66,7 +72,7 @@ export function wordFields(b: AnyBrief): WordField[] {
   };
 
   const lead = b.lead ?? [];
-  add("lead", lead.map((s) => s.text).join(" "), true, 90, 15,
+  add("lead", lead.map((s) => s.text).join(" "), true, LEAD_WORDS.max, LEAD_WORDS.min,
     { note: " (all sentences together)", withheld: lead.some((s) => isMark(s.text)) });
 
   if (b.angle) {
@@ -75,17 +81,17 @@ export function wordFields(b: AnyBrief): WordField[] {
   }
 
   (b.items ?? []).forEach((it, i) => {
+    if (isWithheld(it)) return;
     const p = `items[${i}]`;
-    const held = isWithheldItem(it);
-    add(`${p}.headline`, it.headline, true, null, null, { withheld: held });
+    add(`${p}.headline`, it.headline, true, null);
     if (i < TOP_STORY_COUNT) {
-      add(`${p}.summary`, it.summary, true, 55, null, { withheld: held });
-      add(`${p}.why_it_matters`, it.why_it_matters, true, 25, null, { withheld: held });
+      add(`${p}.summary`, it.summary, true, 55);
+      add(`${p}.why_it_matters`, it.why_it_matters, true, 25);
       const both = [it.summary, it.why_it_matters].filter((t): t is string => typeof t === "string").join(" ");
-      add(p, both, false, 70, 15, { label: `${p}.summary + why_it_matters`, withheld: held });
+      add(p, both, false, 70, 15, { label: `${p}.summary + why_it_matters` });
     } else {
-      add(`${p}.summary`, it.summary, true, 25, null, { withheld: held });
-      add(`${p}.why_it_matters`, it.why_it_matters, true, 25, null, { withheld: held });
+      add(`${p}.summary`, it.summary, true, 25);
+      add(`${p}.why_it_matters`, it.why_it_matters, true, 25);
     }
     add(`${p}.incident.impact`, it.incident?.impact, true, 12);
     add(`${p}.exposure.text`, it.exposure?.text, true, 20);
@@ -138,8 +144,8 @@ const earliest = (dates: readonly string[]): string | null => (dates.length ? [.
 /**
  * The provisional Brief view of a draft that scriptText() reads (§4.12 word table, last line). Region
  * rows come from computeRegions() on the draft's items and raises with `regionsBase` (else the context's
- * regions_preview); `first_seen` is the earliest date `context.recent_items` holds the id, else the
- * draft's date. Each item's vendor, first CVE block and release are rebuilt the way publish builds them
+ * regions_preview); `first_seen` is draftFirstSeen() (lib/rules/items.ts): the base's first_seen map,
+ * as publish gives it, else the draft's date. Each item's vendor, first CVE block and release are rebuilt the way publish builds them
  * (§4.6), from the CVE List, the KEV index rows in `regionsBase`, the context's candidates and the item's
  * own `flaw_evidence`. The Gap and the Lens KEV lines come from `metrics`. `published_at`, `late` and
  * `reading_minutes` are placeholders: the count depends only on their presence, except "(late)", which a
@@ -229,8 +235,7 @@ export function draftView(draft: DraftBrief, inputs: DraftViewInputs): PageBrief
 function draftRegionRows(draft: DraftBrief, inputs: Pick<DraftViewInputs, "context" | "regionsBase">): SummaryRow[] {
   const { context, regionsBase } = inputs;
   if (regionsBase) {
-    const firstSeen = (id: string) => [draft.date, ...(context?.recent_items ?? []).filter((r) => r.id === id).map((r) => r.date)].sort()[0]!;
-    const items = regionItems(draft.items.map((it) => ({ ...it, first_seen: firstSeen(it.id) })), draft.sources, regionsBase.config);
+    const items = regionItems(draft.items.map((it) => ({ ...it, first_seen: draftFirstSeen({ date: draft.date, regionsBase }, it.id) })), draft.sources, regionsBase.config);
     return computeRegions({ ...regionsBase, items, raises: draft.region_raises }).rows;
   }
   const preview = context?.regions_preview ?? [];
@@ -285,7 +290,9 @@ export function pageWords(brief: AnyBrief, metrics: Metrics | null, extra?: Scri
 const cut = (n: number) => `Cut at least ${n}.`;
 const add = (n: number) => `Add at least ${n}.`;
 
-function fieldIssues(b: AnyBrief): ValidationIssue[] {
+const RATIO_HINT = ' Write a ratio as the Gap does, "1.9 times", never "1.9x": a number glued to x is not read as a number.';
+
+function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   for (const f of wordFields(b)) {
     if (f.text === null) continue;
@@ -299,24 +306,36 @@ function fieldIssues(b: AnyBrief): ValidationIssue[] {
   }
   const angle = b.angle;
   if (angle && !isMark(angle.text)) {
-    const nums = numbersIn(angle.text);
+    const nums = angleNumbers(angle, metrics);
+    const figures = angleFigures(angle, metrics);
+    const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${
+      !figures.length ? "."
+        : metrics ? `, nor the figures the metric's label prints (${figureList(figures)}) the first time each is written.`
+          : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written.`}`;
+    // Only WORDS_OVER says a figure written again counts: WORDS_UNDER's Angle holds no number at all.
+    const once = !figures.length ? ""
+      : metrics ? " Write each label figure at most once, as the label writes it: written again, it counts."
+        : " Write each window length at most once: written again, it counts.";
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
-        "Dates, years, CVE ids and version strings are not counted as numbers."));
+        `${notCounted}${gluedRatios(angle.text).length ? RATIO_HINT : ""}`));
     } else if (nums.length > 1) {
       out.push(error("WORDS_OVER", "angle.text",
         `angle.text holds ${nums.length} numbers (${nums.map((x) => x.raw).join(", ")}); the Angle states exactly one. Keep one and cut the other${nums.length > 2 ? "s" : ""}.`,
-        "Dates, years, CVE ids and version strings are not counted as numbers."));
+        `${notCounted}${once}`));
     }
   }
   return out;
 }
 
-/** WORDS_OVER and WORDS_UNDER on each field of the word table (§4.12), and the Angle's one number. */
+/**
+ * WORDS_OVER and WORDS_UNDER on each field of the word table (§4.12), and the Angle's one number, read by
+ * angleNumbers() with the metrics when the run has them (a metric Angle's label figures are not counted).
+ */
 const wordBudgets = defineRule({
   code: ["WORDS_OVER", "WORDS_UNDER"],
   scope: "brief",
-  check: ({ draft }) => fieldIssues(draft),
+  check: ({ draft, metrics }) => fieldIssues(draft, metrics ?? null),
 });
 
 /**
