@@ -340,6 +340,34 @@ describe("rankCandidates() on built cases", () => {
     for (const r of [...exploited, ...critical]) expect(keep.has(r.cve_id)).toBe(true);
     for (const r of [...unscored, ...high]) expect(keep.has(r.cve_id)).toBe(false);
     for (const r of exploited) expect(out.kept.find((c) => c.id === r.cve_id.toLowerCase())?.pack_ids).toHaveLength(1);
+
+    // A news item and a JPCERT note naming high fixes the release does not reference still merge into it, since it matches every member
+    // id, and add only their own ids: its member records stay at RELEASE_PACK_IDS_MAX (review of row 146). Neither names the vendor or
+    // product, so only the CVE id can match.
+    const [newsCve, noteCve] = [high[200]!.cve_id, high[201]!.cve_id];
+    expect(ids.has(newsCve) || ids.has(noteCve)).toBe(false);
+    const news = item(`SAMPLE: ${newsCve} is fixed in this month's update`, { id: "p0901" });
+    const note = notePackRecords("jpcert", [{
+      id: "wr264102", title: `SAMPLE weekly report ${noteCve}`, url: "https://jpcert.or.jp/wr/2026/wr264102.html", text: "SAMPLE",
+      published_at: "2026-10-13T06:00:00Z", cve_ids: [noteCve], alert: false,
+    }], W.window);
+    const packRecords = provisionalRecords([
+      ...kevPackRecords(catalog.vulnerabilities, new Set<string>(), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+      ...note,
+    ]);
+    const noteId = packRecords.find((r) => r.source === "jpcert")!.id;
+    const merged = rankCandidates({ ...base, pack: { items: [news], records: packRecords } });
+    const mpt = merged.kept.find((c) => c.kind === "patch_batch")!;
+    expect(mpt.id).toBe("pt-microsoft-2026-10");
+    expect(merged.cut).toContainEqual(expect.objectContaining({ id: news.id, reason: `merged:${mpt.id}` }));
+    expect(merged.cut).toContainEqual(expect.objectContaining({ id: noteId, reason: `merged:${mpt.id}` }));
+    expect(merged.log).toContainEqual({ code: "MERGED", detail: `${news.id} (bleepingcomputer) merged into ${mpt.id} by CVE id.` });
+    const sourceOf = new Map(packRecords.map((r) => [r.id, r.source]));
+    expect(mpt.pack_ids.filter((id) => sourceOf.get(id) === "cvelist")).toHaveLength(RELEASE_PACK_IDS_MAX);
+    expect(mpt.pack_ids.filter((id) => sourceOf.get(id) !== "cvelist").sort()).toEqual([news.id, noteId].sort());
+    expect(mpt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX + 2);
+    expect(merged.kept.some((c) => c.id !== mpt.id && (c.pack_ids.includes(news.id) || c.pack_ids.includes(noteId)))).toBe(false);
   });
 
   it("past RELEASE_PACK_IDS_MAX exploited fixes the release names the first 20 by CVE id, and the pack keeps every exploited fix's record", () => {
