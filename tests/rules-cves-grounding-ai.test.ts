@@ -829,6 +829,37 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
     for (const [text, ratio] of RATIOS) expect(gluedRatios(text), text).toEqual([ratio]);
   });
 
+  it("NUMBER_FORM: reads a ratio after a date label or a name before a comparison, in a range, and before + or / (review of the eighth pass)", () => {
+    // Each was caught at 3e511f6 and missed at 37d5bb3: the word before read as a name, or the dash before the digits refused.
+    for (const [text, ratio] of [
+      ["In October 5x more records arrived.", "5x"], ["Since September 3x more flaws were listed.", "3x"],
+      ["In 2026 5x more CVE records arrived.", "5x"], ["In Q3 5x more records arrived.", "5x"], ["In H2 5x.", "5x"], ["On Monday 5x.", "5x"],
+      ["Attacks on Taiwan 3x more often hit chipmakers.", "3x"], ["CISA 2x faster", "2x"], ["AI 10x faster triage", "10x"],
+      ["AI tools find bugs 2-3x faster than fuzzers.", "3x"], ["AI tools find bugs 2–3x faster than fuzzers.", "3x"],
+      ["a 5x–10x jump in reports", "10x"], ["a 10x+ jump", "10x"], ["up 10x/year", "10x"], ["KEV 3x the 2023–24 pace", "3x"],
+      ["Exploits rose 3x a year.", "3x"], ["CISA 2x-faster", "2x"],
+      ["In October 9.9x more CVE records arrived than in 2023–24.", "9.9x"],
+    ] as const) expect(gluedRatios(text), text).toEqual([ratio]);
+    // A list of names stays a list of names: a token joined by "and" or "or" to a name, or before "series" or "branch".
+    for (const text of ["DrayTek Vigor 286x and 296x routers", "Cisco 350x and 550x switches", "Drupal 10.x and 11x", "the 3x series",
+      "for 2x and 3x branches", "Microsoft.IdentityModel 7x and 6x are affected.", "Juniper EX4300 and 4600x", "Cisco 9300x or 9500x",
+      "the 1.x and 2x lines", "the Linux kernel 5.1x series", "the 2x branch"]) {
+      expect(gluedRatios(text), text).toEqual([]);
+    }
+    // A comparison after the token still makes it a ratio in a list.
+    expect(gluedRatios("Vigor 286x and 3x more often")).toEqual(["3x"]);
+  });
+
+  it("NUMBER_FORM: a zero-item Gap sentence with a wrong ratio after a month or in a range fails (review of the eighth pass)", () => {
+    // The display is 5.2: each gave 0 errors at 37d5bb3.
+    for (const text of ["In October 9.9x more CVE records arrived than in 2023–24.", "Since July 9.9x more CVE records arrived than in 2023–24.",
+      "New CVE records arrived at 5x–10x the 2023–24 pace in 13 weeks."]) {
+      const d = weekdayDraft();
+      d.lead.push({ text, item_ids: [], gap: true });
+      expect(check(d).errors.map((e) => `${e.code} ${e.path}`), text).toEqual(["NUMBER_FORM lead[3].text"]);
+    }
+  });
+
   it("NUMBER_FORM: a draft that names a product, standard or id ending in x passes, and one that writes a ratio fails", () => {
     for (const name of NAMES) {
       const d = weekdayDraft();

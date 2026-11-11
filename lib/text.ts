@@ -281,15 +281,35 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
 /** Words that make a ratio of the number before them: "10x faster", "five times more". */
 const COMPARATIVES = "more|less|fewer|higher|lower|faster|slower|larger|bigger|greater|smaller|quicker|longer|shorter|wider";
 
+/** Not glued to a letter, digit, "_", ".", ",", "/", "#", "%", hyphen or en dash. */
+const RATIO_START = `(?<![\\p{L}\\p{N}_.,/#%${DASHES}])`;
+/** A ratio range's first number and its dash ("2-3x", "5x–10x"): a bare number or a glued ratio, then a hyphen or en dash. */
+const RANGE_START = `${RATIO_START}\\d+(?:[.,]\\d+)*[xX]?[${DASHES}]`;
 /**
  * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
- * no letter, digit, "_", ".", ",", hyphen, en dash, "/", "#" or "%" before it ("DIR-823X", "370/XP/38x") and
- * after it only whitespace, sentence punctuation and then whitespace, the end, or a hyphen and a
- * comparative ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as a name.
+ * no letter, digit, "_", ".", ",", hyphen, en dash, "/", "#" or "%" before it ("DIR-823X", "370/XP/38x"),
+ * unless it ends a range from a bare number or a glued ratio ("2-3x", "5x–10x"), and after it only
+ * whitespace, sentence punctuation and then whitespace, the end, "+" ("10x+"), "/" and a word ("10x/year"),
+ * or a hyphen and a comparative ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as
+ * a name.
  */
 const GLUED_RATIO_RE = new RegExp(
-  `(?<![\\p{L}\\p{N}_.,/#%${DASHES}])(\\d+(?:[.,]\\d+)*)([xX])` +
-  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
+  `(?:${RATIO_START}|(?<=${RANGE_START}))(\\d+(?:[.,]\\d+)*)([xX])` +
+  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|\\+(?:\\s|$|[.,;:!?)])|\\/\\p{L}|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
+/** The range start before a token, removed before nameBefore() reads the word before the range ("Vigor 286-296x"). */
+const RANGE_START_END_RE = new RegExp(`${RANGE_START}$`, "u");
+/**
+ * After a glued token, a comparison that makes it a ratio whatever word stands before it ("CISA 2x faster",
+ * "In Q3 5x more", "a 3x jump", "10x a year", "10x/year"): a comparative, "the", "than", "as" before an
+ * adjective of degree, or a noun of change.
+ */
+const RATIO_AFTER_RE = new RegExp(
+  `^(?:\\s+(?:${COMPARATIVES}|the|than|as\\s+(?:many|much|often|fast|high|large|likely|common|quickly)|increase|jump|rise|growth|pace|rate` +
+  `|a\\s+year)(?![\\p{L}])|\\/year(?![\\p{L}])|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "u");
+/** After a glued token, a release word: "the 3x series", "the 2x branch". */
+const RELEASE_AFTER_RE = /^\s+(?:series|branch|branches)(?![\p{L}])/u;
+/** Never a product name: a month, a weekday, a year, or a quarter or half ("In October 5x", "In 2026 5x", "In Q3 5x"). */
+const DATE_LABEL_RE = new RegExp(`^(?:${MONTH}|${WEEKDAY}|${YEAR}|Q[1-4]|H[12])$`, "u");
 /** A sentence's first word may be one of these before a ratio ("Nearly 10x more"); any other capitalised word is a name. */
 const RATIO_LEAD_INS: ReadonlySet<string> = new Set(["a", "about", "almost", "also", "an", "and", "approximately", "around", "at",
   "but", "by", "close", "down", "even", "for", "from", "in", "just", "less", "more", "nearly", "now", "of", "on", "only", "or",
@@ -304,7 +324,8 @@ const VERSION_AFTER_RE = /^\s+(?:before|through|until|prior\s+to)\s+v?\d+\.\d/u;
  * The word right before a glued token names a product, standard or release, so the token is a model
  * number, not a ratio: it holds a digit ("Ryzen 9 7950X", "4K 12X"), is one of RELEASE_WORDS ("versions
  * 4.3x") or holds a capital letter ("Catalyst 9300X", "Windows 9x", "iPhone 16x", "HTTP 30x"), unless it
- * ends a clause ("October,"), is a possessive ("KEV's") or opens a sentence as one of RATIO_LEAD_INS
+ * ends a clause ("October,"), is a possessive ("KEV's"), is a month, weekday, year, quarter or half
+ * (DATE_LABEL_RE: "In October 5x", "In 2026 5x", "In Q3 5x") or opens a sentence as one of RATIO_LEAD_INS
  * ("Nearly 10x more").
  */
 function nameBefore(before: string): boolean {
@@ -312,7 +333,7 @@ function nameBefore(before: string): boolean {
   if (!m) return false;
   const opener = /^[(\["'“‘]+/u.exec(m[1]!);
   const word = opener ? m[1]!.slice(opener[0].length) : m[1]!;
-  if (!/[\p{L}\p{N}]$/u.test(word) || /['’]s$/u.test(word)) return false;
+  if (!/[\p{L}\p{N}]$/u.test(word) || /['’]s$/u.test(word) || DATE_LABEL_RE.test(word)) return false;
   if (/\p{N}/u.test(word) || RELEASE_WORDS.has(word.toLowerCase())) return true;
   if (!/\p{Lu}/u.test(word)) return false;
   const opensSentence = opener !== null || /(?:^|[.!?:;]["'”’)\]]*)\s*$/u.test(before.slice(0, m.index));
@@ -324,21 +345,55 @@ function nameBefore(before: string): boolean {
  * "9.9x the 2023–24 pace", "10x faster", "rose 5x.", "a 3x jump". Not a name: a GHSA id, a token glued to
  * a hyphen, "/" or a letter ("DIR-823X", "3x-ui", "0x1F", "x86"), a version or standard ("6.0.0x",
  * "802.1X", "4.3x before 5.1"), a hex prefix ("0x"), three or more digits before a capital X ("9300X",
- * "7950X"), or a token after a name word (nameBefore(): "Windows 9x", "SAP NetWeaver 7.5x", "HTTP 30x")
- * or before a capitalised one ("10x Genomics").
+ * "7950X"), a token after a name word (nameBefore(): "Windows 9x", "SAP NetWeaver 7.5x", "HTTP 30x"),
+ * before a capitalised one ("10x Genomics") or before "series" or "branch" ("the 3x series"), or a token
+ * joined by "and" or "or" to a name ("Vigor 286x and 296x", "Drupal 10.x and 11x", "2x and 3x branches").
+ * A comparison right after the token (RATIO_AFTER_RE: "CISA 2x faster", "In Q3 5x more", "10x/year") makes
+ * it a ratio whatever word stands before it, and a range from a bare number or a ratio ("2-3x", "5x–10x")
+ * gives its last token.
  */
 export function gluedRatios(text: string): string[] {
   const s = text.normalize("NFKC").replace(GHSA_RE, (m) => " ".repeat(m.length));
-  const out: string[] = [];
-  for (const m of s.matchAll(GLUED_RATIO_RE)) {
+  const tokens = [...s.matchAll(GLUED_RATIO_RE)].map((m) => {
     const [raw, num, x] = m as unknown as [string, string, string];
-    if ((num.match(/\./gu)?.length ?? 0) > 1 || /^\d{3,}\./u.test(num)) continue; // "6.0.0x", "802.1X"
-    if (/^0+$/u.test(num) || (x === "X" && /^\d{3,}$/u.test(num))) continue; // "0x", "9300X"
+    const before = s.slice(0, m.index).replace(RANGE_START_END_RE, "");
     const after = s.slice(m.index + raw.length);
-    if (nameBefore(s.slice(0, m.index)) || /^\s+\p{Lu}/u.test(after) || VERSION_AFTER_RE.test(after)) continue;
-    out.push(raw);
+    // "6.0.0x", "802.1X", "0x", "9300X": a version, standard, hex prefix or model whatever stands around it.
+    const fixed = (num.match(/\./gu)?.length ?? 0) > 1 || /^\d{3,}\./u.test(num) || /^0+$/u.test(num) || (x === "X" && /^\d{3,}$/u.test(num));
+    const ratio = !fixed && RATIO_AFTER_RE.test(after);
+    const name = fixed || (!ratio && (nameBefore(before) || /^\s+\p{Lu}/u.test(after) || VERSION_AFTER_RE.test(after) ||
+      RELEASE_AFTER_RE.test(after)));
+    return { at: m.index, end: m.index + raw.length, raw, ratio, name };
+  });
+  // A list of names: a token joined by "and" or "or" to a name is a name ("Vigor 286x and 296x", "2x and 3x branches",
+  // "Drupal 10.x and 11x"), unless a comparison after it makes it a ratio.
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    if (t.name || t.ratio) continue;
+    const prev = tokens[i - 1], next = tokens[i + 1];
+    if (prev?.name && LIST_JOIN_RE.test(s.slice(prev.end, t.at))) t.name = true;
+    else if (listPartnerName(s.slice(0, t.at))) t.name = true;
+    else if (next && LIST_JOIN_RE.test(s.slice(t.end, next.at)) && next.name) t.name = true;
   }
-  return out;
+  return tokens.filter((t) => !t.name).map((t) => t.raw);
+}
+
+/** Between two tokens of a list: " and ", " or " (" & " too). */
+const LIST_JOIN_RE = /^\s+(?:and|or|&)\s+$/u;
+/**
+ * The word before " and " or " or " just before a token is a name, so the token is one too: a version with a
+ * wildcard ("Drupal 10.x and 11x", "the 1.x and 2x lines"), a word with a letter and a digit ("Juniper EX4300
+ * and 4600x", "RAX40 and 120x"), or a number after a name word ("Vigor 3910 and 286x"), but never a year or a
+ * bare ratio, which the token list itself reads.
+ */
+function listPartnerName(before: string): boolean {
+  const m = /(?:^|\s)([^\s]+)\s+(?:and|or|&)\s+$/u.exec(before);
+  if (!m) return false;
+  const word = m[1]!;
+  if (/^\d+(?:[.,]\d+)*[xX]$/u.test(word) || DATE_LABEL_RE.test(word)) return false;
+  if (/^\d+(?:\.\d+)*\.[xX*]$/u.test(word)) return true;
+  if (/\p{L}/u.test(word) && /\p{N}/u.test(word) && /^[\p{L}\p{N}._-]+$/u.test(word)) return true;
+  return /^\d+$/u.test(word) && nameBefore(before.slice(0, m.index + m[0].indexOf(word)));
 }
 
 /** A number word from two up: "ten", "twenty-one", "a hundred", "two thousand"; never "one", "once" or "twice". */
