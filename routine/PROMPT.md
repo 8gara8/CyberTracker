@@ -84,6 +84,9 @@ word DONE.
   advisory, on its own domain, or the item cites a reviewed GitHub advisory page
   (`github.com/advisories/GHSA-...`). A CVE record from another assigner, a CERT note or a news report
   does not confirm it: until the vendor does, set `"watch"`.
+- **A patch batch** is dated from the vendor's own advisory for the release: cite it from the pack, with
+  its `published_at`. Without it, a release with no exploited fix needs its CVE ids, from its pack records,
+  in `cve_ids`; a draft with neither fails.
 - **Victims, attribution, dangerous material, quotes and voice** follow `STYLE.md` §8 to §10.
 - **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
   none of its sources: publish withholds any item that repeats it or cites them.

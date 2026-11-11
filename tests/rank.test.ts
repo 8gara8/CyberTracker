@@ -182,10 +182,12 @@ describe("rankCandidates() on the 2026-10-14 fixture morning", () => {
     expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 9, critical: 4, exploited: 1, exploited_cve_ids: ["CVE-2026-96951"] });
     expect(pt.cve_ids).toEqual(["CVE-2026-96951"]);
     expect(pt.score).toBe(RANK_WEIGHTS.base.release_exploited);
-    // pack_ids: the exploited member's CVE List record, then the critical ones by CVSS, never the other four (§0.4 row 146).
+    // pack_ids: the exploited member's CVE List record, then the critical ones by CVSS, then the rest by CVSS, at most 20
+    // (§0.4 row 146 and its review): all nine fixes of this release.
     const byId = new Map(input().pack.records.map((r) => [r.id, r]));
     expect(pt.pack_ids.map((id) => `${byId.get(id)!.source} ${byId.get(id)!.record_id}`).sort()).toEqual(
-      ["CVE-2026-96951", "CVE-2026-70157", "CVE-2026-84015", "CVE-2026-102210", "CVE-2026-102238"].map((id) => `cvelist ${id}`).sort(),
+      ["CVE-2026-96951", "CVE-2026-70157", "CVE-2026-84011", "CVE-2026-84012", "CVE-2026-84015", "CVE-2026-102210", "CVE-2026-102234", "CVE-2026-102238", "CVE-2026-102860"]
+        .map((id) => `cvelist ${id}`).sort(),
     );
     expect(out.kept.some((c) => c.id === "cve-2026-96951")).toBe(true);
     const bundled = out.cut.filter((c) => c.reason === "bundled:rel-microsoft-2026-10");
@@ -338,6 +340,34 @@ describe("rankCandidates() on built cases", () => {
     for (const r of [...exploited, ...critical]) expect(keep.has(r.cve_id)).toBe(true);
     for (const r of [...unscored, ...high]) expect(keep.has(r.cve_id)).toBe(false);
     for (const r of exploited) expect(out.kept.find((c) => c.id === r.cve_id.toLowerCase())?.pack_ids).toHaveLength(1);
+
+    // A news item and a JPCERT note naming high fixes the release does not reference still merge into it, since it matches every member
+    // id, and add only their own ids: its member records stay at RELEASE_PACK_IDS_MAX (review of row 146). Neither names the vendor or
+    // product, so only the CVE id can match.
+    const [newsCve, noteCve] = [high[200]!.cve_id, high[201]!.cve_id];
+    expect(ids.has(newsCve) || ids.has(noteCve)).toBe(false);
+    const news = item(`SAMPLE: ${newsCve} is fixed in this month's update`, { id: "p0901" });
+    const note = notePackRecords("jpcert", [{
+      id: "wr264102", title: `SAMPLE weekly report ${noteCve}`, url: "https://jpcert.or.jp/wr/2026/wr264102.html", text: "SAMPLE",
+      published_at: "2026-10-13T06:00:00Z", cve_ids: [noteCve], alert: false,
+    }], W.window);
+    const packRecords = provisionalRecords([
+      ...kevPackRecords(catalog.vulnerabilities, new Set<string>(), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+      ...note,
+    ]);
+    const noteId = packRecords.find((r) => r.source === "jpcert")!.id;
+    const merged = rankCandidates({ ...base, pack: { items: [news], records: packRecords } });
+    const mpt = merged.kept.find((c) => c.kind === "patch_batch")!;
+    expect(mpt.id).toBe("pt-microsoft-2026-10");
+    expect(merged.cut).toContainEqual(expect.objectContaining({ id: news.id, reason: `merged:${mpt.id}` }));
+    expect(merged.cut).toContainEqual(expect.objectContaining({ id: noteId, reason: `merged:${mpt.id}` }));
+    expect(merged.log).toContainEqual({ code: "MERGED", detail: `${news.id} (bleepingcomputer) merged into ${mpt.id} by CVE id.` });
+    const sourceOf = new Map(packRecords.map((r) => [r.id, r.source]));
+    expect(mpt.pack_ids.filter((id) => sourceOf.get(id) === "cvelist")).toHaveLength(RELEASE_PACK_IDS_MAX);
+    expect(mpt.pack_ids.filter((id) => sourceOf.get(id) !== "cvelist").sort()).toEqual([news.id, noteId].sort());
+    expect(mpt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX + 2);
+    expect(merged.kept.some((c) => c.id !== mpt.id && (c.pack_ids.includes(news.id) || c.pack_ids.includes(noteId)))).toBe(false);
   });
 
   it("past RELEASE_PACK_IDS_MAX exploited fixes the release names the first 20 by CVE id, and the pack keeps every exploited fix's record", () => {
@@ -351,6 +381,44 @@ describe("rankCandidates() on built cases", () => {
     expect(pt.release).toMatchObject({ total: 26, critical: 1, exploited: 25 });
     const keep = recordKeepIds(base);
     for (const r of records) expect(keep.has(r.cve_id)).toBe(true);
+  });
+
+  /** An Adobe fix in the record window, HIGH, citing the month's bulletin as a vendor advisory, as an all-High Adobe month has them. */
+  const ADOBE_BULLETIN = "https://helpx.adobe.com/security/products/acrobat/apsb26-91.html";
+  const adobeFix = (n: number, score: number | null) => rec(`CVE-2026-${610000 + n}`, {
+    assigner: "adobe", affected: [{ vendor: "Adobe", product: "Acrobat Reader" }], cna_severity: "HIGH",
+    cvss: score === null ? null : { score, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" }, published_at: `2026-10-13T17:${String(n % 60).padStart(2, "0")}:00Z`,
+    references: [{ url: ADOBE_BULLETIN, tags: ["vendor-advisory"], from: "cna" }],
+  });
+
+  it("a release with no exploited and no critical fix names its best-scored fixes: 20 of 35, by CVSS, unscored last, then CVE id, with the vendor's advisory (review of row 146)", () => {
+    // 35 HIGH fixes: CVSS 7.0 to 8.6 in steps of 0.1 (some scores shared), three unscored. Before the fill the candidate named no record,
+    // so it carried no advisory URL and no CVE id, and an item citing only the press failed at publish (releaseBlockOf()).
+    const scores = Array.from({ length: 32 }, (_, i) => Math.round((7 + (i % 17) / 10) * 10) / 10);
+    const fixes = [...scores.map((sc, i) => adobeFix(i, sc)), ...[40, 41, 42].map((n) => adobeFix(n, null))];
+    const base = input({ ...empty, records: shuffled(fixes, 7) });
+    const pt = rankCandidates(base).kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.release).toEqual({ release_id: "rel-adobe-2026-10", vendor: "Adobe", total: 35, critical: 0, exploited: 0, exploited_cve_ids: [] });
+    expect(pt.cve_ids).toEqual([]);
+    const order = [...fixes].sort((a, b) => (b.cvss?.score ?? -1) - (a.cvss?.score ?? -1) || compareCveIds(a.cve_id, b.cve_id)).map((r) => r.cve_id);
+    expect(releasePackMembers({ members: shuffled(fixes, 11), exploited: [] })).toEqual(order.slice(0, RELEASE_PACK_IDS_MAX));
+    const byId = new Map(base.pack.records.map((r) => [r.id, r]));
+    expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
+    expect(pt.pack_ids.map((id) => byId.get(id)!.record_id).sort()).toEqual(order.slice(0, RELEASE_PACK_IDS_MAX).sort());
+    expect(pt.advisory_urls).toEqual([ADOBE_BULLETIN]);
+    // The pack keeps those 20 records and no other fix.
+    const keep = recordKeepIds(base);
+    expect(fixes.filter((r) => keep.has(r.cve_id)).map((r) => r.cve_id).sort()).toEqual(order.slice(0, RELEASE_PACK_IDS_MAX).sort());
+    // A release of 8 fixes names all 8, the unscored last; a critical fix still comes before a better-scored high one.
+    const eight = [...fixes.slice(0, 6), fixes[33]!, fixes[34]!];
+    expect(releasePackMembers({ members: eight, exploited: [] })).toEqual(
+      [...eight].sort((a, b) => (b.cvss?.score ?? -1) - (a.cvss?.score ?? -1) || compareCveIds(a.cve_id, b.cve_id)).map((r) => r.cve_id),
+    );
+    const small = rankCandidates(input({ ...empty, records: eight })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(small.pack_ids).toHaveLength(8);
+    expect(small.advisory_urls).toEqual([ADOBE_BULLETIN]);
+    const critLow: CveRecord = { ...fixes[0]!, cve_id: "CVE-2026-619999", cna_severity: "CRITICAL", cvss: { score: 7.0, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } };
+    expect(releasePackMembers({ members: [...eight, critLow], exploited: [eight[1]!.cve_id] }).slice(0, 2)).toEqual([eight[1]!.cve_id, "CVE-2026-619999"]);
   });
 
   it("bundles schneider-electric once its cna is set", () => {

@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dayReads, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
   freshColumn, ghsaPackRecords, hourlyZip, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
-  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
+  pinnedRecordIds, provisionalRecords, RECORDS_MAX, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
   type FeedOutcome, type ItemDraft, type LinkScreen, type PlannedZip, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
@@ -474,8 +474,9 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   }
 
   // Step 10: the record cap, final ids, rewritten pack_ids.
+  // Records the caps keep whole (§4.14 Caps): region-signal records, exchange filings and the dashboard record.
   const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id)));
-  const capR = capRecords(provisional, referenced);
+  const capR = capRecords(provisional, referenced, RECORDS_MAX, pinnedRecordIds(provisional, regions, D));
   if (capR.cut) log(`records: ${capR.cut} over the cap of 400.`);
   const remapped = remapIds(kept, ranked.cut, ranked.log, capR.idMap);
   kept = remapped.kept;
@@ -556,10 +557,11 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     );
     return { feeds: packFeeds(indexFeedsFor(recs), keptBy), injectionFlags };
   };
-  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last.
+  // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last;
+  // nor a pinned record (pinnedRecordIds() on the final records).
   const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
   const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
-    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, recount,
+    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, pinned: pinnedRecordIds(capR.kept, regions, D), recount,
   });
   const sizeCut = built.sizeCut;
   if (sizeCut.items.length || sizeCut.records.length) log(`pack: the size caps cut ${sizeCut.items.length} items and ${sizeCut.records.length} records.`);
@@ -568,7 +570,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     for (const it of sizeCut.items) byFeed.set(it.feed_id, (byFeed.get(it.feed_id) ?? 0) + 1);
     log(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => byCodeUnit(a, b)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${D}.candidates.json).`);
   }
-  if (sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
+  if (sizeCut.over) log("pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records left; written as it is.");
   const pack = built.pack;
   const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
