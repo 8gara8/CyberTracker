@@ -736,6 +736,16 @@ describe("METRICS_ONLY_NUMBERS", () => {
     expect(r[0]!.message).toContain("holds 6,");
   });
 
+  it("reads the Monday week in review's day range, with its weekdays, as one date (review of the seventh pass)", () => {
+    // Neither 2 nor 8 is a metric number, so the range's first day failed the sentence.
+    for (const text of ["SAMPLE. From Monday 2 to Sunday 8 Nov, CISA's KEV catalog grew while the Flood held.",
+      "SAMPLE. Between Monday 2 and Sunday 8 Nov, CISA's KEV catalog grew while the Flood held."]) {
+      const d = mondayDraft();
+      d.week_in_review!.text = text;
+      expect(only(check(d, "monday"), "METRICS_ONLY_NUMBERS"), text).toEqual([]);
+    }
+  });
+
   it("leaves the Lead and the Angle to LEAD_GROUNDED", () => {
     const d = weekdayDraft();
     d.lead[0]!.text = "Ivanti's flaw was one of 3 KEV additions that day.";

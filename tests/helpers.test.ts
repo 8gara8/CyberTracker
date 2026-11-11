@@ -225,7 +225,7 @@ describe("numbersIn", () => {
     ]) expect(read(text), text).toEqual([]);
     expect(read("Nothing published between 13 and 14 Oct cleared the bar; 37% were exploited at disclosure.")).toEqual([["37%", 37, true, false]]);
     expect(read("13 to 14 October's 26 weeks")).toEqual([["26", 26, false, false]]);
-    // Not dates: no month, the days out of order or past 31, a percentage, a decimal, a count, "and" without "between".
+    // Not dates: no month, the days out of order or past 31, a percentage, a decimal, a count.
     const raws = (text: string) => read(text).map((n) => n[0]);
     expect(raws("rose from 12 to 40")).toEqual(["12", "40"]);
     expect(raws("12 to 14 flaws")).toEqual(["12", "14"]);
@@ -236,13 +236,41 @@ describe("numbersIn", () => {
     expect(raws("0 to 3 Nov")).toEqual(["0"]);
     expect(raws("from 12 to 40 Nov")).toEqual(["12"]);
     expect(raws("1.13 to 14 Oct")).toEqual(["1.13"]);
-    expect(raws("11 and 12 Nov")).toEqual(["11"]);
     expect(raws("Oct 14 to 13")).toEqual(["13"]);
     expect(raws("Oct 13 to 32")).toEqual(["32"]);
     expect(raws("Oct 13 to 14%")).toEqual(["14%"]);
     expect(raws("Oct 13 to 14.5")).toEqual(["14.5"]);
     expect(raws("Oct 13 to 14 million")).toEqual(["14 million"]);
-    expect(raws("Oct 13 and 14")).toEqual(["14"]);
+  });
+
+  it("reads the natural forms of a day range as one date: and, or, /, through, weekdays (review of the seventh pass)", () => {
+    // Each failed LEAD_GROUNDED in a zero-item Gap sentence, or METRICS_ONLY_NUMBERS in the Monday week in review, on its first day.
+    for (const text of [
+      "on 11 and 12 Nov", "Nov 11 and 12", "on 11 or 12 Nov", "Nov 11 or 12", "from Tuesday 11 to Wednesday 12 Nov",
+      "between Tuesday 11 and Wednesday 12 Nov", "overnight on 11/12 Nov", "Nov 11/12", "11 / 12 Nov", "11 through 12 Nov",
+      "Nov 11 through 12", "11 thru 12 Nov", "from Friday 7 to Monday 10 Nov", "From Monday 2 to Sunday 8 Nov",
+      "between Monday 2 and Sunday 8 Nov", "Tue 11 to Wed 12 Nov", "Tues. 11 to Weds 12 Nov", "Thursday, 13 to Friday, 14 Nov",
+      "from Friday the 7th to Monday the 10th of November", "TUESDAY 11 to WEDNESDAY 12 NOV", "Nov 11 to Wednesday 12",
+      "13 and 14 Oct", "Oct 13 and 14",
+      // A spaced dash after the month joins the days at the end of a clause.
+      "Oct 13 – 14.", "Oct 13 – 14, the pace", "Oct 13 - 14 2026", "Oct 13 – 14",
+    ]) expect(read(text), text).toEqual([]);
+    expect(read("From Monday 2 to Sunday 8 Nov, KEV grew 15% in 26 weeks.").map((n) => n[0])).toEqual(["15%", "26"]);
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    // Not dates: a count after a spaced dash or with a multiplier, no month, days out of order, a weekday before a count.
+    expect(raws("Patch Tuesday, Oct 2 - 12 critical flaws")).toEqual(["12"]);
+    expect(raws("Oct 2 – 12 critical flaws were fixed")).toEqual(["12"]);
+    expect(raws("Oct 13 to 14 bn records")).toEqual(["14 bn"]);
+    expect(raws("Oct 13 to 14bn")).toEqual(["14bn"]);
+    expect(raws("Oct 13 to 14 m records")).toEqual(["14"]);
+    expect(raws("Oct 13 and 14 million")).toEqual(["14 million"]);
+    expect(raws("11/12")).toEqual(["11", "12"]);
+    expect(raws("3 and 4 flaws")).toEqual(["3", "4"]);
+    expect(raws("between 2 and 30 days")).toEqual(["2", "30"]);
+    expect(raws("Monday 2 flaws")).toEqual(["2"]);
+    expect(raws("Wednesday 12 to 14 flaws")).toEqual(["12", "14"]);
+    expect(raws("12 or 11 Nov")).toEqual(["12"]);
+    expect(raws("from Friday 10 to Monday 7 Nov")).toEqual(["10"]);
   });
 
   it("reads units and multipliers, and skips digits glued to words", () => {

@@ -62,6 +62,21 @@ describe("a Gap sentence that names the day by its dates (review of row 145)", (
       // A day count beside the dates is still a number the Gap does not quote.
       expect(gapLeadIssues(m, "Nothing published from 10 to 11 Nov cleared the bar, 3 days running.")).toHaveLength(1);
     });
+
+    it(`${set.name}: holds no number in the natural forms of a day range either: and, or, /, through, weekdays (review of the seventh pass)`, () => {
+      const m = set.metrics();
+      const quoted = new Set(m.headline.quoted.flatMap((q) => numbersIn(q.display)).map((n) => n.value));
+      for (const day of [2, 3, 7, 10, 11, 12]) expect(quoted.has(day), `${set.name} quotes ${day}`).toBe(false);
+      for (const days of ["on 11 and 12 Nov", "Nov 11 and 12", "on 11 or 12 Nov", "from Tuesday 11 to Wednesday 12 Nov",
+        "between Tuesday 11 and Wednesday 12 Nov", "overnight on 11/12 Nov", "11 through 12 Nov", "from Friday 7 to Monday 10 Nov",
+        "from Sunday 2 to Monday 3 Nov"]) {
+        const text = `Nothing published ${days} cleared the bar for an item.`;
+        expect(gapLeadIssues(m, text), `${set.name} | ${text}`).toEqual([]);
+      }
+      // A spaced dash after the month joins the days at the end of a clause; before a word, it reads a count.
+      expect(gapLeadIssues(m, "Nothing cleared the bar on Nov 11 – 12.")).toEqual([]);
+      expect(gapLeadIssues(m, "On Nov 11 – 12 flaws cleared the bar.")).toHaveLength(1);
+    });
   }
 });
 

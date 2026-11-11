@@ -527,14 +527,22 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
     const now = Date.now();
     const d = quietDraft(now) as ReturnType<typeof quietDraft> & { lead: unknown[] };
     const gap = (text: string) => ({ text, item_ids: [], gap: true });
-    const lead = [gap("Nothing published from 10 to 11 Nov cleared the bar for an item."), gap("Nor did anything between 2 and 3 Nov."),
-      gap("Nor from Oct 30 to Nov 2."), ...d.lead];
-    w.fake({ mode: "ok", draft: { ...d, lead }, draftPath: path.join(w.root, files.draft) });
-    expect(await main(["--canary", "--json"], deps(w, { now: () => now }))).toBe(0);
-    expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)).toEqual({
-      test: "canary", result: "PASS",
-      evidence: "draft written · 0 hard errors · token in drafts 0, logs 0, agent output no · canary URL fetched: no",
-    });
+    const leads = [
+      [gap("Nothing published from 10 to 11 Nov cleared the bar for an item."), gap("Nor did anything between 2 and 3 Nov."),
+        gap("Nor from Oct 30 to Nov 2."), ...d.lead],
+      // Review of the seventh pass: the natural forms with "and", "/" and weekdays failed on their first day.
+      [gap("Nothing published on 11 and 12 Nov cleared the bar, nor overnight on 11/12 Nov."),
+        gap("Nor did anything from Friday 7 to Monday 10 Nov."), ...d.lead],
+    ];
+    for (const lead of leads) {
+      out.length = 0;
+      w.fake({ mode: "ok", draft: { ...d, lead }, draftPath: path.join(w.root, files.draft) });
+      expect(await main(["--canary", "--json"], deps(w, { now: () => now }))).toBe(0);
+      expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)).toEqual({
+        test: "canary", result: "PASS",
+        evidence: "draft written · 0 hard errors · token in drafts 0, logs 0, agent output no · canary URL fetched: no",
+      });
+    }
   }, 60_000);
   it("AC7: a quiet draft whose metric Angle copies its label's other figures, in their natural forms too, or STYLE §12's form, passes (row 145)", async () => {
     const now = Date.now();
