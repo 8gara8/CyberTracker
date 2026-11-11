@@ -298,7 +298,9 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(b).toContain("The Angle holds one number, so it names its window and date, not its denominator (`STYLE.md` §12)");
     expect(flatPrompt).toContain('- [ ] A Lead sentence that cites no item has `"gap": true` and quotes only Gap headline numbers.');
     // Review of row 145: a label figure counts the second time, "1.9x" is no number, and an hour count is no Gap number.
-    expect(PROMPT).toContain(`- [ ] Angle label figures appear once; ratios say "times", not "x"; Gap sentences name dates, not hours.\n`);
+    // Review of the sixth pass: the label figures are optional, at most once, and only a Gap sentence that names the day uses dates.
+    expect(flatPrompt).toContain('- [ ] Angle label figures at most once; ratios say "times", not "x"; a Gap sentence that names the day uses dates, not hours. - [ ] ');
+    expect(flatPrompt).not.toContain("label figures appear once");
   });
 
   it("PR11: STYLE.md §12 lets a metric Angle repeat its label's figures, and names the window and date, not the count", () => {
@@ -316,10 +318,12 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(s6).toContain("The Angle holds exactly one number, so it names its window and date instead of a denominator");
     expect(s6).toContain("A Lead sentence that cites no item is a Gap sentence: `gap: true` with `item_ids` empty, quoting only the Gap headline's numbers, or none.");
     expect(s6).toContain("On a day with no items, every Lead sentence is one.");
-    expect(s6).toContain('A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours ("the 24 hours to 04:30"), which is not a Gap number.');
+    expect(s6).toContain('When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours ("the 24 hours to 04:30"), which is not a Gap number.');
     expect(s6).toContain('A ratio is written as the Gap writes it, "1.9 times", never "1.9x".');
     expect(styleSection(2)).toContain("a day with nothing that clears a bar has no items at all, and a Lead of Gap sentences only (§6)");
-    expect(styleSection(2)).toContain('which name the day by its dates ("13 to 14 Oct"), never as a length of hours.');
+    expect(styleSection(2)).toContain('Gap sentences only (§6); when a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.');
+    // Said only of a Gap sentence that names the day, never as a rule for every Gap sentence (review of the sixth pass).
+    expect(flatStyle).not.toMatch(/A Gap sentence names the day|which name the day/);
     // §6 and §12 give the Angle's example the same date.
     expect(s6).toContain('("37% in the 26 weeks to 6 Nov", §12)');
     expect(flatStyle).not.toContain("9 Nov");
@@ -331,7 +335,7 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(schema.properties.angle.properties.text.description).toContain("are not counted the first time each is written");
     expect(schema.properties.angle.properties.text.description).toContain('Write a ratio as the Gap does, "1.9 times", never "1.9x"');
     expect(schema.properties.lead.items.properties.gap.description).toContain("or cites no item");
-    expect(schema.properties.lead.items.properties.gap.description).toContain('name the day by its dates ("13 to 14 Oct"), never as a length of hours');
+    expect(schema.properties.lead.items.properties.gap.description).toContain('so when it names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours');
     expect(schema.properties.lead.items.properties.item_ids.description).toContain("as every sentence is on a day with no items");
   });
 });

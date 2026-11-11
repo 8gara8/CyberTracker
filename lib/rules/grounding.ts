@@ -179,7 +179,7 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 
 // ── LEAD_GROUNDED ────────────────────────────────────────────────────────────────────────────────
 
-const GAP_DAY_HINT = ' A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours.';
+const GAP_DAY_HINT = ' When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.';
 
 /** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
 function hoursLength(text: string, n: NumberToken): boolean {

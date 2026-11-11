@@ -494,7 +494,7 @@ describe("LEAD_GROUNDED", () => {
   });
 
   it("tells a Gap sentence that names the day as a length of hours to name it by its dates (review of row 145)", () => {
-    const DAY = ' A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours.';
+    const DAY = ' When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.';
     for (const text of ["Nothing in the 24 hours to 04:30 Taipei cleared the bar for an item.", "Nothing in the 24-hour window cleared the bar.",
       "Nothing in the last 24 hrs cleared the bar."]) {
       const r = lead(text, [], true);

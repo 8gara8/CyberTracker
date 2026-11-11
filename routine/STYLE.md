@@ -52,8 +52,8 @@ An item is one news event, of one of nine kinds. Each kind has a bar it must cle
 
 **How many.** Typically 5 to 8 items, never more than 10. A quiet day is never padded: three strong
 items beat seven thin ones, and a day with nothing that clears a bar has no items at all, and a Lead of
-Gap sentences only (§6), which name the day by its dates ("13 to 14 Oct"), never as a length of hours.
-Fewer items are fine; filler is not.
+Gap sentences only (§6); when a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"),
+never as a length of hours. Fewer items are fine; filler is not.
 
 **Item ids.** A flaw item with a CVE uses its first CVE id in lower case. Other items use their kind's
 prefix and a short slug of lower-case words. An incident slug names the sector, the country and the
@@ -159,10 +159,10 @@ database. The written brief never computes a number of its own.
 and only as displayed. A Lead sentence that quotes Gap numbers is flagged as such and may use only the
 numbers in the Gap headline. A Lead sentence that cites no item is a Gap sentence: `gap: true` with
 `item_ids` empty, quoting only the Gap headline's numbers, or none. On a day with no items, every Lead
-sentence is one. A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours
-("the 24 hours to 04:30"), which is not a Gap number. The headline sentence itself is never rewritten.
-"Faster" and "slower" appear only in the script's own sentence, which says them only when the data
-clears its test; there is no figure from fewer than 30 cases.
+sentence is one. When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as
+a length of hours ("the 24 hours to 04:30"), which is not a Gap number. The headline sentence itself is
+never rewritten. "Faster" and "slower" appear only in the script's own sentence, which says them only
+when the data clears its test; there is no figure from fewer than 30 cases.
 
 **Every number names its denominator and date.** "37% of the 157 flaws CISA listed in the 26 weeks to 6
 Nov", not "37% of flaws". The Angle holds exactly one number, so it names its window and date instead

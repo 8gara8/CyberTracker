@@ -31,7 +31,7 @@
           },
           "gap": {
             "type": "boolean",
-            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so name the day by its dates (\"13 to 14 Oct\"), never as a length of hours"
+            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so when it names the day, it names it by its dates (\"13 to 14 Oct\"), never as a length of hours"
           }
         },
         "required": ["text","item_ids","gap"],
