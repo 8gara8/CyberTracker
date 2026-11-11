@@ -307,7 +307,9 @@ function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
     const nums = angleNumbers(angle, metrics);
     const figures = angleFigures(angle, metrics);
     const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${
-      !figures.length ? "" : metrics ? `, nor the figures the metric's label prints: ${figureList(figures)}` : `, nor the Gap's window lengths: ${figureList(figures)}`}.`;
+      !figures.length ? "."
+        : metrics ? `, nor the figures the metric's label prints (${figureList(figures)}) the first time each is written. Write each label figure once: written again, it counts.`
+          : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written. Write each window length once: written again, it counts.`}`;
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
         notCounted));

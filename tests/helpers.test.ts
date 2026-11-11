@@ -129,7 +129,24 @@ describe("labelFigures and numbersBesideFigures (row 145)", () => {
     expect(raw("The 80% interval of the 26-week share starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
     expect(raw("The 80 per cent interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
     expect(raw("CISA listed 1 in the past 30 days.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1"]);
-    expect(raw("55% were listed within 7 days, a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+    expect(raw("55% were listed within a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+  });
+  it("leaves out each figure only as many times as it is given, the first ones written, and counts any later one", () => {
+    // A label prints each figure once, so a second "7 days" is a number of its own (review of row 145).
+    const P7 = "share listed within 7 days, 26 weeks";
+    expect(raw("55% were listed within 7 days, a 7-day window.", P7)).toEqual(["55%", "7"]);
+    expect(raw("In the 26 weeks to 12 Oct, 55% were listed within 7 days, 7 days sooner than in 2023–24.", P7)).toEqual(["55%", "7"]);
+    expect(raw("37% in 26 weeks, and 26 weeks more.", W26)).toEqual(["37%", "26"]);
+    expect(raw("39% were listed 2 to 30 days after, and fixes took 2 to 30 days.", "n-day race (listed 2 to 30 days after), 26 weeks"))
+      .toEqual(["39%", "2", "30"]);
+    expect(raw("An 80% interval from 32%, and 80% intervals are wide.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%", "80%"]);
+    expect(raw("22 flaws more than 365 days old, some unpatched for 365 days.", "old flaws newly listed (more than 365 days old), 26 weeks"))
+      .toEqual(["22", "365"]);
+    // Text order: the first one written is the label's, whatever comes between.
+    expect(raw("Within 7 days: 55% were listed within 7 days.", P7)).toEqual(["55%", "7"]);
+    // A figure given twice is left out twice.
+    const twice = [...labelFigures(P7), ...labelFigures(P7)];
+    expect(numbersBesideFigures("55% within 7 days, 7 days sooner, in 26 weeks, 26 weeks on.", twice).map((n) => n.raw)).toEqual(["55%"]);
   });
   it("counts the figure when its unit runs on into old or long, or it is part of another number or range", () => {
     expect(raw("37% of 26-week-old flaws.", W26)).toEqual(["37%", "26"]);

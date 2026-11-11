@@ -261,15 +261,26 @@ function figureRe(f: LabelFigure): RegExp {
 /**
  * numbersIn() of `text` without the given label figures where they are written as figures (§4.12, §0.4
  * row 145): "26 weeks", "26-week", "26–week", "26 wks", "26 Weeks"; "2 to 30 days", "2-30 days",
- * "2–30 days"; "80% interval". A figure followed by "long" ("26 weeks long"), or by "old" ("26-week-old
- * flaws") unless its label writes it as an age ("more than 365 days old"), still counts, as does any other
- * number, and any figure not given. A metric Angle reads its text this
- * way with the figures of its path's quotable labels (lib/rules/grounding.ts angleNumbers()).
+ * "2–30 days"; "80% interval". Each entry of `figures` leaves out one written occurrence, the first in
+ * text order, so a figure given once and written twice counts the second time ("within 7 days, 7 days
+ * sooner"). A figure followed by "long" ("26 weeks long"), or by "old" ("26-week-old flaws") unless its
+ * label writes it as an age ("more than 365 days old"), still counts, as does any other number, and any
+ * figure not given. A metric Angle reads its text this way with the figures of its path's quotable labels
+ * (lib/rules/grounding.ts angleNumbers()).
  */
 export function numbersBesideFigures(text: string, figures: readonly LabelFigure[]): NumberToken[] {
   let s = text.normalize("NFKC");
+  const times = new Map<string, { f: LabelFigure; n: number }>();
+  for (const f of figures) {
+    const t = times.get(f.text);
+    if (t) t.n += 1;
+    else times.set(f.text, { f, n: 1 });
+  }
   // Ranges first, so a range's own end is never read as a figure on its own.
-  for (const f of [...figures].sort((x, y) => y.values.length - x.values.length)) s = s.replace(figureRe(f), " ");
+  for (const { f, n } of [...times.values()].sort((x, y) => y.f.values.length - x.f.values.length)) {
+    let left = n;
+    s = s.replace(figureRe(f), (m) => (left-- > 0 ? " " : m));
+  }
   return numbersIn(s);
 }
 
