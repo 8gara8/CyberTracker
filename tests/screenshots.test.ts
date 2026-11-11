@@ -34,6 +34,7 @@ interface ScreenshotsModule {
   DEFAULT_WAIT_SECONDS: number;
   USAGE: string;
   parseArgs(argv: readonly string[]): Parsed;
+  setupHint(pkg?: string): string;
 }
 
 let mod: ScreenshotsModule;
@@ -176,10 +177,14 @@ describe("arguments", () => {
 
 describe("setup messages", () => {
   it("no tools folder: exit 1 naming playwright-core and the setup step", async () => {
-    const r = await cli(["--base", base, "--out", path.join(TMP, "none")]);
+    // A folder that never exists, never the default: on Kobol the §9.9 item 6 install puts playwright-core there.
+    const dir = path.join(TMP, "no-tools");
+    const r = await cli(["--base", base, "--out", path.join(TMP, "none"), "--playwright", path.join(dir, "package.json")]);
     expect(r.code).toBe(1);
-    expect(r.stderr).toContain("playwright-core is not installed: there is no /Users/kobol/.cybertracker/tools.");
-    expect(r.stderr).toContain("One-time setup, SPEC §9.9 item 6: /opt/homebrew/bin/npm install --prefix /Users/kobol/.cybertracker/tools playwright-core@<version>");
+    expect(r.stderr).toContain(`playwright-core is not installed: there is no ${dir}.`);
+    expect(r.stderr).toContain(`One-time setup, SPEC §9.9 item 6: /opt/homebrew/bin/npm install --prefix ${dir} playwright-core@<version>`);
+    // The default path's wording, checked without touching the machine's real tools folder.
+    expect(mod.setupHint()).toContain("One-time setup, SPEC §9.9 item 6: /opt/homebrew/bin/npm install --prefix /Users/kobol/.cybertracker/tools playwright-core@<version>");
     expect(fs.existsSync(path.join(TMP, "none"))).toBe(false);
   });
 
