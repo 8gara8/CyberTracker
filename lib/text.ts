@@ -144,10 +144,13 @@ const isDayRange = (a: string, b: string): boolean => {
   return x >= 1 && x < y && y <= 31;
 };
 
+/** GHSA ids, whose alphabet holds digits and x ("GHSA-683x-4444-jxh8"): never numbers, never ratios. */
+const GHSA_RE = /\bGHSA(?:-[0-9a-z]{4}){3}\b/giu;
+
 /** What numbersIn() removes before reading digits, in order (§4.12): a pattern, or a function that removes what it reads. */
 const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
   /\bCVE-\d{4}-\d{4,}\b/giu,
-  /\bGHSA(?:-[0-9a-z]{4}){3}\b/giu,
+  GHSA_RE,
   /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?(?![\d])/giu, // ISO dates and timestamps
   /(?<![\p{L}\p{N}])[vV]\d+(?:\.\d+)*(?![\p{L}\p{N}])/gu, // v-prefixed versions
   /(?<![\p{L}\p{N}.])\d+(?:\.\d+){2,}[\p{L}\p{N}+-]*/gu, // versions with two or more dots (and dotted quads)
@@ -231,16 +234,112 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
   return out;
 }
 
+/** Words that make a ratio of the number before them: "10x faster", "five times more". */
+const COMPARATIVES = "more|less|fewer|higher|lower|faster|slower|larger|bigger|greater|smaller|quicker|longer|shorter|wider";
+
 /**
  * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
- * no letter, digit, "." or "," before it and no letter or digit after: a ratio numbersIn() does not read,
- * since it reads no digit run glued to a letter. "0x1F", "4x4", "x86" and "Win10x64" are not ratios.
+ * no letter, digit, "_", ".", ",", hyphen, en dash, "/", "#" or "%" before it ("DIR-823X", "370/XP/38x") and
+ * after it only whitespace, sentence punctuation and then whitespace, the end, or a hyphen and a
+ * comparative ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as a name.
  */
-const GLUED_RATIO_RE = /(?<![\p{L}\p{N}_.,])\d+(?:[.,]\d+)*[xX](?![\p{L}\p{N}])/gu;
+const GLUED_RATIO_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}_.,/#%${DASHES}])(\\d+(?:[.,]\\d+)*)([xX])` +
+  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
+/** A sentence's first word may be one of these before a ratio ("Nearly 10x more"); any other capitalised word is a name. */
+const RATIO_LEAD_INS: ReadonlySet<string> = new Set(["a", "about", "almost", "also", "an", "and", "approximately", "around", "at",
+  "but", "by", "close", "down", "even", "for", "from", "in", "just", "less", "more", "nearly", "now", "of", "on", "only", "or",
+  "over", "roughly", "so", "some", "still", "than", "the", "then", "to", "under", "up", "with"]);
+/** A version range after the token: "4.3x before 5.1". */
+const VERSION_AFTER_RE = /^\s+(?:before|through|until|prior\s+to)\s+v?\d+\.\d/u;
 
-/** The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145). */
+/**
+ * The word right before a glued token names a product, standard or release, so the token is a model
+ * number, not a ratio: it holds a digit ("Ryzen 9 7950X", "4K 12X") or a capital letter ("Catalyst 9300X",
+ * "Windows 9x", "iPhone 16x", "HTTP 30x"), unless it ends a clause ("October,"), is a possessive ("KEV's")
+ * or opens a sentence as one of RATIO_LEAD_INS ("Nearly 10x more").
+ */
+function nameBefore(before: string): boolean {
+  const m = /(\S+)\s+$/u.exec(before);
+  if (!m) return false;
+  const opener = /^[(\["'“‘]+/u.exec(m[1]!);
+  const word = opener ? m[1]!.slice(opener[0].length) : m[1]!;
+  if (!/[\p{L}\p{N}]$/u.test(word) || /['’]s$/u.test(word)) return false;
+  if (/\p{N}/u.test(word)) return true;
+  if (!/\p{Lu}/u.test(word)) return false;
+  const opensSentence = opener !== null || /(?:^|[.!?:;]["'”’)\]]*)\s*$/u.test(before.slice(0, m.index));
+  return !opensSentence || !RATIO_LEAD_INS.has(word.toLowerCase());
+}
+
+/**
+ * The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 rows 145 and 147):
+ * "9.9x the 2023–24 pace", "10x faster", "rose 5x.", "a 3x jump". Not a name: a GHSA id, a token glued to
+ * a hyphen, "/" or a letter ("DIR-823X", "3x-ui", "0x1F", "x86"), a version or standard ("6.0.0x",
+ * "802.1X", "4.3x before 5.1"), a hex prefix ("0x"), three or more digits before a capital X ("9300X",
+ * "7950X"), or a token after a name word (nameBefore(): "Windows 9x", "SAP NetWeaver 7.5x", "HTTP 30x")
+ * or before a capitalised one ("10x Genomics").
+ */
 export function gluedRatios(text: string): string[] {
-  return [...text.normalize("NFKC").matchAll(GLUED_RATIO_RE)].map((m) => m[0]);
+  const s = text.normalize("NFKC").replace(GHSA_RE, (m) => " ".repeat(m.length));
+  const out: string[] = [];
+  for (const m of s.matchAll(GLUED_RATIO_RE)) {
+    const [raw, num, x] = m as unknown as [string, string, string];
+    if ((num.match(/\./gu)?.length ?? 0) > 1 || /^\d{3,}\./u.test(num)) continue; // "6.0.0x", "802.1X"
+    if (/^0+$/u.test(num) || (x === "X" && /^\d{3,}$/u.test(num))) continue; // "0x", "9300X"
+    const after = s.slice(m.index + raw.length);
+    if (nameBefore(s.slice(0, m.index)) || /^\s+\p{Lu}/u.test(after) || VERSION_AFTER_RE.test(after)) continue;
+    out.push(raw);
+  }
+  return out;
+}
+
+/** A number word from two up: "ten", "twenty-one", "a hundred", "two thousand"; never "one", "once" or "twice". */
+const NUMBER_WORD = (() => {
+  const units = "one|two|three|four|five|six|seven|eight|nine";
+  const teens = "ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen";
+  const tens = "twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety";
+  const big = "hundred|thousand|million";
+  return `(?:(?:a|${units}|${teens}|${tens})\\s+(?:${big})|(?:${big})|(?:${tens})(?:[\\s${DASHES}](?:${units}))?|${teens}|two|three|four|five|six|seven|eight|nine)`;
+})();
+/**
+ * What follows "N times" when it is a ratio: a comparative, "as" (not "as of", "as well", "as part"),
+ * "the" (not "the following", "the same", "the past" and other spans of time), "over" (not a span of time
+ * or a number), "than", "that of", "those of", "what", "its" or "their". "Three times in October" and
+ * "updated three times this year" are counts of occurrences.
+ */
+const RATIO_FOLLOWER =
+  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their` +
+  "|as(?!\\s+(?:of|well|part|a|an|in|on|at|for)(?![\\p{L}]))" +
+  "|the(?!\\s+(?:following|same|past|last|next|previous|first|second|third|other|whole|entire|course|day|days|week|weeks|weekend" +
+  "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}]))" +
+  "|over(?!\\s+(?:the\\s+|a\\s+|an\\s+)?(?:past|last|next|previous|first|same|whole|entire|course|weekend|period|days?|weeks?" +
+  "|months?|years?|quarters?|nights?|summer|winter|spring|autumn|holidays?)(?![\\p{L}]))(?!\\s+\\d))(?![\\p{L}])";
+/** "ten times the 2023–24 pace", "twenty-one times more": a ratio in words. */
+const WORD_TIMES_RE = new RegExp(`(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}\\s+times(?=\\s+${RATIO_FOLLOWER})`, "giu");
+/** "tenfold", "ten-fold", "a hundredfold", but not "twofold: ..." or "a threefold approach", which name parts, not a ratio. */
+const WORD_FOLD_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}[${DASHES}]?fold(?![\\p{L}\\p{N}])(?!\\s*:)` +
+  "(?!\\s+(?:aim|answer|approach|benefit|challenge|concern|effect|goal|impact|issue|mission|nature|objective|plan|problem|process" +
+  "|purpose|question|reason|response|risk|role|strategy|task|test|threat)s?(?![\\p{L}]))", "giu");
+/** "is twofold", "are threefold": a thing of two or three parts. */
+const PARTS_FOLD_RE = /(?:^|[^\p{L}])(?:is|are|was|were|be|been)\s+$/iu;
+
+/**
+ * The ratios a text writes in words, as written, in order (§4.12 NUMBER_FORM, §0.4 row 147): a number word
+ * from two up, or a compound ("twenty-one", "a hundred"), then "times" and a comparison (RATIO_FOLLOWER:
+ * "nearly ten times the 2023–24 pace", "five times more"), or "-fold" in one word or hyphenated ("tenfold",
+ * "ten-fold"). Not "once", "twice" (the Gap headline prints "more than twice"), a count of occurrences
+ * ("three times in October"), or "twofold" or "threefold" for a thing of two or three parts.
+ */
+export function wordRatios(text: string): string[] {
+  const s = text.normalize("NFKC");
+  const out: { at: number; raw: string }[] = [];
+  for (const m of s.matchAll(WORD_TIMES_RE)) out.push({ at: m.index, raw: m[0] });
+  for (const m of s.matchAll(WORD_FOLD_RE)) {
+    if (/^(?:two|three)/iu.test(m[0]) && PARTS_FOLD_RE.test(s.slice(0, m.index))) continue;
+    out.push({ at: m.index, raw: m[0] });
+  }
+  return out.sort((a, b) => a.at - b.at).map((x) => x.raw);
 }
 
 // ── Label figures (§4.12, §0.4 row 145) ──────────────────────────────────────────────────────────

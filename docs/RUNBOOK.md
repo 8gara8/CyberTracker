@@ -193,9 +193,12 @@ release's pack records carry the vendor's own pages as advisory URLs, and its ca
 exploited fix's first. The validator catches this before publish, so "Not composed" for a release block
 (`E_PUBLISH`) should no longer occur.
 
-A `NUMBER_FORM` error is a ratio written glued to x ("9.9x"), which the validator cannot read as a
-number and so cannot check: write it as the Gap does, "9.9 times", and check the figure against its
-source or `metrics.quotable`, since a wrong one is then caught.
+A `NUMBER_FORM` error is a ratio written glued to x ("9.9x") or in words ("nearly ten times the
+pace", "tenfold"), which the validator cannot read as a number and so cannot check: write it in digits
+as the Gap does, "N times", with N exactly as `metrics.quotable` or the cited source gives it, since a
+wrong one is then caught. A product, standard or id name that ends in x ("D-Link DIR-823X", "802.1X",
+"Catalyst 9300X", "3x-ui") is not read as a ratio; if one still fails, keep the name as the vendor
+writes it and note the text in the morning's report.
 
 ## The Claude CLI and its token
 

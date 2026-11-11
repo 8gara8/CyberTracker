@@ -2,11 +2,11 @@
 // come from numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers()
 // (the Gap panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a
 // source's seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a
-// percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x").
+// percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x", "ten times the pace").
 
 import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
+import { gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordRatios, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -424,17 +424,27 @@ const metricsOnlyNumbers = defineRule({
 
 // ── NUMBER_FORM ──────────────────────────────────────────────────────────────────────────────────
 
+/** The fix for a ratio NUMBER_FORM finds: the number as its source gives it, never the miscopied one. */
+const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives it';
+
 /**
- * NUMBER_FORM (draft, §0.4 row 145): a prose field writes a ratio glued to x ("9.9x"), which numbersIn() does
- * not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong one through.
- * Quoted fields and titles, the sources' own words, are not read. One error per ratio as written, per field.
+ * NUMBER_FORM (draft, §0.4 rows 145 and 147): a prose field writes a ratio glued to x ("9.9x",
+ * gluedRatios()) or in words ("nearly ten times the 2023–24 pace", "tenfold", wordRatios()), which
+ * numbersIn() does not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong
+ * one through. Quoted fields and titles, the sources' own words, are not read. One error per ratio as
+ * written, per field. The hint never proposes the number as written, which may be the miscopied one.
  */
 const numberForm = defineRule({
   code: "NUMBER_FORM",
   scope: "draft",
-  check: ({ draft }) => proseFields(draft).flatMap((f) => [...new Set(gluedRatios(f.text))].map((g) =>
-    error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
-      `Write a ratio as the Gap does, "${g.slice(0, -1)} times", never "${g}", even where a source writes it that way.`))),
+  check: ({ draft }) => proseFields(draft).flatMap((f) => [
+    ...[...new Set(gluedRatios(f.text))].map((g) =>
+      error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
+        `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way.`)),
+    ...[...new Set(wordRatios(f.text))].map((w) =>
+      error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${w}" in words, which the validator does not read as a number, so it cannot check it.`,
+        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.`)),
+  ]),
 });
 
 export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers, numberForm];
