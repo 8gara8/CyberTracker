@@ -1,11 +1,13 @@
 // Small helpers the pages share for turning content into lookups (SPEC §6 "Content loading"): the
-// siblings' indexBy() and neighbours(), plus the item pages, an item's history and its corrections.
+// siblings' indexBy() and neighbours(), plus the item pages, an item's history, its corrections and the items
+// a withhold binds.
 
 import type { Content } from "./content";
 import type { Source } from "./schema/common";
 import type { Item } from "./schema/item";
 import type { Correction } from "./schema/misc";
 import { normalizeUrl } from "./urls";
+import { bindingWithholds, withheldRefs } from "./withhold-mask";
 
 /** id → record. */
 export function indexBy<T extends { id: string }>(items: readonly T[]): Record<string, T> {
@@ -80,4 +82,21 @@ export function correctionsFor(content: Pick<Content, "briefs" | "corrections">,
   return content.corrections.corrections
     .filter((c) => c.item_id === itemId && (c.edition_date === editionDate || c.id === withheldBy))
     .sort(byDateThenId);
+}
+
+/**
+ * The item ids a binding withhold covers (§4.10): each binding withhold's item (bindingWithholds() of
+ * corrections.json, as the validator reads it) and every loaded copy whose `withheld` names one (a copy
+ * masked by URL under another id). While an id is here the site prints its corrections other than
+ * name_removed by type word and date only (heldCorrection()); once the dispute is rejected or withdrawn
+ * and nothing binds, they print in full again, so a restoring `update` shows.
+ */
+export function heldItemIds(content: Pick<Content, "briefs" | "corrections">): Set<string> {
+  const refs = withheldRefs(bindingWithholds(content.corrections), content.briefs);
+  return new Set([...refs.keys()].map((ref) => ref.slice(11)));
+}
+
+/** True when a withhold binds the correction's item and it is not a name_removed line: only its type word and date show. */
+export function heldCorrection(c: Pick<Correction, "type" | "item_id">, held: ReadonlySet<string>): boolean {
+  return c.type !== "name_removed" && held.has(c.item_id);
 }

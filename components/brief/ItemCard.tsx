@@ -2,7 +2,9 @@
 // (cardKicker(): pips, AIChip, region codes, vendor as text); "Impact:" for incidents; the h3 headline; the
 // summary with SourceRefs; "Why it matters →"; releaseLine() or cveTimeline(); the chips; ANTHROPIC_LINE; then
 // the footer: "sources [1][3]", a "details" <details> holding ItemDetails, "Timeline →" when the item has a page,
-// "Report an error". A withheld item (§4.10) renders as stored and carries no `data-words` (§0.4 row 126).
+// "Report an error". A withheld item (§4.10) renders as stored and carries no `data-words` (§0.4 row 126), with
+// no "Impact:" line and no details: the rewrite keeps fields such as the impact, quotes and claimed_by, so its
+// card shows only what the item page's withheld form shows (§6).
 import type { Edition, Source } from "@/lib/schema/common";
 import type { Item } from "@/lib/schema/item";
 import type { Correction } from "@/lib/schema/misc";
@@ -23,17 +25,19 @@ export interface ItemCardProps {
   sourcesById: Record<string, Source>;
   /** correctionsFor(content, item.id, editionDate). */
   corrections: Correction[];
+  /** heldItemIds(content): the items a withhold binds (CorrectionBanner). */
+  held: ReadonlySet<string>;
   /** True when the item has an /items/<id> page. */
   hasPage: boolean;
 }
 
-export function ItemCard({ item, editionDate, edition, index, sourcesById, corrections, hasPage }: ItemCardProps) {
+export function ItemCard({ item, editionDate, edition, index, sourcesById, corrections, held, hasPage }: ItemCardProps) {
   const counted = !isWithheld(item);
   return (
     <article id={itemAnchor(item.id)} className="border-t border-line pt-4 pb-5 first:border-t-0 first:pt-0">
-      <CorrectionBanner corrections={corrections} />
+      <CorrectionBanner corrections={corrections} held={held} />
       <Kicker item={item} edition={edition} counted={counted} />
-      <ImpactLine item={item} counted={counted} />
+      {counted ? <ImpactLine item={item} counted={counted} /> : null}
       <h3 className="display mt-1.5 text-[22px] leading-[1.2] text-fg [text-wrap:balance] md:text-[24px]">
         <Text text={item.headline} counted={counted} />
       </h3>
@@ -42,15 +46,19 @@ export function ItemCard({ item, editionDate, edition, index, sourcesById, corre
         {item.source_ids.length ? (
           <span>sources <SourceRefs ids={item.source_ids} index={index} /></span>
         ) : null}
-        <span aria-hidden="true">·</span>
-        <details className="group open:basis-full">
-          <summary className="inline-flex min-h-[24px] cursor-pointer items-center underline decoration-line underline-offset-2" aria-label={`Details: ${item.headline}`}>
-            details
-          </summary>
-          <div className="normal-case tracking-normal font-sans">
-            <ItemDetails item={item} editionDate={editionDate} index={index} sourcesById={sourcesById} />
-          </div>
-        </details>
+        {counted ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <details className="group open:basis-full">
+              <summary className="inline-flex min-h-[24px] cursor-pointer items-center underline decoration-line underline-offset-2" aria-label={`Details: ${item.headline}`}>
+                details
+              </summary>
+              <div className="normal-case tracking-normal font-sans">
+                <ItemDetails item={item} editionDate={editionDate} index={index} sourcesById={sourcesById} />
+              </div>
+            </details>
+          </>
+        ) : null}
         <CardLinks item={item} editionDate={editionDate} hasPage={hasPage} />
       </div>
     </article>

@@ -11,6 +11,7 @@
 // The 9px-at-375px check of the charts' 11-unit axis text is a screenshot item (§10 P4), not checked here.
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { load, type CheerioAPI } from "cheerio";
 import type { ReactElement, ReactNode } from "react";
@@ -65,13 +66,15 @@ import type { Annotation } from "@/lib/schema/config";
 import { Metrics } from "@/lib/schema/metrics";
 import type { Correction } from "@/lib/schema/misc";
 import { SIBLINGS, issueFormUrl, siteUrl } from "@/lib/site";
-import { itemPageIds } from "@/lib/site-data";
+import { correctionsFor, itemPageIds } from "@/lib/site-data";
 import { countWords } from "@/lib/text";
 import {
   ABOUT_LINE, AI_CREDIT_CAPTION, ANTHROPIC_LINE, BRIEF_END, EDITION_INFO, FIX_SIDE_CAPTION, KIND_INFO, NONE_FOUND, REGION_CHANGE,
   REGION_LEVEL_INFO, REGION_LEVELS, SCOREBOARD_NO_ENTRY, SEVERITIES, SEVERITY_INFO, WINDOW_LABEL, WITHHELD_HEADLINE, WITHHELD_TEXT,
 } from "@/lib/vocab";
+import { rewriteItem } from "@/lib/withhold-mask";
 import { editionDraft } from "@/fixtures/src/drafts";
+import { fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR } from "@/fixtures/src/site";
 import { REPO_ROOT } from "@/fixtures/src/world";
 
@@ -238,6 +241,29 @@ function sampleCopy(): Content {
 }
 
 const briefOf = (c: Pick<Content, "briefs">, date: string) => c.briefs.find((b) => b.date === date)!;
+
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "ct-site-"));
+afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }));
+let folders = 0;
+
+/**
+ * A copy of the sample folder outside fixtures/, changed by `change` (edit() rewrites one JSON file in place),
+ * loaded once with the sample config and the log silenced, so the routes' loadContent() finds it cached; then
+ * CT_CONTENT_DIR names it. The routes' own tests set CT_CONTENT_DIR again in their beforeAll.
+ */
+function sampleFolder(change: (edit: <T>(file: string, fn: (v: T) => void) => void, dir: string) => void): string {
+  const dir = path.join(TMP, `c${(folders += 1)}`);
+  fs.cpSync(SITE, dir, { recursive: true });
+  change((file, fn) => {
+    const p = path.join(dir, file);
+    const v = JSON.parse(fs.readFileSync(p, "utf8"));
+    fn(v);
+    fs.writeFileSync(p, `${JSON.stringify(v, null, 2)}\n`);
+  }, dir);
+  loadContent(dir, { config: fixtureConfig(), log: () => {} });
+  process.env.CT_CONTENT_DIR = dir;
+  return dir;
+}
 
 // ── Sample ────────────────────────────────────────────────────────────────────────────────────────
 
@@ -542,6 +568,78 @@ describe("Withholding", () => {
       const card = $(`#${WITHHELD_ID}`);
       expect(card.find("[data-words]").length).toBe(0);
       expect(card.find('[role="note"]').text()).toContain("NAME REMOVED 13 Oct 2026 · while a dispute about a named party is reviewed.");
+    });
+  });
+
+  describe("its corrections, sources and details", () => {
+    const NAME = "Mercy General Health System";
+    /** A correction to the withheld item written before (or after) the withhold, naming the disputed party. */
+    const named = (over: Partial<Correction> = {}): Correction => ({
+      id: "C-0003", date: "2026-10-12", item_id: WITHHELD_ID, edition_date: MONDAY, type: "correction", field: "incident.victim",
+      before: "a US hospital operator", after: NAME, reason: `SAMPLE. ${NAME}'s own 8-K gives its full name.`,
+      source_url: "https://www.sec.gov/ct-sample/mercy-general-8-k", trigger: "editor", dispute_id: null, ...over,
+    });
+    /** A sample copy with `extra` added to corrections.json and listed by the 13 Oct brief. */
+    const withCorrections = (...extra: Correction[]): Content => {
+      const c = sampleCopy();
+      c.corrections.corrections.push(...extra);
+      briefOf(c, PARTIAL).corrections.push(...structuredClone(extra));
+      return c;
+    };
+    const leaks = (markup: string) => markup.includes("Mercy") || markup.includes("mercy-general");
+
+    it("while a withhold binds the item, its other corrections show only their type word and date: card, foot, item page, Methodology", () => {
+      const c = withCorrections(named());
+      const monday = html(<BriefView {...briefPropsFor(c, MONDAY)!} />);
+      const partial = html(<BriefView {...briefPropsFor(c, PARTIAL)!} />);
+      const item = html(<ItemPage content={c} id={WITHHELD_ID} />);
+      expect(leaks(monday), "12 Oct").toBe(false);
+      expect(leaks(partial), "13 Oct").toBe(false);
+      expect(leaks(item), "item page").toBe(false);
+      expect(text(load(monday)(`#${WITHHELD_ID} [role="note"]`).html()!)).toContain("CORRECTED 12 Oct 2026 · [withheld]");
+      expect(load(partial)("#corrections li").last().text()).toMatch(/C-0003 · .* · CORRECTED · \[withheld\]$/);
+      expect(text(item)).toContain("CORRECTED 12 Oct 2026 · [withheld]");
+      expect(text(item)).toContain("NAME REMOVED 13 Oct 2026 · while a dispute about a named party is reviewed.");
+
+      sampleFolder((edit) => {
+        edit<{ corrections: Correction[] }>("corrections.json", (f) => { f.corrections.push(named()); });
+        edit<Brief>(`briefs/${PARTIAL}.json`, (b) => { b.corrections.push(named()); });
+      });
+      const method = html(MethodologyPage());
+      expect(leaks(method), "methodology").toBe(false);
+      expect(text(method)).toContain(`C-0003 · 12 Oct 2026 · ${WITHHELD_ID} · CORRECTED · [withheld]`);
+    });
+
+    it("a restore after a rejected dispute stays hidden when a new dispute withholds again, and shows once nothing binds", () => {
+      const restore = named({ id: "C-0003", date: "2026-10-14", type: "update", reason: `SAMPLE. The dispute was rejected: ${NAME} confirmed the breach in its 8-K.` });
+      const again: Correction = { ...structuredClone(content.corrections.corrections[0]!), id: "C-0004", date: "2026-10-15", dispute_id: "D-0002" };
+      const c = withCorrections(restore, again);
+      c.corrections.disputes[0]!.status = "rejected";
+      c.corrections.disputes.push({ ...structuredClone(c.corrections.disputes[0]!), id: "D-0002", issue_number: 4, status: "open", correction_id: "C-0004" });
+      const card = () => load(html(<BriefView {...briefPropsFor(c, MONDAY)!} />))(`#${WITHHELD_ID}`).html()!;
+      expect(leaks(card())).toBe(false);
+      expect(leaks(html(<ItemPage content={c} id={WITHHELD_ID} />))).toBe(false);
+      expect(text(card())).toContain("UPDATED 14 Oct 2026 · [withheld]");
+      // The second dispute rejected too: nothing binds, so the restore prints in full again (§4.10).
+      c.corrections.disputes[1]!.status = "rejected";
+      expect(text(card())).toContain(`UPDATED 14 Oct 2026 · incident.victim: now '${NAME}'.`);
+      expect(html(<ItemPage content={c} id={WITHHELD_ID} />)).toContain(NAME);
+    });
+
+    it("a withheld card and row show no Impact line and no details list", () => {
+      const $ = page(propsFor(MONDAY));
+      const card = $(`#${WITHHELD_ID}`);
+      expect(card.text()).not.toContain("Patient records copied");
+      expect(card.text()).not.toContain("Impact:");
+      expect(card.find("dl").length).toBe(0);
+      // The same item in a row: three top stories before it.
+      const props = clone(propsFor(MONDAY));
+      const [held, ...rest] = props.brief.items;
+      props.brief.items = [...rest, { ...structuredClone(rest[0]!), id: rest[0]!.id.replace(/-2026-10$/, "-b-2026-10") }, held!];
+      const row = page(props)(`details#${WITHHELD_ID}`);
+      expect(row.length).toBe(1);
+      expect(row.text()).not.toContain("Patient records copied");
+      expect(row.find("dl").length).toBe(0);
     });
   });
 

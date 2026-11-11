@@ -18,13 +18,14 @@ import { loadConfig } from "@/lib/config";
 import { loadContent } from "@/lib/content";
 import { shortDate } from "@/lib/format";
 import { parseBlocks, section } from "@/lib/markdown";
+import { heldCorrection, heldItemIds } from "@/lib/site-data";
 import { fmtDays, fmtInt, pct } from "@/lib/metrics/stats";
 import type { Metrics } from "@/lib/schema/metrics";
 import {
   AI_CONFIDENCE, AI_CONFIDENCE_INFO, AI_CREDIT_CAPTION, AI_ROLES, AI_ROLE_INFO, ANTHROPIC_LINE, ATTRIBUTION_BASIS,
   ATTRIBUTION_BASIS_INFO, BASELINE_TOOLTIP, BLOCKED_HOSTS, BLOCK_REASONS, CLAIM_TYPES, CLAIM_TYPE_INFO, FIX_SIDE_CAPTION,
   INCIDENT_STATUS, INCIDENT_STATUS_INFO, KINDS, KIND_INFO, HEAD_INFO, LANDMARK_RANK, MIN_N, REGION_INFO, REGION_LEVELS,
-  REGION_LEVEL_INFO, SEVERITIES, SEVERITY_INFO, TIERS, TIER_INFO, WINDOW_LABEL,
+  REGION_LEVEL_INFO, SEVERITIES, SEVERITY_INFO, TIERS, TIER_INFO, WINDOW_LABEL, WITHHELD_MARK,
 } from "@/lib/vocab";
 
 export const metadata: Metadata = { title: "Methodology" };
@@ -109,6 +110,7 @@ export default function MethodologyPage() {
   const statusDays = lastStatusDays(content.status);
   const rows = feedRows(content.status, config.sources);
   const log = correctionsNewestFirst(content.corrections.corrections);
+  const held = heldItemIds(content);
   const loaded = new Set(content.briefs.map((b) => b.date));
   const kindsByRank = [...KINDS].sort((a, b) => KIND_INFO[a].rank - KIND_INFO[b].rank);
   const unlevelled = kindsByRank.filter((k) => KIND_INFO[k].severity === "none").map((k) => KIND_INFO[k].label);
@@ -315,7 +317,7 @@ export default function MethodologyPage() {
                 ) : (
                   <>{shortDate(c.edition_date)} · {c.item_id}</>
                 )}{" "}
-                · <span className="font-mono text-[12px] font-semibold">{CORRECTION_WORD[c.type]}</span> · <PlainText text={c.reason} />
+                · <span className="font-mono text-[12px] font-semibold">{CORRECTION_WORD[c.type]}</span> · {heldCorrection(c, held) ? WITHHELD_MARK : <PlainText text={c.reason} />}
               </li>
             ))}
           </ol>

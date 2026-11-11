@@ -1,7 +1,8 @@
 // SPEC §7 "Brief components", ItemRow: a closed <details id={item.id}>. The summary (at least 44px tall) holds
 // the kicker and the h3 headline; open, the card's parts follow (CorrectionBanner, "Impact:", the summary with
 // its refs, "Why it matters →", the script line, the chips, the Anthropic line, the footer links) with
-// ItemDetails inline, so there is no nested <details>. A withheld item carries no `data-words`.
+// ItemDetails inline, so there is no nested <details>. A withheld item carries no `data-words` and, as on the
+// card, shows no "Impact:" line and no ItemDetails.
 import { isWithheld } from "@/lib/items";
 import { CorrectionBanner } from "./CorrectionBanner";
 import { ItemDetails } from "./ItemDetails";
@@ -12,7 +13,7 @@ import { SourceRefs } from "./sources";
 
 export type ItemRowProps = ItemCardProps;
 
-export function ItemRow({ item, editionDate, edition, index, sourcesById, corrections, hasPage }: ItemRowProps) {
+export function ItemRow({ item, editionDate, edition, index, sourcesById, corrections, held, hasPage }: ItemRowProps) {
   const counted = !isWithheld(item);
   return (
     <details id={itemAnchor(item.id)} className="group border-b border-dotted border-line">
@@ -24,14 +25,14 @@ export function ItemRow({ item, editionDate, edition, index, sourcesById, correc
         </h3>
       </summary>
       <div className="pb-4 pl-5">
-        <CorrectionBanner corrections={corrections} />
-        <ImpactLine item={item} counted={counted} />
+        <CorrectionBanner corrections={corrections} held={held} />
+        {counted ? <ImpactLine item={item} counted={counted} /> : null}
         <CardBody item={item} editionDate={editionDate} index={index} counted={counted} />
         <div className={FOOTER_ROW}>
           {item.source_ids.length ? <span>sources <SourceRefs ids={item.source_ids} index={index} /></span> : null}
           <CardLinks item={item} editionDate={editionDate} hasPage={hasPage} />
         </div>
-        <ItemDetails item={item} editionDate={editionDate} index={index} sourcesById={sourcesById} />
+        {counted ? <ItemDetails item={item} editionDate={editionDate} index={index} sourcesById={sourcesById} /> : null}
       </div>
     </details>
   );

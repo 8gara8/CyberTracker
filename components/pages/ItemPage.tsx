@@ -4,7 +4,8 @@
 //
 // Title: the newest headline. PageHeader kicker "ITEM · <kind label>", then "First seen <date> · in N
 // editions". If any edition holds the item withheld, only WITHHELD_HEADLINE, WITHHELD_TEXT, the
-// CorrectionBanner and edition links show (no headline, summary, source or record of any copy). Otherwise:
+// CorrectionBanner and edition links show (no headline, summary, source or record of any copy; while a withhold
+// binds the item, the banner shows its other corrections by type word and date only). Otherwise:
 // - Timeline (<ol>, oldest first; same-date events in this order): each edition ("<date> · <edition word>
 //   edition: <pips> <headline>", linking /brief/DATE#<id>); from the newest CVE blocks: CVE published,
 //   vendor advisory, fix available, added to CISA's list and US deadline (both "(US date)"), each
@@ -26,9 +27,9 @@ import { isWithheld } from "@/lib/items";
 import { fmtInt } from "@/lib/metrics/stats";
 import type { CveBlock, Item } from "@/lib/schema/item";
 import type { Correction } from "@/lib/schema/misc";
-import { correctionsFor, itemHistory, type ItemEdition } from "@/lib/site-data";
+import { correctionsFor, heldCorrection, heldItemIds, itemHistory, type ItemEdition } from "@/lib/site-data";
 import { normalizeUrl } from "@/lib/urls";
-import { EXPLOITATION_BASIS_INFO, KIND_INFO, WITHHELD_HEADLINE, WITHHELD_TEXT } from "@/lib/vocab";
+import { EXPLOITATION_BASIS_INFO, KIND_INFO, WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { CORRECTION_WORD } from "@/components/brief/CorrectionBanner";
 import { cveRecordUrl, ghsaRecordUrl, kevRecordUrl, nvdRecordUrl } from "@/lib/record-links";
 import { EDITION_WORD } from "./labels";
@@ -88,7 +89,7 @@ function cveEvents(cve: CveBlock): TimelineEvent[] {
   return out;
 }
 
-function timeline(content: ItemContent, id: string, history: readonly ItemEdition[], corrections: readonly Correction[]): TimelineEvent[] {
+function timeline(content: ItemContent, id: string, history: readonly ItemEdition[], corrections: readonly Correction[], held: ReadonlySet<string>): TimelineEvent[] {
   const newest = history.at(-1)!.item;
   const events: TimelineEvent[] = history.map((h) => ({
     date: h.date,
@@ -112,7 +113,9 @@ function timeline(content: ItemContent, id: string, history: readonly ItemEditio
       date: c.date,
       rank: 8,
       key: `correction-${c.id}`,
-      body: <>{c.id} · {CORRECTION_WORD[c.type]} · {c.field}: <PlainText text={c.reason} /></>,
+      body: heldCorrection(c, held)
+        ? <>{c.id} · {CORRECTION_WORD[c.type]} · {WITHHELD_MARK}</>
+        : <>{c.id} · {CORRECTION_WORD[c.type]} · {c.field}: <PlainText text={c.reason} /></>,
     });
   }
   for (const h of history) {
@@ -185,6 +188,7 @@ export function ItemPage({ content, id }: ItemPageProps) {
   const n = history.length;
   const firstSeen = history.reduce((min, h) => (h.item.first_seen < min ? h.item.first_seen : min), newest.item.first_seen);
   const corrections = itemCorrections(content, id, history);
+  const held = heldItemIds(content);
   const header = (title: string) => (
     <PageHeader title={title} kicker={`ITEM · ${KIND_INFO[newest.item.kind].label}`}>
       First seen {shortDate(firstSeen)} · in {plural(n, "edition", "editions")}
@@ -198,7 +202,7 @@ export function ItemPage({ content, id }: ItemPageProps) {
         {header(WITHHELD_HEADLINE)}
         <p className="prose-serif">{WITHHELD_TEXT.replace("{date}", longDate(since))}</p>
         <div className="mt-4">
-          <CorrectionBanner corrections={corrections} />
+          <CorrectionBanner corrections={corrections} held={held} />
         </div>
         <Section id="editions" title="Editions">
           <EditionLinks id={id} history={history} />
@@ -207,7 +211,7 @@ export function ItemPage({ content, id }: ItemPageProps) {
     );
   }
 
-  const events = timeline(content, id, history, corrections);
+  const events = timeline(content, id, history, corrections, held);
   return (
     <>
       {header(newest.item.headline)}

@@ -11,7 +11,7 @@ import type { Brief } from "@/lib/schema/brief";
 import type { Annotation } from "@/lib/schema/config";
 import type { Metrics } from "@/lib/schema/metrics";
 import type { Correction } from "@/lib/schema/misc";
-import { correctionsFor, itemPageIds, neighbours } from "@/lib/site-data";
+import { correctionsFor, heldItemIds, itemPageIds, neighbours } from "@/lib/site-data";
 
 export interface BriefViewProps {
   brief: Brief;
@@ -23,6 +23,8 @@ export interface BriefViewProps {
   annotations: Annotation[];
   /** item id → correctionsFor(content, item.id, brief.date), for every item in the brief ([] when none). */
   correctionsByItem: Record<string, Correction[]>;
+  /** heldItemIds(content): the items a withhold binds, whose corrections show by type word and date only. */
+  heldItems: Set<string>;
   /** itemPageIds(content): the ids with an /items/<id> page. */
   itemPages: Set<string>;
   /** True for the newest loaded brief: BriefView then shows StaleBanner. */
@@ -42,6 +44,7 @@ export function briefPropsFor(content: Content, date: string): BriefViewProps | 
     gapOk: !content.gapFailed.has(date),
     annotations: loadConfig().annotations.annotations,
     correctionsByItem: Object.fromEntries(brief.items.map((it) => [it.id, correctionsFor(content, it.id, brief.date)])),
+    heldItems: heldItemIds(content),
     itemPages: itemPageIds(content),
     isLatest: content.briefs.at(-1)?.date === date,
     prevDate: prev,
