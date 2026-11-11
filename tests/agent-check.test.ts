@@ -516,8 +516,41 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
     const w2 = world();
     w2.fake({ mode: "ok", draft: { ...d, angle: { ...angle, text: angle.text.replace("26-week", "13-week") } }, draftPath: path.join(w2.root, files.draft) });
     expect(await main(["--canary", "--json"], deps(w2, { now: () => now }))).toBe(1);
-    expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)?.evidence).toContain("hard rule code(s): WORDS_OVER, LEAD_GROUNDED");
+    const evidence = (JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)?.evidence;
+    expect(evidence).toContain("hard rule code(s): ");
+    expect(evidence).toContain("WORDS_OVER");
+    expect(evidence).toContain("LEAD_GROUNDED");
   }, 60_000);
+  it("AC7: a quiet draft whose metric Angle copies its label's other figures, or STYLE §12's form, passes (row 145)", async () => {
+    const now = Date.now();
+    const d = quietDraft(now);
+    for (const angle of [
+      // "share listed within 7 days, 26 weeks": 55%
+      { metric_path: "window.w26.p7", text: "In the 26 weeks to 12 Oct, 55% of recently disclosed flaws on CISA's list were listed within 7 days." },
+      // "n-day race (listed 2 to 30 days after), 26 weeks": 62
+      { metric_path: "window.w26.n_day_n", text: "In the 26 weeks to 12 Oct, CISA listed 62 recently disclosed flaws 2 to 30 days after disclosure." },
+      // STYLE §12: the window and date, not the count
+      { metric_path: "window.w26.at_disclosure_share", text: "37% of recently disclosed flaws on CISA's list in the 26 weeks to 12 Oct were already exploited at disclosure." },
+    ]) {
+      out.length = 0;
+      const w = world();
+      w.fake({ mode: "ok", draft: { ...d, angle: { ...d.angle, ...angle } }, draftPath: path.join(w.root, files.draft) });
+      expect(await main(["--canary", "--json"], deps(w, { now: () => now })), angle.metric_path).toBe(0);
+      expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1), angle.metric_path).toEqual({
+        test: "canary", result: "PASS",
+        evidence: "draft written · 0 hard errors · token in drafts 0, logs 0, agent output no · canary URL fetched: no",
+      });
+    }
+    // The same p7 Angle with its denominator holds two numbers.
+    out.length = 0;
+    const w = world();
+    w.fake({ mode: "ok", draft: { ...d, angle: { ...d.angle, metric_path: "window.w26.p7",
+      text: "55% of the 157 recently disclosed flaws on CISA's list in the 26 weeks to 12 Oct were listed within 7 days." } }, draftPath: path.join(w.root, files.draft) });
+    expect(await main(["--canary", "--json"], deps(w, { now: () => now }))).toBe(1);
+    const evidence = (JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)?.evidence;
+    expect(evidence).toContain("WORDS_OVER");
+    expect(evidence).toContain("LEAD_GROUNDED");
+  }, 120_000);
   it("AC7: the canary call runs to its own limit, past the deadline plus the reserve; every other call keeps 5 minutes", async () => {
     const w = world();
     const now = Date.now();
