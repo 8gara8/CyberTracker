@@ -212,6 +212,39 @@ describe("numbersIn", () => {
     expect(read(text)).toEqual([]);
   });
 
+  it("reads a day range before or after a month name as one date, and nothing that is not a date (review of row 145)", () => {
+    for (const text of [
+      "13 to 14 Oct", "from 11 to 12 Nov", "between 10 and 11 Nov", "Between 10 and 11 Nov", "11-12 Nov", "11–12 Nov", "11 – 12 Nov",
+      "11‑12 Nov", "2–3 Nov", "from 12 to 13 Oct", "13 to 14 October", "13 to 14 OCT", "1 to 30 Sept", "13th to 14th Oct",
+      "13th to 14th of October", "from the 13th to the 14th of October", "between the 13th and the 14th of Oct", "13 to 14 Oct.",
+      "Oct 13 to 14", "Oct. 13 to 14", "October 13th to 14th", "Oct 13 to the 14th", "Oct 13-14", "Oct 13–14", "between Oct 13 and 14",
+      "1 to 31 Dec", "Oct 1 to 31",
+      // A range across months is two dates.
+      "30 Oct to 2 Nov", "from 31 Oct to 1 Nov", "30 Oct–2 Nov", "between 30 Oct and 2 Nov", "Oct 30 to Nov 2", "Oct 30–Nov 2",
+      "Oct 30 to 2 Nov", "13 Oct to 14 Oct",
+    ]) expect(read(text), text).toEqual([]);
+    expect(read("Nothing published between 13 and 14 Oct cleared the bar; 37% were exploited at disclosure.")).toEqual([["37%", 37, true, false]]);
+    expect(read("13 to 14 October's 26 weeks")).toEqual([["26", 26, false, false]]);
+    // Not dates: no month, the days out of order or past 31, a percentage, a decimal, a count, "and" without "between".
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    expect(raws("rose from 12 to 40")).toEqual(["12", "40"]);
+    expect(raws("12 to 14 flaws")).toEqual(["12", "14"]);
+    expect(raws("2 to 30 days")).toEqual(["2", "30"]);
+    expect(raws("between 2 and 30 days")).toEqual(["2", "30"]);
+    expect(raws("between 13 and 26 weeks")).toEqual(["13", "26"]);
+    expect(raws("14 to 13 Oct")).toEqual(["14"]);
+    expect(raws("0 to 3 Nov")).toEqual(["0"]);
+    expect(raws("from 12 to 40 Nov")).toEqual(["12"]);
+    expect(raws("1.13 to 14 Oct")).toEqual(["1.13"]);
+    expect(raws("11 and 12 Nov")).toEqual(["11"]);
+    expect(raws("Oct 14 to 13")).toEqual(["13"]);
+    expect(raws("Oct 13 to 32")).toEqual(["32"]);
+    expect(raws("Oct 13 to 14%")).toEqual(["14%"]);
+    expect(raws("Oct 13 to 14.5")).toEqual(["14.5"]);
+    expect(raws("Oct 13 to 14 million")).toEqual(["14 million"]);
+    expect(raws("Oct 13 and 14")).toEqual(["14"]);
+  });
+
   it("reads units and multipliers, and skips digits glued to words", () => {
     expect(read("$4.5m, 2.3bn, 12 million, 3 thousand, 40 per cent, 7 percent, 15 %")).toEqual([
       ["4.5m", 4_500_000, false, false], ["2.3bn", 2_300_000_000, false, false], ["12 million", 12_000_000, false, false],

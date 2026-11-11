@@ -1,11 +1,12 @@
-// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS. Our numbers come from
-// numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers() (the Gap
-// panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a source's
-// seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a percentage.
+// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS, NUMBER_FORM. Our numbers
+// come from numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers()
+// (the Gap panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a
+// source's seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a
+// percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x").
 
 import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
+import { gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -136,9 +137,18 @@ const GAP_WINDOW_FIGURES: readonly LabelFigure[] = WINDOW_LENGTHS.flatMap((w) =>
 export function angleFigures(angle: { metric_path?: string | null }, metrics: Metrics | null): LabelFigure[] {
   if (!angle.metric_path) return [];
   if (!metrics) return [...GAP_WINDOW_FIGURES];
+  return rowFigures(angle.metric_path, quotableRows(metrics));
+}
+
+/**
+ * angleFigures() on given rows: the figures the labels of the rows keyed `metricPath` print, in label
+ * order, each as many times as one of those labels prints it (the most of any one row, not the sum, so two
+ * rows that each print "26 weeks" give it once).
+ */
+export function rowFigures(metricPath: string, rows: readonly { readonly key: string; readonly label: string }[]): LabelFigure[] {
   const most = new Map<string, LabelFigure[]>();
-  for (const r of quotableRows(metrics)) {
-    if (r.key !== angle.metric_path) continue;
+  for (const r of rows) {
+    if (r.key !== metricPath) continue;
     const here = new Map<string, LabelFigure[]>();
     for (const f of labelFigures(r.label)) here.set(f.text, [...(here.get(f.text) ?? []), f]);
     for (const [text, fs] of here) if ((most.get(text)?.length ?? 0) < fs.length) most.set(text, fs);
@@ -179,7 +189,7 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 
 // ── LEAD_GROUNDED ────────────────────────────────────────────────────────────────────────────────
 
-const GAP_DAY_HINT = ' A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours.';
+const GAP_DAY_HINT = ' When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.';
 
 /** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
 function hoursLength(text: string, n: NumberToken): boolean {
@@ -274,7 +284,7 @@ const leadGrounded = defineRule({
             if (!ok) {
               out.push(error("LEAD_GROUNDED", "angle.text",
                 `angle.text holds ${shown(n)}, but angle.metric_path "${a.metric_path}" is ${displays.length ? list(displays) : String(raw)} as the Gap shows it.`,
-                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them, each once; write each label figure once, and no other number.` : ""}`));
+                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them, each at most once; no other number may.` : ""}`));
             }
           }
         }
@@ -412,4 +422,19 @@ const metricsOnlyNumbers = defineRule({
   },
 });
 
-export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers];
+// ── NUMBER_FORM ──────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * NUMBER_FORM (draft, §0.4 row 147): a prose field writes a ratio glued to x ("9.9x"), which numbersIn() does
+ * not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong one through.
+ * Quoted fields and titles, the sources' own words, are not read. One error per ratio as written, per field.
+ */
+const numberForm = defineRule({
+  code: "NUMBER_FORM",
+  scope: "draft",
+  check: ({ draft }) => proseFields(draft).flatMap((f) => [...new Set(gluedRatios(f.text))].map((g) =>
+    error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
+      `Write a ratio as the Gap does, "${g.slice(0, -1)} times", never "${g}", even where a source writes it that way.`))),
+});
+
+export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers, numberForm];

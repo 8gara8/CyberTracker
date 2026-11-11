@@ -190,6 +190,10 @@ date: cite the vendor's own advisory for the release from the pack, with its `pu
 release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`. The validator catches
 this before publish, so "Not composed" for a release block (`E_PUBLISH`) should no longer occur.
 
+A `NUMBER_FORM` error is a ratio written glued to x ("9.9x"), which the validator cannot read as a
+number and so cannot check: write it as the Gap does, "9.9 times", and check the figure against its
+source or `metrics.quotable`, since a wrong one is then caught.
+
 ## The Claude CLI and its token
 
 - The agent uses its own native arm64 Claude Code CLI, pinned to 2.1.316, at

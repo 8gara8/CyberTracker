@@ -16,7 +16,7 @@ export const LeadSentence = z.strictObject({
     .regex(/(?:[.?!]["'”’)\]]*|^\[withheld\])$/u, { error: "A Lead sentence ends in . ? or ! (a closing quote or bracket may follow)" })
     .describe("One sentence ending in . ? or !; no URL. All Lead sentences together: 15 to 90 words"),
   item_ids: refs("Items this sentence draws on; at least 1 unless gap is true. With none, the sentence is a Gap sentence (gap true), as every sentence is on a day with no items"),
-  gap: z.boolean().describe(`true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so name the day by its dates ("13 to 14 Oct"), never as a length of hours`),
+  gap: z.boolean().describe(`true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so when it names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours`),
 });
 
 const exactlyOneBasis = (a: { source_id: string | null; metric_path: string | null }) =>

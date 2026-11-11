@@ -120,8 +120,32 @@ const MONTH = `(?:${MONTH_FORMS.join("|")})`;
 const ORDINAL = "(?:st|nd|rd|th)?";
 const YEAR = "(?:199\\d|20\\d\\d)";
 
-/** What numbersIn() removes before reading digits, in order (§4.12). */
-const NOT_NUMBERS: readonly RegExp[] = [
+/** The hyphen, U+2010 and U+2011 (NFKC makes U+2011 a U+2010) and the en dash. */
+const DASHES = "\\-\\u2010\\u2011\\u2013";
+
+/**
+ * A day range in one month, read as one date (§0.4 row 147): the first day, then " to " (with "the"
+ * allowed before the second day), a hyphen or an en dash, or, after "between", " and ". Ordinals allowed.
+ */
+const DAY_RANGE = (d1: string, d2: string): string =>
+  `(?:[Bb]etween\\s+(?:the\\s+)?${d1}${ORDINAL}\\s+and\\s+(?:the\\s+)?|${d1}${ORDINAL}(?:\\s+to\\s+(?:the\\s+)?|\\s?[${DASHES}]\\s?))${d2}${ORDINAL}`;
+/** "13 to 14 Oct", "13–14 Oct", "between 13 and 14 Oct", "13th to the 14th of October". */
+const DAY_RANGE_MONTH_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}.,])${DAY_RANGE("(\\d{1,2})", "(\\d{1,2})")}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu");
+/** "Oct 13 to 14", "Oct 13–14", "between Oct 13 and 14": the second day is not a percentage, decimal or count in millions. */
+const MONTH_DAY_RANGE_RE = new RegExp(
+  `(?:(?<![\\p{L}])([Bb]etween\\s+))?(?<![\\p{L}])${MONTH}\\.?\\s+(?:the\\s+)?(\\d{1,2})${ORDINAL}` +
+  `(?:\\s+to\\s+(?:the\\s+)?|\\s?[${DASHES}]\\s?|\\s+and\\s+(?:the\\s+)?)(\\d{1,2})${ORDINAL}` +
+  "(?![\\p{L}\\p{N}])(?![.,]\\d)(?!\\s?(?:%|per\\s?cent|percent))(?!\\s+(?:thousand|million|billion)(?![\\p{L}]))", "gu");
+
+/** A day range's days are 1 to 31, the first before the second; anything else is left for the other patterns. */
+const isDayRange = (a: string, b: string): boolean => {
+  const [x, y] = [Number(a), Number(b)];
+  return x >= 1 && x < y && y <= 31;
+};
+
+/** What numbersIn() removes before reading digits, in order (§4.12): a pattern, or a function that removes what it reads. */
+const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
   /\bCVE-\d{4}-\d{4,}\b/giu,
   /\bGHSA(?:-[0-9a-z]{4}){3}\b/giu,
   /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?(?![\d])/giu, // ISO dates and timestamps
@@ -129,6 +153,13 @@ const NOT_NUMBERS: readonly RegExp[] = [
   /(?<![\p{L}\p{N}.])\d+(?:\.\d+){2,}[\p{L}\p{N}+-]*/gu, // versions with two or more dots (and dotted quads)
   /(?<![\p{L}\p{N}])\d{1,2}:\d{2}(?::\d{2})?(?:\s?[aApP]\.?[mM]\.?)?(?![\p{L}\p{N}])/gu, // clock times
   /(?<![\p{L}\p{N}])\d{1,2}\s?[aApP]\.?[mM]\.?(?![\p{L}\p{N}])/gu, // "5 pm"
+  // Day ranges before the single dates, so neither day of "13 to 14 Oct" or "Oct 13 to 14" is read.
+  (s) => s.replace(DAY_RANGE_MONTH_RE, (m, a1?: string, a2?: string, b?: string) => (isDayRange(a1 ?? a2!, b!) ? " " : m)),
+  (s) => s.replace(MONTH_DAY_RANGE_RE, (m, between: string | undefined, a: string, b: string) => {
+    // "and" joins two days only after "between", as in a label figure's range ("Oct 13 and 14" alone is not one).
+    if (!between && /\sand\s/u.test(m.slice(m.search(/\d/u)))) return m;
+    return isDayRange(a, b) ? " " : m;
+  }),
   new RegExp(`(?<![\\p{L}\\p{N}])\\d{1,2}${ORDINAL}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu"), // "21 Oct", "21st October"
   new RegExp(`(?<![\\p{L}])${MONTH}\\.?\\s+\\d{1,2}${ORDINAL}(?![\\p{L}\\p{N}])`, "gu"), // "Oct 21", "October 21st"
   new RegExp(`(?<![\\p{L}\\p{N}.,])${YEAR}\\s?[-–]\\s?(?:${YEAR}|\\d{2})(?!\\d|[.,]\\d)`, "gu"), // "2023-24", "2023–2024"
@@ -158,7 +189,9 @@ const MULTIPLIERS: Record<string, number> = { thousand: 1e3, million: 1e6, billi
 
 /**
  * The numbers in a piece of text (§4.12). First removes what is not a quantity: CVE and GHSA ids, ISO
- * dates and timestamps, clock times, day-month dates ("21 Oct", "October 21"), years 1990 to 2099 and
+ * dates and timestamps, clock times, day-month dates ("21 Oct", "October 21") and day ranges in one month
+ * ("13 to 14 Oct", "13–14 Oct", "between 13 and 14 Oct", "Oct 13 to 14", "Oct 13-14", days 1 to 31, the
+ * first before the second; a range across months is two dates, "30 Oct to 2 Nov"), years 1990 to 2099 and
  * year ranges ("2023-24", "2023–24"), version strings (two or more dots, or a leading v) and section
  * marks. Then reads each digit token (thousands separators dropped) with its unit: %, "per cent" or
  * "percent" make a percentage; a following "thousand", "million", "billion", "bn" or an attached "m"
@@ -168,7 +201,7 @@ const MULTIPLIERS: Record<string, number> = { thousand: 1e3, million: 1e6, billi
  */
 export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberToken[] {
   let s = text.normalize("NFKC");
-  for (const re of NOT_NUMBERS) s = s.replace(re, " ");
+  for (const re of NOT_NUMBERS) s = typeof re === "function" ? re(s) : s.replace(re, " ");
   if (opts.words) {
     s = s.replace(COMPOUND_RE, (_m, tens: string, unit: string) => String(TENS_WORDS[tens.toLowerCase()]! + SMALL_WORDS[unit.toLowerCase()]!));
     s = s.replace(WORD_RE, (w: string) => String(SMALL_WORDS[w.toLowerCase()] ?? TENS_WORDS[w.toLowerCase()]!));
@@ -198,6 +231,18 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
   return out;
 }
 
+/**
+ * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
+ * no letter, digit, "." or "," before it and no letter or digit after: a ratio numbersIn() does not read,
+ * since it reads no digit run glued to a letter. "0x1F", "4x4", "x86" and "Win10x64" are not ratios.
+ */
+const GLUED_RATIO_RE = /(?<![\p{L}\p{N}_.,])\d+(?:[.,]\d+)*[xX](?![\p{L}\p{N}])/gu;
+
+/** The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 147). */
+export function gluedRatios(text: string): string[] {
+  return [...text.normalize("NFKC").matchAll(GLUED_RATIO_RE)].map((m) => m[0]);
+}
+
 // ── Label figures (§4.12, §0.4 row 145) ──────────────────────────────────────────────────────────
 
 /** A figure a quotable label prints with its unit word: "26 weeks", "2 to 30 days", "80% interval". */
@@ -211,8 +256,6 @@ export interface LabelFigure {
   old: boolean;
 }
 
-/** The hyphen, U+2010 and U+2011 (NFKC makes U+2011 a U+2010) and the en dash. */
-const DASHES = "\\-\\u2010\\u2011\\u2013";
 /** Between a range's two numbers: " to ", or a hyphen or en dash with or without spaces. */
 const RANGE_JOIN = `(?:\\s+to\\s+|\\s?[${DASHES}]\\s?)`;
 const LABEL_FIGURE_RE = new RegExp(

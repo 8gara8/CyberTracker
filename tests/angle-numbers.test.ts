@@ -11,11 +11,11 @@ import { draftInputs } from "@/fixtures/src/inputs";
 import type { EditionName } from "@/fixtures/src/world";
 import { quotableRows } from "@/lib/metrics/headline";
 import { RULES } from "@/lib/rules";
-import { angleFigures, angleNumbers } from "@/lib/rules/grounding";
+import { angleFigures, angleNumbers, figureList, rowFigures } from "@/lib/rules/grounding";
 import type { ValidationIssue } from "@/lib/rules/types";
 import type { DraftBrief } from "@/lib/schema/draft-brief";
 import { Metrics } from "@/lib/schema/metrics";
-import { numbersIn } from "@/lib/text";
+import { numbersBesideFigures, numbersIn } from "@/lib/text";
 import { validateDraft } from "@/lib/validate";
 
 const CODES = ["WORDS_OVER", "WORDS_UNDER", "LEAD_GROUNDED"];
@@ -38,6 +38,32 @@ function angleIssues(metrics: Metrics, metricPath: string, text: string): Valida
   return r.errors.filter((e) => CODES.includes(e.code) && e.path.startsWith("angle"));
 }
 const codes = (xs: readonly ValidationIssue[]) => [...new Set(xs.map((x) => `${x.code} ${x.path}`))].sort();
+
+/** The Monday draft with a zero-item Gap sentence first in its Lead, on `metrics`; only LEAD_GROUNDED's Lead issues. */
+function gapLeadIssues(metrics: Metrics, text: string): ValidationIssue[] {
+  const d: DraftBrief = mondayDraft();
+  d.lead = [{ text, item_ids: [], gap: true }, ...d.lead.slice(1)];
+  const r = validateDraft(d, { ...draftInputs("monday"), metrics, rules: RULES_HERE });
+  return r.errors.filter((e) => e.code === "LEAD_GROUNDED" && e.path.startsWith("lead[0]"));
+}
+
+describe("a Gap sentence that names the day by its dates (review of row 145)", () => {
+  for (const set of SETS) {
+    it(`${set.name}: holds no number, whether or not its days are quoted`, () => {
+      const m = set.metrics();
+      const quoted = new Set(m.headline.quoted.flatMap((q) => numbersIn(q.display)).map((n) => n.value));
+      // Days no set quotes, so the test does not pass by luck as the canary's 13 to 14 Oct did.
+      for (const day of [2, 3, 10, 11, 30]) expect(quoted.has(day), `${set.name} quotes ${day}`).toBe(false);
+      for (const text of ["Nothing published from 10 to 11 Nov cleared the bar for an item.",
+        "Nothing published between 2 and 3 Nov cleared the bar for an item.", "Nothing published from Oct 30 to Nov 2 cleared the bar for an item.",
+        "Nothing published 10–11 Nov cleared the bar for an item.", "Nothing published Nov 10 to 11 cleared the bar for an item."]) {
+        expect(gapLeadIssues(m, text), `${set.name} | ${text}`).toEqual([]);
+      }
+      // A day count beside the dates is still a number the Gap does not quote.
+      expect(gapLeadIssues(m, "Nothing published from 10 to 11 Nov cleared the bar, 3 days running.")).toHaveLength(1);
+    });
+  }
+});
 
 describe("a metric Angle that copies its quotable row (row 145)", () => {
   for (const set of SETS) {
@@ -101,7 +127,7 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
       const got = angleIssues(m, p, twice);
       expect(codes(got), `${p} | ${twice}`).toContain("WORDS_OVER angle.text");
       expect(got.find((e) => e.code === "WORDS_OVER")!.hint, p).toContain("Write each label figure once: written again, it counts.");
-      expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("write each label figure once");
+      expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("may stand beside it as the label writes them, each at most once; no other number may.");
       expect(angleIssues(m, p, once), `${p} | ${once}`).toEqual([]);
     }
     // The figure's every written form counts the second time: "7-day" after "7 days".
@@ -160,6 +186,30 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
       expect(angleNumbers({ ...sourced, text }, m)).toEqual(numbersIn(text));
       expect(angleNumbers({ ...sourced, text }, null)).toEqual(numbersIn(text));
     }
+  });
+
+  it("gives a figure as often as one label prints it, the most of any one row, and names it once in a hint (review of the sixth P3 fix pass)", () => {
+    // Stub labels: no label prints a figure twice today, and no key but "constant" has two rows.
+    const twice = [{ key: "p", label: "share in the 26 weeks to the date, against the 26 weeks before" }];
+    const figs = rowFigures("p", twice);
+    expect(figs.map((f) => f.text)).toEqual(["26 weeks", "26 weeks"]);
+    expect(figureList(figs)).toBe("26 weeks");
+    // Given twice, the figure is left out twice; a third copy counts.
+    const raws = (text: string) => numbersBesideFigures(text, figs).map((n) => n.raw);
+    expect(raws("37% in the 26 weeks to 6 Nov, against the 26 weeks before.")).toEqual(["37%"]);
+    expect(raws("37% in the 26 weeks to 6 Nov, against the 26 weeks before and 26 weeks earlier.")).toEqual(["37%", "26"]);
+    // Two rows of the key that each print "26 weeks" give it once, not twice; a row of another key gives nothing.
+    const two = [{ key: "p", label: "share, 26 weeks" }, { key: "p", label: "count, 26 weeks" }, { key: "q", label: "count, 26 weeks" }];
+    expect(rowFigures("p", two).map((f) => f.text)).toEqual(["26 weeks"]);
+    expect(numbersBesideFigures("37% in 26 weeks, 26 weeks running.", rowFigures("p", two)).map((n) => n.raw)).toEqual(["37%", "26"]);
+    // One row printing it twice and another once: twice, in label order with the other figures, each named once.
+    const mixed = [{ key: "p", label: "listed within 7 days, 26 weeks" }, { key: "p", label: "26 weeks against 26 weeks" }];
+    expect(rowFigures("p", mixed).map((f) => f.text)).toEqual(["7 days", "26 weeks", "26 weeks"]);
+    expect(figureList(rowFigures("p", mixed))).toBe("7 days, 26 weeks");
+    expect(rowFigures("q", mixed)).toEqual([]);
+    // angleFigures() is rowFigures() of the day's quotable rows.
+    const m = canaryMetrics();
+    for (const r of quotableRows(m)) expect(angleFigures({ metric_path: r.key }, m), r.key).toEqual(rowFigures(r.key, quotableRows(m)));
   });
 
   it("collects the figures of every row under the path, each once, and the Gap's two windows without metrics", () => {

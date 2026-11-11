@@ -106,7 +106,7 @@ const CASE_TYPES: Record<string, readonly CaseType[]> = {
   // CVEs and flaws
   CVE_PUBLISHED: ["F"], CVE_IN_SOURCE: ["F"], VENDOR_CONFIRMED: ["F"], EXPLOITED_BASIS: ["F"], FLAW_EVIDENCE: ["F"],
   // Grounding and numbers
-  LEAD_GROUNDED: ["F"], GAP_MATCH: ["T"], METRICS_ONLY_NUMBERS: ["F"],
+  LEAD_GROUNDED: ["F"], GAP_MATCH: ["T"], METRICS_ONLY_NUMBERS: ["F"], NUMBER_FORM: ["F"],
   // AI role
   AI_EVIDENCE_REQUIRED: ["F"], AI_CONFIRMED_NONPRESS: ["F"], SELF_REPORTED_WORDING: ["F"], ANTHROPIC_DISCLOSURE_LINE: ["T"],
   // Victims and attribution
