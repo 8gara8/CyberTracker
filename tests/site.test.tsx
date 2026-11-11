@@ -1586,6 +1586,9 @@ describe("Routes", () => {
       expect(t).toContain(ABOUT_WHAT);
       expect(ABOUT_WHAT.split(/\s+/).length).toBeLessThanOrEqual(80);
       expect(howItIsMade().map((s) => s.step)).toEqual(["Collect", "Draft", "Validate", "Publish"]);
+      // A draft still failing after its repair rounds gets one fresh attempt before the retry cutoff (§8.2).
+      expect(howItIsMade().find((s) => s.step === "Validate")!.text).toContain(
+        "if it still fails, Claude writes one fresh draft with its own 2 rounds when there is time before 05:00 Taipei; if no draft passes, the data-only edition stands.");
       expect(t).toContain(DATA_CREDITS.join(" · "));
       expect(DATA_CREDITS.join(" · ")).toBe("CISA Known Exploited Vulnerabilities catalog · CVE List (CVE.org) · FIRST EPSS · GitHub Advisory Database");
       expect(hrefs(out)).toEqual(expect.arrayContaining([sourcesDocUrl(), SIBLINGS.me, SIBLINGS.europe]));

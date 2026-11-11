@@ -48,6 +48,11 @@ export const ABOUT_WHAT =
 export function howItIsMade(): { step: string; text: string }[] {
   const s = run.schedule;
   const rounds = run.budgets.repair_rounds;
+  // §8.2's retry: after a draft fails validation, the next attempt opens when there is time before the cutoff.
+  const fresh = run.budgets.attempts_max - 1;
+  const retry = fresh > 0
+    ? `, and if it still fails, Claude writes ${fresh === 1 ? "one fresh draft with its own" : `up to ${fresh} fresh drafts, each with its own`} ${rounds} rounds when there is time before ${s.retry_cutoff} Taipei; if no draft passes, the data-only edition stands.`
+    : ", and if it still fails the data-only edition stands.";
   return [
     {
       step: "Collect",
@@ -59,7 +64,7 @@ export function howItIsMade(): { step: string; text: string }[] {
     },
     {
       step: "Validate",
-      text: `Scripts check every source, number and label in the draft against the published rules; a failing draft gets at most ${rounds} repair rounds, and if it still fails the data-only edition stands.`,
+      text: `Scripts check every source, number and label in the draft against the published rules; a failing draft gets at most ${rounds} repair rounds${retry}`,
     },
     {
       step: "Publish",
