@@ -94,6 +94,49 @@ export function nextStepFor(code: string, date: string): string {
 }
 
 /**
+ * What a dry run's next step ends with: a dry run pushes nothing and writes no needs-review/D/ (§0.4 row
+ * 75), so there is nothing to rerun or publish by hand, only its own files to read. `{date}` as in NEXT_STEP.
+ */
+export const DRY_RUN_FILES =
+  "this was a dry run, so nothing needs rerunning: what it wrote is in logs/{date}.daily.log, drafts/{date}.json, logs/{date}.validation.json and logs/dry-run/{date}/";
+
+/** A dry run's step: the fix the code still needs before the next run, if any, then DRY_RUN_FILES. */
+const dry = (fix?: string) => (fix ? `${fix}; ${DRY_RUN_FILES}` : DRY_RUN_FILES);
+
+/**
+ * NEXT_STEP's dry-run form (C1): no rerun command, needs-review path or hand publish command. A code whose
+ * cause outlives the dry run (the arch, the config, the CLI, the sign-in, the sandbox) keeps its fix, "before
+ * the next run"; E_SIMULATED's line is the same in both. `{date}` as in NEXT_STEP: use dryRunNextStepFor().
+ */
+export const DRY_RUN_NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
+  E_ARCH: dry("the run isn't native arm64 Node 22 or newer; check scripts/daily.sh's PATH and /opt/homebrew/bin/node (SPEC Appendix C) before the next run"),
+  E_NODE: dry("the run isn't native arm64 Node 22 or newer; check scripts/daily.sh's PATH and /opt/homebrew/bin/node (SPEC Appendix C) before the next run"),
+  E_CONFIG: dry("config/ fails its checks; fix it in a PR before the next run"),
+  E_NET: dry("Kobol had no network"),
+  E_GIT: dry("the checkout can't be synced with GitHub; see docs/RUNBOOK.md before the next run"),
+  E_CLOCK: dry("the data for this date is complete only after 08:00 Taipei on the day before"),
+  E_CLI: dry("the agent CLI is missing; reinstall it (SPEC §9.4) before the next run"),
+  E_AUTH: dry("the agent's sign-in token is missing or expired; JL renews it (SPEC §9.6) before the next run"),
+  E_PUSH: dry("the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6) before the next run"),
+  E_METRICS: dry("read logs/{date}.metrics.log; fix in a PR before the next run"),
+  E_DATA_ONLY: dry(),
+  E_SANDBOX: dry(NEXT_STEP.E_SANDBOX),
+  E_LIMIT: dry("the account's usage limit stopped the agent; runs resume when the limit window resets"),
+  E_AGENT: dry(),
+  E_TIMEOUT: dry(),
+  E_VALIDATION: dry(),
+  E_PUBLISH: dry("the draft was valid, and logs/{date}.daily.log says why its edition was not written"),
+  E_TOO_LATE: dry(),
+  E_SIMULATED: NEXT_STEP.E_SIMULATED,
+  E_INTERNAL: dry(),
+};
+
+/** DRY_RUN_NEXT_STEP[code] with every `{date}` replaced; an unknown code gets E_INTERNAL's line. */
+export function dryRunNextStepFor(code: string, date: string): string {
+  return DRY_RUN_NEXT_STEP[isErrorCode(code) ? code : "E_INTERNAL"].replaceAll("{date}", date);
+}
+
+/**
  * E_PUBLISH's lines after PublishError("compose") (§0.4 row 102): the publish stage of the record that
  * carries the code holds STAGE_NOTES.notComposed. Publishing the same draft again fails the same way, so
  * the next step edits the draft first, then publishes by hand. `{date}` as in NEXT_STEP.
@@ -101,6 +144,8 @@ export function nextStepFor(code: string, date: string): string {
 export const NOT_COMPOSED = {
   what: "The draft was valid, but a release or CVE block in it lacks its date, page or record facts, so the full edition could not be composed.",
   nextStep: `in ${CHECKOUT}, edit drafts/{date}.json to fix or drop the item whose block logs/{date}.daily.log names, then run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}`,
+  /** A dry run's form (DRY_RUN_NEXT_STEP): no hand publish. */
+  dryRunStep: dry("logs/{date}.daily.log names the item whose block lacks its facts"),
 } as const;
 
 /**
@@ -113,6 +158,8 @@ export const NOT_COMPOSED = {
 export const NOT_VALID = {
   what: "The draft was valid, but the full edition made from it failed whole-tree validation, so it was not pushed.",
   nextStep: `read the Validation lines in logs/{date}.daily.log: if they name only briefs/{date}.json, fix drafts/{date}.json, then in ${CHECKOUT} run PATH=/opt/homebrew/bin:$PATH npm run publish -- --date {date} before ${SCHEDULE.publish_until}; if they name another file under content/, today's full edition cannot publish and the fix goes through a PR`,
+  /** A dry run's form (DRY_RUN_NEXT_STEP): no hand publish; another file under content/ still needs its PR. */
+  dryRunStep: dry("read the Validation lines in logs/{date}.daily.log: if they name another file than briefs/{date}.json, the fix goes through a PR before the next run"),
 } as const;
 
 /** The hand publish command E_PUBLISH's next steps give (NEXT_STEP, NOT_COMPOSED, NOT_VALID), `{date}` filled. */
@@ -448,7 +495,9 @@ export function chatInputFor(src: ChatSource): ChatInput {
   const publishNote = code === "E_PUBLISH" && coded !== null ? stage(coded, "publish")?.note ?? "" : "";
   const special = NOTE_RES.notComposed.test(publishNote) ? NOT_COMPOSED : NOTE_RES.notValid.test(publishNote) ? NOT_VALID : null;
   const what = (c: string) => (special ? special.what : whatHappened(c, facts));
+  // A dry run's next step names its own files: nothing to rerun or publish by hand, no needs-review/D/.
   const next = (c: string) => {
+    if (dryRun) return special ? special.dryRunStep.replaceAll("{date}", date) : dryRunNextStepFor(c, date);
     const step = special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date);
     return c === "E_PUBLISH" ? withForce(step, date, brief) : step;
   };

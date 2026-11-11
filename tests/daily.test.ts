@@ -942,6 +942,27 @@ describe("daily.ts end to end", () => {
     expect(fs.existsSync(P.needsReview)).toBe(false);
   }, TIMEOUT);
 
+  it("D47 --dry-run that ends E_VALIDATION: the summary's next step names the dry run's files, with no rerun command or needs-review path", async () => {
+    // Kobol dry run 2026-11-11: the summary said "rerun before 10:00: zsh .../daily.sh --no-deadline; the draft is
+    // in needs-review/2026-11-11/", and a dry run writes no needs-review folder.
+    const h = harness();
+    h.fakeAgent({ mode: "repair", invalidDraft: INVALID, repair: INVALID, fetches: FETCHES });
+    expect(await run(h, ["--dry-run"])).toBe(0);
+    expect(h.remoteLog()).toEqual([]);
+    const P = runPaths(h.root, D);
+    const runs = StatusFile.parse(JSON.parse(fs.readFileSync(P.statusMirror, "utf8"))).runs;
+    expect(runs.at(-1)).toMatchObject({ outcome: "dry_run", error_code: "E_VALIDATION", edition: "data_only" });
+    const text = summary(h);
+    const lines = text.split("\n");
+    expect(lines[0]).toBe(`**CyberTracker ${D} · dry run (data-only edition)** (E_VALIDATION)`);
+    expect(lines).toContain(`Next step: this was a dry run, so nothing needs rerunning: what it wrote is in logs/${D}.daily.log, drafts/${D}.json, logs/${D}.validation.json and logs/dry-run/${D}/`);
+    expect(lines).toContain(`Dry run: nothing was published; files in logs/dry-run/${D}/`);
+    expect(text).not.toMatch(/needs-review|zsh |--no-deadline|npm run publish|rerun before/);
+    // The files it names are there, and the folder it no longer names is not.
+    for (const f of [P.draft, P.validation, P.dryRunCopy]) expect(fs.existsSync(f), f).toBe(true);
+    expect(fs.existsSync(P.needsReview)).toBe(false);
+  }, TIMEOUT);
+
   it("D35 --dry-run that fails at preflight step 4 (no network): exit 0, outcome dry_run with E_NET, the dry-run failed chat format", async () => {
     const h = harness();
     okAgent(h);
