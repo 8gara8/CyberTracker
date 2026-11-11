@@ -235,6 +235,42 @@ function signalTitle(text: string, fallback: string): string {
 
 type SignalDraft = Omit<RegionSignal, "id">;
 
+/** The pack record fields recordSignals() reads. */
+export type SignalRecord = Pick<Pack["records"][number], "url" | "title" | "text" | "date" | "record_id" | "cve_ids">;
+
+/**
+ * The region signals one pack record gives (§5.11), as collectSignals() builds them, before ids: for each
+ * region in regions.json order, an `agency_alert` when the record's publisher (publisherFor() on its URL)
+ * is one of the region's `agencies` and its normalised URL matches one of the region's `alert_patterns`
+ * (alertRegions(), ruling R36), and a `cert_exploitation` when that publisher is one of the region's
+ * `certs` and its sanitised title or text matches CERT_EXPLOITATION_RE. None when the Taipei date of the
+ * record's `date` is outside [date − N_max, date]. `home_vendor_kev` never comes from a record: it is read
+ * from the KEV catalog or kev-index.json.
+ */
+export function recordSignals(rec: SignalRecord, config: RegionsConfig, date: string): SignalDraft[] {
+  const d = taipeiDay(rec.date);
+  if (d === null || d < addDays(date, -maxLookbackDays(config.regions)) || d > date) return [];
+  const publisher = publisherFor(rec.url, "government", { sourceTiers: config.tiers, vendors: config.vendors }).publisher;
+  const alerts = alertRegions(rec.url, publisher, config);
+  const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
+  const out: SignalDraft[] = [];
+  for (const r of config.regions.regions) {
+    const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
+    if (alerts.includes(r.code)) out.push({ type: "agency_alert", ...base });
+    if (exploited && r.certs.includes(publisher)) out.push({ type: "cert_exploitation", ...base });
+  }
+  return out;
+}
+
+/**
+ * True when the pack record gives a region signal (recordSignals() is not empty): collect keeps such a
+ * record whole under the pack's caps (§4.14 Caps), since both editions compute the region levels from the
+ * pack it writes, and a level must not fall because a record was cut for size.
+ */
+export function givesRegionSignal(rec: SignalRecord, config: RegionsConfig, date: string): boolean {
+  return recordSignals(rec, config, date).length > 0;
+}
+
 /** Signal ids order: by edition date, then counter (sig-20261101-3 before sig-20261108-1). */
 export function compareSignalIds(a: string, b: string): number {
   const pa = /^sig-(\d{8})-(\d+)$/.exec(a);
@@ -270,7 +306,6 @@ export function collectSignals(
   const from = addDays(date, -maxLookbackDays(config.regions));
   const inSpan = (d: string | null): d is string => d !== null && d >= from && d <= date;
   const byType: Record<RegionSignal["type"], SignalDraft[]> = { agency_alert: [], home_vendor_kev: [], cert_exploitation: [] };
-  const pubCfg = { sourceTiers: config.tiers, vendors: config.vendors };
 
   for (const it of pack?.items ?? []) {
     const d = taipeiDay(it.published_at);
@@ -284,18 +319,8 @@ export function collectSignals(
       }
     }
   }
-  for (const rec of pack?.records ?? []) {
-    const d = taipeiDay(rec.date);
-    if (!inSpan(d)) continue;
-    const publisher = publisherFor(rec.url, "government", pubCfg).publisher;
-    const alerts = alertRegions(rec.url, publisher, config);
-    const exploited = CERT_EXPLOITATION_RE.test(sanitize(`${rec.title} ${rec.text}`));
-    for (const r of config.regions.regions) {
-      const base = { region: r.code, date: d, publisher, url: normalizeUrl(rec.url), title: signalTitle(rec.title, rec.record_id), cve_ids: [...rec.cve_ids] };
-      if (alerts.includes(r.code)) byType.agency_alert.push({ type: "agency_alert", ...base });
-      if (exploited && r.certs.includes(publisher)) byType.cert_exploitation.push({ type: "cert_exploitation", ...base });
-    }
-  }
+  // Records through recordSignals(), the predicate collect's caps read (givesRegionSignal()), so the two cannot drift.
+  for (const rec of pack?.records ?? []) for (const s of recordSignals(rec, config, date)) byType[s.type].push(s);
 
   const kevRows: { cve: string; added: string; vendorProject: string; title: string }[] = kevCatalog
     ? kevCatalog.vulnerabilities.map((v) => ({ cve: v.cveID, added: v.dateAdded, vendorProject: v.vendorProject, title: v.vulnerabilityName }))

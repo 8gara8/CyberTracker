@@ -8,8 +8,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, maxLookbackDays, previewRegions,
-  publisherCount, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
+  alertRegions, BASELINE_REASON, CERT_EXPLOITATION_RE, collectSignals, computeRegions, cutAtWord, EVALUATORS, givesRegionSignal, maxLookbackDays,
+  previewRegions, publisherCount, recordSignals, regionItems, regionsPreviewRows, renderReason, stepUp, type HistoryBrief, type KevCatalogEntry, type RaiseInput,
   type RegionsConfig,
 } from "@/lib/regions";
 import {
@@ -559,6 +559,22 @@ describe("collectSignals", () => {
     expect(row(r, "JP")).toMatchObject({ level: "high", rule_id: "agency-alert" });
     // Without the record, the newsroom item alone raises nothing.
     expect(collectSignals({ items: pack.items, records: [] }, null, null, CONFIG, DATE)).toEqual([]);
+  });
+
+  it("recordSignals() is what collectSignals() builds from each record, and givesRegionSignal() says whether it builds any (review of row 146)", () => {
+    const strip = (xs: readonly Omit<RegionSignal, "id">[]) => xs.map((x) => JSON.stringify({ ...x, id: undefined })).sort();
+    const alertRecord = { ...PACK.records[0]!, id: "r0004", source: "jpcert" as const, record_id: "at260031", url: "https://www.jpcert.or.jp/at/2026/at260031.html", title: "注意喚起", text: "注意喚起" };
+    const records = [...PACK.records, alertRecord];
+    expect(strip(records.flatMap((r) => recordSignals(r, CONFIG, DATE)))).toEqual(strip(collectSignals({ items: [], records }, null, null, CONFIG, DATE)));
+    for (const r of records) {
+      expect(givesRegionSignal(r, CONFIG, DATE), r.id).toBe(collectSignals({ items: [], records: [r] }, null, null, CONFIG, DATE).length > 0);
+    }
+    // The JPCERT note reporting exploitation and the /at/ alert give one; the TVN note dated before the 7-day span and the one
+    // reporting no exploitation give none.
+    expect(records.map((r) => [r.id, givesRegionSignal(r, CONFIG, DATE)])).toEqual([["r0001", true], ["r0002", false], ["r0003", false], ["r0004", true]]);
+    expect(recordSignals(alertRecord, CONFIG, DATE).map((x) => [x.type, x.region])).toEqual([["agency_alert", "JP"]]);
+    expect(givesRegionSignal({ ...PACK.records[1]!, date: DATE }, CONFIG, DATE)).toBe(true);
+    expect(givesRegionSignal({ ...PACK.records[1]!, date: addDays(DATE, 1) }, CONFIG, DATE)).toBe(false);
   });
 
   it("matches the CERT exploitation wording in English, Japanese and Chinese", () => {
