@@ -122,7 +122,8 @@ export default function MethodologyPage() {
           {SEVERITIES.map((s) => (
             <li key={s}>
               <span className="pips" aria-hidden="true">{SEVERITY_INFO[s].pips}</span>{" "}
-              <span className="font-mono text-[13px] font-semibold">{SEVERITY_INFO[s].word}</span>: {SEVERITY_INFO[s].means}
+              <span className="font-mono text-[13px] font-semibold">{SEVERITY_INFO[s].word}</span>
+              <span className="sr-only">, {SEVERITY_INFO[s].rank} of {SEVERITIES.length}</span>: {SEVERITY_INFO[s].means}
             </li>
           ))}
         </ul>
