@@ -432,11 +432,11 @@ const RATIO_FOLLOWER =
   "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}])))(?![\\p{L}])";
 /**
  * After a sentence-opening "N times the", what makes it a ratio: a number ("Ten times the 2023–24 pace") or
- * a noun of quantity ("Ten times the pace"); otherwise it counts occurrences ("Three times the vendor said
- * no fix was coming").
+ * a noun of quantity at most two words on ("Ten times the pace", "Five times the usual number"); otherwise
+ * it counts occurrences ("Three times the vendor said no fix was coming").
  */
 const OPENING_RATIO_AFTER_RE =
-  /^\s+the\s+(?:\p{N}|(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline)(?![\p{L}]))/u;
+  /^\s+the\s+(?:\p{N}|(?:\S+\s+){0,2}?(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline|count|share)(?![\p{L}]))/u;
 /** "ten times the 2023–24 pace", "twenty-one times more": a ratio in words. */
 const WORD_TIMES_RE = new RegExp(`(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}\\s+times(?=\\s+${RATIO_FOLLOWER})`, "giu");
 /** "tenfold", "ten-fold", "a hundredfold", but not "twofold: ..." or "a threefold approach", which name parts, not a ratio. */

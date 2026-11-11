@@ -927,7 +927,8 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
     for (const [text, ratio] of [["KEV ran at ten times the pace.", "ten times"], ["five times as many flaws", "five times"],
       ["more than five times the reference", "five times"], ["Ten times the pace", "Ten times"], ["Ten times the 2023–24 pace.", "Ten times"],
       ["Three times as many flaws were listed.", "Three times"], ["It rose. Five times more flaws were listed.", "Five times"],
-      ["three times as often in Taiwan", "three times"]] as const) {
+      ["three times as often in Taiwan", "three times"], ["Five times the usual number of flaws arrived.", "Five times"],
+      ["Ten times the old volume arrived.", "Ten times"]] as const) {
       expect(wordRatios(text), text).toEqual([ratio]);
     }
   });
