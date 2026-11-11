@@ -124,6 +124,14 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     expect(got.find((e) => e.code === "WORDS_OVER")!.message).toContain("3 numbers (39%, 2, 30)");
   });
 
+  it("a ratio glued to x holds no number: WORDS_UNDER's hint says to write it as the Gap does, \"1.9 times\"", () => {
+    const m = canaryMetrics();
+    const got = angleIssues(m, "window.kev_pace_ratio", "In the 26 weeks to 12 Oct, CISA's KEV additions ran at 1.9x the 2023–24 pace.");
+    expect(codes(got)).toEqual(["WORDS_UNDER angle.text"]);
+    expect(got[0]!.hint).toContain('Write a ratio as the Gap does, "1.9 times", never "1.9x"');
+    expect(angleIssues(m, "window.kev_pace_ratio", "In the 26 weeks to 12 Oct, CISA's KEV additions ran at 1.9 times the 2023–24 pace.")).toEqual([]);
+  });
+
   it("a path whose labels print no figure counts a window like any number", () => {
     const m = canaryMetrics();
     expect(angleFigures({ metric_path: "window.reference.at_disclosure_share" }, m)).toEqual([]);

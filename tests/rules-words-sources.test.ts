@@ -240,6 +240,18 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(two[0]!.message).toContain("2 numbers (24, 3)");
     d.angle.text = "New CVE records are arriving at 5.2 times the 2023–24 pace.";
     expect(check(d, W)).toEqual([]);
+    expect(none[0]!.hint).not.toContain("1.9 times");
+    // A ratio glued to x is no number; the hint says to write it as the Gap does (review of row 145).
+    for (const t of ["New CVE records are arriving at 5.2x the 2023–24 pace.", "New CVE records are arriving at 5.2X the 2023–24 pace.",
+      "New CVE records are arriving at 5x the 2023–24 pace."]) {
+      d.angle.text = t;
+      const r = check(d, W);
+      expect(codesOf(r), t).toEqual(["WORDS_UNDER angle.text"]);
+      expect(r[0]!.hint, t).toBe("Dates, years, CVE ids and version strings are not counted as numbers. "
+        + 'Write a ratio as the Gap does, "1.9 times", never "1.9x": a number glued to x is not read as a number.');
+    }
+    d.angle.text = "New CVE records on x86 builds are arriving faster than in 2023–24.";
+    expect(check(d, W)[0]!.hint).not.toContain("1.9 times");
     d.angle.text = `${words(30)} 24.`;
     expect(codesOf(check(d, W))).toEqual(["WORDS_OVER angle.text"]);
     expect(check(d, W)[0]!.message).toBe("angle.text has 31 words; the limit is 30. Cut at least 1.");
