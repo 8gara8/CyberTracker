@@ -397,3 +397,38 @@ export function scriptParts(brief: PageBrief, metrics: Metrics | null, opts: Scr
 export function scriptText(brief: PageBrief, metrics: Metrics | null, opts: ScriptOptions = {}): string {
   return scriptParts(brief, metrics, opts).join("\n");
 }
+
+// ── The kicker's parts (P4, for the site's chips) ────────────────────────────────────────────────
+
+/**
+ * The level part of a kicker as cardKicker() writes it (levelPart() above): "●●●○ HIGH", "LANDMARK · POLICY",
+ * the kind label, or UNRATED. SeverityPips shows exactly this text for a severity level or a null one.
+ */
+export function kickerLevel(item: Pick<CardItem, "kind" | "severity" | "landmark">): string {
+  return levelPart(item);
+}
+
+/**
+ * The AI part of a kicker as cardKicker() writes it (aiPart() above): [] for none, ["AI: unassessed"], or the
+ * role chip in upper case, then CLAIMED_CHIP when claimed. AIChip shows these strings joined with " · ".
+ */
+export function kickerAi(item: Pick<CardItem, "ai_role" | "ai_confidence" | "ai_claimant">): string[] {
+  return aiPart(item);
+}
+
+/** cardKicker()'s parts, in its order: joined with " · " (empty parts left out) they are cardKicker(item). */
+export interface KickerParts {
+  level: string;
+  ai: string[];
+  regions: string[];
+  vendor: string | null;
+}
+
+/**
+ * The parts cardKicker() joins, so a component can wrap the level and AI chips in their treatments and the
+ * pips in aria-hidden spans while the text stays cardKicker(item) exactly (§7 ItemCard, Appendix A.3).
+ */
+export function cardKickerParts(item: Omit<CardItem, "cves" | "release">): KickerParts {
+  const vendor = item.vendor ? (item.vendor.country ? `${item.vendor.name} (${item.vendor.country})` : item.vendor.name) : null;
+  return { level: levelPart(item), ai: aiPart(item), regions: [...item.regions], vendor: vendor || null };
+}
