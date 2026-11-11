@@ -176,6 +176,16 @@ describe("Skipping (SPEC §7 Site tests)", () => {
     expect(renderToStaticMarkup(createElement(BriefView, briefPropsFor(content, "2026-10-12")!))).not.toContain("login-update");
   });
 
+  it("the corrections list never links an edition the site skipped", () => {
+    const dir = copy();
+    edit<Brief>(dir, "briefs/2026-10-12.json", (b) => { b.items[1]!.summary += ` ${CANARY_TOKEN}`; });
+    const { content } = load(dir);
+    expect(content.skipped).toEqual([{ file: "briefs/2026-10-12.json", codes: ["CANARY"] }]);
+    const out = renderToStaticMarkup(createElement(BriefView, briefPropsFor(content, "2026-10-13")!));
+    expect(out).toContain("C-0001");
+    expect(out).not.toMatch(/href="\/brief\/2026-10-12/);
+  });
+
   it("SITE_BLOCKING_CODES holds every SAFETY_CODES code, and every entry but FILE_NAME is a † rule (§4.12)", () => {
     for (const code of SAFETY_CODES) expect(SITE_BLOCKING_CODES).toContain(code);
     // The † rows of the §4.12 table, read from SPEC.md, and the rules the validator runs on data-only editions.

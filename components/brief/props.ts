@@ -27,6 +27,8 @@ export interface BriefViewProps {
   heldItems: Set<string>;
   /** itemPageIds(content): the ids with an /items/<id> page. */
   itemPages: Set<string>;
+  /** The dates of the loaded briefs: the corrections list links only an edition the site has. */
+  editionDates: Set<string>;
   /** True for the newest loaded brief: BriefView then shows StaleBanner. */
   isLatest: boolean;
   prevDate: string | null;
@@ -46,6 +48,7 @@ export function briefPropsFor(content: Content, date: string): BriefViewProps | 
     correctionsByItem: Object.fromEntries(brief.items.map((it) => [it.id, correctionsFor(content, it.id, brief.date)])),
     heldItems: heldItemIds(content),
     itemPages: itemPageIds(content),
+    editionDates: new Set(content.briefs.map((b) => b.date)),
     isLatest: content.briefs.at(-1)?.date === date,
     prevDate: prev,
     nextDate: next,
