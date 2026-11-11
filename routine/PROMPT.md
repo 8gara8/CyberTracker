@@ -67,9 +67,10 @@ word DONE.
   shorteners or exploit repositories. Never clone, install or run anything.
 - **Cite only what you saw:** URLs from the pack, from search results or from a page you opened. Never
   invent or rebuild a URL, and use no archive or redirect wrappers.
-- **Source types** fit the publisher (`STYLE.md` §7). A page on a domain in the context's
-  `config.tiers.cve_record` (CVE, NVD, GitHub Advisory Database, JVN and TVN records) is a `"cve_record"`,
-  never a `"vendor_advisory"`, which is only the affected vendor's own page.
+- **Source types** fit the publisher (`STYLE.md` §7). A CVE, NVD, GitHub Advisory Database, JVN or TVN
+  record, on a domain in the context's `config.tiers.cve_record`, is a `"cve_record"`, never a
+  `"vendor_advisory"`, which is only the affected vendor's own page. A CERT's own notice on one of those
+  domains, such as TWCERT/CC's, is a `"government"` source.
 - **Flaw evidence** fits its basis: `"vendor_confirmed"` cites the vendor's own domain;
   `"cert_confirmed"` a national CERT's page, from a CERT (JPCERT/CC, TWCERT/CC, NCSC and the like) or
   CISA, its KEV catalog included, and no other government body; `"news_reported"` a newsroom.

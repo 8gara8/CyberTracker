@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { loadConfig } from "@/lib/config";
 import { CONFIRMING_SOURCE_TYPES } from "@/lib/rules/naming";
 import { secretsIn } from "@/lib/rules/safety";
 import type { ValidationIssue } from "@/lib/rules/types";
@@ -216,6 +217,22 @@ describe("PR8: the source-type guidance the dry runs needed", () => {
     expect(flat).toContain("`config.tiers.cve_record`");
     expect(flat).toMatch(/is a `"cve_record"`, never a `"vendor_advisory"`/);
     expect(weekday.config.tiers.cve_record).toContain("github.com");
+  });
+
+  it("PR8: the rule covers the record pages there, so a CERT's own notice on a record domain stays a government source", () => {
+    // twcert.org.tw carries TVN records and TWCERT/CC's own notices. A notice fits "government", the only
+    // type VICTIM_STATUS takes as a CERT's confirmation (the Incident status bullet), so the source-type
+    // bullet must not make every page on that domain a "cve_record".
+    const cfg = loadConfig({ root });
+    const certDomains = cfg.sourceTiers.publishers
+      .filter((p) => p.kind === "cert" && p.domains.some((d) => weekday.config.tiers.cve_record.includes(d)))
+      .map((p) => p.id);
+    expect(certDomains).toContain("twcert");
+    const flat = PROMPT.replace(/\s+/g, " ");
+    const b = flat.slice(flat.indexOf("- **Source types**")).split(" - **")[0]!;
+    expect(b).not.toContain("A page on a domain in the context's");
+    expect(b).toContain("record, on a domain in the context's `config.tiers.cve_record`, is a `\"cve_record\"`");
+    expect(b).toContain("A CERT's own notice on one of those domains, such as TWCERT/CC's, is a `\"government\"` source.");
   });
 });
 
