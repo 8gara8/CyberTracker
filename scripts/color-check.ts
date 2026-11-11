@@ -76,7 +76,7 @@ const pairs = (fg: string, bgs: string[], need: Need, use: string, where?: Scope
 /** A.5's pairs and every chip foreground on its background (A.3), in each scope where it applies. */
 export const PAIRS: readonly Pair[] = [
   // Text, in every scope (paper, full dark and the Gap panel in each).
-  ...pairs("--ink", ["--bg", "--card", "--bg-deep"], "text", "text-fg on the page, cards (bg-panel) and bg-deep (tab hover)"),
+  ...pairs("--ink", ["--bg", "--card", "--bg-deep"], "text", "text-fg on the page, cards (bg-panel) and bg-deep (the siblings' tab-hover surface, kept for parity, not drawn)"),
   ...pairs("--bg", ["--ink"], "text", "bg-fg text-bg: active tab, stale banner, skip link"),
   ...pairs("--fg", ["--panel"], "text", "the siblings' aliases --fg on --panel"),
   ...pairs("--ink-soft", ["--bg", "--card"], "text", "text-soft"),
@@ -103,7 +103,7 @@ export const PAIRS: readonly Pair[] = [
 
 /** Decorative pairs: printed with their ratio and reason, never failed. */
 export const EXEMPT: readonly Exempt[] = [
-  { fg: "--ink-mute", bg: "--bg-deep", reason: "tab hover only, where the text is ink (A.5)" },
+  { fg: "--ink-mute", bg: "--bg-deep", reason: "bg-deep is kept for parity and not drawn; were it drawn, its text is ink (A.5)" },
   { fg: "--border", bg: "--card", reason: "chart gridlines, decorative: the axis text and table carry the values (A.2)" },
   { fg: "--border", bg: "--bg", reason: "gridlines; in full dark also the Gap panel's 1px #33424F border, decorative" },
   { fg: "--rule-soft", bg: "--bg", reason: "border-line hairlines and link underlines (the text is ink); the Gap's panel border (A.5)" },

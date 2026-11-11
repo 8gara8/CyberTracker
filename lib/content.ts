@@ -1,5 +1,5 @@
-// Content loading for the site (SPEC §6 "Content loading"). The siblings' readJson/readFolder (never throw;
-// folders sorted by name; a missing folder is []), a cache per directory and { fresh: true } for tests,
+// Content loading for the site (SPEC §6 "Content loading"). The siblings' readJson() (never throws) and readFolder(),
+// here listJson() (a folder's .json names, sorted by name; a missing folder is []), a cache per directory and { fresh: true } for tests,
 // with CyberTracker's file set. Every file is re-checked with validateAll(dir, { perFile: true }) (§4.12):
 // one invalid file never fails the build. A brief is skipped only for a SITE_BLOCKING_CODES code; any
 // other error is a build warning and the brief is shown. A metrics, status, scoreboard or corrections file

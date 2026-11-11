@@ -1,7 +1,8 @@
 // Date and time formatters for page text, the chat edition and the site (SPEC §7 "Script-written page
 // text", §5.2). Pure string work on "YYYY-MM-DD" calendar dates, so no machine time zone leaks in; clock
 // times are Taipei (UTC+8, no daylight saving). §5.2's number helpers (pct, fmtPct, fmtInt, fmt1, fmtDays,
-// fmtDate) live in lib/metrics/stats.ts. P4 extends this file for the site.
+// fmtDate) live in lib/metrics/stats.ts. P4 extends this file for the site. Adapted from the siblings'
+// lib/format.ts (docs/PROVENANCE.md).
 
 import { isValidDate } from "./dates";
 

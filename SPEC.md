@@ -4685,7 +4685,7 @@ table: Foundation `npm run typecheck && npm test`; P1 adds `schema:check`, `fixt
 `publish`, `recheck` and `links`, each as above (`check` unchanged); P4 adds `dev`, `dev:sample`, `build`,
 `build:sample`, `build:empty`, `start` and `color:check` and the last three steps of `check`; `calibrate`
 arrives with calibration. The screenshot script has no package script: §10 P4 runs
-`node scripts/screenshots.mjs` on Kobol.
+`/opt/homebrew/bin/node scripts/screenshots.mjs` on Kobol.
 Content-only pushes to `main` skip CI (§9.2): publish runs `validateAll`
 before every commit (§8.7), and every PR's `validate:all` checks `content/` with the PR's code. No test
 touches the network (feed tests read `fixtures/feeds/`, agent tests use `fixtures/agent/fake-claude.mjs`).
@@ -6906,6 +6906,7 @@ Appendix A.6).
    row recording JL's pick.
 
 ```
+export PATH=/opt/homebrew/bin:$PATH                                       # arm64 node, npm and npx (AGENTS rule 2)
 npm ci && npm run check                                                   # includes both builds and color:check
 for look in paper night; do CT_CONTENT_DIR=logs/dry-run/tree CT_LOOK=$look npx next build && (npx next start -p 3000 &) && node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/$look; pkill -f 'next start -p 3000'; done
 git status --short content                                                # nothing: content/ untouched

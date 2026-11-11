@@ -2,6 +2,7 @@
 // loaded (never archive-index.json, so a skipped brief is never linked): longDate(date) linking /brief/DATE;
 // a kicker (archiveKicker()); the top story (SeverityPips and items[0].headline), or "No item cleared the
 // bar.", or "Data-only edition" when a data-only edition has no items. Empty: "No editions yet."
+// Adapted from the siblings' ArchivePage frame (docs/PROVENANCE.md).
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Empty, PageHeader } from "@/components/layout/chrome";

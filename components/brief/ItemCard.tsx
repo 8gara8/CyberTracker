@@ -4,7 +4,8 @@
 // the footer: "sources [1][3]", a "details" <details> holding ItemDetails, "Timeline →" when the item has a page,
 // "Report an error". A withheld item (§4.10) renders as stored and carries no `data-words` (§0.4 row 126), with
 // no "Impact:" line and no details: the rewrite keeps fields such as the impact, quotes and claimed_by, so its
-// card shows only what the item page's withheld form shows (§6).
+// card prints none of them; the kicker, headline, summary, script line, chips, source refs and links render as
+// stored (§6).
 import type { Edition, Source } from "@/lib/schema/common";
 import type { Item } from "@/lib/schema/item";
 import type { Correction } from "@/lib/schema/misc";

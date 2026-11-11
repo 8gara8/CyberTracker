@@ -1,5 +1,6 @@
 // SPEC §7 "BriefView and section order": BriefViewProps and briefPropsFor(content, date), which `/` and
 // `/brief/[date]` spread into <BriefView>. Owner: P4 foundation (S0); lanes read it and none edits it.
+// Adapted from the siblings' briefPropsFor() (docs/PROVENANCE.md).
 //
 // gapOk: loadContent() records in `content.gapFailed` every loaded brief whose per-file validateAll() result
 // has a GAP_MATCH issue (its gap block or Lens KEV lines differ from the same-date metrics, or there is no

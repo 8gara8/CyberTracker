@@ -3,6 +3,7 @@
 // date renders app/not-found.tsx. Next.js 16 passes params as a Promise. Title longDate(date) ("Sunday 8
 // November 2026 · CyberTracker" through the layout's template); description, openGraph and the ct-edition
 // marker as on `/` (components/pages/edition-meta.ts).
+// Adapted from the siblings' BriefPage (docs/PROVENANCE.md).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BriefView } from "@/components/brief/BriefView";

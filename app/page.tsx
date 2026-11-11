@@ -1,6 +1,7 @@
 // SPEC §6 Route table, `/`: the newest valid brief through BriefView (which shows StaleBanner when isLatest),
 // or the empty state. "Today" is content.briefs.at(-1): if today's brief was skipped, `/` shows yesterday's
 // and the stale banner appears after 08:00 Taipei. Static: built from the content folder, nothing per request.
+// Adapted from the siblings' TodayPage (docs/PROVENANCE.md).
 import type { Metadata } from "next";
 import { BriefView } from "@/components/brief/BriefView";
 import { briefPropsFor } from "@/components/brief/props";
