@@ -39,6 +39,8 @@ import type { DraftBrief } from "@/lib/schema/draft-brief";
 import type { CveBlock, DraftItem } from "@/lib/schema/item";
 import type { InputsManifest, Metrics } from "@/lib/schema/metrics";
 import { publisherFor } from "@/lib/sources";
+import { numbersIn } from "@/lib/text";
+import { normalizeUrl } from "@/lib/urls";
 import { ARCHIVE_WARNING_CODES, runRules, validateDraft } from "@/lib/validate";
 import { CANARY_TOKEN, NONE_FOUND, UNNAMED_CLAIM } from "@/lib/vocab";
 
@@ -830,6 +832,25 @@ describe("snapshot soft gates", () => {
       expect(r.errors).toEqual([]);
       expect(r.warnings.map((w) => `${w.code} ${w.path}`)).toEqual([`${c.code} ${c.path(d)}`]);
     }
+  });
+
+  it("SNAP_NUMBER reads a source's \"10x\" as 10, so a summary written as STYLE asks, \"10 times\", finds it (review of the eighth pass)", () => {
+    const run = (summary: string) => {
+      const d = weekdayDraft();
+      const inputs = draftInputs("weekday");
+      const it = d.items.find((x) => x.ai_evidence.length)!;
+      const url = d.sources.find((x) => x.id === it.ai_evidence[0]!.source_id)!.url;
+      const key = Object.keys(inputs.evidence!.texts).find((u) => normalizeUrl(u) === normalizeUrl(url))!;
+      inputs.evidence!.texts[key] = `${inputs.evidence!.texts[key]} SAMPLE: the model found the bugs 10x faster than our fuzzers.`;
+      it.summary = summary;
+      return warns(validateDraft(d, { ...inputs, rules: MINE }), "SNAP_NUMBER");
+    };
+    expect(run("The firm says its model found the bugs 10 times faster than its fuzzers.")).toEqual([]);
+    // Another ratio still has no source (11 and 12 are weekday metric numbers, so 40).
+    expect(run("The firm says its model found the bugs 40 times faster than its fuzzers.").map((w) => w.message)).toEqual([expect.stringContaining("holds 40")]);
+    // Our own prose never reads "10x" as a number (NUMBER_FORM fails it instead).
+    expect(numbersIn("found the bugs 10x faster")).toEqual([]);
+    expect(numbersIn("found the bugs 10x faster, 5.2x more; DIR-823X", { words: true }).map((n) => n.value)).toEqual([10, 5.2]);
   });
 
   it("SNAP_NUMBER checks the Angle's text against its sources, and skips NONE_FOUND", () => {

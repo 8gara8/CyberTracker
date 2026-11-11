@@ -244,10 +244,14 @@ const MULTIPLIERS: Record<string, number> = { thousand: 1e3, million: 1e6, billi
  * "percent" make a percentage; a following "thousand", "million", "billion", "bn" or an attached "m"
  * multiplies. A digit run glued to letters ("2FA", "x86", "5G", "3rd", "COVID-19") is not a number.
  * With `words: true` (a source's seen text, never our own prose) two to twenty and the tens, and
- * compounds such as "twenty-one", are read as digits.
+ * compounds such as "twenty-one", are read as digits, and so is each ratio glued to x (gluedRatios():
+ * "10x" as 10, "5.2x" as 5.2), so a summary that writes a source's "10x faster" as "10 times faster"
+ * finds it.
  */
 export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberToken[] {
   let s = text.normalize("NFKC");
+  // The x of each glued ratio becomes a space, so the same positions hold and its digits read as a number.
+  if (opts.words) for (const t of gluedRatioTokens(s)) s = `${s.slice(0, t.end - 1)} ${s.slice(t.end)}`;
   for (const re of NOT_NUMBERS) s = typeof re === "function" ? re(s) : s.replace(re, " ");
   if (opts.words) {
     s = s.replace(COMPOUND_RE, (_m, tens: string, unit: string) => String(TENS_WORDS[tens.toLowerCase()]! + SMALL_WORDS[unit.toLowerCase()]!));
@@ -355,7 +359,12 @@ function nameBefore(before: string): boolean {
  * gives its last token.
  */
 export function gluedRatios(text: string): string[] {
-  const s = text.normalize("NFKC").replace(GHSA_RE, (m) => " ".repeat(m.length));
+  return gluedRatioTokens(text.normalize("NFKC")).map((t) => t.raw);
+}
+
+/** gluedRatios() with each token's place in the NFKC text `nfkc`. */
+function gluedRatioTokens(nfkc: string): { at: number; end: number; raw: string }[] {
+  const s = nfkc.replace(GHSA_RE, (m) => " ".repeat(m.length));
   const tokens = [...s.matchAll(GLUED_RATIO_RE)].map((m) => {
     const [raw, num, x] = m as unknown as [string, string, string];
     const before = s.slice(0, m.index).replace(RANGE_START_END_RE, "");
@@ -377,7 +386,7 @@ export function gluedRatios(text: string): string[] {
     else if (listPartnerName(s.slice(0, t.at))) t.name = true;
     else if (next && LIST_JOIN_RE.test(s.slice(t.end, next.at)) && next.name) t.name = true;
   }
-  return tokens.filter((t) => !t.name).map((t) => t.raw);
+  return tokens.filter((t) => !t.name).map(({ at, end, raw }) => ({ at, end, raw }));
 }
 
 /** Between two tokens of a list: " and ", " or " (" & " too). */
