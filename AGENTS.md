@@ -89,7 +89,18 @@ faster?
   first fix) passed 13 of 13 (report `a6a1042`). The dry runs also showed that the pack held no news
   items. A fifth fix pass in the container fixed both (rows 145 and 146): a metric Angle may repeat any
   figure its quotable labels print, and the pack's size caps cut records before news, with a release's
-  `pack_ids` bounded. Kobol reruns `agent:check -- --all` and the timed dry run.
+  `pack_ids` bounded. An independent review of that pass found gaps in both, and a sixth pass in the
+  container (2026-11-11) closed them, editing rows 145 and 146: each label figure is exempt only as often
+  as its labels print it, with the "between A and B" and confidence-interval forms read and hints for
+  ratios and Gap days; region-signal, exchange and dashboard records are protected from the caps, a
+  release's `pack_ids` are filled to 20, and a new rule, RELEASE_SOURCE, fails before publish a patch
+  batch publish could not date. After this pass Kobol reruns (SPEC §10 P3): `npm run check`;
+  `agent:check -- --all`; the timed dry run (`packs/D.md` at most 153,600 bytes with its news items kept,
+  and the `size_cut` list in `logs/D.candidates.json`); and the backdated dry run for 2026-10-14
+  (`--date 2026-10-14`: `pt-microsoft-2026-10` with at most 20 `pack_ids` for its fixes' records, a
+  merged news item or note adding its own id, and its counts unchanged, 1,384 fixes, 61 critical and 1
+  exploited; `packs/2026-10-14.md` at most 153,600 bytes with its news items kept; the TW and JP levels
+  as in the earlier run). Done-when bullet 1 is re-measured on the new pack.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -110,7 +121,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; canary and timed dry run to rerun after the fifth pass |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; after the sixth pass Kobol reruns `npm run check`, `agent:check -- --all`, the timed dry run and the 2026-10-14 dry run |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
