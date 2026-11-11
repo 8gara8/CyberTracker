@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": 3,
+  "version": 4,
   "updated": "2026-11-11",
   "vendors": [
     { "id": "acer", "name": "Acer", "country": "TW", "widely_deployed": true, "aliases": [], "cna": ["Acer"], "domains": ["acer.com"], "note": null },
@@ -89,7 +89,7 @@
     { "id": "phoenix-contact", "name": "Phoenix Contact", "country": "DE", "widely_deployed": true, "aliases": [], "cna": [], "domains": ["phoenixcontact.com"], "note": null },
     { "id": "rarlab", "name": "RARLAB", "country": "DE", "widely_deployed": true, "aliases": ["win.rar"], "cna": [], "domains": ["rarlab.com", "win-rar.com"], "note": "WinRAR; distributed by win.rar GmbH" },
     { "id": "roundcube", "name": "Roundcube", "country": "DE", "widely_deployed": true, "aliases": [], "cna": [], "domains": ["roundcube.net"], "note": "Part of Nextcloud" },
-    { "id": "sap", "name": "SAP", "country": "DE", "widely_deployed": true, "aliases": [], "cna": ["sap"], "domains": ["sap.com"], "note": null },
+    { "id": "sap", "name": "SAP", "country": "DE", "widely_deployed": true, "aliases": [], "cna": ["sap"], "domains": ["sap.com", "url.sap"], "note": null },
     { "id": "siemens", "name": "Siemens", "country": "DE", "widely_deployed": true, "aliases": [], "cna": ["siemens"], "domains": ["siemens.com"], "note": null },
     { "id": "suse", "name": "SUSE", "country": "DE", "widely_deployed": true, "aliases": [], "cna": ["suse"], "domains": ["suse.com"], "note": null },
     { "id": "nokia", "name": "Nokia", "country": "FI", "widely_deployed": true, "aliases": [], "cna": ["Nokia"], "domains": ["nokia.com"], "note": null },

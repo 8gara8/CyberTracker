@@ -1280,8 +1280,9 @@ describe("collect's other runs", () => {
   });
 
   it("a release whose CVE records tag no reference: the pack's member records carry the vendor's own page, as the candidate does (review of row 146)", async () => {
-    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day link, both untagged, as SAP's
-    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it.
+    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day page, both untagged, as SAP's
+    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it. url.sap is
+    // SAP SE's own brand top-level domain (vendors.json v4), so the public patch-day page, which needs no login, is one of them.
     const zipName = "2026-10-13_delta_CVEs_at_2000Z.zip";
     const feeds = feedsVariant();
     const zipPath = path.join(feeds, "cvelist", "zips", zipName);
@@ -1307,16 +1308,16 @@ describe("collect's other runs", () => {
     expect(pt.release).toMatchObject({ vendor: "SAP", total: 7, exploited: 0 });
     const fixtureNote = "https://me.sap.com/ct-sample/cve-2026-58249-1";
     const notes = [0, 1, 2, 3, 4, 5].map((i) => `https://me.sap.com/notes/36943${80 + i}`);
-    expect(pt.advisory_urls).toEqual([fixtureNote, ...notes.slice(0, 4)]);
+    const patchDay = "https://url.sap/sapsecuritypatchday";
+    expect(pt.advisory_urls).toEqual([fixtureNote, notes[0], patchDay, notes[1], notes[2]]);
     const byCve = new Map(r.pack.records.filter((x) => x.source === "cvelist").map((x) => [x.record_id, x]));
-    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i]]));
+    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i], patchDay]));
     expect(byCve.get("CVE-2026-58249")?.advisory_urls).toEqual([fixtureNote]);
     const md = readOut(root, `packs/${DATE}.md`);
-    for (const u of [fixtureNote, ...notes]) expect(md).toContain(`  advisory: ${u}`);
-    expect(md).not.toContain("url.sap");
+    for (const u of [fixtureNote, ...notes, patchDay]) expect(md).toContain(`  advisory: ${u}`);
     expect(md).not.toContain("  advisory: https://example.com/");
-    // The pack is the run's evidence: a draft citing the note from the pack is citing a URL the run saw.
-    for (const u of [fixtureNote, ...notes]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
+    // The pack is the run's evidence: a draft citing the note or the patch-day page from the pack is citing a URL the run saw.
+    for (const u of [fixtureNote, ...notes, patchDay]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
     // On the fixture morning alone the SAP fix is no release member (one record, under min_records) and no test keeps it, so the
     // pack holds no record of it; the six fixes change no other record's advisory URLs.
     const before = await run(tempRoot(true));

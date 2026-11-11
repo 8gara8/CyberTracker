@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { releaseMember } from "../lib/rules/sources";
+import { publisherFor } from "../lib/sources";
 import type { CveRecordInfo } from "../lib/rules/types";
 import { cnaVendorOf, cveIdsIn, cvePackRecords, ghsaPackRecords, kevPackRecords, notePackRecords, packWindow, provisionalRecords, recordWindow, vendorPageUrls } from "../lib/collect";
 import { loadConfig, matchCredit, type LoadedConfig } from "../lib/config";
@@ -456,12 +457,16 @@ describe("rankCandidates() on built cases", () => {
   });
 
   it("a release whose CVE records tag no reference still carries the vendor's own page, and no page on another host (review of row 146)", () => {
-    // SAP: each record cites its note on me.sap.com (vendor:sap, tier 1) and the url.sap patch-day link (host:url.sap, tier 3).
-    const sap = Array.from({ length: 6 }, (_, i) => untaggedFix(i, "sap", "SAP", [`https://me.sap.com/notes/36943${80 + i}`, "https://url.sap/sapsecuritypatchday"], 8 - i / 10));
+    // SAP: each record cites its note on me.sap.com and the public patch-day page on url.sap (both vendor:sap, tier 1; url.sap is
+    // SAP SE's own brand top-level domain, vendors.json v4).
+    const PATCH_DAY = "https://url.sap/sapsecuritypatchday";
+    const sap = Array.from({ length: 6 }, (_, i) => untaggedFix(i, "sap", "SAP", [`https://me.sap.com/notes/36943${80 + i}`, PATCH_DAY], 8 - i / 10));
     const ptSap = rankCandidates(input({ ...empty, records: sap })).kept.find((c) => c.kind === "patch_batch")!;
     expect(ptSap.id).toBe("pt-sap-2026-10");
-    // Best-scored first (releasePackMembers()), at most five; url.sap is never one.
-    expect(ptSap.advisory_urls).toEqual([0, 1, 2, 3, 4].map((i) => `https://me.sap.com/notes/36943${80 + i}`));
+    // Best-scored first (releasePackMembers()), each member's note then the patch-day page, repeats dropped, at most five.
+    const note = (i: number) => `https://me.sap.com/notes/36943${80 + i}`;
+    expect(ptSap.advisory_urls).toEqual([note(0), PATCH_DAY, note(1), note(2), note(3)]);
+    expect(publisherFor(PATCH_DAY, "vendor_advisory", cfg)).toMatchObject({ publisher: "vendor:sap", tier: 1 });
     // Siemens: one ProductCERT page per record on cert-portal.siemens.com; one record also cites a page on another host.
     const siemens = Array.from({ length: 5 }, (_, i) => untaggedFix(10 + i, "siemens", "Siemens", [
       `https://cert-portal.siemens.com/productcert/html/ssa-0635${10 + i}.html`, ...(i === 0 ? ["https://example.com/ct-sample/siemens-writeup"] : []),
@@ -478,22 +483,22 @@ describe("rankCandidates() on built cases", () => {
     expect(ptSchneider.advisory_urls.filter((u) => u.startsWith("https://download.schneider-electric.com/"))).toHaveLength(3);
     // Only references on another host: no advisory URL. An exploit-tagged reference on the vendor's domain is never taken either.
     const elsewhere = sap.map((r, i) => ({ ...r, references: [
-      { url: "https://url.sap/sapsecuritypatchday", tags: [], from: "cna" as const },
       { url: `https://example.com/ct-sample/sap-${i}`, tags: [], from: "cna" as const },
+      { url: `https://sap.example.org/ct-sample/sap-${i}`, tags: [], from: "cna" as const },
       { url: `https://me.sap.com/notes/39${i}`, tags: ["exploit"], from: "cna" as const },
       { url: `https://me.sap.com/notes/38${i}`, tags: [], from: "adp" as const },
     ] }));
     expect(rankCandidates(input({ ...empty, records: elsewhere })).kept.find((c) => c.kind === "patch_batch")!.advisory_urls).toEqual([]);
     // A record's vendor pages are on the hosts of the vendor whose CNA assigned it, whether or not a release bundles it
     // (fourth review of row 146): the record's pack record holds them after its tagged URLs, so the pack holds the page.
-    expect(vendorPageUrls(sap[0]!, cfg)).toEqual(["https://me.sap.com/notes/3694380"]);
+    expect(vendorPageUrls(sap[0]!, cfg)).toEqual(["https://me.sap.com/notes/3694380", PATCH_DAY]);
     expect(vendorPageUrls({ ...sap[0]!, assigner: "siemens" }, cfg)).toEqual([]);
     expect(vendorPageUrls({ ...sap[0]!, assigner: "example" }, cfg)).toEqual([]);
     expect(vendorPageUrls({ ...sap[0]!, assigner: null }, cfg)).toEqual([]);
     expect(cnaVendorOf(sap[0]!, cfg.vendors)?.id).toBe("sap");
     const drafts = cvePackRecords(sap, () => true, cfg);
-    expect(drafts.map((d) => d.advisory_urls)).toEqual(sap.map((_, i) => [`https://me.sap.com/notes/36943${80 + i}`]));
-    expect(cvePackRecords(sap.slice(0, 4), () => true, cfg).map((d) => d.advisory_urls)).toEqual(sap.slice(0, 4).map((_, i) => [`https://me.sap.com/notes/36943${80 + i}`]));
+    expect(drafts.map((d) => d.advisory_urls)).toEqual(sap.map((_, i) => [note(i), PATCH_DAY]));
+    expect(cvePackRecords(sap.slice(0, 4), () => true, cfg).map((d) => d.advisory_urls)).toEqual(sap.slice(0, 4).map((_, i) => [note(i), PATCH_DAY]));
   });
 
   /** A Fortinet record as Fortinet's CNA writes them: one untagged FortiGuard PSIRT page, its own host, and nothing tagged. */

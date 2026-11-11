@@ -72,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 3, ai_finders: 2, source_tiers: 2, regions: 1, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 1, actors: 1 });
   });
 });
 
@@ -189,13 +189,15 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("versioned files: vendors at 3 (P3: Schneider Electric's schneider-electric.com), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), the rest at 1", () => {
+  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), the rest at 1", () => {
     const c = prod();
-    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([3, 2, 2]);
+    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([4, 2, 2]);
     expect(c.sourceTiers.updated).toBe("2026-11-10");
     expect(c.vendors.updated).toBe("2026-11-11");
     // Its notices sit on download.schneider-electric.com as well as download.se.com (23 and 11 of its 34 2026 CVE records).
     expect(c.vendors.vendors.find((v) => v.id === "schneider-electric")?.domains).toEqual(["se.com", "schneider-electric.com"]);
+    // SAP's public patch-day link is on url.sap, SAP SE's own brand top-level domain; its notes on me.sap.com need a login.
+    expect(c.vendors.vendors.find((v) => v.id === "sap")?.domains).toEqual(["sap.com", "url.sap"]);
     for (const f of [c.regions, c.actors]) expect(f.version).toBe(1);
   });
 });
