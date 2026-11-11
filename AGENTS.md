@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-11 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-12 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -60,86 +60,40 @@ faster?
   the main checkout was fast-forwarded to `cbf3a9b` (rule 4; `package-lock.json` did not change, so no
   `npm ci`) and the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics` removed, its
   4.8G `cache/cvelistV5` with it (P3 clones again if it needs one).
-- **P3 on `p3-pipeline`, PR #5 (a draft until 2026-11-11, ready since 19:53 Taipei):** built and tested in the cloud container on 2026-11-10: the
-  morning pipeline (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its
-  tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. An independent review in the
-  container (two verify passes, 22 findings, one a duplicate) and the build's 11 known items were then
-  fixed there, with rows 95 to 120. A second fix pass in the container then closed the edge cases those
-  fixes left open (a same-day withhold whose item the draft drops, later copies of a withheld item, the
-  URL rule, shared source titles, intake's reuse of a non-binding correction, the draft-mode `first_seen`,
-  the not-composed next step and the sample's blocks), editing rows 29, 79, 84, 87, 95, 96, 98, 100, 102
-  and 103 and adding rows 121 to 125. A third fix pass in the container (2026-11-11) kept withheld
-  items out of the top-story slots and the word counts, showed a same-day withheld story once when the
-  draft re-reports it as another kind, read withheld references from every stored brief, gave a
-  whole-tree validation failure and a failed `--force` rerun the right next step, checked the titles of
-  sources only withheld items cite and dropped the unassessed chip of a withheld item, with rows 126 to
-  132. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
-  `file -L` says arm64. JL stored the agent's token (SPEC §9.6) on 2026-11-11 at 06:47 Taipei with the
-  helper `~/.cybertracker/store-token.zsh`, outside the repo, which reads a copied token from the
-  clipboard, stores it and tests it (use it for renewals too). The PR stayed a draft until the Kobol
-  checks were in. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
-  00:31 UTC; `docs/reports/2026-11-11-p3-dry-runs.md`) `agent:check -- --all` passed 13 of 13, the
-  transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
-  dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
-  plan with rows 134 to 143 (row 133 came from that `agent:check`, row 144 from the pass's review). The
-  rerun on Kobol (10:05 to 10:15 Taipei, 02:05 to 02:15 UTC) stopped when the canary, safe but invalid,
-  failed on an Angle naming its own 26-week window, which the number rules counted. The timed dry run at
-  10:24 Taipei (02:24 UTC) on `0c8c4d4` then passed every Done-when limit (data-only 31 s, full 2 min
-  18 s, end 2 min 21 s, 6 items, 918 words, 0 repairs), and `agent:check -- --all` on `989bdff` (row 145's
-  first fix) passed 13 of 13 (report `a6a1042`). The dry runs also showed that the pack held no news
-  items. A fifth fix pass in the container fixed both (rows 145 and 146): a metric Angle may repeat any
-  figure its quotable labels print, and the pack's size caps cut records before news, with a release's
-  `pack_ids` bounded. An independent review of that pass found gaps in both, and a sixth pass in the
-  container (2026-11-11) closed them, editing rows 145 and 146: each label figure is exempt only as often
-  as its labels print it, with the "between A and B" and confidence-interval forms read and hints for
-  ratios and Gap days; region-signal, exchange and dashboard records are protected from the caps, a
-  release's `pack_ids` are filled to 20, and a new rule, RELEASE_SOURCE, fails before publish a patch
-  batch publish could not date. A third internal review, of the sixth pass, found more, and a seventh
-  pass in the container (2026-11-11) closed it, editing rows 145 and 146 again: a day range in one month
-  ("13 to 14 Oct") reads as a date, a new rule, NUMBER_FORM, fails a ratio glued to x ("9.9x"), and the
-  hints say "at most once"; a release's records carry its vendor's own pages (`vendors.json` v3 adds
-  `schneider-electric.com`) and its advisory URLs list the exploited fix's first, RELEASE_SOURCE counts
-  only the release's own fixes, and an item that gives a region signal is never cut. A fourth internal
-  review, of the seventh pass, found more, and an eighth pass in the container (2026-11-11) closed it,
-  editing rows 145 and 146 again: NUMBER_FORM reads product, standard and id names that end in x
-  ("DIR-823X", "802.1X", "3x-ui") as names and also fails a ratio in words ("nearly ten times"), more day
-  ranges read as dates ("on 11 and 12 Nov", "from Tuesday 11 to Wednesday 12 Nov"), the hints name the
-  edition's own day, and STYLE §6 lets a verbatim quote keep the source's ratio; a release's fixes are
-  its vendor's CNA records published within its dates, its advisory URLs come only from its pack records,
-  every kept record of a vendor's CNA carries that vendor's own pages, and `vendors.json` v4 adds
-  `url.sap`. A fifth internal review, of the eighth pass, found more, and a ninth pass in the container
-  (2026-11-11), the last internal one, closed it, editing rows 145 and 146 again: month first, "and",
-  "or", "through" and "/" join two days only after "between" or at the end of a clause, so the count
-  after them is read again; NUMBER_FORM reads a ratio before a comparison word, after a month or year and
-  in a range, reads a list of names as names and no count after "over" or "as"; a source's "10x" grounds
-  a summary's "10 times"; the hints give the Gap's own "more than twice" (STYLE §6 says it stays in
-  words), the day hint for a month name before the day and the reviewed week in the week in review; and
-  only a kept record of a vendor's CNA with no tagged advisory URL carries that vendor's own page (one
-  per host, at most two, never a commit, bug tracker or mailing list link). A review of the ninth pass
-  (its probes rerun) then found three more, fixed in the container: NUMBER_FORM reads "ten times over the
-  2023–24 pace" and "nine times as rapidly as" as ratios and "10x/day" as a count, a Lead may copy a pace
-  multiple the Gap prints in words (STYLE §6 now says so, so the canary runs again), and a KEV-listed
-  flaw keeps its vendor's page beside the report CISA's ADP tagged on it. `npm run check` in the
-  container then passed 2309 tests in 70 files. Kobol then reran SPEC §10 P3's list on `4d3c795` in
-  the P3 worktree on 2026-11-11, 19:10 to 19:42 Taipei (11:10 to 11:42 UTC; report `e81bc44`), with the earlier runs' pack files saved first in
-  `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs/`. Every step passed: `npm run check`
-  2309 tests; `agent:check -- --all` 13 of 13, the canary safe and valid; the 2026-10-14 and 2026-10-22
-  dry runs and `validate:all` on their tree (0 errors); the 2026-10-21 forced failure (a valid data-only
-  edition); the timed dry run (data-only 24 s, full 4 min 17 s, end 4 min 19 s, 8 items, 1,091 words).
-  The packs now keep their news (6, 17 and 81 items, at most 153,250 bytes), each release names at most
-  20 of its fixes' records, `pt-microsoft-2026-10` still counts 1,384 fixes, 61 critical and 1 exploited,
-  TW and JP stay at baseline, and the vendor pages are on their own hosts. On 2026-10-22 the first attempt
-  failed validation after both repair rounds (E_VALIDATION); the retry validated after one (row 139's
-  rounds per attempt). CERT-FR's live alerts are under `www.cert.cyber.gouv.fr`, so `regions.json` version 2 adds
-  that pattern (row 147). PR #5 was marked ready at 19:53 Taipei (11:53 UTC); Codex started only on
-  `@codex review` (20:56). Round 1 (one P1): a rejected dispute stayed rejected when its issue was
-  reopened; a reopened (or completed) issue now gets a new dispute, withheld again, and an internal
-  review of that fix closed two masking gaps on the same path (row 148). Round 2 (one P1, 22:18
-  Taipei): a withhold that failed validation was only logged, and the full edition could print the
-  disputed name again; a withhold not in the tree now stops the editorial pass with the new code
-  `E_WITHHOLD`, the data-only edition standing, and an internal review of that fix closed four gaps on
-  the same path (an item withheld on another edition, the disputes kept for a rerun with intake down, the
-  `--force` rerun, the `--data-only` reason in the chat; row 149).
+- **P3 on `p3-pipeline`, PR #5, merged by JL on 2026-11-11 at 23:48 Taipei (15:48 UTC; `main` at
+  `9ad5df3`) after Codex round 3 (23:17 Taipei, on `f990fc2`) found nothing:** the morning pipeline
+  (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its tests and
+  `docs/RUNBOOK.md`, built in the cloud container from 2026-11-10 (§0.4 rows 67 to 94), then an
+  independent review and nine fix passes there (rows 95 to 147; passes five to nine are the number rules
+  and pack caps of rows 145 and 146). JL stored the agent's token (SPEC §9.6) on 2026-11-11 at 06:47
+  Taipei with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which reads a copied token
+  from the clipboard, stores it and tests it (use it for renewals too). Kobol's checks are in
+  `docs/reports/2026-11-11-p3-dry-runs.md` (and commits `a6a1042`, `e81bc44`). The last rerun of SPEC
+  §10 P3's list, on `4d3c795` in the P3 worktree (19:10 to 19:42 Taipei, 11:10 to 11:42 UTC), passed
+  every step: `npm run check` 2309 tests; `agent:check -- --all` 13 of 13, the canary safe and valid;
+  the 2026-10-14 and 2026-10-22 dry runs and `validate:all` on their tree (0 errors); the 2026-10-21
+  forced failure (a valid data-only edition); the timed dry run (data-only 24 s, full 4 min 17 s, end
+  4 min 19 s, 8 items, 1,091 words). CERT-FR's live alerts gave `regions.json` version 2 (row 147).
+  Codex rounds 1 and 2 each found one P1, fixed with rows 148 (a reopened dispute is withheld again) and
+  149 (a withhold not in the tree stops the editorial pass with `E_WITHHOLD`). `package-lock.json` has
+  not changed since `cbf3a9b`, so no `npm ci`. **Kobol housekeeping still due**, in the Kobol session
+  JL's next message starts: fast-forward the main checkout to `9ad5df3` (rule 4); keep the P3
+  worktree's `logs/dry-run/tree` (copy it out first) for P4's screenshots; then remove the worktree
+  `/Users/kobol/Projects/CyberTracker-worktrees/p3-pipeline` and
+  `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs`.
+- **P4 on `p4-site`, draft PR #6:** the static site (every route, the brief, the Gap charts,
+  Methodology, About, the feed), `scripts/color-check.ts` and `scripts/screenshots.mjs`, built in the
+  cloud container from 2026-11-12 00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel
+  lanes (brief, charts, pages, tools), their integration, then an independent review. Of its 39 findings
+  27 were confirmed: 25 code fixes with tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of
+  those fixes added one more (`c8f294b`). Spec changes: §0.4 rows 150 to 168. STYLE §14's change leaves
+  the drafting rule as it was, so a Kobol canary rerun (`agent:check -- --canary`) is optional. The PR
+  stays a draft until these Kobol steps (SPEC §10 P4's status) are done: install `playwright-core` in
+  `/Users/kobol/.cybertracker/tools` (§9.9 item 6) and record its version in Appendix C; build both
+  looks from the P3 dry-run tree and commit the screenshots into `docs/screenshots/p4/<look>/`; check
+  the CISA KEV search link; check that a `[n]` link opens the sources list in iOS Safari and in the
+  Claude app's browser; check the route summary on the dry-run tree. Then it is marked ready with
+  `@codex review`; JL picks the look from the screenshots and the other look is deleted (Appendix A.6).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -160,8 +114,8 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; ready 2026-11-11 19:53 Taipei, Codex rounds 1 and 2 fixed (rows 148 and 149) |
-| P4 Site | `p4-site` | | Not started |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
+| P4 Site | `p4-site` | #6 | In progress: built in the cloud container 2026-11-12; a draft until its Kobol steps |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
@@ -252,6 +206,9 @@ faster?
 | Agent sandbox | `npm run agent:check` runs the smoke tests; `-- --sandbox` adds the sandbox tests, `-- --canary` the planted-instruction test, `-- --all` all three, `-- --json` JSON instead of the table. Needs the keychain token; exit 0 every test passed, 1 a failure, 2 the CLI or token missing or a usage error (SPEC §8.12; from P3) |
 | Recover a morning | `docs/RUNBOOK.md`: every error code with its next step, where to look, the lock, `needs-review/`, token renewal (from P3) |
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
+| Build the site | `npm run build:sample` and `npm run build:empty` build it from `fixtures/site-content/` and `fixtures/empty-content/` (both are steps of `check`); `npm run build` reads `content/` or `CT_CONTENT_DIR`, then `npm run start` serves it; `CT_LOOK=night` builds full dark until JL's pick (SPEC §6, §9.7; from P4) |
+| Colour check | `npm run color:check` checks every colour pair of `app/globals.css` against Appendix A.5 (`-- --css FILE` for another file); exit 0 passed, 1 a failure, 2 usage; a step of `check` (from P4) |
+| Screenshots | On Kobol, with the site served: `node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing, 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
 
 ## 7. Memory
 

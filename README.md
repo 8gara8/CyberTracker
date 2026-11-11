@@ -3,9 +3,10 @@
 Daily AI-era cyber threat brief: exploits, breaches and the AI shift across the US, Europe, Taiwan, Japan and global.
 
 Status: rebuilt for Kobol (SPEC.md v2.0, 2026-11-08); the build follows in phases P1 to P5 (SPEC.md §10).
-P1 (data contract, validator, chat edition) merged on 2026-11-09 and P2 (feeds, metrics and the two-year
-backfill) on 2026-11-10. P3 (the morning pipeline and its dry runs on Kobol) is in progress on draft
-PR #5: built and tested, with the Kobol checks next.
+P1 (data contract, validator, chat edition) merged on 2026-11-09, P2 (feeds, metrics and the two-year
+backfill) on 2026-11-10 and P3 (the morning pipeline and its dry runs on Kobol) on 2026-11-11. P4 (the
+static site) is in progress on draft PR #6: built and tested, with its Kobol steps (the screenshots of
+both looks and a few phone and link checks) next.
 
 - Design: [docs/DESIGN.md](docs/DESIGN.md) (approved v0.2, frozen)
 - Build spec: [SPEC.md](SPEC.md)
@@ -28,3 +29,8 @@ Commands (Node from `/opt/homebrew/bin` on Kobol; SPEC.md §8.1 has the full lis
 - `npm run context -- --date D`: write the agent's context for D
 - `npm run chat -- --date D`: print D's chat edition
 - `npm run agent:check`: check the agent CLI and its sign-in; `-- --all` adds the sandbox and canary tests
+- `npm run dev:sample`: the site on the sample data; `npm run build:sample` and `npm run build:empty` build
+  it from the sample and from the empty folder
+- `npm run color:check`: check the site's colour pairs against SPEC.md Appendix A.5
+- `node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>`: the P4
+  screenshots on Kobol, from a running site (needs `playwright-core`, SPEC.md §9.9 item 6)
