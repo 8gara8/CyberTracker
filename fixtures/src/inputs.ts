@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { cveRecordDomains } from "../../lib/context";
 import { loadConfig, matchCredit, matchVendor, type LoadedConfig } from "../../lib/config";
 import { addDays, isMonday, isoWeekStart, newestCompleteWeek, windowEnding } from "../../lib/dates";
 import { composeHeadline, gapTableDisplays, kevLines } from "../../lib/metrics/headline";
@@ -460,6 +461,7 @@ function buildContext(name: EditionName): AgentContext {
         t2: domains((p) => p.tier === 2),
         not_sole_newsroom: domains((p) => !p.sole_newsroom_for_critical),
         state_labelled: domains((p) => p.state_label !== null),
+        cve_record: cveRecordDomains(cfg.sourceTiers),
       },
       home_vendors: {
         tw: cfg.vendors.vendors.filter((v) => v.country === "TW").map((v) => v.name),

@@ -61,7 +61,7 @@ export interface ValidateLoopIo {
   writeDropped(r: DropReport): void;
 }
 
-/** Shared across attempts. */
+/** One attempt's repair rounds: daily.ts starts a new state for each attempt, so each has `maxRepairs` (§8.2). */
 export interface ValidateLoopState {
   repairsUsed: number;
   maxRepairs: number;
@@ -118,7 +118,7 @@ export async function validateLoop(
   const file = `drafts/${inputs.context.date}.json`;
   let repairs = 0;
   let checked: number | null = null;
-  const drops: DropReport = { items: [], angle: null, scoreboard_entries: [] };
+  const drops: DropReport = { items: [], angle: null, scoreboard_entries: [], removed: [] };
   let dropped = false;
   let angleDropped = false;
 
@@ -188,6 +188,7 @@ export async function validateLoop(
     drops.angle = report.angle ?? drops.angle;
     if (report.angle) angleDropped = true;
     drops.scoreboard_entries.push(...report.scoreboard_entries);
+    drops.removed.push(...report.removed);
     io.writeDropped(structuredClone(drops));
     const parts = [
       report.items.length ? `${plural(report.items.length, "unverified item")} (${report.items.map((x) => x.id).join(", ")})` : null,
@@ -196,6 +197,9 @@ export async function validateLoop(
         ? `${report.scoreboard_entries.length} Scoreboard ${report.scoreboard_entries.length === 1 ? "entry" : "entries"}` : null,
     ].filter((p): p is string => p !== null);
     io.log(`Attempt ${attempt}: the soft pass dropped ${parts.join(" and ")}.`);
+    if (report.removed.length) {
+      io.log(`Attempt ${attempt}: the soft pass removed ${report.removed.map((x) => x.path).join(", ")}, left citing no item.`);
+    }
     const result = validateGated(draft, c.inputs);
     record(result);
     return { gated: draft, result };
@@ -245,7 +249,7 @@ export async function validateLoop(
 /**
  * The drops the final draft still shows: each dropped item id once (its latest report), less the ids the
  * final gated draft holds again, and the Angle only while the final draft has none. Scoreboard entries
- * stay as reported. With no final draft (it did not parse) every dropped id stays.
+ * and the removed Lead sentences and raises stay as reported. With no final draft (it did not parse) every dropped id stays.
  */
 function finalDrops(all: DropReport, gated: GatedDraft | null): DropReport {
   const kept = new Set(gated ? gated.items.map((it) => it.id) : []);
@@ -258,5 +262,6 @@ function finalDrops(all: DropReport, gated: GatedDraft | null): DropReport {
     items: [...latest.values()].filter((it) => !kept.has(it.id)),
     angle: all.angle && (gated === null || gated.angle === null) ? all.angle : null,
     scoreboard_entries: all.scoreboard_entries,
+    removed: all.removed,
   };
 }

@@ -146,6 +146,8 @@ export const AgentContext = z.strictObject({
       t2: z.array(z.string().min(1)),
       not_sole_newsroom: z.array(z.string().min(1)),
       state_labelled: z.array(z.string().min(1)),
+      /** The domains of the record publishers (CVE, NVD, GitHub advisories, JVN, TVN): a page on one is source_type "cve_record". */
+      cve_record: z.array(z.string().min(1)),
     }),
     home_vendors: z.strictObject({ tw: z.array(z.string().min(1)), jp: z.array(z.string().min(1)) }),
     actors: z.array(z.strictObject({ name: z.string().min(1), aliases: z.array(z.string().min(1)), related_tracker: SiblingTracker.nullable() })),

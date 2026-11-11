@@ -430,11 +430,66 @@ describe("dropUnverified", () => {
   it("changes nothing without soft-gate issues, and accepts dotted index paths", () => {
     const { draft: same, report } = dropUnverified(draft(), [{ code: "SNAP_MISSING", path: "items[3]" }]);
     expect(same).toEqual(draft());
-    expect(report).toEqual({ items: [], angle: null, scoreboard_entries: [] });
+    expect(report).toEqual({ items: [], angle: null, scoreboard_entries: [], removed: [] });
     const dotted = dropUnverified(draft(), [{ code: "SNAP_NAME", path: "items.2.headline" }, { code: "SNAP_NUMBER", path: "angle.text" }]);
     expect(dotted.draft.items.map((i) => i.id)).toEqual(["vuln-a", "cve-2026-104935", "pol-b"]);
     expect(dotted.draft.angle).toBeNull();
-    expect(dotted.draft.region_raises[0]!.item_ids).toEqual([]);
+    expect(dotted.draft.region_raises).toEqual([]); // the raise cited only the dropped item
     expect(dropUnverified(dotted.draft, []).draft.angle).toBeNull(); // a gated draft goes round again
+  });
+
+  /** The 2026-11-11 Kobol dry run's Lead: lead[2] cites only the item the soft pass drops. */
+  function kobolLead(): DraftBrief {
+    const d = draft();
+    d.lead = [
+      { text: "SAMPLE lead sentence one about the exploited flaw and the vendor's own patch today.", item_ids: ["cve-2026-104935"], gap: false },
+      { text: "SAMPLE lead sentence two about the policy move.", item_ids: ["pol-b"], gap: false },
+      { text: "SAMPLE lead sentence three about the breach.", item_ids: ["inc-retail-nl-2026-10"], gap: false },
+    ];
+    return d;
+  }
+  const breachDropped: SoftIssue[] = [{ code: "SNAP_NAME", path: "items[2].summary" }];
+
+  it("removes a Lead sentence the drop leaves citing no item, when the Lead keeps its minimum (Kobol dry run, 2026-11-11)", () => {
+    const { draft: out, report } = dropUnverified(kobolLead(), breachDropped);
+    expect(out.items.map((i) => i.id)).toEqual(["vuln-a", "cve-2026-104935", "pol-b"]);
+    expect(out.lead.map((s) => s.item_ids)).toEqual([["cve-2026-104935"], ["pol-b"]]);
+    expect(countWords(out.lead.map((s) => s.text).join(" "))).toBeGreaterThanOrEqual(15);
+    // The raise that cited only the dropped item goes too; the Lens rows stay (six fixed rows), emptied, for the next round.
+    expect(out.region_raises).toEqual([]);
+    expect(report.removed).toEqual([
+      { path: "lead[2]", text: "SAMPLE lead sentence three about the breach." },
+      { path: "region_raises[0]", text: "TW: SAMPLE raise." },
+    ]);
+    expect(out.taiwan_lens.rows[0]).toMatchObject({ row: "gov_infra", text: "SAMPLE row.", item_ids: [] });
+  });
+
+  it("keeps an emptied Lead sentence when removing it would take the Lead under 15 words or leave none, and never removes a Gap sentence", () => {
+    const short = kobolLead();
+    short.lead[0]!.text = "SAMPLE short one.";
+    const a = dropUnverified(short, breachDropped);
+    expect(a.draft.lead).toHaveLength(3);
+    expect(a.draft.lead[2]!.item_ids).toEqual([]); // left for the next repair round or the failure, as before
+    expect(a.report.removed.map((r) => r.path)).toEqual(["region_raises[0]"]);
+
+    const alone = kobolLead();
+    alone.lead = [alone.lead[2]!];
+    expect(dropUnverified(alone, breachDropped).draft.lead).toHaveLength(1);
+
+    const gap = kobolLead();
+    gap.lead[2]!.gap = true;
+    const g = dropUnverified(gap, breachDropped);
+    expect(g.draft.lead).toHaveLength(3);
+    expect(g.report.removed.map((r) => r.path)).toEqual(["region_raises[0]"]);
+  });
+
+  it("keeps a raise that still cites an item, and a Lead sentence that already cited none", () => {
+    const d = kobolLead();
+    d.region_raises[0]!.item_ids = ["inc-retail-nl-2026-10", "pol-b"];
+    d.lead.push({ text: "SAMPLE sentence that cited nothing before the drop.", item_ids: [], gap: false });
+    const { draft: out, report } = dropUnverified(d, breachDropped);
+    expect(out.region_raises.map((r) => r.item_ids)).toEqual([["pol-b"]]);
+    expect(report.removed.map((r) => r.path)).toEqual(["lead[2]"]);
+    expect(out.lead.map((s) => s.text)).toEqual([d.lead[0]!.text, d.lead[1]!.text, d.lead[3]!.text]);
   });
 });

@@ -202,7 +202,26 @@ describe("validateLoop", () => {
     expect(f.lines[0]).toBe("Attempt 2: 0 errors, 1 warning (1 snapshot).");
   });
 
-  it("V6 repairsUsed is shared across attempts", async () => {
+  it("V5 with no round left, a Lead sentence citing only the dropped item goes with it (Kobol dry run, 2026-11-11)", async () => {
+    const d = soft("SNAP_NUMBER"); // the soft pass drops the AISLE item
+    d.lead.push({ text: "A security firm says its AI tool found new flaws in open source code.", item_ids: [I.aiConfirmed], gap: false });
+    const k = d.lead.length - 1;
+    const f = fake(d);
+    const out = await validateLoop(2, inputs, f.io, st(2, 2));
+    expect(out.ok).toBe(true);
+    expect(codes(out.result.errors)).toEqual([]);
+    expect(out.draft!.lead).toHaveLength(k);
+    expect(out.drops!.removed).toEqual([{ path: `lead[${k}]`, text: d.lead[k]!.text }]);
+    expect(f.droppedFiles.at(-1)).toEqual(out.drops);
+    expect(f.lines).toEqual([
+      "Attempt 2: 0 errors, 1 warning (1 snapshot).",
+      `Attempt 2: the soft pass dropped 1 unverified item (${I.aiConfirmed}).`,
+      `Attempt 2: the soft pass removed lead[${k}], left citing no item.`,
+      "Attempt 2: 0 errors, 1 warning (0 snapshot).",
+    ]);
+  });
+
+  it("V6 repairsUsed carries over when the same state is passed again (daily.ts passes a new one per attempt, D46)", async () => {
     const state = st(0, 2);
     const first = fake(banned(), [banned(), banned()]);
     const a1 = await validateLoop(1, inputs, first.io, state);

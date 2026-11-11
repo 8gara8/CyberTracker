@@ -46,6 +46,9 @@ export interface WordField {
   withheld: boolean;
 }
 
+/** The Lead's budget, all sentences together (§4.12 Word budgets); dropUnverified() keeps the minimum when it removes a sentence. */
+export const LEAD_WORDS = { min: 15, max: 90 } as const;
+
 /** QUOTE_MAX_25's limit for a quoted field or a quoted span in prose. */
 export const QUOTE_MAX = 25;
 
@@ -68,7 +71,7 @@ export function wordFields(b: AnyBrief): WordField[] {
   };
 
   const lead = b.lead ?? [];
-  add("lead", lead.map((s) => s.text).join(" "), true, 90, 15,
+  add("lead", lead.map((s) => s.text).join(" "), true, LEAD_WORDS.max, LEAD_WORDS.min,
     { note: " (all sentences together)", withheld: lead.some((s) => isMark(s.text)) });
 
   if (b.angle) {

@@ -12,6 +12,7 @@ import { printJson } from "./json-schema";
 import { gapTableDisplays, kevLines } from "./metrics/headline";
 import { previewRegions, regionsPreviewRows } from "./regions";
 import { finderNames } from "./rules/shared";
+import { fittingType } from "./rules/sources";
 import type { RegionsBase } from "./rules/types";
 import type { Brief } from "./schema/brief";
 import { AgentContext } from "./schema/context";
@@ -138,6 +139,17 @@ const QUOTED_LABELS: Readonly<Record<string, string>> = {
   "ai_credited.w13.ex_anthropic": "AI-credited records excluding Anthropic, 13 weeks",
 };
 
+/**
+ * `config.tiers.cve_record` (§4.15): the domains of the publishers whose fitting source_type is
+ * "cve_record" (SOURCE_TIER's fittingType()), in config order, each once. The prompt tells the agent to cite
+ * a page on one as a CVE record, never as a vendor advisory.
+ */
+export function cveRecordDomains(sourceTiers: Pick<LoadedConfig["sourceTiers"], "publishers">): string[] {
+  return [...new Set(sourceTiers.publishers
+    .filter((p) => fittingType({ tier: p.tier, publisher: p.id, kind: p.kind }) === "cve_record")
+    .flatMap((p) => p.domains))];
+}
+
 /** A claim threshold as one line of text (§4.15 scoreboard support and challenge). */
 export function thresholdText(th: Threshold): string {
   if (th.kind === "event") return th.text;
@@ -248,6 +260,7 @@ function assemble(i: ContextInput): AgentContext {
         t2: domains((p) => p.tier === 2),
         not_sole_newsroom: domains((p) => !p.sole_newsroom_for_critical),
         state_labelled: domains((p) => p.state_label !== null),
+        cve_record: cveRecordDomains(cfg.sourceTiers),
       },
       home_vendors: {
         tw: cfg.vendors.vendors.filter((v) => v.country === "TW").map((v) => v.name),

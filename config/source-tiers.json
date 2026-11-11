@@ -5,11 +5,11 @@
   "publishers": [
     { "id": "cve-org", "name": "CVE Program", "tier": 1, "kind": "other", "country": "US", "domains": ["cve.org", "cve.mitre.org"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "nvd", "name": "NIST NVD", "tier": 1, "kind": "government", "country": "US", "domains": ["nvd.nist.gov"], "state_label": null, "sole_newsroom_for_critical": true },
-    { "id": "cisa-kev", "name": "CISA KEV catalog", "tier": 1, "kind": "government", "country": "US", "domains": ["cisa.gov/known-exploited-vulnerabilities-catalog"], "state_label": null, "sole_newsroom_for_critical": true },
+    { "id": "cisa-kev", "name": "CISA KEV catalog", "tier": 1, "kind": "government", "country": "US", "domains": ["cisa.gov/known-exploited-vulnerabilities-catalog"], "state_label": null, "sole_newsroom_for_critical": true, "national_cert": true },
     { "id": "github-advisories", "name": "GitHub Advisory Database", "tier": 1, "kind": "other", "country": "US", "domains": ["github.com"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "osv", "name": "OSV", "tier": 1, "kind": "other", "country": "US", "domains": ["osv.dev"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "first-epss", "name": "FIRST EPSS", "tier": 1, "kind": "other", "country": "US", "domains": ["first.org/epss", "api.first.org"], "state_label": null, "sole_newsroom_for_critical": true },
-    { "id": "cisa", "name": "CISA", "tier": 1, "kind": "government", "country": "US", "domains": ["cisa.gov"], "state_label": null, "sole_newsroom_for_critical": true },
+    { "id": "cisa", "name": "CISA", "tier": 1, "kind": "government", "country": "US", "domains": ["cisa.gov"], "state_label": null, "sole_newsroom_for_critical": true, "national_cert": true },
     { "id": "cert-cc", "name": "CERT/CC", "tier": 1, "kind": "cert", "country": "US", "domains": ["kb.cert.org"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "fbi", "name": "FBI", "tier": 1, "kind": "government", "country": "US", "domains": ["fbi.gov", "ic3.gov"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "doj", "name": "US Department of Justice", "tier": 1, "kind": "government", "country": "US", "domains": ["justice.gov"], "state_label": null, "sole_newsroom_for_critical": true },

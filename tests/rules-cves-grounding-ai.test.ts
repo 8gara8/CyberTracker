@@ -421,6 +421,24 @@ describe("FLAW_EVIDENCE", () => {
     expect(fit("cert_confirmed", "s18", (d) => top(d).source_ids.push("s18"))).toEqual([]); // NCSC, a CERT
   });
 
+  it("takes CISA, the US national CERT, for cert_confirmed (Kobol dry run, 2026-11-11), but no other government body", () => {
+    const fit = (url: string) => {
+      const d = weekdayDraft();
+      const inputs = draftInputs("weekday");
+      const sid = addSource(d, inputs, url, { type: "government" });
+      top(d).source_ids.push(sid);
+      top(d).flaw_evidence[0] = { cve_id: "CVE-2026-104935", kind: "exploited", basis: "cert_confirmed", date: "2026-10-13", source_id: sid };
+      return only(validateDraft(d, { ...inputs, rules: MINE }), "FLAW_EVIDENCE").map((e) => e.message);
+    };
+    expect(fit("https://www.cisa.gov/ct-sample/news-events/alerts/cisa-adds-two-known-exploited-vulnerabilities")).toEqual([]);
+    expect(fit("https://www.cisa.gov/known-exploited-vulnerabilities-catalog")).toEqual([]); // cisa-kev
+    const fbi = fit("https://www.fbi.gov/ct-sample/news/flash-alert");
+    expect(fbi).toHaveLength(1);
+    expect(fbi[0]).toContain('basis "cert_confirmed" needs a national CERT\'s page, but s20 is published by FBI (kind government)');
+    const cfg = draftInputs("weekday").config;
+    expect(cfg.sourceTiers.publishers.filter((p) => p.national_cert).map((p) => p.id)).toEqual(["cisa-kev", "cisa"]);
+  });
+
   it("fails a vendor statement for a CVE no vendor matches", () => {
     const d = weekdayDraft();
     const r = check(d, "weekday", (inputs) => {
