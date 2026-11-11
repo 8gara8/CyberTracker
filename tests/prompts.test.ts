@@ -217,3 +217,11 @@ describe("PR8: the source-type guidance the dry runs needed", () => {
     expect(weekday.config.tiers.cve_record).toContain("github.com");
   });
 });
+
+describe("PR9: the cert_confirmed basis as FLAW_EVIDENCE checks it", () => {
+  it("PR9: PROMPT.md says a national CERT's page, a CERT or CISA, and no other government body", () => {
+    const flat = PROMPT.replace(/\s+/g, " ");
+    expect(flat).toContain('`"cert_confirmed"` a national CERT\'s page, from a CERT');
+    expect(flat).toContain("CISA, its KEV catalog included, and no other government body");
+  });
+});

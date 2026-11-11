@@ -70,6 +70,9 @@ word DONE.
 - **Source types** fit the publisher (`STYLE.md` §7). A page on a domain in the context's
   `config.tiers.cve_record` (CVE, NVD, GitHub Advisory Database, JVN and TVN records) is a `"cve_record"`,
   never a `"vendor_advisory"`, which is only the affected vendor's own page.
+- **Flaw evidence** fits its basis: `"vendor_confirmed"` cites the vendor's own domain;
+  `"cert_confirmed"` a national CERT's page, from a CERT (JPCERT/CC, TWCERT/CC, NCSC and the like) or
+  CISA, its KEV catalog included, and no other government body; `"news_reported"` a newsroom.
 - **Victims, attribution, dangerous material, quotes and voice** follow `STYLE.md` §8 to §10.
 - **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
   none of its sources: publish withholds any item that repeats it or cites them.

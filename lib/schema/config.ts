@@ -63,6 +63,8 @@ export const Publisher = z.strictObject({
   domains: z.array(Domain),
   state_label: z.string().min(1).nullable().describe('e.g. "PRC state source"; shown beside every citation'),
   sole_newsroom_for_critical: z.boolean().describe("false: cannot be the only newsroom behind a critical item"),
+  national_cert: z.literal(true).optional()
+    .describe("Set only on a publisher of another kind that runs its country's national CERT function (CISA): its page satisfies cert_confirmed"),
 });
 
 export const SourceTiersFile = z.strictObject({

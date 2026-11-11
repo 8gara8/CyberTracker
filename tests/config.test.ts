@@ -117,6 +117,8 @@ describe("seed counts (Appendix B)", () => {
     expect(t3.filter((p) => p.state_label === "PRC state media").map((p) => p.id)).toEqual(["xinhua", "global-times", "cgtn"]);
     expect(t3.filter((p) => p.state_label === "Russian state media").map((p) => p.id)).toEqual(["tass", "rt"]);
     expect(publishers.filter((p) => !p.sole_newsroom_for_critical).map((p) => p.id)).toEqual(["the-hacker-news"]);
+    // CISA runs the US national CERT function under kind government, so its pages satisfy cert_confirmed (P3, Kobol dry run).
+    expect(publishers.filter((p) => p.national_cert).map((p) => [p.id, p.kind])).toEqual([["cisa-kev", "government"], ["cisa", "government"]]);
     expect(github.tier1_paths).toEqual(["^/advisories/GHSA-[\\w-]+", "^/[^/]+/[^/]+/security/advisories/GHSA-[\\w-]+", "^/CVEProject/",
       "^/cisagov/", "^/github/advisory-database/"]);
     // B.3 lists github.com for github-advisories; publisherFor() still gives tier 1 only to github.tier1_paths.
@@ -448,6 +450,11 @@ describe("broken copies (CONFIG_SCHEMA, CONFIG_DUP, CONFIG_REF, CONFIG_REGEX)", 
     } },
     { name: "sources.yaml: two feeds share an id", code: "CONFIG_DUP", overrides: () => { const s = copyOf("sources"); s.feeds[1]!.id = s.feeds[0]!.id; return { sources: s }; } },
     { name: "source-tiers.json: tier 4", code: "CONFIG_SCHEMA", overrides: () => { const s = copyOf("sourceTiers"); (s.publishers[0] as { tier: number }).tier = 4; return { sourceTiers: s }; } },
+    { name: "source-tiers.json: national_cert false (the flag is set only where true)", code: "CONFIG_SCHEMA", overrides: () => {
+      const s = copyOf("sourceTiers");
+      (s.publishers.find((p) => p.id === "fbi") as { national_cert?: unknown }).national_cert = false;
+      return { sourceTiers: s };
+    } },
     { name: "source-tiers.json: two publishers share a domain", code: "CONFIG_DUP", overrides: () => {
       const s = copyOf("sourceTiers");
       s.publishers.find((p) => p.id === "reuters")!.domains.push("apnews.com");

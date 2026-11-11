@@ -6,11 +6,13 @@
 
 import { cnaConfirms, matchVendor, type LoadedConfig } from "../config";
 import type { CveBlock } from "../schema/item";
-import type { Vendor } from "../schema/config";
+import type { SourceTiersFile, Vendor } from "../schema/config";
 import { GITHUB_ADVISORIES, urlOnAnyDomain } from "../sources";
 import { hostOf, matchPath } from "../urls";
 import { proseFields, quotedFields, inEvidence, seenText, sourcesOfItem, type FieldText } from "./shared";
-import { defineRule, error, list, plural, warning, type AnyBrief, type AnyItem, type Rule, type RuleInput, type ValidationIssue } from "./types";
+import {
+  defineRule, error, list, plural, warning, type AnyBrief, type AnyItem, type PublisherView, type Rule, type RuleInput, type ValidationIssue,
+} from "./types";
 
 // ── CVE ids in text ──────────────────────────────────────────────────────────────────────────────
 
@@ -386,6 +388,16 @@ const exploitedBasis = defineRule({
 
 // ── FLAW_EVIDENCE ────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * True when a publisher's page can carry basis `cert_confirmed` (§4.12 FLAW_EVIDENCE): a publisher of kind
+ * `cert`, or a source-tiers entry of another kind flagged `national_cert` (CISA, kind government, runs the
+ * US national CERT function). Draft mode only: published mode freezes no kind.
+ */
+export function certConfirms(view: Pick<PublisherView, "publisher" | "kind"> | undefined, sourceTiers: Pick<SourceTiersFile, "publishers">): boolean {
+  if (!view) return false;
+  return view.kind === "cert" || sourceTiers.publishers.some((p) => p.id === view.publisher && p.national_cert === true);
+}
+
 const BASES_FOR_KIND: Readonly<Record<string, readonly string[]>> = {
   exploited: ["vendor_confirmed", "cert_confirmed", "news_reported"],
   patched: ["vendor_advisory"],
@@ -394,7 +406,7 @@ const BASES_FOR_KIND: Readonly<Record<string, readonly string[]>> = {
 /**
  * FLAW_EVIDENCE (the source fit and evidence set draft only): an entry's `cve_id` is one of the item's
  * `cve_ids`; its basis fits its kind; its source fits its basis (vendor_*: on the matched vendor's own
- * `domains`; cert_confirmed: a publisher of kind `cert`; news_reported: a tier 2 newsroom); its URL is in
+ * `domains`; cert_confirmed: a national CERT, certConfirms(); news_reported: a tier 2 newsroom); its URL is in
  * `evidence.urls`. A source that is unknown or missing from `source_ids` is SOURCE_REF's.
  */
 const flawEvidence = defineRule({
@@ -429,7 +441,7 @@ const flawEvidence = defineRule({
           if (vendor === null) misfit = `no vendor in vendors.json matches ${cve}, so a vendor statement can't be checked; use basis "cert_confirmed" or "news_reported" if a CERT or newsroom says it`;
           else if (vendor && !urlOnAnyDomain(s.url, vendor.domains)) misfit = `basis "${f.basis}" needs a page on ${vendor.name}'s own domains (${list(vendor.domains)}), but ${f.source_id} is ${s.url}`;
         } else if (f.basis === "cert_confirmed") {
-          if (view?.kind !== "cert") misfit = `basis "cert_confirmed" needs a national CERT's page, but ${f.source_id} is published by ${view?.publisher_name ?? "an unknown publisher"} (kind ${view?.kind ?? "unknown"})`;
+          if (!certConfirms(view, input.config.sourceTiers)) misfit = `basis "cert_confirmed" needs a national CERT's page, but ${f.source_id} is published by ${view?.publisher_name ?? "an unknown publisher"} (kind ${view?.kind ?? "unknown"})`;
         } else if (f.basis === "news_reported") {
           if (!(view?.tier === 2 && view.kind === "newsroom")) misfit = `basis "news_reported" needs a tier 2 newsroom, but ${f.source_id} is ${view ? `${view.publisher_name} (tier ${view.tier}, kind ${view.kind})` : "unknown"}`;
         }
