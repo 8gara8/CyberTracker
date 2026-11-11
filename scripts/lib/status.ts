@@ -19,7 +19,7 @@ import type { Transcript } from "./transcript";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-export type NotRunReason = "metrics" | "cli" | "data_only" | "hard_stop";
+export type NotRunReason = "metrics" | "cli" | "data_only" | "hard_stop" | "withhold";
 
 export interface Notes {
   // Re-used from lib/chat.ts STAGE_NOTES (same strings, so chatInputFor reads them back).
@@ -56,6 +56,8 @@ export interface Notes {
   dryRunTree: string;
   degradedBlocks(ids: readonly string[]): string;
   withheld(n: number, waiting: number): string;
+  /** Intake's withhold left N items without a binding correction, so no editorial pass ran (§0.4 row 149). */
+  notWithheld(n: number): string;
   flagsSkipped(feeds: readonly string[]): string;
   tooLittleTime(hhmm: string): string;
   notInDryRun: string;
@@ -116,6 +118,7 @@ export const NOTES: Notes = {
   degradedBlocks: (ids) => `Shown with older data: ${ids.join(", ")}.`,
   withheld: (n, waiting) =>
     `Withheld ${plural(n, "item")} on reader disputes${waiting > 0 ? `; ${waiting} ${waiting === 1 ? "waits" : "wait"} for the next run` : ""}.`,
+  notWithheld: (n) => `Could not withhold ${plural(n, "item")} on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).`,
   flagsSkipped: (feeds) => `Re-check flags from ${feeds.join(" and ")} skipped: the ${feeds.length === 1 ? "feed" : "feeds"} failed.`,
   tooLittleTime: (hhmm) => `Not run: under 6 minutes left before ${hhmm}.`,
   notInDryRun: "Not run in a dry run.",
@@ -129,6 +132,7 @@ export const NOTES: Notes = {
       case "cli": return "Not run: the agent CLI or its sign-in token is missing.";
       case "data_only": return "Not run: the data-only edition stands.";
       case "hard_stop": return STAGE_NOTES.startedAfterHardStop(run.schedule.hard_stop);
+      case "withhold": return "Not run: a reader dispute's withhold was not made.";
     }
   },
   failure: (code, facts) => whatHappened(code, facts),

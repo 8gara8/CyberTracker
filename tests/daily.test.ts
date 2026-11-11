@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ComposeError, applyDraft } from "@/lib/apply";
-import { NOT_COMPOSED, NOT_VALID, nextStepFor } from "@/lib/chat";
+import { NOT_COMPOSED, NOT_VALID, WHAT_HAPPENED, nextStepFor } from "@/lib/chat";
 import { at } from "@/lib/dates";
 import { jsonText } from "@/lib/json";
 import { Brief } from "@/lib/schema/brief";
@@ -32,6 +32,12 @@ import { beforeEdition, siteBrief, testRecord, victimDispute, worldConfig } from
 vi.mock("@/scripts/metrics", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/scripts/metrics")>();
   return { ...actual, runMetrics: vi.fn(actual.runMetrics) };
+});
+// D48 and D49 wrap publishWithholds once (a withhold that fails validation, one whose push is refused);
+// every other case runs the real one.
+vi.mock("@/scripts/publish", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/scripts/publish")>();
+  return { ...actual, publishWithholds: vi.fn(actual.publishWithholds) };
 });
 // D31 makes applyDraft throw ComposeError once; every other case runs the real one.
 vi.mock("@/lib/apply", async (importOriginal) => {
@@ -576,6 +582,175 @@ describe("daily.ts end to end", () => {
     expect(stageOf(r, "publish").note).toContain("Withheld 1 re-reported item under reader disputes.");
     expect(dailyLog(h)).toContain(`Withheld ${ITEM} in this edition: it re-reports the item C-0001 withholds (id match).`);
     expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D48 a victim dispute whose withhold fails validation: no editorial pass, E_WITHHOLD, exit 3, the dispute stored; the rerun withholds the item even with intake down, then drafts", async () => {
+    // Codex review of PR #5, round 2: the run logged the failed withhold and went on to draft and publish a full
+    // edition with no correction to mask the item, so the disputed name could be printed again (§0.4 row 149).
+    // The review of that fix: nothing stored the dispute, so a rerun whose intake could not read GitHub published
+    // the item unmasked; the end record's commit now stores intake's disputes.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-104935";
+    h.issues([correctionIssue({ number: 5, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    const actual = await vi.importActual<typeof import("@/scripts/publish")>("@/scripts/publish");
+    const { composeWithholds } = await vi.importActual<typeof import("@/lib/withhold")>("@/lib/withhold");
+    vi.mocked(publishWithholds).mockImplementationOnce((o) => actual.publishWithholds(o, {
+      composeWithholds: (i) => {
+        const ch = composeWithholds(i);
+        ch.corrections!.corrections.at(-1)!.dispute_id = "D-0999";
+        return ch;
+      },
+    }));
+    expect(await run(h, ["--trigger", "schedule"])).toBe(3);
+    let s = subjects(h);
+    expect(s.filter((x) => x.startsWith("correction: "))).toEqual([]);
+    expect(s.filter((x) => x.startsWith("brief: "))).toEqual([`brief: ${D} · data-only edition`]);
+    expect(s.at(-1)).toMatch(/ ended: published_data_only$/);
+    expect(agentRuns(h)).toEqual([]);
+    // The end record's commit stores the waiting dispute, with no correction.
+    const ended = h.remoteLog().at(-1)!;
+    expect(ended.subject).toMatch(/ ended: published_data_only$/);
+    expect(ended.files).toEqual(expect.arrayContaining(["content/corrections.json", `content/status/${D}.json`]));
+    expect(CorrectionsFile.parse(JSON.parse(h.remoteFile("content/corrections.json")!))).toMatchObject({
+      corrections: [], disputes: [{ id: "D-0001", issue_number: 5, item_id: ITEM, kind: "victim", status: "open", correction_id: null }],
+    });
+    let r = statusOn(h)!.runs[0]!;
+    expect([r.outcome, r.error_code]).toEqual(["published_data_only", "E_WITHHOLD"]);
+    expect(stageOf(r, "recheck").status).toBe("failed");
+    expect(stageOf(r, "recheck").note).toContain("Could not withhold 1 item on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).");
+    expect(stageOf(r, "recheck").note).not.toContain("Withheld 1 item on reader disputes.");
+    for (const st of ["draft", "validate", "publish"]) {
+      expect(stageOf(r, st)).toMatchObject({ status: "skipped", note: "Not run: a reader dispute's withhold was not made." });
+    }
+    expect(dailyLog(h)).toContain("Validation: XREF_CORRECTION at ");
+    expect(dailyLog(h)).toContain(`Not withheld: ${ITEM}; no editorial pass today.`);
+    expect(summary(h).split("\n")[0]).toContain("(E_WITHHOLD)");
+    expect(summary(h)).toContain(`\nWhat happened: ${WHAT_HAPPENED.E_WITHHOLD({ date: D, errors: 0, repairs: 0, attempts: 0, agentMinutes: null, hardStop: "05:30", publishUntil: "11:00" })}\n`);
+    expect(summary(h)).toContain(`\nNext step: ${nextStepFor("E_WITHHOLD", D)}\n`);
+    expect(fs.existsSync(path.join(h.root, "needs-review", D))).toBe(true);
+
+    // The next step's rerun, with GitHub's issues unreadable: intake builds its withholds from the stored
+    // dispute, the withhold lands, and the full edition masks the item.
+    h.issues("fail");
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--no-deadline"])).toBe(0);
+    s = subjects(h);
+    expect(s.filter((x) => x.startsWith("correction: "))).toEqual([`correction: ${D} · withheld ${ITEM}`]);
+    expect(s.some((x) => x.startsWith(`brief: ${D} · full edition`))).toBe(true);
+    expect(agentRuns(h)).toHaveLength(1);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.items.find((x) => x.id === ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: D } });
+    r = statusOn(h)!.runs.at(-1)!;
+    expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
+    expect(stageOf(r, "recheck")).toMatchObject({ status: "ok" });
+    expect(stageOf(r, "recheck").note).toContain("Dispute intake unavailable today.");
+    expect(stageOf(r, "recheck").note).toContain("Withheld 1 item on reader disputes.");
+    expect(CorrectionsFile.parse(JSON.parse(h.remoteFile("content/corrections.json")!)).disputes).toMatchObject([{ id: "D-0001", correction_id: "C-0001" }]);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D49 a withhold whose push GitHub refuses stays local and still binds: the full edition drafts, masks the item and carries the commit, exit 0", async () => {
+    // The tree holds the correction, so §0.4 row 149's check passes and the edition's push takes the withhold with it.
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-104935";
+    h.issues([correctionIssue({ number: 5, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T20:45:00Z" })]);
+    const actual = await vi.importActual<typeof import("@/scripts/publish")>("@/scripts/publish");
+    vi.mocked(publishWithholds).mockImplementationOnce(async (o) => {
+      h.pushes("reject");
+      try {
+        return await actual.publishWithholds(o);
+      } finally {
+        h.pushes("accept");
+      }
+    });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const s = subjects(h);
+    const withhold = s.indexOf(`correction: ${D} · withheld ${ITEM}`);
+    expect(withhold).toBeGreaterThan(0);
+    expect(s.findIndex((x) => x.startsWith(`brief: ${D} · full edition`))).toBeGreaterThan(withhold);
+    expect(dailyLog(h)).toMatch(/[0-9a-f]{7} stays local; the next push carries it\./);
+    expect(dailyLog(h)).not.toContain("Not withheld:");
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.edition).toBe("full");
+    expect(stored.items.find((x) => x.id === ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: D } });
+    const r = statusOn(h)!.runs[0]!;
+    expect([r.outcome, r.error_code]).toEqual(["published_full", null]);
+    expect(stageOf(r, "recheck")).toMatchObject({ status: "ok" });
+    expect(stageOf(r, "recheck").note).toContain("Withheld 1 item on reader disputes.");
+    expect(stageOf(r, "recheck").note).not.toContain("Could not withhold");
+    expect(agentRuns(h)).toHaveLength(1);
+    expect(validateAll(path.join(h.root, "content"), { config: loadCheckedConfig({ root: h.root }) }).errors).toEqual([]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D50 after a full edition, a --force run whose withhold fails ends E_WITHHOLD, exit 1, and its next step reruns with --force, which withholds the item", async () => {
+    // The review of the Codex round 2 fix: the next step's plain rerun stops at preflight step 6 (the full edition
+    // is up), so intake never asked for the withhold again that day (§0.4 row 149).
+    const h = harness();
+    okAgent(h);
+    const ITEM = "cve-2026-104935";
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(briefOn(h)!.edition).toBe("full");
+    h.issues([correctionIssue({ number: 5, itemId: ITEM, edition: D, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T22:00:00Z" })]);
+    const actual = await vi.importActual<typeof import("@/scripts/publish")>("@/scripts/publish");
+    vi.mocked(publishWithholds).mockImplementationOnce((o) => actual.publishWithholds(o, { composeWithholds: () => { throw new Error("simulated compose failure"); } }));
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--force"])).toBe(1);
+    const r = statusOn(h)!.runs.at(-1)!;
+    expect([r.outcome, r.error_code]).toEqual(["failed", "E_WITHHOLD"]);
+    expect(agentRuns(h)).toHaveLength(1);
+    const rerun = "zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline";
+    expect(summary(h)).toContain(`\nNext step: ${nextStepFor("E_WITHHOLD", D).replace(rerun, `${rerun} --force`)}\n`);
+    // As the next step says: the withhold lands and the forced full edition masks the item.
+    h.clock.set(h.clock() + 2 * MIN);
+    expect(await run(h, ["--trigger", "manual", "--no-deadline", "--force"])).toBe(0);
+    expect(subjects(h).filter((x) => x.startsWith("correction: "))).toEqual([`correction: ${D} · withheld ${ITEM}`]);
+    const stored = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!));
+    expect(stored.items.find((x) => x.id === ITEM)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: D } });
+    expect([statusOn(h)!.runs.at(-1)!.outcome, statusOn(h)!.runs.at(-1)!.error_code]).toEqual(["published_full", null]);
+    expectContentOnly(h);
+  }, TIMEOUT);
+
+  it("D51 a withhold that fails on an item another edition's binding withhold of the same kind already masks stops nothing: the editorial pass runs", async () => {
+    // The review of the Codex round 2 fix: a blank-edition dispute on an item already withheld under another
+    // edition asks for a withhold of its own; when that one fails, the binding one still masks the item by id
+    // in every brief, so the gate must not stop the morning (§0.4 row 149).
+    const D0 = "2026-10-13";
+    const D2 = "2026-10-15";
+    const h = harness({ date: D0 });
+    h.fakeAgent({ mode: "nodraft" });
+    expect(await run(h, ["--trigger", "schedule", "--data-only"])).toBe(3);
+    const X = Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D0}.json`)!)).items.map((x) => x.id)
+      .find((id) => (DRAFT as { items: { id: string }[] }).items.some((x) => x.id === id))!;
+    expect(X).toBeTruthy();
+    // Day D: a victim dispute on X in the D0 edition; the withhold lands and the full edition masks X by id.
+    okAgent(h);
+    h.issues([correctionIssue({ number: 6, itemId: X, edition: D0, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T13:00:00Z" })]);
+    h.clock.set(at(D, "04:37"));
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    expect(Brief.parse(JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!)).items.find((x) => x.id === X)?.withheld?.correction_id).toBe("C-0001");
+    // Day D2: a second victim dispute on X with the edition left blank (resolved to D, the newest holding X); its own withhold fails.
+    h.issues([
+      correctionIssue({ number: 6, itemId: X, edition: D0, option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-13T13:00:00Z" }),
+      correctionIssue({ number: 7, itemId: X, edition: "_No response_", option: DISPUTE_FORM_OPTIONS.victim, createdAt: "2026-10-14T13:00:00Z" }),
+    ]);
+    vi.mocked(publishWithholds).mockImplementationOnce(async () => { throw new Error("simulated: the commit failed"); });
+    h.fakeAgent({ mode: "nodraft" });
+    const before = agentRuns(h).length;
+    h.clock.set(at(D2, "04:37"));
+    await run(h, ["--trigger", "schedule"]);
+    const r = StatusFile.parse(JSON.parse(h.remoteFile(`content/status/${D2}.json`)!)).runs[0]!;
+    expect(r.error_code).not.toBe("E_WITHHOLD");
+    expect(stageOf(r, "recheck").status).toBe("ok");
+    expect(stageOf(r, "recheck").note ?? "").not.toContain("Could not withhold");
+    expect(stageOf(r, "draft").note ?? "").not.toContain("withhold was not made");
+    expect(agentRuns(h).length).toBeGreaterThan(before);
+    expect(fs.readFileSync(path.join(h.root, "logs", `${D2}.daily.log`), "utf8")).toContain("simulated: the commit failed");
+    expect(fs.readFileSync(path.join(h.root, "logs", `${D2}.daily.log`), "utf8")).not.toContain("Not withheld:");
     expectContentOnly(h);
   }, TIMEOUT);
 

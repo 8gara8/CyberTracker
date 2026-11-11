@@ -134,7 +134,12 @@ faster?
   that pattern (row 147). PR #5 was marked ready at 19:53 Taipei (11:53 UTC); Codex started only on
   `@codex review` (20:56). Round 1 (one P1): a rejected dispute stayed rejected when its issue was
   reopened; a reopened (or completed) issue now gets a new dispute, withheld again, and an internal
-  review of that fix closed two masking gaps on the same path (row 148).
+  review of that fix closed two masking gaps on the same path (row 148). Round 2 (one P1, 22:18
+  Taipei): a withhold that failed validation was only logged, and the full edition could print the
+  disputed name again; a withhold not in the tree now stops the editorial pass with the new code
+  `E_WITHHOLD`, the data-only edition standing, and an internal review of that fix closed four gaps on
+  the same path (an item withheld on another edition, the disputes kept for a rerun with intake down, the
+  `--force` rerun, the `--data-only` reason in the chat; row 149).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -155,7 +160,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; ready 2026-11-11 19:53 Taipei, Codex round 1 fixed (row 148) |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; ready 2026-11-11 19:53 Taipei, Codex rounds 1 and 2 fixed (rows 148 and 149) |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |

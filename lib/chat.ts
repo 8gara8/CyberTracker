@@ -27,7 +27,7 @@ export const CHAT_MAX_LINES = 15;
 
 /** Every run error code of §8.2's table, in its order. */
 export const ERROR_CODES = [
-  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_DATA_ONLY", "E_SANDBOX", "E_LIMIT",
+  "E_ARCH", "E_NODE", "E_CONFIG", "E_NET", "E_GIT", "E_CLOCK", "E_CLI", "E_AUTH", "E_PUSH", "E_METRICS", "E_DATA_ONLY", "E_WITHHOLD", "E_SANDBOX", "E_LIMIT",
   "E_AGENT", "E_TIMEOUT", "E_VALIDATION", "E_PUBLISH", "E_TOO_LATE", "E_SIMULATED", "E_INTERNAL",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -55,7 +55,9 @@ function clockOf(minutes: number): string {
  * --no-deadline run may last 75 minutes but is cut at publish_until (§8.2), so this leaves it about 50.
  */
 export const RERUN_BEFORE = clockOf(minutesOf(SCHEDULE.publish_until) - 60);
-const RERUN = `rerun before ${RERUN_BEFORE}: zsh ${CHECKOUT}/scripts/daily.sh --no-deadline`;
+/** The rerun command <rerun> names; withForce() adds --force to it for E_WITHHOLD (§0.4 row 149). */
+const RERUN_CMD = `zsh ${CHECKOUT}/scripts/daily.sh --no-deadline`;
+const RERUN = `rerun before ${RERUN_BEFORE}: ${RERUN_CMD}`;
 
 /**
  * One line per code, from §8.2's table ("<rerun>" written out in full). `{date}` stands for the edition
@@ -73,6 +75,7 @@ export const NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
   E_PUSH: `the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6), then ${RERUN}`,
   E_METRICS: `read logs/{date}.metrics.log; fix in a PR, then ${RERUN}`,
   E_DATA_ONLY: `read logs/{date}.daily.log, then ${RERUN}`,
+  E_WITHHOLD: `read logs/{date}.daily.log, then ${RERUN}; if the withhold fails again, its fix goes through a PR`,
   E_SANDBOX: "the agent's sandbox is wrong; run npm run agent:check -- --sandbox and fix SPEC §9.5's settings before the next run",
   E_LIMIT: "the account's usage limit stopped the agent; the data-only edition stands; runs resume when the limit window resets",
   E_AGENT: RERUN,
@@ -120,6 +123,7 @@ export const DRY_RUN_NEXT_STEP: Readonly<Record<ErrorCode, string>> = {
   E_PUSH: dry("the run can't push to GitHub; check gh's login on Kobol (SPEC §9.6) before the next run"),
   E_METRICS: dry("read logs/{date}.metrics.log; fix in a PR before the next run"),
   E_DATA_ONLY: dry(),
+  E_WITHHOLD: dry(),
   E_SANDBOX: dry(NEXT_STEP.E_SANDBOX),
   E_LIMIT: dry("the account's usage limit stopped the agent; runs resume when the limit window resets"),
   E_AGENT: dry(),
@@ -166,13 +170,14 @@ export const NOT_VALID = {
 const publishCommand = (date: string) => `npm run publish -- --date ${date}`;
 
 /**
- * E_PUBLISH's next step when brief D as committed is a full or partial edition (§0.4 row 132): a failed
- * --force run left the earlier edition standing, and publish replaces one only with --force (§8.7), so
- * the hand command takes it. With brief D a data-only edition, or no brief, the step is as given.
+ * E_PUBLISH's and E_WITHHOLD's next step when brief D as committed is a full or partial edition (§0.4 rows 132
+ * and 149): a failed --force run left the earlier edition standing, and publish replaces one only with --force
+ * (§8.7), as a rerun reaches intake past preflight step 6 only with it, so the hand command and the rerun take
+ * it. With brief D a data-only edition, or no brief, the step is as given.
  */
 export function withForce(nextStep: string, date: string, stored: Pick<Brief, "edition"> | null): string {
   if (!stored || stored.edition === "data_only") return nextStep;
-  return nextStep.replaceAll(publishCommand(date), `${publishCommand(date)} --force`);
+  return nextStep.replaceAll(publishCommand(date), `${publishCommand(date)} --force`).replaceAll(RERUN_CMD, `${RERUN_CMD} --force`);
 }
 
 /** What WHAT_HAPPENED's templates are filled from: the run records (chatInputFor() builds it). */
@@ -206,6 +211,7 @@ export const WHAT_HAPPENED: Readonly<Record<ErrorCode, (f: WhatFacts) => string>
   E_PUSH: () => "The start record could not be pushed to GitHub, so nothing else was tried.",
   E_METRICS: () => "No metrics file was written, so nothing could be published.",
   E_DATA_ONLY: () => "The data-only edition could not be composed, validated or pushed, and no full edition followed.",
+  E_WITHHOLD: () => "A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.",
   E_SANDBOX: () => "The agent started with tools beyond its sandbox and was stopped.",
   E_LIMIT: () => "The account's usage limit stopped the agent before it wrote a valid draft.",
   E_AGENT: (f) => `The agent wrote no draft in ${count(f.attempts, "attempt")}.`,
@@ -499,7 +505,7 @@ export function chatInputFor(src: ChatSource): ChatInput {
   const next = (c: string) => {
     if (dryRun) return special ? special.dryRunStep.replaceAll("{date}", date) : dryRunNextStepFor(c, date);
     const step = special ? special.nextStep.replaceAll("{date}", date) : nextStepFor(c, date);
-    return c === "E_PUBLISH" ? withForce(step, date, brief) : step;
+    return c === "E_PUBLISH" || c === "E_WITHHOLD" ? withForce(step, date, brief) : step;
   };
 
   let left: Edition | null = null;
@@ -512,8 +518,13 @@ export function chatInputFor(src: ChatSource): ChatInput {
   }
   if (brief && left === "data_only") {
     let said: string;
-    if (code) said = what(code);
-    else {
+    if (code) {
+      said = what(code);
+      // E_WITHHOLD comes from intake, not from the editorial pass: a --data-only or late start keeps its own
+      // reason first (§0.4 row 149).
+      const skip = code === "E_WITHHOLD" ? NOTE_RES.dataOnlyRequested.exec(notes) ?? NOTE_RES.startedAfterHardStop.exec(notes) : null;
+      if (skip) said = `${skip[0]} ${said}`;
+    } else {
       const noted = NOTE_RES.dataOnlyRequested.exec(notes) ?? NOTE_RES.startedAfterHardStop.exec(notes);
       said = noted?.[0]
         ?? (last && taipeiTime(last.started_at) > schedule.hard_stop ? STAGE_NOTES.startedAfterHardStop(schedule.hard_stop) : STAGE_NOTES.dataOnlyRequested);

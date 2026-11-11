@@ -107,6 +107,7 @@ describe("stage notes", () => {
       NOTES.dataOnlyFailed, NOTES.intakeUnavailable, NOTES.reusedFrom("20261014-043702"), NOTES.dryRunValid(D),
       NOTES.staleLock("02:31"), NOTES.droppedPending(1), NOTES.droppedPending(2), NOTES.remadeWithholds(1), NOTES.remadeWithholds(3),
       NOTES.dryRunTree, NOTES.degradedBlocks(["epss", "ghsa"]), NOTES.withheld(1, 0), NOTES.withheld(2, 1), NOTES.withheld(3, 2),
+      NOTES.notWithheld(1), NOTES.notWithheld(2), NOTES.notRun("withhold"),
       NOTES.flagsSkipped(["kev"]), NOTES.flagsSkipped(["kev", "cvelist"]), NOTES.tooLittleTime("05:30"), NOTES.notInDryRun,
       NOTES.missedTarget("data_only", "04:55", "04:50"), NOTES.missedTarget("full", "05:21", "05:15"), NOTES.siteNotShowing(1),
       NOTES.siteNotShowing(8), NOTES.notReached(1), NOTES.notReached(12), NOTES.simulated, NOTES.notRun("metrics"), NOTES.notRun("cli"),
@@ -132,6 +133,10 @@ describe("stage notes", () => {
     expect(NOTES.missedTarget("data_only", "04:55", "04:50")).toBe("Data-only edition published at 04:55, after the 04:50 target.");
     expect(NOTES.notReached(12)).toBe("12 links not reached in time.");
     expect(NOTES.notRun("hard_stop")).toBe("Started after 05:30: no editorial pass today.");
+    // §0.4 row 149: a withhold that left no binding correction stops the editorial pass.
+    expect(NOTES.notWithheld(1)).toBe("Could not withhold 1 item on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).");
+    expect(NOTES.notWithheld(2)).toBe("Could not withhold 2 items on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).");
+    expect(NOTES.notRun("withhold")).toBe("Not run: a reader dispute's withhold was not made.");
   });
 
   it("ST3 CHAT_READ_NOTES matches exactly the STAGE_NOTES texts, and NOTES reuses them", () => {

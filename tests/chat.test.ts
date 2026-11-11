@@ -578,6 +578,42 @@ describe("chat edition: data-only format", () => {
     expect(chatInputFor({ date: D, brief: full, runs: agent })).toMatchObject({ nextStep: nextStepFor("E_AGENT", D) });
   });
 
+  it("E_WITHHOLD: after a failed --force run the rerun takes --force; a data-only morning keeps the plain rerun and a --data-only or late start its own reason", () => {
+    // §0.4 row 149, from the review of the Codex round 2 fix: without --force the rerun stops at preflight step 6
+    // (already published), so intake never asks for the withhold again; and the sentence alone named the withhold
+    // as the reason for a data-only edition the operator had asked for.
+    const D = "2026-11-12";
+    const full = brief(D);
+    const what = WHAT_HAPPENED.E_WITHHOLD({} as WhatFacts);
+    expect(what).toBe("A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.");
+    const rerun = "zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline";
+    const step = nextStepFor("E_WITHHOLD", D);
+    expect(step).toBe(`read logs/${D}.daily.log, then rerun before 10:00: ${rerun}; if the withhold fails again, its fix goes through a PR`);
+    const failedForce = [
+      record(D, { data_only_published_at: full.data_only_published_at, full_published_at: full.published_at }),
+      record(D, {
+        trigger: "manual", started_at: at(D, "06:02:00"), outcome: "failed", edition: "full", error_code: "E_WITHHOLD",
+        stage: { recheck: { status: "failed" }, ...skippedStages(["draft", "validate", "publish"], "Not run: a reader dispute's withhold was not made.") },
+      }),
+    ];
+    const forced = chatInputFor({ date: D, brief: full, runs: failedForce });
+    expect(forced).toMatchObject({ kind: "failed", code: "E_WITHHOLD", what, nextStep: step.replace(rerun, `${rerun} --force`) });
+    expect(render(forced)).toContain(`${rerun} --force; if the withhold fails again`);
+    // A data-only edition standing: the plain rerun resumes it and reaches intake.
+    const b = dataOnlyBrief(D, SEVEN_KEV(D).slice(0, 1));
+    const dataOnly = (notes: Partial<Record<RunStage, Partial<StageRecord>>>) => [record(D, {
+      outcome: "published_data_only", edition: "data_only", error_code: "E_WITHHOLD", data_only_published_at: b.data_only_published_at,
+      stage: { recheck: { status: "failed" }, ...notes },
+    })];
+    const plain = chatInputFor({ date: D, brief: b, runs: dataOnly(skippedStages(["draft", "validate", "publish"], "Not run: a reader dispute's withhold was not made.")) });
+    expect(plain).toMatchObject({ kind: "data_only", code: "E_WITHHOLD", what, nextStep: step });
+    expect(render(plain)).not.toContain("--force");
+    for (const reason of [STAGE_NOTES.dataOnlyRequested, STAGE_NOTES.startedAfterHardStop("05:30")]) {
+      const input = chatInputFor({ date: D, brief: b, runs: dataOnly(skippedStages(["draft", "validate", "publish"], reason)) });
+      expect(input).toMatchObject({ kind: "data_only", code: "E_WITHHOLD", what: `${reason} ${what}`, nextStep: step });
+    }
+  });
+
   it("keeps the metrics KEV count when the data-only brief holds no items", () => {
     const D = "2026-11-12";
     const b = dataOnlyBrief(D, []);

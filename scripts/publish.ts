@@ -783,6 +783,12 @@ export async function publishStatus(o: PublishOptions & {
   event: StatusEvent;
   /** Applied to archive-index.json in the same commit (the end record carries the link results). */
   updateArchive?: (ix: ArchiveIndex) => ArchiveIndex;
+  /**
+   * Intake's disputes, written into corrections.json in the same commit, each linked to the stored correction
+   * that names it (linkDisputes()): the end record of a run whose withhold was not made (E_WITHHOLD, §0.4 row
+   * 149), so the waiting dispute is stored and a later intake asks for its withhold again.
+   */
+  disputes?: readonly Dispute[];
 }): Promise<PublishResult> {
   const last = lastOf(o.records);
   const title = statusTitle(o.date, o.records, o.event);
@@ -793,6 +799,13 @@ export async function publishStatus(o: PublishOptions & {
   if (o.updateArchive) {
     const ix = readArchiveIndex(ctx.dir) ?? { schema_version: 1 as const, editions: [], urls: {} };
     files.set("archive-index.json", jsonText(o.updateArchive(structuredClone(ix)), ArchiveIndex));
+  }
+  if (o.disputes) {
+    const cf = readCorrections(ctx.dir);
+    const disputes = linkDisputes(o.disputes, cf?.corrections ?? []);
+    if (JSON.stringify(cf?.disputes ?? []) !== JSON.stringify(disputes)) {
+      files.set("corrections.json", jsonText({ schema_version: 1, corrections: cf?.corrections ?? [], disputes }, CorrectionsFile));
+    }
   }
   const sha = await runPlan(ctx, { files, title, validate: {} }, {});
   return { sha, publishedAt, record: last };

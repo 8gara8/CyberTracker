@@ -91,6 +91,13 @@ export const LINES = {
   restarting(sha7: string): string {
     return `Restarting on the code synced from main (${sha7}).`;
   },
+  /**
+   * "Not withheld: <item ids>; no editorial pass today." Intake's withhold for these items left no binding
+   * correction in the tree (it failed to compose, validate or commit), so the run drafts nothing (§0.4 row 149).
+   */
+  notWithheld(itemIds: readonly string[]): string {
+    return `Not withheld: ${[...new Set(itemIds)].join(", ")}; no editorial pass today.`;
+  },
   /** "Watchdog: the run passed HH:MM; ending." (new wording, A23) */
   watchdog(hhmm: string): string {
     return `Watchdog: the run passed ${hhmm}; ending.`;

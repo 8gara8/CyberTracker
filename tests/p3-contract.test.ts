@@ -168,6 +168,8 @@ describe("the run-log lines (RL1)", () => {
     expect(LINES.fullPublished("05:12", "a1b2c3d")).toBe("Full edition published at 05:12 (a1b2c3d).");
     expect(LINES.restarting("a1b2c3d")).toBe("Restarting on the code synced from main (a1b2c3d).");
     expect(LINES.watchdog("05:32")).toBe("Watchdog: the run passed 05:32; ending.");
+    // §0.4 row 149: ids once each, in request order.
+    expect(LINES.notWithheld(["cve-2026-104935", "camp-tw-2026-10", "cve-2026-104935"])).toBe("Not withheld: cve-2026-104935, camp-tw-2026-10; no editorial pass today.");
     expect(LINES.runEnded("published_full")).toBe("Run ended: published_full.");
     expect(LINES.runEnded("dry_run")).toBe("Run ended: dry_run.");
   });
@@ -179,7 +181,7 @@ describe("the run-log lines (RL1)", () => {
       LINES.agent({ attempt: 1, exitCode: 0, timedOutMin: null, turns: 2, tools: { Read: 1 }, fetches: 0, budget: 40, isError: true }),
       LINES.noDraft(1), LINES.validation(1, 2, 2, 2), LINES.repair(1, 1, 1, 0, ["X"]), LINES.noRetry("cutoff", "05:00"),
       LINES.dryRunComplete("2026-10-14"), LINES.fullPublished("05:12", "a1b2c3d"), LINES.restarting("a1b2c3d"),
-      LINES.watchdog("05:32"), LINES.runEnded("failed"),
+      LINES.watchdog("05:32"), LINES.notWithheld(["cve-2026-104935"]), LINES.runEnded("failed"),
     ];
     expect(Object.keys(LINES)).toHaveLength(lines.length);
     for (const l of lines) {

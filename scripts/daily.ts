@@ -29,11 +29,13 @@ import type { RegionsBase } from "../lib/rules/types";
 import type { Brief, FeedStale } from "../lib/schema/brief";
 import { RunFile } from "../lib/schema/config";
 import type { AgentContext } from "../lib/schema/context";
-import type { Evidence } from "../lib/schema/misc";
+import type { Dispute, Evidence } from "../lib/schema/misc";
 import { CandidatesFile, FeedIndexFile, Pack } from "../lib/schema/pack";
 import type { RunRecord } from "../lib/schema/status";
 import { siteUrl } from "../lib/site";
 import { cveLookupFromDir, packDatesOf, regionsInputFile } from "../lib/validate";
+import type { WithholdRequest } from "../lib/withhold";
+import { bindingWithholds } from "../lib/withhold-mask";
 import type { Edition, RunOutcome, RunStage, RunTrigger } from "../lib/vocab";
 import type { GatedDraft } from "../lib/apply";
 import { collect } from "./collect";
@@ -254,6 +256,11 @@ interface RunState {
   attempts: number;
   repairs: number;
   mf: MetricsForResult | null;
+  /**
+   * Intake's disputes when a withhold was not made and the editorial pass stopped (E_WITHHOLD): the end
+   * record's commit stores them, so a later intake, even one that cannot read GitHub, asks again (§0.4 row 149).
+   */
+  pendingDisputes?: readonly Dispute[];
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -512,6 +519,8 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     // 5. The re-check (at least 6 min before the run's end limit).
     let intake: IntakeResult | null = null;
     let shown: AgentContext["corrections"]["flagged"] = [];
+    /** Items intake asked to withhold that no binding correction in the tree withholds (§0.4 row 149). */
+    let unwithheld = 0;
     if (sch.endLimit - now() < P3_LIMITS.linksMinLeftMs) {
       setStage(cur(), "recheck", { status: "skipped", note: NOTES.tooLittleTime(hhmm(sch.endLimit)) });
     } else {
@@ -527,13 +536,30 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         }
         if (intake && !intake.ok) addNote(cur(), "recheck", NOTES.intakeUnavailable);
         if (intake && intake.withhold.length) {
-          const n = new Set(intake.withhold.map((w) => w.item_id)).size;
-          addNote(cur(), "recheck", NOTES.withheld(n, intake.waiting));
           try {
             const res = await publishWithholds({ ...base(now() + P3_LIMITS.finalCommitMs), requests: intake.withhold, disputes: intake.disputes });
             setCur(res.record);
           } catch (e) {
             line(errorText(e));
+          }
+          // A withhold is made once the tree holds its binding correction, pushed or not: a commit whose push
+          // failed stays local and goes out with the next push. One that could not be synced, composed,
+          // validated or committed left the tree as it was. The item is still guarded when another binding
+          // withhold of the same item and kind (on another edition) masks it in every brief; with none, nothing
+          // would keep the disputed name out of the full edition: no editorial pass, E_WITHHOLD, and the end
+          // record's commit stores intake's disputes so a later intake asks again (§0.4 row 149).
+          const made = bindingWithholds(readCorrections(P.content), intake.disputes);
+          const isMade = (r: WithholdRequest) => made.some((w) => w.item_id === r.item_id && w.edition_date === r.edition_date && w.kind === r.kind);
+          const guarded = (r: WithholdRequest) => made.some((w) => w.item_id === r.item_id && w.kind === r.kind);
+          const done = new Set(intake.withhold.filter(isMade).map((r) => r.item_id)).size;
+          if (done) addNote(cur(), "recheck", NOTES.withheld(done, intake.waiting));
+          const unguarded = intake.withhold.filter((r) => !guarded(r));
+          if (unguarded.length) {
+            unwithheld = new Set(unguarded.map((r) => r.item_id)).size;
+            addNote(cur(), "recheck", NOTES.notWithheld(unwithheld));
+            line(LINES.notWithheld(unguarded.map((r) => r.item_id)));
+            state.code ??= "E_WITHHOLD";
+            state.pendingDisputes = intake.disputes;
           }
           // The history stage 3 read predates the withhold: region reasons embed headlines (§5.11), so the
           // validator, the full edition and logs/D.regions-input.json read the rewritten briefs.
@@ -557,7 +583,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
         line(errorText(e));
         recheckFailed = true;
       }
-      setStage(cur(), "recheck", { status: recheckFailed ? "failed" : "ok", ended: now() });
+      setStage(cur(), "recheck", { status: recheckFailed || unwithheld > 0 ? "failed" : "ok", ended: now() });
       try {
         writeRecheckLog(root, D, { intake, flagged: cur().recheck, shown, reports: intake?.reports ?? [] });
       } catch (e) {
@@ -572,6 +598,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     if (a.dataOnly) skipEditorial(NOTES.dataOnlyRequested);
     else if (clock === "after_hard_stop") skipEditorial(NOTES.startedAfterHardStop(cfg.run.schedule.hard_stop));
     else if (!mf) skipEditorial(NOTES.notRun("metrics"));
+    else if (unwithheld > 0) skipEditorial(NOTES.notRun("withhold"));
     else if (cli.code) {
       skipEditorial(NOTES.notRun("cli"));
       state.code ??= cli.code;
@@ -925,11 +952,20 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     }
 
     const results = state.linkResults;
+    const endRecord = (disputes?: readonly Dispute[]) => publishStatus({
+      ...base(now() + P3_LIMITS.finalCommitMs), event: { kind: "ended", outcome },
+      updateArchive: results && results.length ? (ix) => applyLinkResults(ix, D, results) : undefined,
+      disputes,
+    });
     try {
-      await publishStatus({
-        ...base(now() + P3_LIMITS.finalCommitMs), event: { kind: "ended", outcome },
-        updateArchive: results && results.length ? (ix) => applyLinkResults(ix, D, results) : undefined,
-      });
+      try {
+        await endRecord(state.pendingDisputes);
+      } catch (e) {
+        // Disputes the tree cannot take never cost the end record: it goes in without them (§0.4 row 149).
+        if (!state.pendingDisputes || !(e instanceof PublishError && e.code === "validation")) throw e;
+        line(errorText(e));
+        await endRecord();
+      }
     } catch (e) {
       line(errorText(e));
       if (!state.notes.includes(CHAT_NOTES.statusNotSaved)) state.notes.push(CHAT_NOTES.statusNotSaved);
