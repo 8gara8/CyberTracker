@@ -585,7 +585,9 @@ export function confirmBlock(b: BareCveBlock, item: Pick<Item, "flaw_evidence" |
  * "<vendor name> security updates, YYYY-MM" and source_url the first bundled record's record_url. The
  * counts come from the candidate's release (total, critical, exploited). Null when the item has no release.
  * `records` (optional, added by L3) gives the bundle's publication dates; applyDraft passes the CVE List.
- * The bundle is the release's exploited CVEs, else the item's. Throws ComposeError when no date or page can be found.
+ * The bundle is the release's exploited CVEs, else those of the item's that are the release's own fixes
+ * (releaseMember(): a record from one of the vendor's CNAs). Throws ComposeError when no date can be found
+ * (with a date there is always a page).
  */
 export function releaseBlockOf(
   item: DraftItem, release: Candidate["release"], sources: readonly Source[], config: LoadedConfig, records: CveLookup | null = null,
@@ -595,7 +597,8 @@ export function releaseBlockOf(
   const { vendor: v, source: src, bundle, date, problem } = releaseBasisOf(item, release, sources, (s) => s, config, records);
   const vendor = vendorRefOf(v, release.vendor);
   if (problem === "no_date" || !date) throw new ComposeError(`No release date for ${release.release_id}: no vendor source with a date and no bundled record`);
-  if (problem === "no_page") throw new ComposeError(`No release page for ${release.release_id}: no vendor source and no bundled record`);
+  // A date comes from the vendor source or from a bundled record (one of the release's own fixes), so with
+  // no source `bundle[0]` exists: the block always has a page once it has a date.
   return {
     release_id: release.release_id,
     vendor,
