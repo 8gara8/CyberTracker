@@ -133,10 +133,10 @@ interface Work {
   merges: Merge[];
   exploited: boolean;
   /**
-   * A release candidate's vendor and the members it references, in releasePackMembers() order: finish()
-   * reads its advisory URLs member by member in that order, so the exploited fixes' pages come first.
+   * The members a release candidate references, in releasePackMembers() order: finish() reads its advisory
+   * URLs member by member in that order, so the exploited fixes' pages come first.
    */
-  release?: { vendor: Vendor; members: string[] };
+  release?: { members: string[] };
 }
 
 interface Ctx {
@@ -402,22 +402,20 @@ function firstUrls(lists: readonly (readonly string[])[]): string[] {
 
 /**
  * A release candidate's advisory URLs (§5.12 step 2): member by member in releasePackMembers() order
- * (exploited, then critical, then the rest), each member's CVE List pack records' advisory URLs and then
- * its vendor pages (releaseVendorUrls()); then those of the other records it references (merged notes), in
- * record id order; repeats dropped, at most ADVISORY_MAX. So the exploited fix's own advisory is never
- * pushed out by the fill's better-scored fixes, and a vendor that tags no reference still gives its page.
+ * (exploited, then critical, then the rest), each member's CVE List pack record's advisory URLs (its tagged
+ * ones, then the vendor pages collect adds, releaseMemberUrls()); then those of the other records it
+ * references (merged notes), in record id order; repeats dropped, at most ADVISORY_MAX. So the exploited
+ * fix's own advisory is never pushed out by the fill's better-scored fixes, a vendor that tags no reference
+ * still gives its page, and every URL is one a pack record holds, after collect's link screen (safeLink()).
  */
 function releaseUrls(ctx: Ctx, w: Work, pack: readonly string[]): string[] {
-  const rel = w.release!;
   const lists: (readonly string[])[] = [];
   const seen = new Set<string>();
-  for (const id of rel.members) {
+  for (const id of w.release!.members) {
     for (const r of (ctx.packByCve.get(id) ?? []).filter((x) => x.source === "cvelist" && pack.includes(x.id))) {
       seen.add(r.id);
       lists.push(r.advisory_urls);
     }
-    const rec = ctx.recs.get(id);
-    if (rec) lists.push(releaseVendorUrls(rec, rel.vendor, ctx.input.config.loaded));
   }
   for (const id of pack) if (!seen.has(id)) lists.push(ctx.packById.get(id)?.advisory_urls ?? []);
   return firstUrls(lists);
@@ -507,7 +505,7 @@ function releaseWork(ctx: Ctx, b: Bundle): Work {
     c, origin: "release", bases: [n > 0 ? RANK_WEIGHTS.base.release_exploited : RANK_WEIGHTS.base.release],
     ownReasons: [`release: ${total} fixes, ${n} exploited`, ...(home ? [`${b.vendor.country} vendor`] : [])],
     bonuses: new Set(home ? ["home_vendor"] : []), epss: null, newKev: false, date: b.newest, texts: [title],
-    matchIds: ids, vendor: null, merges: [], exploited: n > 0, release: { vendor: b.vendor, members: releasePackMembers(b) },
+    matchIds: ids, vendor: null, merges: [], exploited: n > 0, release: { members: releasePackMembers(b) },
   };
 }
 

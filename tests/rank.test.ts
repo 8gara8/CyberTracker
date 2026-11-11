@@ -63,9 +63,11 @@ function input(over: Partial<RankInput> = {}, config: LoadedConfig = cfg): RankI
   const merged = { ...base, ...over };
   if (over.pack) return merged as RankInput;
   const keep = recordKeepIds(merged);
+  // As scripts/collect.ts writes them: a release member's record carries its vendor pages after its tagged URLs.
+  const vendorUrls = releaseMemberUrls(merged);
   const drafts = [
     ...kevPackRecords(merged.catalog?.vulnerabilities ?? [], new Set(merged.newKevIds), cfg.sourceTiers),
-    ...cvePackRecords(merged.records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ...cvePackRecords(merged.records, (r) => keep.has(r.cve_id), cfg.sourceTiers, undefined, undefined, (r) => vendorUrls.get(r.cve_id) ?? []),
     ...ghsaPackRecords(merged.ghsa, merged.window),
   ];
   return { ...merged, pack: { items: [], records: provisionalRecords(drafts) } };
@@ -495,6 +497,24 @@ describe("rankCandidates() on built cases", () => {
     const urls = releaseMemberUrls(base);
     const drafts = cvePackRecords(sap, () => true, cfg.sourceTiers, undefined, undefined, (r) => urls.get(r.cve_id) ?? []);
     expect(drafts.map((d) => d.advisory_urls)).toEqual(sap.map((_, i) => [`https://me.sap.com/notes/36943${80 + i}`]));
+  });
+
+  it("every advisory URL a release candidate carries is one its pack records hold: a vendor page collect's link screen refuses stays out (fourth review of row 146)", () => {
+    // Before, releaseUrls() also read the vendor pages straight from the CVE records, so a page with an apostrophe in its path,
+    // which safeLink() drops from the member's pack record (flagging it), still reached the candidate's advisory_urls.
+    const sap = Array.from({ length: 8 }, (_, i) => untaggedFix(30 + i, "sap", "SAP", [
+      i < 6 ? `https://me.sap.com/notes/37000${i}'x` : `https://me.sap.com/notes/37000${i}`,
+    ], 9 - i / 10));
+    const base = input({ ...empty, records: sap });
+    const pt = rankCandidates(base).kept.find((c) => c.kind === "patch_batch")!;
+    const held = new Set(base.pack.records.flatMap((r) => r.advisory_urls));
+    expect(pt.advisory_urls.length).toBeGreaterThan(0);
+    for (const u of pt.advisory_urls) expect(held.has(u), u).toBe(true);
+    expect(pt.advisory_urls).toEqual(["https://me.sap.com/notes/370006", "https://me.sap.com/notes/370007"]);
+    // The six refused pages are in no pack record, and their records are flagged.
+    const refused = base.pack.records.filter((r) => r.flags.includes("injection_like"));
+    expect(refused.map((r) => r.record_id).sort()).toEqual(sap.slice(0, 6).map((r) => r.cve_id).sort());
+    expect(refused.every((r) => r.advisory_urls.length === 0)).toBe(true);
   });
 
   it("a release's advisory URLs start with its exploited fix's own, whatever the fill adds (review of row 146)", () => {
