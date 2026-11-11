@@ -17,14 +17,14 @@ import type { EditionName } from "@/fixtures/src/world";
 import { kevLines } from "@/lib/metrics/headline";
 import { aiRules, attributesClaim, mentionsAnthropic, anthropicReasons } from "@/lib/rules/ai";
 import { cveIdsIn, cveRules, draftVendorConfirmedBy, holdsCveId, isCveRecordPage, onKevDraft } from "@/lib/rules/cves";
-import { displaysFor, groundingRules, metricTermsIn, valueAt } from "@/lib/rules/grounding";
+import { displaysFor, gapDayExample, groundingRules, metricTermsIn, valueAt } from "@/lib/rules/grounding";
 import { derive } from "@/lib/rules/shared";
 import type { CveRecordInfo, Rule, RuleInput, ValidationIssue } from "@/lib/rules/types";
 import type { DraftBrief } from "@/lib/schema/draft-brief";
 import type { DraftItem } from "@/lib/schema/item";
 import type { Metrics } from "@/lib/schema/metrics";
 import { publisherFor } from "@/lib/sources";
-import { gluedRatios } from "@/lib/text";
+import { gluedRatios, wordRatios } from "@/lib/text";
 import { normalizeUrl } from "@/lib/urls";
 import { runRules, validateDraft, type DraftInputs } from "@/lib/validate";
 import { KEV_ABSENCE_NOTE } from "@/lib/vocab";
@@ -512,6 +512,34 @@ describe("LEAD_GROUNDED", () => {
       "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.", expect.stringContaining(DAY)]);
   });
 
+  it("names the edition's own day in the hints, and offers gap: false only when there is an item to cite (review of the seventh pass)", () => {
+    expect(gapDayExample("2026-11-12")).toBe("11 to 12 Nov");
+    expect(gapDayExample("2026-10-11")).toBe("10 to 11 Oct");
+    expect(gapDayExample("2026-11-01")).toBe("31 Oct to 1 Nov");
+    expect(gapDayExample("2027-01-01")).toBe("31 Dec to 1 Jan");
+    expect(gapDayExample("")).toBeNull();
+    // The quiet edition (2026-10-11) has no items, so there is none to cite.
+    const quiet = (text: string) => {
+      const d = quietDraft();
+      d.lead[0] = { text, item_ids: [], gap: true };
+      return only(check(d, "quiet"), "LEAD_GROUNDED");
+    };
+    expect(quiet("Nothing in the 24 hours to 04:30 Taipei cleared the bar for an item.").map((e) => e.hint)).toEqual([
+      'Copy the number exactly as metrics.quotable shows it, or remove it. When a Gap sentence names the day, it names it by its dates ("10 to 11 Oct"), never as a length of hours.']);
+    // A stray day before a month or weekday name: the third day of a list is no range.
+    expect(quiet("Nothing published on 8, 9 or 10 Oct cleared the bar for an item.").map((e) => [e.message, e.hint])).toEqual([[
+      expect.stringContaining("holds 8, which is not one of the Gap's quoted numbers"),
+      'Copy the number exactly as metrics.quotable shows it, or remove it. A day number is read as a number unless written as a date or a date range like "10 to 11 Oct".']]);
+    expect(quiet("Nothing published from Friday 9 to Saturday 10 Oct cleared the bar for an item.")).toEqual([]);
+    // No month or weekday name after it: no day hint.
+    expect(quiet("Nothing cleared the bar, 3 days running.").map((e) => e.hint)).toEqual(["Copy the number exactly as metrics.quotable shows it, or remove it."]);
+    // The weekday edition (2026-10-14) has items, so gap: false and an item stay on offer; a non-Gap sentence gets the day hint too.
+    expect(lead("Nothing published on 8, 9 or 10 Oct cleared the bar.", [], true).map((e) => e.hint)).toEqual([
+      'Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from. A day number is read as a number unless written as a date or a date range like "13 to 14 Oct".']);
+    expect(lead("Ivanti's fix shipped on 8, 9 or 10 Oct.", [I.criticalExploited]).map((e) => e.hint)).toEqual([
+      'Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it. A day number is read as a number unless written as a date or a date range like "13 to 14 Oct".']);
+  });
+
   it("matches other numbers against the cited items' text and CVE blocks, rounding as written", () => {
     expect(lead("Shadowserver counts about 9,000 unpatched Ivanti gateways.", [I.criticalExploited])).toEqual([]);
     expect(lead("Microsoft fixed about 1,400 flaws.", [I.patchBatch])).toEqual([]);
@@ -736,6 +764,27 @@ describe("METRICS_ONLY_NUMBERS", () => {
     expect(r[0]!.message).toContain("holds 6,");
   });
 
+  it("reads the Monday week in review's day range, with its weekdays, as one date (review of the seventh pass)", () => {
+    // Neither 2 nor 8 is a metric number, so the range's first day failed the sentence.
+    for (const text of ["SAMPLE. From Monday 2 to Sunday 8 Nov, CISA's KEV catalog grew while the Flood held.",
+      "SAMPLE. Between Monday 2 and Sunday 8 Nov, CISA's KEV catalog grew while the Flood held."]) {
+      const d = mondayDraft();
+      d.week_in_review!.text = text;
+      expect(only(check(d, "monday"), "METRICS_ONLY_NUMBERS"), text).toEqual([]);
+    }
+  });
+
+  it("adds a day hint, with the edition's dates, when the stray number is a day before a month or weekday name (review of the seventh pass)", () => {
+    const d = mondayDraft();
+    d.week_in_review!.text = "SAMPLE. On 8, 9 or 10 Oct, CISA's KEV catalog grew while the Flood held.";
+    const r = only(check(d, "monday"), "METRICS_ONLY_NUMBERS");
+    expect(r.map((e) => e.message)).toEqual([expect.stringContaining("holds 8,")]);
+    expect(r[0]!.hint).toBe("A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, "
+      + 'or rewrite the sentence without the metric term. A day number is read as a number unless written as a date or a date range like "11 to 12 Oct".');
+    d.week_in_review!.text = "SAMPLE. The Window held: 157 such flaws in 26 weeks. The Flood brought 6 surprises.";
+    expect(only(check(d, "monday"), "METRICS_ONLY_NUMBERS")[0]!.hint).not.toContain("day number");
+  });
+
   it("leaves the Lead and the Angle to LEAD_GROUNDED", () => {
     const d = weekdayDraft();
     d.lead[0]!.text = "Ivanti's flaw was one of 3 KEV additions that day.";
@@ -755,6 +804,76 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
     }
   });
 
+  // Review of the seventh pass: product, standard and id names ending in x are not ratios (CVE-2025-29635, the D-Link DIR-823X
+  // flaw, is in KEV), and of 132,638 CVE List descriptions from 2025 and 2026, 127 held a match before and 28 do now, all ratios but
+  // two "30x redirect" ones.
+  const NAMES = ["D-Link DIR-823X", "DIR-823x", "802.1X", "802.1x", "802.3x", "Catalyst 9300X", "Catalyst 9500X", "3x-ui", "3X-UI",
+    "AMD Ryzen 9 7950X", "Windows 9x", "10x Genomics", "iPhone 16x", "SAP NetWeaver 7.5x", "HTTP 30x redirects", "XikeStor SKS8310-8X",
+    "GHSA-683x-4444-jxh8"];
+  const RATIOS: readonly (readonly [string, string])[] = [
+    ["New CVE records arrived at 9.9x the 2023–24 pace.", "9.9x"], ["Exploits came 10x faster.", "10x"], ["Exploitation rose 5x.", "5x"],
+    ["The Flood ran at 5.2x, against 1.9 for KEV.", "5.2x"], ["It was a 3x jump.", "3x"], ["KEV added 2.5x more.", "2.5x"],
+    ["Nearly 10x more flaws were listed.", "10x"], ["In October, 5x more were listed.", "5x"], ["KEV's 2x jump", "2x"]];
+
+  it("NUMBER_FORM: reads no product, standard or id name ending in x, alone or in a sentence, and every ratio", () => {
+    for (const name of NAMES) {
+      for (const text of [name, `The flaw affects ${name}.`, `${name} devices are affected, as are ${name} units.`, `It names ${name}, again.`]) {
+        expect(gluedRatios(text), text).toEqual([]);
+      }
+    }
+    for (const text of ["Cisco Catalyst 9500X and 9600X Series Switches", "versions from 4.3x before 5.1", "a 30X HTTP response",
+      "sprintf('%08x%05x')", "Windows 9x is legacy.", "Catalyst 9300X switches are affected.", "+0x159/0x200 and 0x",
+      "affects versions 4.3x of the plugin", "firmware 2.1x is affected"]) {
+      expect(gluedRatios(text), text).toEqual([]);
+    }
+    for (const [text, ratio] of RATIOS) expect(gluedRatios(text), text).toEqual([ratio]);
+  });
+
+  it("NUMBER_FORM: a draft that names a product, standard or id ending in x passes, and one that writes a ratio fails", () => {
+    for (const name of NAMES) {
+      const d = weekdayDraft();
+      d.items[3]!.summary = `Attackers target ${name}.`;
+      expect(only(check(d), "NUMBER_FORM"), name).toEqual([]);
+    }
+    for (const [text, ratio] of RATIOS) {
+      const d = weekdayDraft();
+      d.items[3]!.summary = text;
+      expect(only(check(d), "NUMBER_FORM").map((e) => e.message), text).toEqual([
+        `items[3].summary writes the ratio "${ratio}", glued to x, which the validator does not read as a number, so it cannot check it.`]);
+    }
+  });
+
+  it("NUMBER_FORM: reads a ratio in words, and no count of occurrences, \"once\" or \"twice\"", () => {
+    for (const [text, ratio] of [
+      ["nearly ten times the 2023–24 pace", "ten times"], ["more than five times the reference", "five times"],
+      ["twenty-one times more", "twenty-one times"], ["a hundred times faster", "a hundred times"], ["Ten times the pace", "Ten times"],
+      ["ten times that of 2023–24", "ten times"], ["three times as many flaws", "three times"], ["seven times higher", "seven times"],
+      ["five times over the 2023–24 pace", "five times"], ["two times greater", "two times"], ["rose tenfold.", "tenfold"],
+      ["a ten-fold rise", "ten-fold"], ["a hundredfold increase", "a hundredfold"], ["a twofold rise", "twofold"],
+    ] as const) expect(wordRatios(text), text).toEqual([ratio]);
+    for (const text of ["updated three times this year", "three times in October", "patched three times the following week",
+      "updated three times as of today", "patched five times over the past week", "more than twice the pace", "once the pace",
+      "The problem is twofold: speed and scale.", "a threefold approach", "The risk is twofold.", "more than five times.",
+      "3 times the pace", "5.2 times the 2023–24 pace"]) {
+      expect(wordRatios(text), text).toEqual([]);
+    }
+  });
+
+  it("NUMBER_FORM: a zero-item Gap sentence with a ratio in words fails, with a hint to write it in digits (review of the seventh pass)", () => {
+    // The review's G9 rewritten: no rule read "nearly ten times", so a display of 5.2 published as ten.
+    const d = weekdayDraft();
+    d.lead.push({ text: "New CVE records arrived at nearly ten times the 2023–24 pace in 13 weeks.", item_ids: [], gap: true });
+    const r = check(d);
+    expect(r.errors.map((e) => [e.code, e.path, e.message, e.hint])).toEqual([["NUMBER_FORM", "lead[3].text",
+      'lead[3].text writes the ratio "ten times" in words, which the validator does not read as a number, so it cannot check it.',
+      'Write it in digits as the Gap does, "N times", with N exactly as metrics.quotable or the cited source gives it.']]);
+    d.lead[3]!.text = "New CVE records arrived at 5.2 times the 2023–24 pace in 13 weeks.";
+    expect(check(d).errors).toEqual([]);
+    // The Gap headline's own "more than twice" is no ratio in words.
+    d.lead[3]!.text = "Exploitation ran at more than twice the 2023–24 pace, and CISA updated its list three times in October.";
+    expect(only(check(d), "NUMBER_FORM")).toEqual([]);
+  });
+
   it("NUMBER_FORM: a zero-item Gap sentence with a wrong ratio glued to x fails, though LEAD_GROUNDED reads no number in it", () => {
     // The review's G9: the display is 5.2, and 13 is a quoted Gap number, so no other rule notices.
     const d = weekdayDraft();
@@ -762,7 +881,8 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
     const r = check(d);
     expect(r.errors.map((e) => `${e.code} ${e.path}`)).toEqual(["NUMBER_FORM lead[3].text"]);
     expect(r.errors[0]!.message).toBe('lead[3].text writes the ratio "9.9x", glued to x, which the validator does not read as a number, so it cannot check it.');
-    expect(r.errors[0]!.hint).toBe('Write a ratio as the Gap does, "9.9 times", never "9.9x", even where a source writes it that way.');
+    // The hint never proposes the miscopied 9.9 (review of the seventh pass): "9.9 times" would fail LEAD_GROUNDED next round.
+    expect(r.errors[0]!.hint).toBe('Write it as "N times", with N exactly as metrics.quotable or the cited source gives it, never "9.9x", even where a source writes it that way.');
     // Written as the Gap writes it, the wrong ratio is read, and LEAD_GROUNDED fails it.
     d.lead[3]!.text = "New CVE records arrived at 9.9 times the 2023–24 pace in 13 weeks.";
     expect(check(d).errors.map((e) => e.code)).toEqual(["LEAD_GROUNDED"]);
@@ -776,7 +896,7 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
       text: "New CVE records arrived at 5.2x the 2023–24 pace in the 13 weeks to 12 Oct, against 1.9 for KEV." };
     const r = validateDraft(d, draftInputs("weekday"));
     expect(only(r, "NUMBER_FORM").map((e) => [e.path, e.hint])).toEqual([
-      ["angle.text", 'Write a ratio as the Gap does, "5.2 times", never "5.2x", even where a source writes it that way.']]);
+      ["angle.text", 'Write it as "N times", with N exactly as metrics.quotable or the cited source gives it, never "5.2x", even where a source writes it that way.']]);
     expect(only(r, "WORDS_UNDER")).toEqual([]);
   });
 
