@@ -300,6 +300,56 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
   return out;
 }
 
+// ── Quotable rows (§4.15 metrics.quotable) ───────────────────────────────────────────────────────
+
+/** Labels for the paths `headline.quoted` uses (§5.8); a path not listed is its own label. */
+export const QUOTED_LABELS: Readonly<Record<string, string>> = {
+  constant: "weeks in the window",
+  "window.w26.at_disclosure_share": "share already exploited at disclosure, 26 weeks",
+  "window.reference.at_disclosure_share": "share already exploited at disclosure, 2023–24",
+  "window.w26.after_disclosure_median_days": "median days to listing for the rest, 26 weeks",
+  "window.reference.after_disclosure_median_days": "median days to listing for the rest, 2023–24",
+  "window.w26.after_disclosure_n": "flaws listed after disclosure, 26 weeks",
+  "window.w26.cohort_n": "recently disclosed flaws on CISA's list, 26 weeks",
+  "window.kev_pace_ratio": "KEV additions, pace vs 2023–24",
+  "window.volume_ratio": "recently disclosed flaws listed, pace vs 2023–24",
+  "flood.n": "new CVE records, 13 weeks",
+  "flood.vs_reference_ratio": "new CVE records, pace vs 2023–24",
+  "flood.vs_reference_ex_kernel_ratio": "new CVE records excluding the Linux kernel, pace vs 2023–24",
+  "ai_credited.w13.total": "AI-credited records, 13 weeks",
+  "ai_credited.w13.ex_anthropic": "AI-credited records excluding Anthropic, 13 weeks",
+};
+
+/** One row of `metrics.quotable` before its `as_of`: a metrics path (or "constant"), what it is, and the exact string shown. */
+export type QuotableRow = GapDisplay;
+
+/**
+ * The rows of `metrics.quotable` (§4.15), without `as_of`: every number the Gap headline and second line
+ * quote (`headline.quoted`, labelled by QUOTED_LABELS), then every Gap data table display
+ * (gapTableDisplays()), then the Taiwan Lens KEV counts, each with its exact display string. A key and
+ * display pair is listed once (the first label wins), and an empty display is left out. lib/context.ts
+ * and fixtures/src/inputs.ts both build the context's list from it.
+ */
+export function quotableRows(m: Pick<Metrics, "date" | "headline" | "window" | "home_vendors">): QuotableRow[] {
+  const out: QuotableRow[] = [];
+  const seen = new Set<string>();
+  const add = (key: string, label: string, display: string) => {
+    const k = `${key}\0${display}`;
+    if (seen.has(k) || display.trim() === "") return;
+    seen.add(k);
+    out.push({ key, label, display });
+  };
+  for (const q of m.headline.quoted) add(q.path, QUOTED_LABELS[q.path] ?? q.path, q.display);
+  if (m.window) for (const d of gapTableDisplays(m.window)) add(d.key, d.label, d.display);
+  const lines = kevLines(m);
+  for (const key of ["tw", "jp"] as const) {
+    const word = key === "tw" ? "Taiwanese" : "Japanese";
+    add(`home_vendors.${key}.d30_n`, `KEV additions for ${word} vendors, 30 days`, String(lines[key].d30_n));
+    add(`home_vendors.${key}.d90_n`, `KEV additions for ${word} vendors, 90 days`, String(lines[key].d90_n));
+  }
+  return out;
+}
+
 /**
  * The strings metricNumbers() parses (§5.8, §4.12): `headline.quoted[].display`, every display string
  * of the Gap data table, the in-KEV line and the Taiwan Lens KEV lines, all from the §5.2 helpers.
