@@ -292,15 +292,19 @@ const isCritical = (r: CveRecord) => r.cna_severity !== null && r.cna_severity.t
 
 /**
  * The members whose CVE List records a patch_batch candidate references (§5.12 step 2, §0.4 row 146): the
- * exploited ones in CVE id order, then the critical ones (isCritical()) by CVSS score descending, unscored
- * last, then CVE id; at most RELEASE_PACK_IDS_MAX in all. The release counts still cover every member.
+ * exploited ones in CVE id order, then the critical ones (isCritical()), then the rest, each of these two
+ * by CVSS score descending, unscored last, then CVE id; at most RELEASE_PACK_IDS_MAX in all. The rest fill
+ * the slots the exploited and critical ones leave, so a release with neither (an all-High month) still
+ * names its best-scored fixes, and its candidate their records and vendor advisory URLs. The release
+ * counts still cover every member.
  */
 export function releasePackMembers(b: { members: readonly CveRecord[]; exploited: readonly string[] }): string[] {
   const exploited = new Set(b.exploited);
-  const critical = b.members.filter((r) => !exploited.has(r.cve_id) && isCritical(r))
-    .sort((x, y) => (y.cvss?.score ?? -1) - (x.cvss?.score ?? -1) || compareCveIds(x.cve_id, y.cve_id))
-    .map((r) => r.cve_id);
-  return [...b.exploited, ...critical].slice(0, RELEASE_PACK_IDS_MAX);
+  const byScore = (x: CveRecord, y: CveRecord) => (y.cvss?.score ?? -1) - (x.cvss?.score ?? -1) || compareCveIds(x.cve_id, y.cve_id);
+  const rest = b.members.filter((r) => !exploited.has(r.cve_id));
+  const critical = rest.filter(isCritical).sort(byScore).map((r) => r.cve_id);
+  const others = rest.filter((r) => !isCritical(r)).sort(byScore).map((r) => r.cve_id);
+  return [...b.exploited, ...critical, ...others].slice(0, RELEASE_PACK_IDS_MAX);
 }
 
 /**
