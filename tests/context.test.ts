@@ -13,8 +13,10 @@ import { addDays, at } from "@/lib/dates";
 import { printJson } from "@/lib/json-schema";
 import { previewRegions, regionsPreviewRows } from "@/lib/regions";
 import { readCorrections, readScoreboard, standingLast } from "@/lib/run-inputs";
+import { fittingType, RECORD_PUBLISHERS, sourceTypeFits } from "@/lib/rules/sources";
 import { Brief } from "@/lib/schema/brief";
 import { AgentContext } from "@/lib/schema/context";
+import { publisherFor } from "@/lib/sources";
 import type { Correction, CorrectionsFile, Dispute } from "@/lib/schema/misc";
 import { BANNED_WORDS, WITHHELD_HEADLINE } from "@/lib/vocab";
 import { main } from "@/scripts/build-context";
@@ -392,5 +394,21 @@ describe("withheld recent items (a withhold binds later editions, §4.10)", () =
     const other = structuredClone(c);
     other.recent_items[c.recent_items.findIndex((x) => !x.withheld)]!.dispute_kind = "victim";
     expect(AgentContext.safeParse(other).success).toBe(false);
+  });
+});
+
+describe("the source type a record publisher takes (SOURCE_TIER, §4.15 config)", () => {
+  it("X10 lists the record publishers' domains as config.tiers.cve_record, the domains SOURCE_TIER fits only cve_record among the advisory types", () => {
+    const want = w.config.sourceTiers.publishers.filter((p) => RECORD_PUBLISHERS.includes(p.id)).flatMap((p) => p.domains);
+    expect(built.context.config.tiers.cve_record).toEqual(want);
+    expect(built.context.config.tiers.cve_record).toEqual(expect.arrayContaining(["cve.org", "nvd.nist.gov", "github.com", "jvn.jp"]));
+    // The Kobol dry run of 2026-11-11: a GitHub Advisory Database page cited as a vendor advisory.
+    const ghsa = publisherFor("https://github.com/advisories/GHSA-2222-3333-4444", "vendor_advisory", w.config);
+    expect(sourceTypeFits("vendor_advisory", ghsa)).toBe(false);
+    expect(sourceTypeFits("cve_record", ghsa)).toBe(true);
+    for (const p of w.config.sourceTiers.publishers) {
+      const fits = fittingType({ tier: p.tier, publisher: p.id, kind: p.kind }) === "cve_record";
+      for (const d of p.domains) expect(built.context.config.tiers.cve_record.includes(d), d).toBe(fits);
+    }
   });
 });

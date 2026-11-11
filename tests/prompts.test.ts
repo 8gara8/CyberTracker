@@ -208,3 +208,12 @@ describe("PR7: a real render", () => {
     expect(text).toContain(`\`${path.join(fakeRoot, "drafts", "2026-10-14.json")}\``);
   });
 });
+
+describe("PR8: the source-type guidance the dry runs needed", () => {
+  it("PR8: PROMPT.md names the context's record domains as cve_record, never vendor_advisory", () => {
+    const flat = PROMPT.replace(/\s+/g, " ");
+    expect(flat).toContain("`config.tiers.cve_record`");
+    expect(flat).toMatch(/is a `"cve_record"`, never a `"vendor_advisory"`/);
+    expect(weekday.config.tiers.cve_record).toContain("github.com");
+  });
+});

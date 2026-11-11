@@ -67,6 +67,9 @@ word DONE.
   shorteners or exploit repositories. Never clone, install or run anything.
 - **Cite only what you saw:** URLs from the pack, from search results or from a page you opened. Never
   invent or rebuild a URL, and use no archive or redirect wrappers.
+- **Source types** fit the publisher (`STYLE.md` §7). A page on a domain in the context's
+  `config.tiers.cve_record` (CVE, NVD, GitHub Advisory Database, JVN and TVN records) is a `"cve_record"`,
+  never a `"vendor_advisory"`, which is only the affected vendor's own page.
 - **Victims, attribution, dangerous material, quotes and voice** follow `STYLE.md` §8 to §10.
 - **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
   none of its sources: publish withholds any item that repeats it or cites them.

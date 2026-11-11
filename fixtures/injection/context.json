@@ -880,6 +880,14 @@
         "tass.com",
         "tass.ru",
         "rt.com"
+      ],
+      "cve_record": [
+        "cve.org",
+        "cve.mitre.org",
+        "nvd.nist.gov",
+        "github.com",
+        "twcert.org.tw",
+        "jvn.jp"
       ]
     },
     "home_vendors": {

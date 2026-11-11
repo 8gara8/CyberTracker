@@ -204,8 +204,11 @@ const TYPE_NEEDS: Record<SourceType, string> = {
   other: "a tier 3 publisher",
 };
 
-/** The source_type that fits a publisher best, for the message. */
-function fittingType(v: PublisherView): SourceType {
+/**
+ * The source_type that fits a publisher best: SOURCE_TIER's message, and the context's
+ * `config.tiers.cve_record` (lib/context.ts, §4.15), so what the agent is told and what the rule asks agree.
+ */
+export function fittingType(v: Pick<PublisherView, "tier" | "publisher" | "kind">): SourceType {
   if (v.tier === 3) return "other";
   if (RECORD_PUBLISHERS.includes(v.publisher)) return "cve_record";
   if (v.kind === "vendor") return "vendor_advisory";
@@ -213,6 +216,12 @@ function fittingType(v: PublisherView): SourceType {
   if (v.kind === "regulator") return "regulator_filing";
   if (v.kind === "newsroom" && v.tier === 2) return "press";
   return "research";
+}
+
+/** "an unlisted publisher", "a record or data publisher" (a listed publisher of kind other: CVE, GHSA, OSV, EPSS) or "a <kind> publisher". */
+function publisherKindText(v: PublisherView): string {
+  if (unlisted(v)) return "an unlisted publisher";
+  return v.kind === "other" ? "a record or data publisher" : `a ${v.kind} publisher`;
 }
 
 /** "s5 (example.org, tier 3)". */
@@ -265,7 +274,7 @@ const sourceTier = defineRule({
       }
       if (mode === "draft" && v.kind !== null && !sourceTypeFits(s.source_type, v)) {
         out.push(error("SOURCE_TIER", `sources[${i}].source_type`,
-          `${s.id} has source_type "${s.source_type}", which needs ${TYPE_NEEDS[s.source_type]}, but ${v.publisher_name} is ${v.kind === "other" ? "an unlisted publisher" : `a ${v.kind} publisher`} of tier ${v.tier}. Use "${fittingType(v)}", or cite a source that fits.`));
+          `${s.id} has source_type "${s.source_type}", which needs ${TYPE_NEEDS[s.source_type]}, but ${v.publisher_name} is ${publisherKindText(v)} of tier ${v.tier}. Use "${fittingType(v)}", or cite a source that fits.`));
       }
     });
     return out;

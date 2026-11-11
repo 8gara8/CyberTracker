@@ -699,6 +699,16 @@ describe("SOURCE_TIER", () => {
     expect(r[0]!.message).toContain('Use "cve_record"');
   });
 
+  it("a GitHub Advisory Database page cited as a vendor advisory (Kobol dry run, 2026-11-11): a listed record publisher, never \"unlisted\"", () => {
+    const d = weekdayDraft();
+    const id = addSource(d, { url: "https://github.com/advisories/GHSA-2222-3333-4444", source_type: "vendor_advisory" });
+    d.items[0]!.source_ids.push(id);
+    const r = check(d, T);
+    expect(codesOf(r)).toEqual([`SOURCE_TIER sources[${d.sources.length - 1}].source_type`]);
+    expect(r[0]!.message).toContain('needs a vendor\'s own domain, but GitHub Advisory Database is a record or data publisher of tier 1. Use "cve_record"');
+    expect(r[0]!.message).not.toContain("unlisted");
+  });
+
   it("skips the source_type fit in published mode (no publisher kind is frozen)", () => {
     const inputs = draftInputs("weekday");
     const d = weekdayDraft();
