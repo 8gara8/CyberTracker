@@ -159,6 +159,23 @@ describe("Skipping (SPEC §7 Site tests)", () => {
     expect(content.briefs.find((b) => b.date === WED)!.lead.find((x) => x.gap)!.text).toContain("38%");
   });
 
+  it("a correction whose text fails a safety code is dropped from corrections.json too, not only from the brief listing it", () => {
+    const dir = copy();
+    const planted = " Phishing used login-update.example.com.";
+    edit<{ corrections: { id: string; after: string }[] }>(dir, "corrections.json", (f) => { f.corrections.find((c) => c.id === "C-0002")!.after += planted; });
+    edit<Brief>(dir, "briefs/2026-10-13.json", (b) => { b.corrections.find((c) => c.id === "C-0002")!.after += planted; });
+    const { content, lines } = load(dir);
+    expect(content.skipped).toEqual([
+      { file: "briefs/2026-10-13.json", codes: ["NO_LIVE_IOC"] },
+      { file: "corrections.json C-0002", codes: ["NO_LIVE_IOC"] },
+    ]);
+    expect(lines).toContain("content: skipped corrections.json C-0002 (NO_LIVE_IOC)");
+    for (const line of lines) expect(line).not.toContain("login-update");
+    expect(content.corrections.corrections.map((c) => c.id)).toEqual(["C-0001"]);
+    expect(correctionsFor(content, "pol-jp-active-cyber-defence-2026-10", "2026-10-12")).toEqual([]);
+    expect(renderToStaticMarkup(createElement(BriefView, briefPropsFor(content, "2026-10-12")!))).not.toContain("login-update");
+  });
+
   it("SITE_BLOCKING_CODES holds every SAFETY_CODES code, and every entry but FILE_NAME is a † rule (§4.12)", () => {
     for (const code of SAFETY_CODES) expect(SITE_BLOCKING_CODES).toContain(code);
     // The † rows of the §4.12 table, read from SPEC.md, and the rules the validator runs on data-only editions.

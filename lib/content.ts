@@ -3,20 +3,22 @@
 // with CyberTracker's file set. Every file is re-checked with validateAll(dir, { perFile: true }) (§4.12):
 // one invalid file never fails the build. A brief is skipped only for a SITE_BLOCKING_CODES code; any
 // other error is a build warning and the brief is shown. A metrics, status, scoreboard or corrections file
-// failing its schema is skipped. Only a missing content folder throws (ContentError), which fails
+// failing its schema is skipped, and so is one correction whose text fails a safety code (correctionSafetyCodes()).
+// Only a missing content folder throws (ContentError), which fails
 // `next build` and leaves the previous deployment up (§9.1).
 
 import fs from "node:fs";
 import path from "node:path";
-import type { LoadedConfig } from "./config";
+import { loadCheckedConfig, type LoadedConfig } from "./config";
 import { Brief } from "./schema/brief";
 import { Metrics } from "./schema/metrics";
-import { CorrectionsFile } from "./schema/misc";
+import { CorrectionsFile, type Correction } from "./schema/misc";
 import { ScoreboardFile } from "./schema/scoreboard";
 import { StatusFile } from "./schema/status";
-import { SAFETY_CODES } from "./rules/safety";
+import { SAFETY_CODES, hasScannerQuery, listedHosts, liveIndicators, payloadsIn, secretsIn } from "./rules/safety";
 import { contentDir } from "./site";
 import { validateAll, type FileResult } from "./validate";
+import { CANARY_TOKEN } from "./vocab";
 
 export { contentDir };
 
@@ -35,7 +37,10 @@ const FILE_BLOCKING_CODES: readonly string[] = ["SCHEMA", "FILE_NAME", "DATE_MIS
 
 /** A file the site did not load, or loaded with errors, and the codes that say why (never the matched text). */
 export interface FileCodes {
-  /** Relative to the content folder, "/"-separated: "briefs/2026-11-08.json". */
+  /**
+   * Relative to the content folder, "/"-separated: "briefs/2026-11-08.json"; "corrections.json C-0002" for one
+   * correction left out of a loaded corrections.json (correctionSafetyCodes()).
+   */
   file: string;
   codes: string[];
 }
@@ -109,6 +114,25 @@ function listJson(dir: string, sub: string): string[] {
 }
 
 const distinct = (codes: readonly string[]) => [...new Set(codes)];
+
+const CANARY_LOWER = CANARY_TOKEN.toLowerCase();
+
+/**
+ * The safety codes a correction's printed text (field, after, reason) fails under the current lists, with the
+ * matchers the brief rules use (§6 item 3): CANARY, NO_LIVE_IOC, NO_EXPLOIT_LINK (payloads and scanner queries)
+ * and SECRET_LIKE. validateAll() checks these texts only inside the briefs that list them, so a brief skipped
+ * for one would otherwise still print the text from corrections.json. Its source_url needs nothing here:
+ * safeHref() applies the current host and github checks. A name_removed correction's fixed texts pass.
+ */
+export function correctionSafetyCodes(c: Pick<Correction, "field" | "after" | "reason">, hosts: readonly string[]): SiteBlockingCode[] {
+  const texts = [c.field, c.after, c.reason];
+  const codes: SiteBlockingCode[] = [];
+  if (texts.some((t) => t.toLowerCase().includes(CANARY_LOWER))) codes.push("CANARY");
+  if (texts.some((t) => liveIndicators(t, hosts).length > 0)) codes.push("NO_LIVE_IOC");
+  if (texts.some((t) => payloadsIn(t).length > 0 || hasScannerQuery(t))) codes.push("NO_EXPLOIT_LINK");
+  if (texts.some((t) => secretsIn(t).length > 0)) codes.push("SECRET_LIKE");
+  return codes;
+}
 
 /** The distinct codes of a file's issues, errors and warnings alike, in the validator's order. */
 function codesOf(r: FileResult | undefined): string[] {
@@ -192,6 +216,16 @@ export function loadContent(dir: string = contentDir(), opts: LoadContentOptions
   const scoreboard = present("scoreboard.json") ? load(readJson(key, "scoreboard.json"), "scoreboard.json", ScoreboardFile, FILE_BLOCKING_CODES) : null;
   const corrections = (present("corrections.json") ? load(readJson(key, "corrections.json"), "corrections.json", CorrectionsFile, FILE_BLOCKING_CODES) : null)
     ?? { schema_version: 1 as const, corrections: [], disputes: [] };
+  // A correction whose text fails a safety code under the current lists is left out, as its brief is (§6 item 3).
+  // The hosts come from sourceTiers and vendors, which the sample claims validateAll() may add do not touch.
+  if (corrections.corrections.length) {
+    const hosts = listedHosts(opts.config ?? loadCheckedConfig());
+    corrections.corrections = corrections.corrections.filter((c) => {
+      const codes = correctionSafetyCodes(c, hosts);
+      if (codes.length) skipped.push({ file: `corrections.json ${c.id}`, codes });
+      return codes.length === 0;
+    });
+  }
 
   // Build warnings: every other error, in any file the site still reads (cross-file codes never hide anything, §6 item 4).
   const skippedFiles = new Set(skipped.map((s) => s.file));
