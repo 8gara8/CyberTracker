@@ -332,7 +332,10 @@ function candidates(name: EditionName, items: readonly DraftItem[]): Candidate[]
     const vendor = rec ? matchVendor(cfg, { affectedVendors: [rec.vendor] }) : null;
     const kevRow = cve ? KEV_ROWS.find((r) => r[0] === cve && r[1] <= EDITIONS[name].kev.version.replace(/\./g, "-")) : undefined;
     const credit = rec?.credits.map((c) => matchCredit(c, cfg.compiled.aiFinders)).find((x) => x !== null) ?? null;
-    const release = it.release_id ? { release_id: it.release_id, vendor: "Microsoft", total: 1384, critical: 60, exploited: 1, exploited_cve_ids: [...it.cve_ids] } : null;
+    // Every fix of the fixture release was published on Patch Tuesday, CVE-2026-96951's day.
+    const release = it.release_id
+      ? { release_id: it.release_id, vendor: "Microsoft", total: 1384, critical: 60, exploited: 1, exploited_cve_ids: [...it.cve_ids], first_published: "2026-10-13", last_published: "2026-10-13" }
+      : null;
     const rank = out.length + 1;
     const reasons = [
       ...(kevRow ? ["new KEV"] : []),

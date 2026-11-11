@@ -396,7 +396,7 @@ function pinMorning(o: { tw: number; notes: ReturnType<typeof notePackRecords>; 
   const keep = recordKeepIds(rankBase);
   const provisional = provisionalRecords([
     ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
-    ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg),
     ...o.notes,
   ]);
   const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
@@ -560,7 +560,7 @@ describe("items", () => {
     const keep = recordKeepIds(rankBase);
     const provisional = provisionalRecords([
       ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
-      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg),
     ]);
     const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
     const capR = capRecords(provisional, new Set(ranked.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id))));
@@ -571,7 +571,10 @@ describe("items", () => {
 
     // The release: its counts cover all 390 fixes; its pack_ids name at most 20 records, every one still in the pack.
     const pt = kept.find((c) => c.kind === "patch_batch")!;
-    expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id] });
+    expect(pt.release).toEqual({
+      release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id],
+      first_published: "2026-10-13", last_published: "2026-10-13",
+    });
     expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
     const inPack = new Set([...built.pack.items.map((i) => i.id), ...built.pack.records.map((r) => r.id)]);
     for (const id of pt.pack_ids) expect(inPack.has(id)).toBe(true);
@@ -782,6 +785,20 @@ describe("items", () => {
     expect(capped.kept.some((d) => d.url === alert.url)).toBe(true);
     // The alert took one of the 200 places: the lowest-scored story that would otherwise have stayed went instead.
     expect(capItems(wide, ITEM_CAPS, held).kept.filter((d) => !capped.kept.includes(d)).length).toBe(1);
+  });
+
+  it("held items stop at the 200 the pack schema allows: of 201 held items the 200 best-scored stay and the lowest goes (fourth review of row 146)", () => {
+    const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = Array.from({ length: 201 }, (_, i) => ({
+      ...base, feed_id: `feed-${i % 5}`, key: `h${i}`, url: `https://therecord.media/ct-sample/held-${i}`, coverage: ["exploits"] as ItemDraft["coverage"], score: 60 - i / 10,
+    }));
+    const c = capItems(items, ITEM_CAPS, () => true);
+    expect(c.kept).toHaveLength(ITEM_CAPS.total);
+    expect(ITEM_CAPS.total).toBe(200);
+    expect(c.kept.map((d) => d.url)).not.toContain("https://therecord.media/ct-sample/held-200");
+    expect(c.cutByFeed).toEqual({ "feed-0": 1 });
+    // Held items pass a feed's 30 and a section's 60: five feeds of 40, all in one section, all kept.
+    expect(capItems(items.slice(0, 200), ITEM_CAPS, () => true).kept).toHaveLength(200);
   });
 
   it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut unreferenced records first (row 146)", () => {
@@ -1277,8 +1294,9 @@ describe("collect's other runs", () => {
   });
 
   it("a release whose CVE records tag no reference: the pack's member records carry the vendor's own page, as the candidate does (review of row 146)", async () => {
-    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day link, both untagged, as SAP's
-    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it.
+    // Six SAP fixes in the hourly zip, each citing its note on me.sap.com and the url.sap patch-day page, both untagged, as SAP's
+    // 2026 records all do. Without the vendor pages the pack held no SAP page, so a patch batch could cite none from it. url.sap is
+    // SAP SE's own brand top-level domain (vendors.json v4), so the public patch-day page, which needs no login, is one of them.
     const zipName = "2026-10-13_delta_CVEs_at_2000Z.zip";
     const feeds = feedsVariant();
     const zipPath = path.join(feeds, "cvelist", "zips", zipName);
@@ -1304,18 +1322,18 @@ describe("collect's other runs", () => {
     expect(pt.release).toMatchObject({ vendor: "SAP", total: 7, exploited: 0 });
     const fixtureNote = "https://me.sap.com/ct-sample/cve-2026-58249-1";
     const notes = [0, 1, 2, 3, 4, 5].map((i) => `https://me.sap.com/notes/36943${80 + i}`);
-    expect(pt.advisory_urls).toEqual([fixtureNote, ...notes.slice(0, 4)]);
+    const patchDay = "https://url.sap/sapsecuritypatchday";
+    expect(pt.advisory_urls).toEqual([fixtureNote, notes[0], patchDay, notes[1], notes[2]]);
     const byCve = new Map(r.pack.records.filter((x) => x.source === "cvelist").map((x) => [x.record_id, x]));
-    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i]]));
+    sap.forEach((_, i) => expect(byCve.get(`CVE-2026-6209${i}`)?.advisory_urls).toEqual([notes[i], patchDay]));
     expect(byCve.get("CVE-2026-58249")?.advisory_urls).toEqual([fixtureNote]);
     const md = readOut(root, `packs/${DATE}.md`);
-    for (const u of [fixtureNote, ...notes]) expect(md).toContain(`  advisory: ${u}`);
-    expect(md).not.toContain("url.sap");
+    for (const u of [fixtureNote, ...notes, patchDay]) expect(md).toContain(`  advisory: ${u}`);
     expect(md).not.toContain("  advisory: https://example.com/");
-    // The pack is the run's evidence: a draft citing the note from the pack is citing a URL the run saw.
-    for (const u of [fixtureNote, ...notes]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
-    // On the fixture morning alone the SAP fix is no release member (one record, under min_records): no vendor page, and no
-    // other record's advisory URLs change either way.
+    // The pack is the run's evidence: a draft citing the note or the patch-day page from the pack is citing a URL the run saw.
+    for (const u of [fixtureNote, ...notes, patchDay]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
+    // On the fixture morning alone the SAP fix is no release member (one record, under min_records) and no test keeps it, so the
+    // pack holds no record of it; the six fixes change no other record's advisory URLs.
     const before = await run(tempRoot(true));
     expect(before.candidates.kept.some((c) => c.kind === "patch_batch" && c.id.startsWith("pt-sap-"))).toBe(false);
     for (const x of before.pack.records) {

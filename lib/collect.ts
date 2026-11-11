@@ -12,14 +12,14 @@ import { endOfDayAsset, hourlyAsset, tagTime, type ReleaseAsset } from "./feeds/
 import { kevNoteUrls } from "./feeds/kev";
 import { CATCH_UP_DAYS, catchUpRange, inCatchUp } from "./metrics/flood";
 import { ghsaRecordUrl } from "./feeds/ghsa";
-import { recordAdvisoryUrls } from "./feeds/cvelist";
+import { ADVISORY_TAGS, recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
 import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
 import { alertRegions, givesRegionSignal, itemGivesRegionSignal, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
-import type { RunFile, SourceTiersFile } from "./schema/config";
+import type { RunFile, SourceTiersFile, Vendor, VendorsFile } from "./schema/config";
 import type { Evidence } from "./schema/misc";
 import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type PackSizeCut, type RankLogEntry } from "./schema/pack";
 import type { Candidate } from "./schema/context";
@@ -576,14 +576,40 @@ export function kevPackRecords(entries: readonly KevEntry[], newIds: ReadonlySet
 /** Extra facts per CVE record (EPSS, the AI-credit match), filled by collect. */
 export type RecordFacts = (rec: CveRecord) => Facts;
 
+/** The vendor in vendors.json whose CNA assigned the record (its `cna` short names, exact), or null. */
+export function cnaVendorOf(rec: Pick<CveRecord, "assigner">, vendors: Pick<VendorsFile, "vendors">): Vendor | null {
+  const a = rec.assigner;
+  return a ? vendors.vendors.find((v) => v.cna.includes(a)) ?? null : null;
+}
+
+/**
+ * A CVE record's vendor pages (§8.3 Advisory URLs): its CNA references that carry no advisory tag
+ * (recordAdvisoryUrls() takes the tagged ones) and no exploit tag, on the own hosts of the vendor whose CNA
+ * assigned it (cnaVendorOf(): publisherFor() gives `vendor:<id>` at tier 1), through advisoryUrlFilter()
+ * (https, not blocked, at most 500 characters, normalised, unique, at most 5). SAP, Siemens, Fortinet,
+ * Ivanti and Schneider Electric tag none of their references, so without these their records, release
+ * members and out-of-band exploited flaws alike, would carry no vendor page; a reference on any other
+ * host, and every reference of a record no vendor's CNA assigned, is left out.
+ */
+export function vendorPageUrls(rec: CveRecord, cfg: PublisherConfig): string[] {
+  const vendor = cnaVendorOf(rec, cfg.vendors);
+  if (!vendor) return [];
+  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.includes("exploit") && !r.tags.some((t) => ADVISORY_TAGS.has(t)))
+    .map((r) => r.url)
+    .filter((u) => {
+      const p = publisherFor(u, "vendor_advisory", cfg);
+      return p.publisher === `vendor:${vendor.id}` && p.tier === 1;
+    });
+  return advisoryUrlFilter(own, cfg.sourceTiers);
+}
+
 /**
  * CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit
- * flag. `vendorUrls` gives a record further advisory URLs after its tagged ones (collect passes a release
- * member's vendor pages, releaseMemberUrls() in lib/rank.ts); the five-URL cap and the URL rules still apply.
+ * flag. Its advisory URLs are its tagged ones (recordAdvisoryUrls()), then its vendor's own pages
+ * (vendorPageUrls()), through advisoryUrlFilter(), so the tagged ones stay first under the five-URL cap.
  */
 export function cvePackRecords(
-  recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: Pick<SourceTiersFile, "github">, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },
-  vendorUrls: (r: CveRecord) => readonly string[] = () => [],
+  recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: PublisherConfig, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },
 ): RecordDraft[] {
   return present(recs.filter(keep).map((r) => {
     const affected = r.affected.find((a) => usableName(a.vendor, 80) || usableName(a.product, 120));
@@ -604,7 +630,7 @@ export function cvePackRecords(
       exploit_reference: r.exploit_reference,
       ...(extra ? extra(r) : {}),
     };
-    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter([...recordAdvisoryUrls(r, cfg), ...vendorUrls(r)], cfg), r.title ?? r.description,
+    return draft("cvelist", r.cve_id, cveOrgUrl(r.cve_id), advisoryUrlFilter([...recordAdvisoryUrls(r, cfg.sourceTiers), ...vendorPageUrls(r, cfg)], cfg.sourceTiers), r.title ?? r.description,
       r.description, event ? utcDateOf(event) : "1970-01-01", affected?.vendor ?? null, affected?.product ?? null, [r.cve_id], facts, screen);
   }));
 }

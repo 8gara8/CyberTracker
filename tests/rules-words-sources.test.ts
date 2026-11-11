@@ -18,7 +18,7 @@ import { derive } from "../lib/rules/shared";
 import {
   exploitLinkUrl, RECORD_PUBLISHERS, releaseBasisOf, releaseMember, sourceRules, sourceTypeFits, sourceUrlProblem, stateClaimPhrase,
 } from "../lib/rules/sources";
-import type { RuleInput, ValidationIssue } from "../lib/rules/types";
+import type { CveRecordInfo, RuleInput, ValidationIssue } from "../lib/rules/types";
 import {
   bannedWordsIn, draftView, modelWords, pageWordCount, pageWords, quotedSpans, wordFields, wordRules,
 } from "../lib/rules/words";
@@ -1047,6 +1047,12 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
       ["another CNA's, then the release's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA, "CVE-2026-96951"]; }, () => unexploited()],
       ["another CNA's CVE id, exploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA]; }, () => draftInputs("weekday")],
       ["another CNA's CVE id and the bulletin, unexploited", (d, p) => { d.items[p]!.cve_ids = [OTHER_CNA]; d.items[p]!.source_ids.push(S["msrc-october"]); }, () => unexploited()],
+      // An older (or later) record of the vendor's own CNA is not one of the release's fixes either: rank bundles only records
+      // published in the record window, so it neither dates nor links the block (fourth review of row 146).
+      ["an older record of the vendor's own CNA, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER]; }, () => unexploited(withOwnCna())],
+      ["a later record of the vendor's own CNA, unexploited", (d, p) => { d.items[p]!.cve_ids = [LATER]; }, () => unexploited(withOwnCna())],
+      ["an older own-CNA record, then the release's CVE id, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER, "CVE-2026-96951"]; }, () => unexploited(withOwnCna())],
+      ["an older own-CNA record and the bulletin, unexploited", (d, p) => { d.items[p]!.cve_ids = [OLDER]; d.items[p]!.source_ids.push(S["msrc-october"]); }, () => unexploited(withOwnCna())],
     ];
     const seen = cases.map(([name, mutate, inputsOf]) => {
       const { d, p } = pressOnly();
@@ -1058,12 +1064,52 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
     expect(seen.filter(([, passes]) => !passes).map(([name]) => name)).toEqual([
       "press only, unexploited", "unknown CVE id, unexploited", "CVE id, no CVE List", "record source only, unexploited", "press only, exploited, no CVE List",
       "another CNA's CVE id, unexploited", "another vendor's CVE id, unexploited",
+      "an older record of the vendor's own CNA, unexploited", "a later record of the vendor's own CNA, unexploited",
     ]);
   });
 
   /** CVE-2026-108917 is a VulDB record and CVE-2026-104935 an Ivanti one in the weekday CVE List; CVE-2026-96951 is Microsoft's. */
   const OTHER_CNA = "CVE-2026-108917";
   const IVANTI = "CVE-2026-104935";
+  /**
+   * Records of Microsoft's own CNA outside the release, published 2026-10-13 (CVE-2026-96951's day, the fixture release's
+   * span): an older one (July's), as collect keeps older records the delta zips carry because they were updated in the window,
+   * and a later one; and one rejected on the release's own day.
+   */
+  const OLDER = "CVE-2026-61004";
+  const LATER = "CVE-2026-61007";
+  const REJECTED = "CVE-2026-61008";
+  const withOwnCna = (base = draftInputs("weekday")): DraftInputs => {
+    const ms = base.cveList!.get("CVE-2026-96951")!;
+    const extra = new Map<string, CveRecordInfo>([
+      [OLDER, { ...ms, cve_id: OLDER, date_published: "2026-07-14", date_updated: "2026-10-13" }],
+      [LATER, { ...ms, cve_id: LATER, date_published: "2026-10-14", date_updated: "2026-10-14" }],
+      [REJECTED, { ...ms, cve_id: REJECTED, state: "REJECTED" }],
+    ]);
+    const list = base.cveList!;
+    return { ...base, cveList: { get: (id) => extra.get(id.toUpperCase()) ?? list.get(id) } };
+  };
+
+  it("RELEASE_SOURCE: an older record of the vendor's own CNA neither dates, titles nor links the release (fourth review of row 146)", () => {
+    // Before, any record of Microsoft's CNA counted: July's record dated rel-microsoft-2026-10 2026-07-14, titled it
+    // "Microsoft security updates, 2026-07" and linked its cve.org page.
+    const inputs = unexploited(withOwnCna());
+    const one = pressOnly();
+    one.d.items[one.p]!.cve_ids = [OLDER];
+    const r = check(one.d, R, { inputs });
+    expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${one.p}].source_ids`]);
+    expect(r[0]!.message).toBe(`items[${one.p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids (${OLDER} is not among the release's fixes: it has no CVE List record from Microsoft's CNA published on 2026-10-13, so it is ignored).`);
+    expect(composes(one.d, one.p, inputs)).toBe(false);
+    // Beside a fix of the release, the older record is ignored: the block is dated, titled and linked from the fix.
+    const mixed = pressOnly();
+    mixed.d.items[mixed.p]!.cve_ids = [OLDER, "CVE-2026-96951"];
+    expect(check(mixed.d, R, { inputs })).toEqual([]);
+    const release = inputs.context!.candidates.find((c) => c.release?.release_id === REL)!.release!;
+    const block = releaseBlockOf(mixed.d.items[mixed.p]!, release, mixed.d.sources.map((s) => freezeSource(s, "pack", inputs.config)), inputs.config, inputs.cveList)!;
+    expect(block).toMatchObject({ date: "2026-10-13", title: "Microsoft security updates, 2026-10", source_url: "https://www.cve.org/CVERecord?id=CVE-2026-96951" });
+    // The span the candidate carries is what rank bundled: the fixture release's fixes were all published on 2026-10-13.
+    expect([release.first_published, release.last_published]).toEqual(["2026-10-13", "2026-10-13"]);
+  });
 
   it("RELEASE_SOURCE: a CVE id that is not the release's neither dates nor links it, and the message names it (review of row 146)", () => {
     // Before, any CVE id with a record dated the block: a VulDB record dated Microsoft's release 2026-10-12, not the 13th, and
@@ -1073,12 +1119,12 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
     one.d.items[one.p]!.cve_ids = [OTHER_CNA];
     const r = check(one.d, R, { inputs });
     expect(codesOf(r)).toEqual([`RELEASE_SOURCE items[${one.p}].source_ids`]);
-    expect(r[0]!.message).toBe(`items[${one.p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids (${OTHER_CNA} is not among the release's fixes: it has no CVE List record from Microsoft's CNA, so it is ignored).`);
+    expect(r[0]!.message).toBe(`items[${one.p}] (${I.patchBatch}) names release ${REL}, but publish cannot date its release block: it cites no tier 1 source of Microsoft, and it names none of the release's CVE ids (${OTHER_CNA} is not among the release's fixes: it has no CVE List record from Microsoft's CNA published on 2026-10-13, so it is ignored).`);
     expect(r[0]!.hint).toBe("Cite Microsoft's own advisory for the release from the pack (a tier 1 source on Microsoft's domain), with its published_at, or name the release's CVE ids (its pack records) in cve_ids.");
     expect(composes(one.d, one.p, inputs)).toBe(false);
     const two = pressOnly();
     two.d.items[two.p]!.cve_ids = [OTHER_CNA, IVANTI, "CVE-2026-99999"];
-    expect(check(two.d, R, { inputs })[0]!.message).toContain(`(${OTHER_CNA}, ${IVANTI}, CVE-2026-99999 are not among the release's fixes: they have no CVE List record from Microsoft's CNA, so they are ignored)`);
+    expect(check(two.d, R, { inputs })[0]!.message).toContain(`(${OTHER_CNA}, ${IVANTI}, CVE-2026-99999 are not among the release's fixes: they have no CVE List record from Microsoft's CNA published on 2026-10-13, so they are ignored)`);
     // Beside a fix of the release, the other id is ignored: the block is dated, titled and linked from Microsoft's record.
     const mixed = pressOnly();
     mixed.d.items[mixed.p]!.cve_ids = [OTHER_CNA, "CVE-2026-96951"];
@@ -1090,18 +1136,28 @@ describe("RELEASE_SOURCE (review of row 146)", () => {
     expect([basis.bundle, basis.ignored, basis.date, basis.problem]).toEqual([["CVE-2026-96951"], [OTHER_CNA], "2026-10-13", null]);
   });
 
-  it("releaseMember(): the release's exploited ids, or a record from one of the vendor's CNAs; never an unknown id (review of row 146)", () => {
-    const { cveList, config } = draftInputs("weekday");
+  it("releaseMember(): the release's exploited ids, or a published record from one of the vendor's CNAs within the release's span; never an unknown id (reviews of row 146)", () => {
+    const { cveList, config } = withOwnCna();
     const microsoft = config.vendors.vendors.find((v) => v.id === "microsoft")!;
-    const none = { exploited_cve_ids: [] as string[] };
-    const table: Array<[string, { exploited_cve_ids: string[] }, boolean, boolean]> = [
+    type Rel = { exploited_cve_ids: string[]; first_published: string; last_published: string };
+    const span = { first_published: "2026-10-13", last_published: "2026-10-13" };
+    const none: Rel = { exploited_cve_ids: [], ...span };
+    const table: Array<[string, Rel, boolean, boolean]> = [
       // id, release, with the CVE List, without it
       ["CVE-2026-96951", none, true, false],
       ["cve-2026-96951", none, true, false],
       [OTHER_CNA, none, false, false],
       [IVANTI, none, false, false],
       ["CVE-2026-99999", none, false, false],
-      [OTHER_CNA, { exploited_cve_ids: [OTHER_CNA] }, true, true],
+      [OTHER_CNA, { exploited_cve_ids: [OTHER_CNA], ...span }, true, true],
+      // The vendor's own CNA, outside the span (rank bundles only records published in the record window), or rejected.
+      [OLDER, none, false, false],
+      [LATER, none, false, false],
+      [REJECTED, none, false, false],
+      // A span that reaches them takes them; its ends are inclusive.
+      [OLDER, { exploited_cve_ids: [], first_published: "2026-07-14", last_published: "2026-10-13" }, true, false],
+      [LATER, { exploited_cve_ids: [], first_published: "2026-10-13", last_published: "2026-10-14" }, true, false],
+      ["CVE-2026-96951", { exploited_cve_ids: [], first_published: "2026-10-14", last_published: "2026-10-15" }, false, false],
     ];
     expect(table.map(([id, rel]) => [id, releaseMember(id, rel, microsoft, cveList), releaseMember(id, rel, microsoft, null)]))
       .toEqual(table.map(([id, , withList, without]) => [id, withList, without]));
