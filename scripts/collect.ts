@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dayReads, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
   freshColumn, ghsaPackRecords, hourlyZip, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
-  pinnedRecordIds, provisionalRecords, RECORDS_MAX, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
+  ITEM_CAPS, pinnedItemIds, pinnedRecordIds, provisionalRecords, RECORDS_MAX, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
   type FeedOutcome, type ItemDraft, type LinkScreen, type PlannedZip, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
@@ -31,7 +31,7 @@ import type { CheckLabel, CveRecord, EpssDay, GhsaAdvisory, KevCatalog } from ".
 import { byCodeUnit, compareCveIds } from "../lib/ids";
 import { jsonText } from "../lib/json";
 import { rankCandidates, recordKeepIds, releaseMemberUrls, type AiHit } from "../lib/rank";
-import { regionsConfig } from "../lib/regions";
+import { itemGivesRegionSignal, regionsConfig } from "../lib/regions";
 import { AiCreditsFile, AnthropicCvdFile, CreditCandidatesFile, DaysFile, KevIndexFile } from "../lib/schema/metrics";
 import {
   CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord,
@@ -407,7 +407,8 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     log(`${entry.id}: ${r.data.total} items, ${d.drafts.length} in the window${d.missedKeywords ? `, ${d.missedKeywords} without a keyword` : ""}${d.badUrl ? `, ${d.badUrl} with an unusable link or title` : ""}${d.unsafeLinks ? `, ${d.unsafeLinks} dropped for a malformed link (flagged)` : ""}.`);
   }
   const deduped = dedupe(itemDrafts);
-  const capped = capItems(deduped.kept);
+  // An item that gives a region signal (an agency's alert page, a CERT note reporting exploitation) is never cut (§4.14 Caps).
+  const capped = capItems(deduped.kept, ITEM_CAPS, (d) => itemGivesRegionSignal(d, regions, D));
   for (const [id, n] of Object.entries(capped.cutByFeed)) log(`${id}: ${n} items over the caps.`);
   const items: PackItem[] = toPackItems(capped.kept);
 
@@ -560,10 +561,11 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     return { feeds: packFeeds(indexFeedsFor(recs), keptBy), injectionFlags };
   };
   // What a kept candidate points to (final ids): the size caps never cut such a record, and such an item last;
-  // nor a pinned record (pinnedRecordIds() on the final records).
+  // nor a pinned record or item (pinnedRecordIds() on the final records, pinnedItemIds() on the items).
   const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+  const pinnedFinal = new Set([...pinnedRecordIds(capR.kept, regions, D), ...pinnedItemIds(items, regions, D)]);
   const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
-    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, pinned: pinnedRecordIds(capR.kept, regions, D), recount,
+    lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, pinned: pinnedFinal, recount,
   });
   const sizeCut = built.sizeCut;
   if (sizeCut.items.length || sizeCut.records.length) log(`pack: the size caps cut ${sizeCut.items.length} items and ${sizeCut.records.length} records.`);
@@ -572,7 +574,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     for (const it of sizeCut.items) byFeed.set(it.feed_id, (byFeed.get(it.feed_id) ?? 0) + 1);
     log(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => byCodeUnit(a, b)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${D}.candidates.json).`);
   }
-  if (sizeCut.over) log("pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records left; written as it is.");
+  if (sizeCut.over) log("pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records and region-signal items left; written as it is.");
   const pack = built.pack;
   const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
