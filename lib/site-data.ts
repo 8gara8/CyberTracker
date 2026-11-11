@@ -92,10 +92,16 @@ export function correctionsFor(content: Pick<Content, "briefs" | "corrections">,
  * masked by URL under another id). While an id is here the site prints its corrections other than
  * name_removed by type word and date only (heldCorrection()); once the dispute is rejected or withdrawn
  * and nothing binds, they print in full again, so a restoring `update` shows.
+ *
+ * It fails closed: a loaded copy whose `withheld` names no name_removed correction the site loaded (corrections.json
+ * skipped, or that correction left out or missing) stays held, since the site cannot tell whether its withhold binds.
  */
 export function heldItemIds(content: Pick<Content, "briefs" | "corrections">): Set<string> {
   const refs = withheldRefs(bindingWithholds(content.corrections), content.briefs);
-  return new Set([...refs.keys()].map((ref) => ref.slice(11)));
+  const held = new Set([...refs.keys()].map((ref) => ref.slice(11)));
+  const known = new Set(content.corrections.corrections.filter((c) => c.type === "name_removed").map((c) => c.id));
+  for (const b of content.briefs) for (const it of b.items) if (it.withheld && !known.has(it.withheld.correction_id)) held.add(it.id);
+  return held;
 }
 
 /** True when a withhold binds the correction's item and it is not a name_removed line: only its type word and date show. */

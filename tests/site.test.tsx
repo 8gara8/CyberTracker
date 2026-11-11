@@ -66,7 +66,7 @@ import type { Annotation } from "@/lib/schema/config";
 import { Metrics } from "@/lib/schema/metrics";
 import type { Correction } from "@/lib/schema/misc";
 import { SIBLINGS, issueFormUrl, siteUrl } from "@/lib/site";
-import { correctionsFor, itemPageIds } from "@/lib/site-data";
+import { correctionsFor, heldItemIds, itemPageIds } from "@/lib/site-data";
 import { countWords } from "@/lib/text";
 import {
   ABOUT_LINE, AI_CREDIT_CAPTION, ANTHROPIC_LINE, BRIEF_END, EDITION_INFO, FIX_SIDE_CAPTION, KIND_INFO, NONE_FOUND, REGION_CHANGE,
@@ -677,6 +677,26 @@ describe("Withholding", () => {
       c.corrections.disputes[1]!.status = "rejected";
       expect(text(card())).toContain(`UPDATED 14 Oct 2026 · incident.victim: now '${NAME}'.`);
       expect(html(<ItemPage content={c} id={WITHHELD_ID} />)).toContain(NAME);
+    });
+
+    it("a withheld copy whose withhold the site cannot read stays held: corrections.json skipped, or its correction missing", async () => {
+      // corrections.json unparsable: the loader swaps in the empty file, and the 13 Oct foot still lists C-0003.
+      const dir = sampleFolder((edit, d) => {
+        edit<Brief>(`briefs/${PARTIAL}.json`, (b) => { b.corrections.push(named()); });
+        fs.writeFileSync(path.join(d, "corrections.json"), '{"schema_version": 1, "corrections": [');
+      });
+      const c = loadContent(dir, { config: fixtureConfig(), fresh: true, log: () => {} });
+      expect(c.corrections.corrections).toEqual([]);
+      expect([...heldItemIds(c)]).toEqual([WITHHELD_ID]);
+      const partial = html(<BriefView {...briefPropsFor(c, PARTIAL)!} />);
+      expect(leaks(partial)).toBe(false);
+      expect(load(partial)("#corrections li").last().text()).toMatch(/C-0003 · .* · CORRECTED · \[withheld\]$/);
+      // The withhold's own correction missing from a loaded corrections.json (a dangling correction_id).
+      const d2 = withCorrections(named());
+      d2.corrections.corrections = d2.corrections.corrections.filter((x) => x.type !== "name_removed");
+      expect(heldItemIds(d2).has(WITHHELD_ID)).toBe(true);
+      expect(leaks(html(<BriefView {...briefPropsFor(d2, PARTIAL)!} />))).toBe(false);
+      expect(leaks(html(<ItemPage content={d2} id={WITHHELD_ID} />))).toBe(false);
     });
 
     it("a source only withheld items cite shows its number and [withheld] as plain text: no outlet, no link", () => {
