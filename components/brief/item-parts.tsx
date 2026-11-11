@@ -104,11 +104,17 @@ export function CardBody({ item, editionDate, index, counted }: CardBodyProps) {
   );
 }
 
-/** "Timeline →" (when the item has a page) and "Report an error": the links after "sources" and "details". */
+/**
+ * The item id as plain text ("id cve-2026-12345", lower case though the footer row is uppercased: the error form
+ * asks for the id shown at the foot of the item, and intake reads only lower-case ids), then "Timeline →" (when
+ * the item has a page) and "Report an error": the parts after "sources" and "details".
+ */
 export function CardLinks({ item, editionDate, hasPage }: { item: Item; editionDate: string; hasPage: boolean }) {
   const id = itemAnchor(item.id);
   return (
     <>
+      <span aria-hidden="true">·</span>
+      <span className="normal-case">id <PlainText text={item.id} /></span>
       {hasPage && id ? <><span aria-hidden="true">·</span><Link href={`/items/${id}`}>Timeline →</Link></> : null}
       <span aria-hidden="true">·</span>
       {/* The repo's own issue form, built by issueFormUrl() from run.json and the item id: a site link, not a

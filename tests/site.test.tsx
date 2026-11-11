@@ -398,6 +398,19 @@ describe("Sample", () => {
       for (const a of $('a:contains("↓")').toArray()) expect($(a).attr("aria-label")).toMatch(/^Read: /);
     });
 
+    it("prints each card's and row's lower-case item id at its foot, outside the uppercased footer text", () => {
+      let n = 0;
+      for (const b of briefs) {
+        const $ = page(propsFor(b.date));
+        for (const it of b.items) {
+          const foot = $(`[id="${it.id}"]`).find("span.normal-case").filter((_, el) => $(el).text() === `id ${it.id}`);
+          expect(foot.length, `${b.date} ${it.id}`).toBe(1);
+          n += 1;
+        }
+      }
+      expect(n).toBeGreaterThan(10);
+    });
+
     it("renders EPSS movers in a data-only edition only", () => {
       const props = clone(propsFor(DATA_ONLY));
       props.brief.epss_movers = [{ cve_id: "CVE-2026-88779", score: 0.41234, delta_7d: 0.12, percentile: 0.98 }];
