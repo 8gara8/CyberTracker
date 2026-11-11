@@ -279,7 +279,7 @@ export default function MethodologyPage() {
         ) : (
           <>
             <p className="text-[15px]">
-              Each feed in the registry, from the final run of each of the last {fmtInt(statusDays.length)} days with a status file
+              Each feed in the registry, from the last feed check of each of the last {fmtInt(statusDays.length)} days with a status file
               ({shortDate(statusDays[0]!.date)} to {shortDate(statusDays.at(-1)!.date)}).
             </p>
             <div className="mt-2 overflow-x-auto">

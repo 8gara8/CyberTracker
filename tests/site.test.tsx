@@ -46,7 +46,7 @@ import { StaleBanner } from "@/components/layout/StaleBanner";
 import { TabBar } from "@/components/layout/TabBar";
 import { ItemPage, itemPageTitle } from "@/components/pages/ItemPage";
 import { FEED_SIZE, escapeXml, feedXml } from "@/components/pages/feed";
-import { STYLE_SECTIONS } from "@/components/pages/methodology-data";
+import { STYLE_SECTIONS, feedRows } from "@/components/pages/methodology-data";
 import { ABOUT_WHAT, DATA_CREDITS, howItIsMade, noEditionYet, sourcesDocUrl } from "@/components/pages/site-text";
 import { AIChip } from "@/components/ui/AIChip";
 import { SeverityPips } from "@/components/ui/SeverityPips";
@@ -248,8 +248,8 @@ let folders = 0;
 
 /**
  * A copy of the sample folder outside fixtures/, changed by `change` (edit() rewrites one JSON file in place),
- * loaded once with the sample config and the log silenced, so the routes' loadContent() finds it cached; then
- * CT_CONTENT_DIR names it. The routes' own tests set CT_CONTENT_DIR again in their beforeAll.
+ * loaded once with the sample config and the log silenced, so the routes' loadContent() finds it cached. Render
+ * routes from it inside inFolder().
  */
 function sampleFolder(change: (edit: <T>(file: string, fn: (v: T) => void) => void, dir: string) => void): string {
   const dir = path.join(TMP, `c${(folders += 1)}`);
@@ -261,8 +261,19 @@ function sampleFolder(change: (edit: <T>(file: string, fn: (v: T) => void) => vo
     fs.writeFileSync(p, `${JSON.stringify(v, null, 2)}\n`);
   }, dir);
   loadContent(dir, { config: fixtureConfig(), log: () => {} });
-  process.env.CT_CONTENT_DIR = dir;
   return dir;
+}
+
+/** Runs `fn` with CT_CONTENT_DIR set to `dir`, then restores it. */
+async function inFolder<T>(dir: string, fn: () => T | Promise<T>): Promise<T> {
+  const saved = process.env.CT_CONTENT_DIR;
+  process.env.CT_CONTENT_DIR = dir;
+  try {
+    return await fn();
+  } finally {
+    if (saved === undefined) delete process.env.CT_CONTENT_DIR;
+    else process.env.CT_CONTENT_DIR = saved;
+  }
 }
 
 // ── Sample ────────────────────────────────────────────────────────────────────────────────────────
@@ -588,7 +599,7 @@ describe("Withholding", () => {
     };
     const leaks = (markup: string) => markup.includes("Mercy") || markup.includes("mercy-general");
 
-    it("while a withhold binds the item, its other corrections show only their type word and date: card, foot, item page, Methodology", () => {
+    it("while a withhold binds the item, its other corrections show only their type word and date: card, foot, item page, Methodology", async () => {
       const c = withCorrections(named());
       const monday = html(<BriefView {...briefPropsFor(c, MONDAY)!} />);
       const partial = html(<BriefView {...briefPropsFor(c, PARTIAL)!} />);
@@ -601,11 +612,11 @@ describe("Withholding", () => {
       expect(text(item)).toContain("CORRECTED 12 Oct 2026 · [withheld]");
       expect(text(item)).toContain("NAME REMOVED 13 Oct 2026 · while a dispute about a named party is reviewed.");
 
-      sampleFolder((edit) => {
+      const dir = sampleFolder((edit) => {
         edit<{ corrections: Correction[] }>("corrections.json", (f) => { f.corrections.push(named()); });
         edit<Brief>(`briefs/${PARTIAL}.json`, (b) => { b.corrections.push(named()); });
       });
-      const method = html(MethodologyPage());
+      const method = await inFolder(dir, () => html(MethodologyPage()));
       expect(leaks(method), "methodology").toBe(false);
       expect(text(method)).toContain(`C-0003 · 12 Oct 2026 · ${WITHHELD_ID} · CORRECTED · [withheld]`);
     });
@@ -1366,6 +1377,19 @@ describe("Methodology", () => {
       expect(rows).toHaveLength(loadConfig().sources.feeds.length);
       const days = Math.min(14, loadContent().status.length);
       expect(text(feeds)).toContain(`of ${days} days ok`);
+    });
+
+    it("the feeds table reads each day's last record that lists feeds: a later skipped or start-only record changes nothing", () => {
+      const sources = loadConfig().sources;
+      const status = clone(content.status);
+      const before = feedRows(status, sources);
+      expect(before.some((r) => r.latest?.status === "ok")).toBe(true);
+      const last = status.at(-1)!;
+      const full = last.runs.at(-1)!;
+      expect(full.feeds.length).toBeGreaterThan(0);
+      last.runs.push({ ...clone(full), outcome: "skipped", feeds: [] }, { ...clone(full), finished_at: null, outcome: null, feeds: [] } as unknown as typeof full);
+      expect(feedRows(status, sources)).toEqual(before);
+      expect(text(html(MethodologyPage()))).toContain("from the last feed check of each of the last");
     });
 
     it("lists every correction newest first, linking the edition's item", () => {

@@ -23,21 +23,31 @@ export const STYLE_SECTIONS: Record<"gap" | "sources" | "naming" | "corrections"
 /** How many status files the feeds table reads (§6 `feeds`). */
 export const FEED_DAYS = 14;
 
-/** One feeds-table row: a sources.yaml feed and its record in each of the last status files' final runs. */
+/**
+ * One feeds-table row: a sources.yaml feed and its record in each of the last status files, from the day's last
+ * run record that lists feeds (a hand publish, a skipped rerun or a start record lists none).
+ */
 export interface FeedRow {
   id: string;
   name: string;
-  /** The newest status file's record (its final run), or null when that run did not list the feed. */
+  /** The newest status file's record (its last run that lists feeds), or null when that run did not list the feed. */
   latest: FeedRecord | null;
-  /** Days whose final run had the feed "ok". */
+  /** Days whose last run that lists feeds had the feed "ok". */
   okDays: number;
   /** Status files read (at most FEED_DAYS). */
   days: number;
 }
 
-/** The last FEED_DAYS valid status files, oldest first, each with its final run's feeds by id (§6 `feeds`). */
+/**
+ * The last FEED_DAYS valid status files, oldest first, each with the feeds by id of its last run record that lists
+ * feeds (§6 `feeds`), as scripts/lib/status.ts feedIn() and publish read them; an empty map when no record that
+ * day lists feeds (before collect has run, or after a crash), so the day reads "not run".
+ */
 export function lastStatusDays(status: readonly StatusFile[]): { date: string; feeds: Map<string, FeedRecord> }[] {
-  return status.slice(-FEED_DAYS).map((s) => ({ date: s.date, feeds: new Map((s.runs.at(-1)?.feeds ?? []).map((f) => [f.id, f])) }));
+  return status.slice(-FEED_DAYS).map((s) => {
+    const run = [...s.runs].reverse().find((r) => r.feeds.length > 0);
+    return { date: s.date, feeds: new Map((run?.feeds ?? []).map((f) => [f.id, f])) };
+  });
 }
 
 /** A row per sources.yaml feed, in registry order, from the last FEED_DAYS status files. */
