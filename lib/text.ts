@@ -207,6 +207,8 @@ export interface LabelFigure {
   /** Its number, or a range's two. */
   values: readonly number[];
   unit: "week" | "day" | "% interval";
+  /** The label writes it as an age ("more than 365 days old"), so the prose may follow it with "old" too. */
+  old: boolean;
 }
 
 /** The hyphen, U+2010 and U+2011 (NFKC makes U+2011 a U+2010) and the en dash. */
@@ -214,7 +216,7 @@ const DASHES = "\\-\\u2010\\u2011\\u2013";
 /** Between a range's two numbers: " to ", or a hyphen or en dash with or without spaces. */
 const RANGE_JOIN = `(?:\\s+to\\s+|\\s?[${DASHES}]\\s?)`;
 const LABEL_FIGURE_RE = new RegExp(
-  `(?<![\\p{L}\\p{N}.,${DASHES}])(\\d+)(?:${RANGE_JOIN}(\\d+))?(?:\\s+(weeks?|days?)|%\\s+(interval))(?![\\p{L}\\p{N}])`, "giu");
+  `(?<![\\p{L}\\p{N}.,${DASHES}])(\\d+)(?:${RANGE_JOIN}(\\d+))?(?:\\s+(weeks?|days?)(?:(?:\\s+|[${DASHES}])(old))?|%\\s+(interval))(?![\\p{L}\\p{N}])`, "giu");
 
 const YEAR_ONLY_RE = new RegExp(`^${YEAR}$`, "u");
 
@@ -226,20 +228,25 @@ const YEAR_ONLY_RE = new RegExp(`^${YEAR}$`, "u");
 export function labelFigures(label: string): LabelFigure[] {
   const out: LabelFigure[] = [];
   for (const m of label.normalize("NFKC").matchAll(LABEL_FIGURE_RE)) {
-    const [text, a, b, unit, interval] = m as unknown as [string, string, string | undefined, string | undefined, string | undefined];
+    const [text, a, b, unit, old, interval] = m as unknown as [string, string, string | undefined, string | undefined, string | undefined, string | undefined];
     if ([a, b].some((x) => x !== undefined && YEAR_ONLY_RE.test(x))) continue; // a year, as numbersIn() reads it
     out.push({
       text,
       values: b === undefined ? [Number(a)] : [Number(a), Number(b)],
       unit: interval ? "% interval" : unit!.toLowerCase().startsWith("week") ? "week" : "day",
+      old: old !== undefined,
     });
   }
   return out;
 }
 
 const UNIT_RES: Readonly<Record<LabelFigure["unit"], string>> = { week: "(?:weeks?|wks?)", day: "days?", "% interval": "intervals?" };
-/** The unit word ends there, and is not followed by "old" or "long" ("26-week-old", "26 weeks long"). */
-const UNIT_END = `(?![\\p{L}\\p{N}])(?!(?:\\s+|[${DASHES}])(?:old|long)(?![\\p{L}\\p{N}]))`;
+/**
+ * The unit word ends there, and is not followed by "long" ("26 weeks long") or, unless the label writes the
+ * figure as an age, by "old" ("26-week-old"; "365 days old" when the label says "more than 365 days old").
+ */
+const unitEnd = (f: LabelFigure): string =>
+  `(?![\\p{L}\\p{N}])(?!(?:\\s+|[${DASHES}])(?:${f.old ? "long" : "old|long"})(?![\\p{L}\\p{N}]))`;
 /** Not glued to a word or a number, and not the end of a range ("13-26 weeks", "13 to 26 weeks"). */
 const FIGURE_START = `(?<![\\p{L}\\p{N}.,]|\\p{N}\\s?[${DASHES}]\\s?|\\p{N}\\s+to\\s+)`;
 
@@ -248,14 +255,15 @@ function figureRe(f: LabelFigure): RegExp {
   const [a, b] = f.values.map((v) => String(v));
   const num = b === undefined ? a : `${a}${RANGE_JOIN}${b}`;
   const pct = f.unit === "% interval" ? "(?:\\s?%|\\s?per\\s?cent|\\s?percent)" : "";
-  return new RegExp(`${FIGURE_START}${num}${pct}(?=(?:\\s+|[${DASHES}])${UNIT_RES[f.unit]}${UNIT_END})`, "giu");
+  return new RegExp(`${FIGURE_START}${num}${pct}(?=(?:\\s+|[${DASHES}])${UNIT_RES[f.unit]}${unitEnd(f)})`, "giu");
 }
 
 /**
  * numbersIn() of `text` without the given label figures where they are written as figures (§4.12, §0.4
  * row 145): "26 weeks", "26-week", "26–week", "26 wks", "26 Weeks"; "2 to 30 days", "2-30 days",
- * "2–30 days"; "80% interval". A figure followed by "old" or "long" ("26-week-old flaws", "26 weeks long")
- * still counts, as does any other number, and any figure not given. A metric Angle reads its text this
+ * "2–30 days"; "80% interval". A figure followed by "long" ("26 weeks long"), or by "old" ("26-week-old
+ * flaws") unless its label writes it as an age ("more than 365 days old"), still counts, as does any other
+ * number, and any figure not given. A metric Angle reads its text this
  * way with the figures of its path's quotable labels (lib/rules/grounding.ts angleNumbers()).
  */
 export function numbersBesideFigures(text: string, figures: readonly LabelFigure[]): NumberToken[] {

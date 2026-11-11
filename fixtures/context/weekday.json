@@ -476,7 +476,7 @@
       },
       {
         "key": "window.w26.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 26 weeks",
+        "label": "old flaws newly listed (more than 365 days old), 26 weeks",
         "display": "22",
         "as_of": "2026-10-12"
       },
@@ -590,7 +590,7 @@
       },
       {
         "key": "window.w13.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 13 weeks",
+        "label": "old flaws newly listed (more than 365 days old), 13 weeks",
         "display": "13",
         "as_of": "2026-10-12"
       },
@@ -692,7 +692,7 @@
       },
       {
         "key": "window.reference.old_listed_n",
-        "label": "old flaws newly listed (more than 365 days), 2023–24",
+        "label": "old flaws newly listed (more than 365 days old), 2023–24",
         "display": "91",
         "as_of": "2026-10-12"
       },

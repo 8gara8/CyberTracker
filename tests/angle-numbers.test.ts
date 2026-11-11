@@ -86,6 +86,15 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     expect(angleFigures({ metric_path: "flood.kernel_n" }, m)).toEqual([]);
   });
 
+  it("an old-flaws Angle may give their age as the label does, more than 365 days old", () => {
+    const m = canaryMetrics();
+    expect(angleIssues(m, "window.w26.old_listed_n", "CISA newly listed 22 flaws more than 365 days old in the last 26 weeks.")).toEqual([]);
+    expect(angleIssues(m, "window.w26.old_listed_n", "In the 26 weeks to 12 Oct, CISA newly listed 22 365-day-old flaws.")).toEqual([]);
+    // The late-listed band's label prints a range, not an age: a lone "365 days old" counts there.
+    const got = angleIssues(m, "window.w26.late_listed_n", "CISA listed 37 flaws 365 days old in the last 26 weeks.");
+    expect(codes(got)).toEqual(["LEAD_GROUNDED angle.text", "WORDS_OVER angle.text"]);
+  });
+
   it("a sourced Angle has no figures: its text is read with numbersIn(), as before", () => {
     const m = canaryMetrics();
     const sourced = weekdayDraft().angle;
@@ -106,7 +115,7 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     expect(texts("window.w26.n_day_n")).toEqual(["2 to 30 days", "26 weeks"]);
     expect(texts("window.w26.n_day_share")).toEqual(["2 to 30 days", "26 weeks"]);
     expect(texts("window.w13.late_listed_n")).toEqual(["31 to 365 days", "13 weeks"]);
-    expect(texts("window.reference.old_listed_n")).toEqual(["365 days"]);
+    expect(texts("window.reference.old_listed_n")).toEqual(["365 days old"]);
     expect(texts("window.reference.old_listed_pace_13w")).toEqual(["13 weeks"]);
     expect(texts("window.kev_pace_ratio")).toEqual(["26 weeks"]);
     expect(texts("flood.vs_reference_ex_kernel_ratio")).toEqual(["13 weeks"]);

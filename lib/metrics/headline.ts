@@ -281,7 +281,7 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
         add(`${p}.p7_ci80.1`, `80% interval high, listed within 7 days, ${name}`, fmtPct(w.p7_ci80[1]));
       }
     }
-    add(`${p}.old_listed_n`, `old flaws newly listed (more than 365 days), ${name}`, fmtInt(w.old_listed_n));
+    add(`${p}.old_listed_n`, `old flaws newly listed (more than 365 days old), ${name}`, fmtInt(w.old_listed_n));
     if (col !== "reference") {
       const days = daysBetween(w.from, w.to) + 1;
       add(`window.reference.old_listed_pace_${col === "w26" ? "26w" : "13w"}`, `${REF_PERIOD} pace of old flaws newly listed, ${name}`,

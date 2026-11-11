@@ -106,7 +106,7 @@ describe("labelFigures and numbersBesideFigures (row 145)", () => {
     expect(figs("share listed within 7 days, 26 weeks")).toEqual([["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
     expect(figs("n-day race (listed 2 to 30 days after), 26 weeks")).toEqual([["2 to 30 days", [2, 30], "day"], ["26 weeks", [26], "week"]]);
     expect(figs("listed 31 to 365 days after, 2023–24")).toEqual([["31 to 365 days", [31, 365], "day"]]);
-    expect(figs("old flaws newly listed (more than 365 days), 13 weeks")).toEqual([["365 days", [365], "day"], ["13 weeks", [13], "week"]]);
+    expect(figs("old flaws newly listed (more than 365 days old), 13 weeks")).toEqual([["365 days old", [365], "day"], ["13 weeks", [13], "week"]]);
     expect(figs("80% interval low, listed within 7 days, 26 weeks")).toEqual([["80% interval", [80], "% interval"], ["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
     expect(figs("KEV additions for Taiwanese vendors, 30 days")).toEqual([["30 days", [30], "day"]]);
     expect(figs("KEV additions for Japanese vendors, 90 days")).toEqual([["90 days", [90], "day"]]);
@@ -144,6 +144,17 @@ describe("labelFigures and numbersBesideFigures (row 145)", () => {
     const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
     expect(raw("39% were listed 30 days after.", nDay)).toEqual(["39%", "30"]);
     expect(raw("80% of flaws, 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+  });
+  it("lets a figure run on into old when its label writes it as an age, and only then", () => {
+    const OLD = "old flaws newly listed (more than 365 days old), 26 weeks";
+    for (const t of ["CISA newly listed 22 flaws more than 365 days old in the last 26 weeks.", "22 flaws over 365 days old, in 26 weeks.",
+      "22 365-day-old flaws in 26 weeks.", "22 flaws older than 365 days in 26 weeks."]) expect(raw(t, OLD), t).toEqual(["22"]);
+    // The label's 26 weeks is a window, not an age, and "long" never labels.
+    expect(raw("22 flaws, 26 weeks old.", OLD)).toEqual(["22", "26"]);
+    expect(raw("22 flaws, a 365 days long wait.", OLD)).toEqual(["22", "365"]);
+    // A label that prints 365 days without "old" lets no "365 days old" through.
+    expect(raw("37 flaws 365 days old.", "listed 31 to 365 days after, 26 weeks")).toEqual(["37", "365"]);
+    expect(raw("22 flaws 365 days old.", "old flaws newly listed (more than 365 days), 26 weeks")).toEqual(["22", "365"]);
   });
   it("with no figures, or for a label without any, is numbersIn()", () => {
     expect(numbersBesideFigures("37% in 26 weeks.", [])).toEqual(numbersIn("37% in 26 weeks."));
