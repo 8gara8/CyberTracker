@@ -188,9 +188,10 @@ in `needs-review/D/D.validation.json` (or rerun the agent with a rerun), check i
 held, after 11:00, and off native arm64. A `RELEASE_SOURCE` error is a patch batch publish could not
 date: cite the vendor's own advisory for the release from the pack, with its `published_at`, or, for a
 release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`. Only the release's own
-fixes count: an id with no CVE List record from the vendor's CNA is ignored, and the error names it. The
-release's pack records carry the vendor's own pages as advisory URLs, and its candidate lists the
-exploited fix's first. The validator catches this before publish, so "Not composed" for a release block
+fixes count: an id that is not one of them (no CVE List record from the vendor's CNA published within
+the release's dates, which the error gives, or not exploited) is ignored, and the error names it. Every
+CVE record of a vendor's CNA in the pack carries that vendor's own pages as advisory URLs, after its
+tagged ones, and a release's candidate lists the exploited fix's first. The validator catches this before publish, so "Not composed" for a release block
 (`E_PUBLISH`) should no longer occur.
 
 A `NUMBER_FORM` error is a ratio written glued to x ("9.9x") or in words ("nearly ten times the

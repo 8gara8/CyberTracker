@@ -138,7 +138,7 @@ const BEFORE_DAY = `(?:${WEEKDAY}\\.?,?\\s+)?(?:the\\s+)?`;
 const DAY_JOIN = `(?:\\s+(?:to|and|or|through|thru)\\s+|\\s?[${DASHES}/]\\s?)`;
 
 /**
- * A day range in one month, read as one date (§4.12, §0.4 rows 145 and 147): the first day, then " to ",
+ * A day range in one month, read as one date (§4.12, §0.4 row 145): the first day, then " to ",
  * " and ", " or ", " through ", "/", a hyphen or an en dash, then the second day; or "between" the first
  * "and" the second. A weekday or "the" may stand before each day, and ordinals are allowed.
  */
@@ -314,7 +314,7 @@ function nameBefore(before: string): boolean {
 }
 
 /**
- * The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 rows 145 and 147):
+ * The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145):
  * "9.9x the 2023–24 pace", "10x faster", "rose 5x.", "a 3x jump". Not a name: a GHSA id, a token glued to
  * a hyphen, "/" or a letter ("DIR-823X", "3x-ui", "0x1F", "x86"), a version or standard ("6.0.0x",
  * "802.1X", "4.3x before 5.1"), a hex prefix ("0x"), three or more digits before a capital X ("9300X",
@@ -367,7 +367,7 @@ const WORD_FOLD_RE = new RegExp(
 const PARTS_FOLD_RE = /(?:^|[^\p{L}])(?:is|are|was|were|be|been)\s+$/iu;
 
 /**
- * The ratios a text writes in words, as written, in order (§4.12 NUMBER_FORM, §0.4 row 147): a number word
+ * The ratios a text writes in words, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145): a number word
  * from two up, or a compound ("twenty-one", "a hundred"), then "times" and a comparison (RATIO_FOLLOWER:
  * "nearly ten times the 2023–24 pace", "five times more"), or "-fold" in one word or hyphenated ("tenfold",
  * "ten-fold"). Not "once", "twice" (the Gap headline prints "more than twice"), a count of occurrences

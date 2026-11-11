@@ -455,7 +455,7 @@ const metricsOnlyNumbers = defineRule({
 const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives it';
 
 /**
- * NUMBER_FORM (draft, §0.4 rows 145 and 147): a prose field writes a ratio glued to x ("9.9x",
+ * NUMBER_FORM (draft, §0.4 row 145): a prose field writes a ratio glued to x ("9.9x",
  * gluedRatios()) or in words ("nearly ten times the 2023–24 pace", "tenfold", wordRatios()), which
  * numbersIn() does not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong
  * one through. Quoted fields and titles, the sources' own words, are not read. One error per ratio as
