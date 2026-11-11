@@ -372,13 +372,14 @@ describe("Word count", () => {
     expect($("[data-words] [data-words]").length).toBe(0);
   });
 
-  it.each(fulls.map((b) => [b.date, b.edition] as const))("%s (%s): the words outside #gap are computed.word_count less the Gap's", (date) => {
+  // §7 asks this of the full editions; the data-only ones add up too, so every edition is checked.
+  it.each(briefs.map((b) => [b.date, b.edition] as const))("%s (%s): the words outside #gap are computed.word_count less the Gap's", (date) => {
     const props = propsFor(date);
     const outside = sum(counted(page(props), true));
     expect(outside).toBe(props.brief.computed.word_count - sum(gapParts(props.brief, props.metrics, props.gapOk)));
   });
 
-  it.skipIf(GAP_STUB).each(fulls.map((b) => [b.date, b.edition] as const))("%s (%s): the whole page's data-words sum to computed.word_count", (date) => {
+  it.skipIf(GAP_STUB).each(briefs.map((b) => [b.date, b.edition] as const))("%s (%s): the whole page's data-words sum to computed.word_count", (date) => {
     const props = propsFor(date);
     expect(sum(counted(page(props)))).toBe(props.brief.computed.word_count);
   });
