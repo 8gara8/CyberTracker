@@ -7,7 +7,7 @@ import { addDays } from "@/lib/dates";
 import { HomeVendorKev, Metrics, VendorsFile, WindowStats, type Metrics as MetricsT } from "@/lib/schema";
 import {
   AI_UNAVAILABLE, composeHeadline, FLOOD_UNAVAILABLE, footerLine, gapHeadline, gapTableDisplays, inKevLine, metricDisplays,
-  metricNumbers, secondLine, WINDOW_UNAVAILABLE, type HeadlineInput,
+  metricNumbers, QUOTED_LABELS, quotableRows, secondLine, WINDOW_UNAVAILABLE, type HeadlineInput,
 } from "@/lib/metrics/headline";
 import { homeVendorKev, kevLine, kevLines, type KevVendorEntry } from "@/lib/metrics/home-vendors";
 import {
@@ -528,8 +528,46 @@ describe("metricDisplays and metricNumbers (§4.12, §5.8)", () => {
     expect(shown("window.w26.at_disclosure_ci80.1")).toEqual(["42%"]);
     expect(shown("window.w13.after_disclosure_median_days")).toEqual(["20.5"]);
     expect(shown("window.w26.p7")).toEqual(["55%"]);
-    expect(shown("window.reference.old_listed_n")).toEqual(["23", "11", "91"]); // 26-week pace, 13-week pace, the reference's own
-    expect(rows.find((r) => r.label === "listed 31 to 365 days after, 26 weeks")?.display).toBe("37");
+    // Each row has a key of its own (§0.4 row 145): the paces, the late count and the n-day share never share their count's key.
+    expect(shown("window.reference.old_listed_n")).toEqual(["91"]);
+    expect(shown("window.reference.old_listed_pace_26w")).toEqual(["23"]);
+    expect(shown("window.reference.old_listed_pace_13w")).toEqual(["11"]);
+    expect(shown("window.w26.cohort_n")).toEqual(["157"]);
+    expect(shown("window.w26.late_listed_n")).toEqual(["37"]);
+    expect(shown("window.w26.n_day_n")).toEqual(["62"]);
+    expect(shown("window.w26.n_day_share")).toEqual(["39%"]);
+    expect(rows.find((r) => r.label === "listed 31 to 365 days after, 26 weeks")?.key).toBe("window.w26.late_listed_n");
+    expect(new Set(rows.map((r) => r.key)).size).toBe(rows.length);
+    // A ratio's label names its window, as every other label does.
+    expect(rows.find((r) => r.key === "window.kev_pace_ratio")?.label).toBe("KEV additions, pace vs 2023–24, 26 weeks");
+  });
+
+  it("quotableRows: the headline's paths, then the table, then the Lens counts; every key but constant shows one display (row 145)", () => {
+    const m = d3Metrics();
+    const rows = quotableRows(m);
+    const quoted = [...new Set(m.headline.quoted.map((q) => `${q.path} ${q.display}`))];
+    expect(rows.slice(0, quoted.length).map((r) => `${r.key} ${r.display}`)).toEqual(quoted);
+    expect(rows[0]).toEqual({ key: "window.w26.at_disclosure_share", label: "share already exploited at disclosure, 26 weeks", display: "37%" });
+    expect(rows.slice(-4).map((r) => [r.key, r.label, r.display])).toEqual([
+      ["home_vendors.tw.d30_n", "KEV additions for Taiwanese vendors, 30 days", "0"],
+      ["home_vendors.tw.d90_n", "KEV additions for Taiwanese vendors, 90 days", "1"],
+      ["home_vendors.jp.d30_n", "KEV additions for Japanese vendors, 30 days", "0"],
+      ["home_vendors.jp.d90_n", "KEV additions for Japanese vendors, 90 days", "0"],
+    ]);
+    const displays = new Map<string, Set<string>>();
+    for (const r of rows) displays.set(r.key, (displays.get(r.key) ?? new Set()).add(r.display));
+    for (const [key, set] of displays) if (key !== "constant") expect([...set], key).toHaveLength(1);
+    expect([...displays.get("constant")!]).toEqual(["26", "13"]);
+    // Every headline label names its window or 2023–24, the windowed ratios included.
+    for (const [path, label] of Object.entries(QUOTED_LABELS)) {
+      if (path !== "constant") expect(label, path).toMatch(/, (?:26 weeks|13 weeks|2023–24)$/);
+    }
+    expect(rows.filter((r) => /ratio$/.test(r.key)).map((r) => [r.key, r.label])).toEqual([
+      ["window.kev_pace_ratio", "KEV additions, pace vs 2023–24, 26 weeks"],
+      ["flood.vs_reference_ratio", "new CVE records, pace vs 2023–24, 13 weeks"],
+      ["flood.vs_reference_ex_kernel_ratio", "new CVE records excluding the Linux kernel, pace vs 2023–24, 13 weeks"],
+    ]);
+    expect(QUOTED_LABELS["window.volume_ratio"]).toBe("recently disclosed flaws listed, pace vs 2023–24, 26 weeks");
   });
 
   it("holds the quoted displays, the table, the in-KEV line and the Lens KEV lines", () => {

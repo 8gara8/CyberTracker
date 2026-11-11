@@ -97,7 +97,7 @@
       },
       {
         "key": "window.kev_pace_ratio",
-        "label": "KEV additions, pace vs 2023–24",
+        "label": "KEV additions, pace vs 2023–24, 26 weeks",
         "display": "1.9",
         "as_of": "2026-10-10"
       },
@@ -115,13 +115,13 @@
       },
       {
         "key": "flood.vs_reference_ratio",
-        "label": "new CVE records, pace vs 2023–24",
+        "label": "new CVE records, pace vs 2023–24, 13 weeks",
         "display": "5.2",
         "as_of": "2026-10-10"
       },
       {
         "key": "flood.vs_reference_ex_kernel_ratio",
-        "label": "new CVE records excluding the Linux kernel, pace vs 2023–24",
+        "label": "new CVE records excluding the Linux kernel, pace vs 2023–24, 13 weeks",
         "display": "5.0",
         "as_of": "2026-10-10"
       },
@@ -174,13 +174,13 @@
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.w26.n_day_n",
+        "key": "window.w26.n_day_share",
         "label": "n-day race share, 26 weeks",
         "display": "39%",
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.w26.cohort_n",
+        "key": "window.w26.late_listed_n",
         "label": "listed 31 to 365 days after, 26 weeks",
         "display": "37",
         "as_of": "2026-10-10"
@@ -228,7 +228,7 @@
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.reference.old_listed_n",
+        "key": "window.reference.old_listed_pace_26w",
         "label": "2023–24 pace of old flaws newly listed, 26 weeks",
         "display": "23",
         "as_of": "2026-10-10"
@@ -282,13 +282,13 @@
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.w13.n_day_n",
+        "key": "window.w13.n_day_share",
         "label": "n-day race share, 13 weeks",
         "display": "37%",
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.w13.cohort_n",
+        "key": "window.w13.late_listed_n",
         "label": "listed 31 to 365 days after, 13 weeks",
         "display": "23",
         "as_of": "2026-10-10"
@@ -342,7 +342,7 @@
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.reference.old_listed_n",
+        "key": "window.reference.old_listed_pace_13w",
         "label": "2023–24 pace of old flaws newly listed, 13 weeks",
         "display": "11",
         "as_of": "2026-10-10"
@@ -390,13 +390,13 @@
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.reference.n_day_n",
+        "key": "window.reference.n_day_share",
         "label": "n-day race share, 2023–24",
         "display": "33%",
         "as_of": "2026-10-10"
       },
       {
-        "key": "window.reference.cohort_n",
+        "key": "window.reference.late_listed_n",
         "label": "listed 31 to 365 days after, 2023–24",
         "display": "84",
         "as_of": "2026-10-10"

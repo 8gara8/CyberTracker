@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "@/lib/config";
+import { quotableOf } from "@/lib/context";
 import { taipeiTimestamp } from "@/lib/dates";
 import { AgentContext } from "@/lib/schema/context";
 import { Metrics } from "@/lib/schema/metrics";
@@ -235,6 +236,12 @@ describe("AC5: the canary inputs (fixtures/injection/)", () => {
     expect(context.candidates.map((c) => c.id)).toEqual(["p0001"]);
     const claims = new Set(loadConfig({ root: REPO }).claims.claims.map((c) => c.id));
     for (const s of context.scoreboard) expect(claims.has(s.id), s.id).toBe(true);
+  });
+  it("AC5: the hand-made context's metrics.quotable is quotableOf() of the canary's metrics.json, keys and labels included (row 145)", () => {
+    const metrics = Metrics.parse(JSON.parse(raw("metrics.json")));
+    expect(context.metrics.quotable).toEqual(quotableOf(metrics));
+    expect(context.metrics.gap_headline).toBe(metrics.headline.text);
+    expect(context.data_cutoff_utc).toBe(metrics.data_cutoff_utc);
   });
   it("AC5: the evidence base holds the pack's item as seen in the pack", () => {
     const e = Evidence.parse(JSON.parse(raw("evidence-base.json")));
