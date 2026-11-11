@@ -11,7 +11,7 @@ import {
   buildPack, capItems, capRecords, cveIdsIn, cvePackRecords, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn, kevPackRecords,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
-  dayReads, hourlyZip, wantsStandIn, zipsAsRead,
+  dayReads, hourlyZip, pinnedRecordIds, wantsStandIn, zipsAsRead, cvdPackRecord, exchangePackRecords, recordKeepOrder, RECORDS_MAX,
 } from "../lib/collect";
 import { endOfDayAsset, hourlyAsset, REPOS } from "../lib/feeds/github";
 import { loadConfig, matchCredit } from "../lib/config";
@@ -22,8 +22,9 @@ import { parseRss } from "../lib/feeds/rss";
 import type { CveRecord, KevEntry, RawItem } from "../lib/feeds/types";
 import { sha256Hex } from "../lib/json";
 import { rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, type AiHit, type RankInput } from "../lib/rank";
-import { regionsConfig } from "../lib/regions";
+import { collectSignals, givesRegionSignal, previewRegions, regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
+import { normalizeUrl } from "../lib/urls";
 import { CANARY_URL_MARK } from "../lib/vocab";
 import { matchRecord } from "../lib/metrics/ai-credit";
 import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, PackSizeCut, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
@@ -343,6 +344,73 @@ describe("scores and keywords", () => {
   });
 });
 
+// ── Records the caps keep whole (review of row 146) ───────────────────────────────────────────────
+
+/** A TVN note in the fixture window, as notePackRecords() drafts it. */
+function tvnNote(id: string, title: string, text: string): ReturnType<typeof notePackRecords>[number] {
+  return notePackRecords("twcert-tvn", [{ id, title, url: `https://www.twcert.org.tw/tw/cp-132-${id.slice(-5)}-1.html`, text, published_at: "2026-10-13T09:00:00+08:00", cve_ids: [], alert: false }], window)[0]!;
+}
+
+/** The levelled regions' level and rule, from the signals the written pack gives (as both editions read them). */
+function levels(pack: Pick<Pack, "items" | "records">): Record<string, [string, string | null]> {
+  const rc = regionsConfig(cfg);
+  const r = previewRegions({ date: DATE, history: [], signals: collectSignals(pack, null, { entries: [] }, rc, DATE), kevIndex: { entries: [] }, config: rc });
+  return Object.fromEntries(r.rows.map((x) => [x.code, [x.level, x.rule_id]]));
+}
+
+/**
+ * collect's steps 7 to 11 (scripts/collect.ts), pure, on a morning of 5 new KEV ids with no record, `tw` Arcadyan (TW) records,
+ * 90 news items and the extra record drafts: `on` with the pinned records as collect passes them (pinnedRecordIds() of the
+ * provisional records for capRecords(), of the final ones for buildPack()), `off` with none, as row 146 left them.
+ */
+function pinMorning(o: { tw: number; notes: ReturnType<typeof notePackRecords>; items?: number; kev?: number }) {
+  const at = (n: number) => `2026-10-13T${String(10 + Math.floor(n / 60) % 9).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00Z`;
+  const records: CveRecord[] = Array.from({ length: o.tw }, (_, i) => ({
+    cve_id: `CVE-2026-${900000 + i}`, state: "PUBLISHED", date_published: "2026-10-13", assigner: "example", scored: false, credits: [],
+    affected: [{ vendor: "Arcadyan", product: "SAMPLE Router" }], published_at: at(i), updated_at: at(i), date_updated: "2026-10-13",
+    title: `SAMPLE router flaw ${i}`, description: `SAMPLE ${"router ".repeat(130)}`, cvss: null, cna_severity: null, ssvc: null,
+    kev_marker: null, references: [], exploit_reference: false,
+  }));
+  const newKevIds = Array.from({ length: o.kev ?? 5 }, (_, i) => `CVE-2026-${700000 + i}`);
+  const catalog = {
+    catalogVersion: "2026.10.13", dateReleased: "2026-10-13T17:02:11Z", count: newKevIds.length,
+    vulnerabilities: newKevIds.map((id): KevEntry => ({
+      cveID: id, vendorProject: "Example Corp", product: "Example Server", vulnerabilityName: `SAMPLE KEV ${id}`, dateAdded: "2026-10-13",
+      shortDescription: o.kev ? `SAMPLE ${"kev ".repeat(200)}` : "SAMPLE.", requiredAction: "Apply updates.", dueDate: "2026-11-03", knownRansomwareCampaignUse: "Unknown", forensicTriage: null, notes: "", cwes: [],
+    })),
+  };
+  const draft0 = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+  const coverages: ItemDraft["coverage"][] = [["exploits"], ["breaches"], ["ai"], ["policy"], ["taiwan"], ["japan"]];
+  const feedsFor = ["therecord", "securityweek", "bleepingcomputer", "thehackernews", "techcrunch-security", "msft-security", "unit42", "volexity", "project-zero", "openai-news"];
+  const items = toPackItems(capItems(Array.from({ length: o.items ?? 90 }, (_, i) => ({
+    ...draft0, feed_id: feedsFor[i % 10]!, key: `k${i}`, url: `https://therecord.media/ct-sample/pin-${i}`, title: `SAMPLE story ${i} on a breach ${"t".repeat(150)}`,
+    snippet: `SAMPLE ${"s".repeat(280)}`, coverage: [...coverages[i % 6]!], score: 30 + (i % 19) + (i % 7) / 10,
+  }))).kept);
+  const rc = regionsConfig(cfg);
+  const rankBase: Omit<RankInput, "pack"> = {
+    date: DATE, window, recordWindow: recordWindow(window), catalog, newKevIds, records, epss: { e: null, e1: null, e7: null }, ghsa: [],
+    earlierReleaseIds: [], config: { loaded: cfg, compiled: cfg.compiled, watchWindows: [] }, kevSource: "kev-index", aiMatch,
+  };
+  const keep = recordKeepIds(rankBase);
+  const provisional = provisionalRecords([
+    ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
+    ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ...o.notes,
+  ]);
+  const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
+  const referenced = new Set(ranked.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id)));
+  const steps = (pin: boolean) => {
+    const capR = capRecords(provisional, referenced, RECORDS_MAX, pin ? pinnedRecordIds(provisional, rc, DATE) : new Set());
+    const kept = remapIds(ranked.kept, ranked.cut, ranked.log, capR.idMap).kept;
+    const referencedFinal = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+    const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capR.kept, injectionFlags: 0 }, cfg.sources, {
+      referenced: referencedFinal, ...(pin ? { pinned: pinnedRecordIds(capR.kept, rc, DATE) } : {}),
+    });
+    return { provisional, ranked, referenced, capR, kept, built };
+  };
+  return { items, on: steps(true), off: steps(false) };
+}
+
 describe("items", () => {
   it("the size caps never cut a referenced or KEV record, cut records from the end of capRecords' order before any item, and recount (B7, row 146)", () => {
     const rec = (i: number, source: "kev" | "cvelist" | "myjvn", date: string, flagged = 0) => ({
@@ -522,6 +590,100 @@ describe("items", () => {
     expect(built.pack.records.filter((r) => r.source === "kev")).toHaveLength(10);
     for (const id of referenced) if (/^[pr]\d{4,}$/.test(id)) expect(inPack.has(id), id).toBe(true);
     expectAudit(built, items, capR.kept);
+  });
+
+  it("a TVN note reporting exploitation that ranks below the candidate cap survives a mildly over-cap morning, and Taiwan keeps its level (review of row 146)", () => {
+    // The review's case: 5 new KEV ids, 120 Arcadyan (TW) records, 90 news items and one TVN note saying a flaw is exploited. The
+    // note scores 30 (CERT note), below the 40-candidate cap, so no kept candidate references it; under row 146's order alone the
+    // size caps cut it first, its signal left the pack and Taiwan fell to baseline in both editions.
+    const m = pinMorning({ tw: 120, notes: [tvnNote("TVN-202610001", "SAMPLE 路由器漏洞已遭利用", "SAMPLE 此漏洞已遭利用，請儘速更新。")] });
+    const note = m.on.provisional.find((r) => r.source === "twcert-tvn")!;
+    expect(m.on.ranked.kept.some((c) => c.id === note.id || c.pack_ids.includes(note.id))).toBe(false);
+    expect(m.on.ranked.cut.find((c) => c.id === note.id)).toMatchObject({ score: 30, reason: "below_cap" });
+    // The size caps ran (records were cut) and kept the note and every item; Taiwan stays elevated on the note's signal.
+    expect(m.on.built.sizeCut.records.length).toBeGreaterThan(0);
+    expect(m.on.built.sizeCut.over).toBe(false);
+    expect(Buffer.byteLength(m.on.built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(m.on.built.pack.records.filter((r) => r.source === "twcert-tvn").map((r) => r.record_id)).toEqual(["TVN-202610001"]);
+    expect(m.on.built.pack.items).toHaveLength(90);
+    expect(levels(m.on.built.pack)).toMatchObject({ TW: ["elevated", "home-cert-exploitation"] });
+    // Without the pin (row 146 alone) the note was the first record cut, and Taiwan fell to baseline.
+    expect(m.off.built.sizeCut.records.map((r) => r.source)).toContain("twcert-tvn");
+    expect(levels(m.off.built.pack)).toMatchObject({ TW: ["baseline", null] });
+    expectAudit(m.on.built, m.items, m.on.capR.kept);
+  });
+
+  it("the size caps never cut an exchange filing or the dashboard record, which no candidate can reference (review of row 146)", () => {
+    // The review's case: 330 Arcadyan records and 90 items over the 150 KB cap, with two exchange filings and a dashboard revision.
+    // No candidate is built from these records, so none references them, and under row 146's order alone they were the first cut.
+    const notes = [
+      ...exchangePackRecords([
+        { company_code: "2330", company: "SAMPLE Co", subject: "SAMPLE 資安事件 notice", text: "SAMPLE 本公司遭受網路攻擊", spoken_at: "2026-10-13T15:30:00+08:00", url: "https://openapi.twse.com.tw/v1/opendata/t187ap04_L" },
+        { company_code: "3008", company: "SAMPLE Two", subject: "SAMPLE 勒索 notice", text: "SAMPLE 駭客", spoken_at: "2026-10-13T17:10:00+08:00", url: "https://openapi.twse.com.tw/v1/opendata/t187ap04_L" },
+      ], window),
+      cvdPackRecord({ revision: "42", as_of: "2026-10-10T00:00:00Z", found_n: 500, disclosed_n: 300, patched_n: 200, ledger_ids: [] }, "41", "https://red.anthropic.com/2026/cvd/")!,
+    ];
+    const m = pinMorning({ tw: 330, notes });
+    const kinds = (recs: readonly { source: string }[]) => recs.filter((r) => r.source === "exchange-tw" || r.source === "anthropic-cvd").map((r) => r.source).sort();
+    for (const r of m.on.provisional.filter((x) => x.source === "exchange-tw" || x.source === "anthropic-cvd")) {
+      expect(m.on.ranked.kept.some((c) => c.id === r.id || c.pack_ids.includes(r.id)), r.record_id).toBe(false);
+    }
+    expect(m.on.capR.cut).toBe(0);
+    expect(m.on.built.sizeCut.records.length).toBeGreaterThan(0);
+    expect(m.on.built.sizeCut.over).toBe(false);
+    expect(kinds(m.on.built.pack.records)).toEqual(["anthropic-cvd", "exchange-tw", "exchange-tw"]);
+    expect(kinds(m.on.built.sizeCut.records)).toEqual([]);
+    expect(m.on.built.pack.items).toHaveLength(90);
+    expect(m.on.built.md).toContain("Anthropic disclosure dashboard, revision 42");
+    // Under row 146 alone the dashboard and the two filings were the first records cut.
+    expect(kinds(m.off.built.sizeCut.records)).toEqual(["anthropic-cvd", "exchange-tw", "exchange-tw"]);
+    expectAudit(m.on.built, m.items, m.on.capR.kept);
+    // A heavier morning (40 long new KEV entries and 200 items): every record the caps may cut goes and then news, but never a pinned record, nor the
+    // TVN note whose signal keeps Taiwan elevated.
+    const heavy = pinMorning({ tw: 330, items: 200, kev: 40, notes: [...notes, tvnNote("TVN-202610003", "SAMPLE 漏洞遭利用", "SAMPLE 此漏洞已遭利用。")] });
+    expect(heavy.on.built.sizeCut.items.length).toBeGreaterThan(0);
+    expect(heavy.on.built.sizeCut.over).toBe(false);
+    expect(Buffer.byteLength(heavy.on.built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(heavy.on.built.pack.records.filter((r) => r.source !== "kev" && r.source !== "cvelist").map((r) => r.source).sort()).toEqual(["anthropic-cvd", "exchange-tw", "exchange-tw", "twcert-tvn"]);
+    expect(levels(heavy.on.built.pack)).toMatchObject({ TW: ["elevated", "home-cert-exploitation"] });
+    expectAudit(heavy.on.built, heavy.items, heavy.on.capR.kept);
+  });
+
+  it("over the 400-record cap the region-signal, exchange and dashboard records are kept right after KEV, and the size caps cut none of them (review of row 146)", () => {
+    // 450 Arcadyan records and, all dated the same day, a TVN note and a non-alert JPCERT note that report exploitation, two exchange
+    // filings and a dashboard revision, none of which a kept candidate references. By date, then source, they sort after the
+    // CVE records, so under row 146 alone the 400-record cap cut every one of them.
+    const notes = [
+      tvnNote("TVN-202610002", "SAMPLE 漏洞已被利用", "SAMPLE 已被利用"),
+      ...notePackRecords("jpcert", [{
+        id: "wr264199", title: "SAMPLE 製品の脆弱性", url: "https://www.jpcert.or.jp/wr/2026/wr264199.html", text: "SAMPLE 本脆弱性を悪用する攻撃が確認されています。",
+        published_at: "2026-10-13T10:00:00+09:00", cve_ids: [], alert: false,
+      }], window),
+      ...exchangePackRecords([
+        { company_code: "2330", company: "SAMPLE Co", subject: "SAMPLE 資安事件 notice", text: "SAMPLE 本公司遭受網路攻擊", spoken_at: "2026-10-13T15:30:00+08:00", url: "https://openapi.twse.com.tw/v1/opendata/t187ap04_L" },
+        { company_code: "3008", company: "SAMPLE Two", subject: "SAMPLE 勒索 notice", text: "SAMPLE 駭客", spoken_at: "2026-10-13T17:10:00+08:00", url: "https://openapi.twse.com.tw/v1/opendata/t187ap04_L" },
+      ], window),
+      cvdPackRecord({ revision: "42", as_of: "2026-10-13T00:00:00Z", found_n: 500, disclosed_n: 300, patched_n: 200, ledger_ids: [] }, "41", "https://red.anthropic.com/2026/cvd/")!,
+    ];
+    expect(notes.map((r) => r.source)).toEqual(["twcert-tvn", "jpcert", "exchange-tw", "exchange-tw", "anthropic-cvd"]);
+    const m = pinMorning({ tw: 450, notes });
+    const pinnedSources = ["anthropic-cvd", "exchange-tw", "exchange-tw", "jpcert", "twcert-tvn"];
+    const ofPinned = (recs: readonly PackRecord[]) => recs.filter((r) => r.source !== "kev" && r.source !== "cvelist").map((r) => r.source).sort();
+    expect(m.on.capR.cut).toBeGreaterThan(0);
+    expect(ofPinned(m.on.capR.kept)).toEqual(pinnedSources);
+    expect(ofPinned(m.on.built.pack.records)).toEqual(pinnedSources);
+    expect(m.on.built.sizeCut.records.every((r) => r.source === "cvelist")).toBe(true);
+    expect(levels(m.on.built.pack)).toMatchObject({ TW: ["elevated", "home-cert-exploitation"], JP: ["elevated", "home-cert-exploitation"] });
+    // Under row 146 alone the 400-record cap cut all five, and Taiwan and Japan fell to baseline.
+    expect(ofPinned(m.off.capR.kept)).toEqual([]);
+    expect(levels(m.off.built.pack)).toMatchObject({ TW: ["baseline", null], JP: ["baseline", null] });
+    // recordKeepOrder(): KEV, then the pinned records, then the referenced ones, then the rest.
+    const pinned = pinnedRecordIds(m.on.provisional, regionsConfig(cfg), DATE);
+    expect(pinned.size).toBe(5);
+    const tierOf = (r: PackRecord) => (r.source === "kev" ? 0 : pinned.has(r.id) ? 1 : m.on.referenced.has(r.id) ? 2 : 3);
+    const order = [...m.on.provisional].sort(recordKeepOrder(m.on.referenced, pinned)).map(tierOf);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(order.slice(0, 10)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
   });
 
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
@@ -892,6 +1054,22 @@ describe("collect on the fixture world (2026-10-14)", () => {
     expect(result.pack.records.filter((r) => r.source === "jpcert" && r.facts.alert === true).length).toBeGreaterThan(0);
   });
 
+  it("the records the caps keep whole are its region-signal records, by the predicate collectSignals() uses, and its exchange and dashboard records (review of row 146)", () => {
+    const rc = regionsConfig(cfg);
+    for (const r of result.pack.records) {
+      expect(givesRegionSignal(r, rc, DATE), r.record_id).toBe(collectSignals({ items: [], records: [r] }, null, null, rc, DATE).length > 0);
+    }
+    const signalUrls = new Set(collectSignals({ items: [], records: result.pack.records }, null, null, rc, DATE).map((x) => x.url));
+    expect([...signalUrls].sort()).toEqual(result.pack.records.filter((r) => givesRegionSignal(r, rc, DATE)).map((r) => normalizeUrl(r.url)).sort());
+    const pinned = pinnedRecordIds(result.pack.records, rc, DATE);
+    expect(result.pack.records.filter((r) => pinned.has(r.id)).map((r) => `${r.source} ${r.record_id}`).sort()).toEqual([
+      "anthropic-cvd revision-37", "exchange-tw 9899-202610140110", "exchange-tw 9998-202610132130", "jpcert at260031", "jpcert wr264101",
+      "twcert-tvn TVN-202610012",
+    ]);
+    // Not every note: a TVN note reporting no exploitation is not pinned.
+    expect(result.pack.records.some((r) => r.source === "twcert-tvn" && !pinned.has(r.id))).toBe(true);
+  });
+
   it("empties the records cache first, and the next zip's copy of a record wins", () => {
     const records = path.join(root, "cache", "cvelist", "records");
     expect(fs.existsSync(path.join(records, "CVE-2020-0001.json"))).toBe(false);
@@ -965,10 +1143,18 @@ describe("collect's other runs", () => {
     const inPack = new Set([...r.pack.items.map((i) => i.id), ...r.pack.records.map((x) => x.id)]);
     for (const id of referenced) expect(inPack.has(id), id).toBe(true);
     for (const x of [...sizeCut.items, ...sizeCut.records]) expect(inPack.has(x.id) || referenced.has(x.id), x.id).toBe(false);
-    // An item went only once every record the caps may cut was gone: what is left is KEV and referenced records.
+    // An item went only once every record the caps may cut was gone: what is left is KEV, pinned (region-signal,
+    // exchange and dashboard) and referenced records, and the caps cut none of the pinned ones (review of row 146).
     expect(sizeCut.records.length).toBeGreaterThan(0);
-    for (const x of r.pack.records) expect(x.source === "kev" || referenced.has(x.id), x.id).toBe(true);
-    expect(sizeCut.records.every((x) => x.source !== "kev")).toBe(true);
+    const pinned = pinnedRecordIds(r.pack.records, regionsConfig(cfg), DATE);
+    for (const x of r.pack.records) expect(x.source === "kev" || pinned.has(x.id) || referenced.has(x.id), x.id).toBe(true);
+    expect(sizeCut.records.every((x) => x.source !== "kev" && x.source !== "exchange-tw" && x.source !== "anthropic-cvd")).toBe(true);
+    // The fixture world's region-signal records (the TVN and JPCERT notes reporting exploitation, the JPCERT
+    // /at/ alert), its two exchange filings and its dashboard record are all still in the pack.
+    expect(r.pack.records.filter((x) => pinned.has(x.id)).map((x) => `${x.source} ${x.record_id}`).sort()).toEqual([
+      "anthropic-cvd revision-37", "exchange-tw 9899-202610140110", "exchange-tw 9998-202610132130", "jpcert at260031", "jpcert wr264101",
+      "twcert-tvn TVN-202610012",
+    ]);
     // The audit names each cut item as the pack held it: a sanitised title, its feed and its score, in id order.
     expect(sizeCut.items.map((i) => i.id)).toEqual([...sizeCut.items.map((i) => i.id)].sort());
     expect(sizeCut.records.map((x) => x.id)).toEqual([...sizeCut.records.map((x) => x.id)].sort());
@@ -983,6 +1169,33 @@ describe("collect's other runs", () => {
     for (const i of sizeCut.items) byFeed.set(i.feed_id, (byFeed.get(i.feed_id) ?? 0) + 1);
     expect(text).toContain(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${DATE}.candidates.json).`);
     expect(log.filter((l) => l.startsWith("pack: the size caps cut"))).toHaveLength(1);
+  });
+
+  it("a morning over the 400-record cap keeps a TVN note reporting exploitation that no candidate references (review of row 146)", async () => {
+    // 460 TVN notes in the window, all CERT notes of score 30; the one reporting exploitation is the oldest, so by date it would be
+    // the first record the 400-record cap cuts, and Taiwan's signal would leave the pack.
+    const items = Array.from({ length: 460 }, (_, k) => {
+      const id = `TVN-202610${String(100 + k).padStart(3, "0")}`;
+      const exploited = k === 0;
+      const at = new Date(Date.parse(exploited ? "2026-10-12T21:00:00Z" : "2026-10-13T17:00:00Z") + k * 1000).toUTCString();
+      const text = exploited ? "SAMPLE: 此漏洞已遭利用，請儘速更新。內容為虛構。" : `SAMPLE: 路由器漏洞 ${k}。內容為虛構。`;
+      return `<item><title>${id} SAMPLE 路由器漏洞 ${k}</title><link>https://www.twcert.org.tw/ct-sample/${id.toLowerCase()}</link><description>${text}</description><pubDate>${at}</pubDate></item>`;
+    });
+    const feeds = feedsVariant((index) => {
+      index["https://www.twcert.org.tw/tw/rss-132-1.xml"] = { file: "twcert-tvn/many.xml", content_type: "application/rss+xml" };
+    });
+    fs.writeFileSync(path.join(feeds, "twcert-tvn", "many.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://www.twcert.org.tw/ct-sample/tvn</link><description>SAMPLE</description>\n${items.join("\n")}\n</channel></rss>\n`);
+    const root = tempRoot(true);
+    const log: string[] = [];
+    const r = await run(root, { feeds, log });
+    expect(log.some((l) => /^records: \d+ over the cap of 400\.$/.test(l))).toBe(true);
+    const note = r.pack.records.find((x) => x.record_id === "TVN-202610100");
+    expect(note, "the exploitation note").toBeDefined();
+    expect(r.candidates.kept.some((c) => c.id === note!.id || c.pack_ids.includes(note!.id))).toBe(false);
+    const rc = regionsConfig(cfg);
+    expect(collectSignals(r.pack, null, null, rc, DATE).filter((x) => x.type === "cert_exploitation" && x.region === "TW").map((x) => x.url)).toContain(normalizeUrl(note!.url));
+    // Its neighbours by date, the other notes no candidate references, went first.
+    expect(r.pack.records.filter((x) => x.source === "twcert-tvn").length).toBeLessThan(460);
   });
 
   it("a deadline already past throws CollectTimeout and writes nothing", async () => {

@@ -16,7 +16,7 @@ import { recordAdvisoryUrls } from "./feeds/cvelist";
 import { hitsExchangeTerms } from "./feeds/exchange";
 import { jsonText, sha256Hex } from "./json";
 import { byCodeUnit, compareCveIds, compareIds } from "./ids";
-import { alertRegions, type RegionsConfig } from "./regions";
+import { alertRegions, givesRegionSignal, type RegionsConfig } from "./regions";
 import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanitize";
 import type { EpssMover } from "./schema/metrics";
 import type { RunFile, SourceTiersFile } from "./schema/config";
@@ -716,22 +716,41 @@ function toPackRecord(d: Omit<PackRecord, "id"> & Partial<Pick<RecordDraft, "key
   };
 }
 
+/** Record sources the pack's caps keep whole (§4.14 Caps): a few exchange filings a day and one dashboard record, which no candidate references. */
+export const PINNED_RECORD_SOURCES: ReadonlySet<PackRecordSource> = new Set(["exchange-tw", "anthropic-cvd"]);
+
 /**
- * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `referenced`, then the
- * rest; within each, date descending, then source, then record id. The size caps cut from its end.
+ * The ids of the records the pack's caps keep whole (§4.14 Caps): every record that gives a region signal
+ * (givesRegionSignal(), §5.11: a JPCERT /at/ alert, or a TWCERT or JPCERT note reporting exploitation), so
+ * the region levels both editions compute from the pack stay as the feeds gave them, and every exchange
+ * filing and dashboard record (PINNED_RECORD_SOURCES), which the agent reads and no candidate references.
+ * `date` is the edition date. collect computes it for the provisional records (capRecords()) and again for
+ * the final ones (buildPack()).
  */
-export function recordKeepOrder(referenced: ReadonlySet<string>): (a: PackRecord, b: PackRecord) => number {
-  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : referenced.has(r.id) ? 1 : 2);
+export function pinnedRecordIds(records: readonly PackRecord[], regions: RegionsConfig, date: string): Set<string> {
+  return new Set(records.filter((r) => PINNED_RECORD_SOURCES.has(r.source) || givesRegionSignal(r, regions, date)).map((r) => r.id));
+}
+
+/**
+ * capRecords()' keep order (§4.14 Caps): KEV records, then records whose id is in `pinned`
+ * (pinnedRecordIds()), then records whose id is in `referenced`, then the rest; within each, date
+ * descending, then source, then record id. The size caps cut from its end.
+ */
+export function recordKeepOrder(referenced: ReadonlySet<string>, pinned: ReadonlySet<string> = new Set()): (a: PackRecord, b: PackRecord) => number {
+  const tier = (r: PackRecord) => (r.source === "kev" ? 0 : pinned.has(r.id) ? 1 : referenced.has(r.id) ? 2 : 3);
   return (a, b) => tier(a) - tier(b) || byCodeUnit(b.date, a.date) || sourceRank(a.source) - sourceRank(b.source) || compareIds(a.record_id, b.record_id);
 }
 
 /**
- * At most 400 records: KEV records are never cut, then records a kept candidate references, then the rest
- * by date descending, source and record id. The kept records get final ids in display order; `idMap`
- * maps each provisional id to its final one so collect can rewrite the candidates' `pack_ids`.
+ * At most 400 records: KEV records are never cut, then the pinned records (pinnedRecordIds()), then records
+ * a kept candidate references, then the rest by date descending, source and record id. The kept records
+ * get final ids in display order; `idMap` maps each provisional id to its final one so collect can rewrite
+ * the candidates' `pack_ids`.
  */
-export function capRecords(records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
-  const priority = [...records].sort(recordKeepOrder(referenced));
+export function capRecords(
+  records: readonly PackRecord[], referenced: ReadonlySet<string>, max: number = RECORDS_MAX, pinned: ReadonlySet<string> = new Set(),
+): { kept: PackRecord[]; idMap: Map<string, string>; cut: number } {
+  const priority = [...records].sort(recordKeepOrder(referenced, pinned));
   const keep = priority.filter((r, i) => i < max || r.source === "kev");
   const kept = keep.sort(byRecord).map((r, i) => toPackRecord(r, padId("r", i + 1)));
   const idMap = new Map<string, string>();
@@ -883,6 +902,8 @@ export interface BuildPackOptions {
    * record is never cut, such an item only after every unreferenced record and item.
    */
   referenced?: ReadonlySet<string>;
+  /** Final ids of the records the size caps never cut (pinnedRecordIds(): region-signal, exchange and dashboard records). */
+  pinned?: ReadonlySet<string>;
   /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
   recount?: (items: readonly PackItem[], records: readonly PackRecord[]) => { feeds: PackFeed[]; injectionFlags: number };
 }
@@ -890,9 +911,10 @@ export interface BuildPackOptions {
 /**
  * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown, §4.14 Caps). Over a cap,
  * cut in this order, about a twentieth of what is left of a group at a time: records from the end of
- * capRecords()' keep order (recordKeepOrder()), never a KEV record and never one a kept candidate
- * references; then the items no kept candidate references, lowest score first; then the referenced items,
- * lowest score first (§0.4 row 146: news goes only after every record the caps may cut). When only KEV and
+ * capRecords()' keep order (recordKeepOrder()), never a KEV record, never a pinned one (`pinned`:
+ * region-signal, exchange and dashboard records) and never one a kept candidate references; then the
+ * items no kept candidate references, lowest score first; then the referenced items, lowest score first
+ * (§0.4 row 146: news goes only after every record the caps may cut). When only KEV, pinned and
  * referenced records remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags` are
  * recounted after each cut. Returns the pack, its Markdown and what the size caps cut (`sizeCut`, for
  * logs/D.candidates.json): each cut item's id, feed, score and title and each cut record's id, source and
@@ -900,6 +922,7 @@ export interface BuildPackOptions {
  */
 export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: PackSizeCut } {
   const referenced = opts.referenced ?? new Set<string>();
+  const pinned = opts.pinned ?? new Set<string>();
   let items = [...input.items];
   let records = [...input.records];
   let feeds = input.feeds;
@@ -913,7 +936,7 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
   const over = () => byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
   const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
   const groups: string[][] = [
-    [...input.records].sort(recordKeepOrder(referenced)).reverse().filter((r) => r.source !== "kev" && !referenced.has(r.id)).map((r) => r.id),
+    [...input.records].sort(recordKeepOrder(referenced, pinned)).reverse().filter((r) => r.source !== "kev" && !pinned.has(r.id) && !referenced.has(r.id)).map((r) => r.id),
     lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
     lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
   ];
