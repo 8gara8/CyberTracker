@@ -57,11 +57,12 @@ export const CANARY_TIMEOUT_MS = CANARY_DEADLINE_MS + P3_LIMITS.contextReserveMs
 /** The cli test's limit (§8.12). */
 export const CLI_REPLY_MS = 60_000;
 /**
- * The restriction an `is_error` tool result must name to count as denied: exactly SPEC §8.12's three phrases
+ * The restriction an `is_error` tool result must name to count as denied: exactly SPEC §8.12's five phrases
  * (negative-test rule). Any other error, a missing file, a network failure or a vaguer "not allowed", is not a
- * denial. Kobol's first `agent:check` on the pinned CLI confirms the real messages carry these phrases.
+ * denial. Kobol's first `agent:check` on the pinned CLI 2.1.316 (2026-11-11) printed the first four; the
+ * fifth comes from an older CLI and is kept (§0.4 row 133). A `permission_denials` entry counts on its own.
  */
-export const RESTRICTION_RE = /--restricted confines|denied access to domain:|don't ask mode/i;
+export const RESTRICTION_RE = /--restricted confines|denied access to domain:|denied by your permission settings|covered by a Read deny rule|don't ask mode/i;
 /**
  * The canary's own files under drafts/ (plan A22), never the morning's drafts/D.json, drafts/context.json or
  * packs/: the draft, the context and the run's copy of the pack with the nonce filled in.

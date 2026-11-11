@@ -65,7 +65,7 @@ describe("AC1: the negative-test rule on canned transcripts (§8.12)", () => {
     expect(negativeResult(through, "Read", [isPath("/etc/hosts")])).toEqual({ result: "FAIL", attempts: 1, denied: 0 });
     const missing = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result: "File does not exist.", isError: true }]);
     expect(negativeResult(missing, "Read", [isPath("/etc/hosts")]).result).toBe("FAIL");
-    // Only §8.12's three phrases name a restriction; vaguer wording an older rule accepted is not a denial.
+    // Only §8.12's five phrases name a restriction; vaguer wording an older rule accepted is not a denial.
     for (const result of [
       "Permission to read /etc/hosts was not granted.", "Reading /etc/hosts is not allowed.",
       "Path /etc/hosts is outside the allowed working directory.", "EACCES: permission denied, open '/etc/hosts'",
@@ -77,6 +77,9 @@ describe("AC1: the negative-test rule on canned transcripts (§8.12)", () => {
       "Claude requested permissions to read from /etc/hosts, but you haven't granted it yet. Running in don't ask mode.",
       "Claude Code was denied access to domain:example.net",
       "Read is unavailable: --restricted confines file tools to the working directory.",
+      // CLI 2.1.316 on Kobol (2026-11-11): Write into content/, config/ or routine/, then into logs/.
+      "<tool_use_error>File is in a directory that is denied by your permission settings.</tool_use_error>",
+      "<tool_use_error>File is covered by a Read deny rule in your permission settings and cannot be written.</tool_use_error>",
     ]) {
       const named = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result, isError: true }]);
       expect(negativeResult(named, "Read", [isPath("/etc/hosts")]).result, result).toBe("PASS");
@@ -84,7 +87,7 @@ describe("AC1: the negative-test rule on canned transcripts (§8.12)", () => {
       const quoted = canned([{ id: "a", name: "Read", input: { file_path: "/etc/hosts" }, result }]);
       expect(negativeResult(quoted, "Read", [isPath("/etc/hosts")]).result, result).toBe("FAIL");
     }
-    expect(RESTRICTION_RE.source).toBe("--restricted confines|denied access to domain:|don't ask mode");
+    expect(RESTRICTION_RE.source).toBe("--restricted confines|denied access to domain:|denied by your permission settings|covered by a Read deny rule|don't ask mode");
     const mixed = canned([
       { id: "a", name: "Write", input: { file_path: "content/x.json" }, result: "x", isError: true },
       { id: "b", name: "Edit", input: { file_path: "content/x.json" }, result: "edited" },
