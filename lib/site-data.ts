@@ -74,13 +74,15 @@ const byDateThenId = (a: Correction, b: Correction) =>
 /**
  * The corrections to item `itemId` as shown in the `editionDate` edition, oldest first (date, then id): every
  * correction in corrections.json targeting that item in that edition, and, when that edition's copy of the
- * item is withheld, the correction its `withheld.correction_id` names (a withhold made on an earlier edition
- * binds later copies, §4.10, so their banner can say why).
+ * item is withheld, the correction its `withheld.correction_id` names, whatever item it targets (a withhold
+ * made on an earlier edition binds later copies, a copy masked by URL under its own id among them, §4.10, so
+ * their banner can say why).
  */
 export function correctionsFor(content: Pick<Content, "briefs" | "corrections">, itemId: string, editionDate: string): Correction[] {
   const withheldBy = content.briefs.find((b) => b.date === editionDate)?.items.find((x) => x.id === itemId)?.withheld?.correction_id ?? null;
+  // The named correction whatever its item_id: a copy masked by URL keeps its own id (§4.10).
   return content.corrections.corrections
-    .filter((c) => c.item_id === itemId && (c.edition_date === editionDate || c.id === withheldBy))
+    .filter((c) => c.id === withheldBy || (c.item_id === itemId && c.edition_date === editionDate))
     .sort(byDateThenId);
 }
 

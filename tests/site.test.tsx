@@ -660,6 +660,17 @@ describe("Withholding", () => {
       expect(row.text()).not.toContain("Patient records copied");
       expect(row.find("dl").length).toBe(0);
     });
+
+    it("a copy masked by URL under another id gets the withhold's banner on its card and its page", () => {
+      const c = sampleCopy();
+      const wed = briefOf(c, WED);
+      const copy = wed.items.find((i) => i.id === "cve-2026-108917")!;
+      rewriteItem(wed, copy, { kind: "victim", since: "2026-10-13" }, "C-0001");
+      expect(correctionsFor(c, copy.id, WED).map((x) => x.id)).toEqual(["C-0001"]);
+      const line = "NAME REMOVED 13 Oct 2026 · while a dispute about a named party is reviewed.";
+      expect(load(html(<BriefView {...briefPropsFor(c, WED)!} />))(`#${copy.id} [role="note"]`).text()).toContain(line);
+      expect(text(html(<ItemPage content={c} id={copy.id} />))).toContain(line);
+    });
   });
 
   describe("on the item page", () => {
