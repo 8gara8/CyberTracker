@@ -142,7 +142,11 @@ function cvelistFeed(p: ReturnType<typeof cachePaths>, inputs: CollectInputsFile
   const days = inputs.cvelist.days.map((d) => {
     const a = byAsset.get(d.zips[0]);
     const b = byAsset.get(d.zips[1]);
-    return { date: d.date, ok: d.ok && !!a && !!b, records: a && b ? merged([a.facts, b.facts]) : [] };
+    // Day X counts from its own end-of-day zip (§8.3): one read from an hourly zip, such as T − 1's stand-in,
+    // waits for a later run. X + 1's zip may be hourly (T's on every morning).
+    const own = zips.find((z) => z.asset === d.zips[0]);
+    const ownEndOfDay = own?.kind === "end_of_day" && own.utc_day === d.date;
+    return { date: d.date, ok: d.ok && ownEndOfDay && !!a && !!b, records: a && b ? merged([a.facts, b.facts]) : [] };
   });
   const zipRecords = merged(loaded.map((z) => byAsset.get(z.asset)!.facts));
 

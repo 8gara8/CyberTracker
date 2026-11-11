@@ -12,10 +12,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
-  freshColumn, ghsaPackRecords, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
-  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome,
-  type ItemDraft, type LinkScreen, type RecordDraft,
+  buildPack, capItems, capRecords, cvdPackRecord, cvePackRecords, dayReads, dedupe, epssJumps, epssPackRecords, exchangePackRecords, feedState,
+  freshColumn, ghsaPackRecords, hourlyZip, injectionCount, isDegraded, kevPackRecords, newestOf, notePackRecords, packFeeds, packWindow, PER_ID_MAX, perIdPlan,
+  provisionalRecords, recordWindow, remapIds, skippedOutcome, summaryLines, toItemDrafts, toPackItems, wantsStandIn, zipPlan, zipsAsRead, zipsReach, zipsShortNote,
+  type FeedOutcome, type ItemDraft, type LinkScreen, type PlannedZip, type RecordDraft,
 } from "../lib/collect";
 import { ALERT_PATTERN_FLAGS, loadConfig, type LoadedConfig } from "../lib/config";
 import { addDays, at, dataCutoffFor, isValidDate, taipeiTimestamp, taipeiToday, utcDateOf } from "../lib/dates";
@@ -23,7 +23,7 @@ import { cachePaths, type CachePaths } from "../lib/feeds/cache";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { epssMovers } from "../lib/feeds/epss";
 import { ghsaMonths } from "../lib/feeds/ghsa";
-import { newestHourlyTag, REPOS } from "../lib/feeds/github";
+import { newestHourlyTag, REPOS, tagTime } from "../lib/feeds/github";
 import { fetchBudget, fetchFeed, pool, type FetchErrorClass } from "../lib/feeds/http";
 import { kevBaseline } from "../lib/feeds/kev";
 import { jpcertRecords, tvnRecords } from "../lib/feeds/rss";
@@ -279,6 +279,28 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   let catalog: KevCatalog | null = null;
   let kevRead: Read<KevCatalog> | null = null;
   const zipReads = new Map<string, Read<{ raws: unknown[]; reused: boolean }>>();
+  // Planned end-of-day asset → the hourly zip read in its place (ruling R37's stand-in, §8.3).
+  const standIns = new Map<string, PlannedZip>();
+  // T − 1's end-of-day zip answered 404 (not out yet): its newest hourly zip, found as T's is (ls-remote on its
+  // tags), is read instead. With no tag list or no tag, nothing stands in and the read fails as before.
+  const standIn = async (z: PlannedZip): Promise<void> => {
+    const x = z.utc_day;
+    const refs = await git.lsRemote(REPOS.cvelist, [`refs/tags/cve_${x}_*`]);
+    const sub = hourlyZip(x, refs ? newestHourlyTag(refs, x) : null);
+    const why = `cvelist: ${z.asset} is not out yet (HTTP 404)`;
+    if (!sub) {
+      log(`${why}, and ${refs ? `${x} has no hourly tag` : `the hourly tags of ${x} could not be listed`}, so no hourly zip stands in for it.`);
+      return;
+    }
+    const r = await readZip(ctx, sub);
+    if (!r.ok) {
+      log(`${why}, and ${sub.asset}, which would stand in for it, was not read (${r.error}).`);
+      return;
+    }
+    zipReads.set(sub.asset, r);
+    standIns.set(z.asset, sub);
+    log(`${why}; read ${sub.tag} instead, so the records changed after ${tagTime(sub.tag)!.slice(11, 16)} UTC on ${x} wait for a later run.`);
+  };
   let deltaLog: Read<{ newest: string | null; entries: unknown[] }> | null = null;
   let epss: Read<Awaited<ReturnType<typeof readEpss>>["data"] & object> | null = null;
   let ghsa: Read<NonNullable<Awaited<ReturnType<typeof readGhsa>>["data"]>> | null = null;
@@ -301,17 +323,22 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   for (const entry of byKind("rss")) light.push(async () => { rssReads.set(entry.id, await readRss(entry, ctx)); });
   for (const entry of byKind("cvelist")) heavy.push(async () => {
     deltaLog = await readDeltaLog(entry, ctx, commits.cvelist);
-    for (const z of plan.zips) zipReads.set(z.asset, await readZip(ctx, z));
+    for (const z of plan.zips) {
+      const r = await readZip(ctx, z);
+      zipReads.set(z.asset, r);
+      if (!r.ok && wantsStandIn(z, runUtcDay, r.error)) await standIn(z);
+    }
   });
   for (const entry of byKind("epss")) heavy.push(async () => { epss = await readEpss(entry, ctx, runUtcDay); });
   if (byKind("ghsa").length) heavy.push(async () => { ghsa = await readGhsa(ctx, git, months, commits.ghsa); });
   await inTwoWaves(light, heavy, (t) => t());
   const fetchedAt = generatedAt;
+  const asRead = zipsAsRead(plan.zips, standIns);
 
   // CVE records: oldest zip first, so X + 1's copy wins.
   const records = new Map<string, { rec: CveRecord; raw: unknown }>();
   const zipsRead: ZipRead[] = [];
-  for (const z of plan.zips) {
+  for (const z of asRead) {
     const r = zipReads.get(z.asset);
     if (!r?.ok || !r.data) continue;
     let n = 0;
@@ -460,7 +487,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const cveEntry = byKind("cvelist")[0];
   const dl = deltaLog as Read<{ newest: string | null; entries: unknown[] }> | null;
   if (cveEntry && dl) {
-    const windowZips = plan.zips.filter((z) => z.utc_day >= utcDateOf(rw.start));
+    const windowZips = asRead.filter((z) => z.utc_day >= utcDateOf(rw.start));
     const zipFail = windowZips.map((z) => zipReads.get(z.asset)).find((r) => r && !r.ok);
     const notes = windowZips.filter((z) => !zipReads.get(z.asset)?.ok).map((z) => `CVE List: ${z.asset} not read.`);
     if (perId.overCap) notes.push(`CVE List: ${perId.overCap} ids over the per-id cap of ${PER_ID_MAX}.`);
@@ -561,7 +588,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     commits,
     cvelist: {
       zips: zipsRead,
-      days: plan.days.map((d) => ({ date: d.date, zips: d.zips, ok: d.zips.every((a) => zipReads.get(a)?.ok === true) })),
+      days: dayReads(plan.days, standIns, (a) => zipReads.get(a)?.ok === true),
       newest_hourly_tag: hourlyTag,
       delta_log_newest: newestOf(dl?.data?.newest ?? null) && /T/.test(newestOf(dl?.data?.newest ?? null)!) ? newestOf(dl!.data!.newest)! : null,
       by_id: { fetched, not_found: notFound, over_cap: perId.overCap },
