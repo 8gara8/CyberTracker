@@ -196,18 +196,23 @@ const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
 
 /** After a day number: at most three words, then a month or weekday name ("12 Nov", "8, 9 or 10 Oct", "12 this Tuesday"). */
 const DATE_NAME_AFTER = new RegExp(`^${ORDINAL}[,;]?(?:\\s+\\S+){0,3}?\\s+(?:of\\s+)?(?:${MONTH}|${WEEKDAY})(?![\\p{L}])`, "u");
+/** Before a day number: a month name, then at most three words ("Nov 11 – 12", "Oct 5 and 9"). */
+const MONTH_NAME_BEFORE = new RegExp(`(?<![\\p{L}])${MONTH}\\.?,?(?:\\s+\\S+?){0,3}?[\\s/${DASHES}]+$`, "u");
 
 /**
  * The number reads as a day of a date the text writes in another form: a whole number from 1 to 31,
  * not a percentage, with a month or weekday name after it and at most three words between ("on 8, 9 or
- * 10 Oct", whose last two days are a range but whose first is a number).
+ * 10 Oct", whose last two days are a range but whose first is a number), or with a month name at most
+ * three words before it ("On Nov 11 – 12 flaws", whose spaced dash in mid-clause leaves 12 a number).
  * LEAD_GROUNDED and METRICS_ONLY_NUMBERS then add a hint on how a day range is written (§4.12).
  */
 export function dayBeforeDateName(text: string, n: NumberToken): boolean {
   if (n.percent || n.decimals || !Number.isInteger(n.value) || n.value < 1 || n.value > 31 || !/^\d{1,2}$/u.test(n.raw)) return false;
   const s = text.normalize("NFKC");
   const re = new RegExp(`(?<![\\p{L}\\p{N}.,])${n.raw}(?![\\p{N}])`, "gu");
-  for (const m of s.matchAll(re)) if (DATE_NAME_AFTER.test(s.slice(m.index + m[0].length))) return true;
+  for (const m of s.matchAll(re)) {
+    if (DATE_NAME_AFTER.test(s.slice(m.index + m[0].length)) || MONTH_NAME_BEFORE.test(s.slice(0, m.index))) return true;
+  }
   return false;
 }
 
