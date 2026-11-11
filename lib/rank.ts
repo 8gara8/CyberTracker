@@ -72,6 +72,14 @@ const NOTE_SOURCES: ReadonlySet<PackRecord["source"]> = new Set(["twcert-tvn", "
 const ADVISORY_MAX = 5;
 const PRODUCT_MIN = 4;
 
+/**
+ * The most bundle members whose CVE List records a patch_batch candidate references (§5.12 step 2, §0.4
+ * row 146): enough for every exploited fix of a usual Patch Tuesday and its highest-scored critical ones,
+ * about 10 KB of the pack's 150 KB Markdown. The release block's counts come from every member, never from
+ * these records, so the rest of a 1,000-fix release adds nothing the brief can use and once filled the pack.
+ */
+export const RELEASE_PACK_IDS_MAX = 20;
+
 /** The kind a news candidate proposes from its first coverage (§5.12 step 3). */
 export const NEWS_KIND_HINT: Readonly<Record<Coverage, KindId>> = {
   exploits: "critical_flaw", breaches: "breach", ai: "ai_capability", policy: "policy", taiwan: "campaign", japan: "campaign",
@@ -273,16 +281,35 @@ function bundles(ctx: Ctx): Bundle[] {
     }
     const exploited = members.filter((r) => ctx.kev.has(r.cve_id) || r.ssvc?.exploitation === "active").map((r) => r.cve_id).sort(compareCveIds);
     const rated = members.filter((r) => r.cna_severity !== null);
-    const critical = rated.length ? rated.filter((r) => r.cna_severity!.toUpperCase() === "CRITICAL").length : null;
+    const critical = rated.length ? rated.filter(isCritical).length : null;
     out.push({ vendor, releaseId, id, members, exploited, critical, newest });
   }
   return out;
 }
 
+/** A bundle's critical fix, as `release.critical` counts it: CNA baseSeverity CRITICAL. */
+const isCritical = (r: CveRecord) => r.cna_severity !== null && r.cna_severity.toUpperCase() === "CRITICAL";
+
+/**
+ * The members whose CVE List records a patch_batch candidate references (§5.12 step 2, §0.4 row 146): the
+ * exploited ones in CVE id order, then the critical ones (isCritical()) by CVSS score descending, unscored
+ * last, then CVE id; at most RELEASE_PACK_IDS_MAX in all. The release counts still cover every member.
+ */
+export function releasePackMembers(b: { members: readonly CveRecord[]; exploited: readonly string[] }): string[] {
+  const exploited = new Set(b.exploited);
+  const critical = b.members.filter((r) => !exploited.has(r.cve_id) && isCritical(r))
+    .sort((x, y) => (y.cvss?.score ?? -1) - (x.cvss?.score ?? -1) || compareCveIds(x.cve_id, y.cve_id))
+    .map((r) => r.cve_id);
+  return [...b.exploited, ...critical].slice(0, RELEASE_PACK_IDS_MAX);
+}
+
 /**
  * The CVE ids whose CVE List records the pack keeps (§4.14 Records): records published or updated in the
  * record window that meet a §5.12 step 1 test, name a TW or JP vendor or carry an AI-finder match, every
- * new KEV id with a record, and every release-bundle member (so the bundle's pack_ids resolve).
+ * new KEV id with a record and, of each release bundle, the members its candidate references
+ * (releasePackMembers()) and every exploited member, which stays a candidate of its own (§0.4 row 146). A
+ * member no test keeps is left out, so a 1,000-fix release cannot fill the 400 records with fixes that
+ * only its counts need; the counts come from the CVE List records, never from the pack.
  */
 export function recordKeepIds(input: Omit<RankInput, "pack">): Set<string> {
   const ctx = context({ ...input, pack: { items: [], records: [] } });
@@ -292,7 +319,7 @@ export function recordKeepIds(input: Omit<RankInput, "pack">): Set<string> {
     const s = signals(ctx, id, byCve);
     if (s.candidate || s.newKev || (s.touched && (s.home || !!s.ai))) keep.add(id);
   }
-  for (const b of bundles(ctx)) for (const r of b.members) keep.add(r.cve_id);
+  for (const b of bundles(ctx)) for (const id of [...b.exploited, ...releasePackMembers(b)]) keep.add(id);
   return keep;
 }
 
@@ -379,7 +406,8 @@ function cveWork(ctx: Ctx, id: string, s: CveSignals): Work {
 
 function releaseWork(ctx: Ctx, b: Bundle): Work {
   const ids = b.members.map((r) => r.cve_id).sort(compareCveIds);
-  const packIds = [...new Set(ids.flatMap((id) => (ctx.packByCve.get(id) ?? []).filter((r) => r.source === "cvelist").map((r) => r.id)))].sort(byCodeUnit);
+  // pack_ids: the bounded members' CVE List records only (§0.4 row 146); merges still match every member id.
+  const packIds = [...new Set(releasePackMembers(b).flatMap((id) => (ctx.packByCve.get(id) ?? []).filter((r) => r.source === "cvelist").map((r) => r.id)))].sort(byCodeUnit);
   const total = b.members.length;
   const n = b.exploited.length;
   const title = `${b.vendor.name} security updates, ${b.newest.slice(0, 7)}: ${total} fixes, ${n} exploited`;
