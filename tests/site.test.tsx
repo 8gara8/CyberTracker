@@ -1441,16 +1441,20 @@ describe("Methodology", () => {
     });
     const style = fs.readFileSync(path.join(REPO_ROOT, "routine", "STYLE.md"), "utf8");
 
-    it("each STYLE_SECTIONS number resolves to its title with a body over 100 characters", () => {
+    it("each STYLE_SECTIONS number resolves to its title, and its section prints that title and STYLE.md's prose", () => {
       const out = html(MethodologyPage());
-      const h2s = [...out.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]!));
+      const titles = { gap: "Numbers and the Gap", sources: "Sources and tiers", naming: "Naming victims and attackers", corrections: "Corrections" };
+      expect(Object.keys(STYLE_SECTIONS).sort()).toEqual(Object.keys(titles).sort());
       for (const [key, n] of Object.entries(STYLE_SECTIONS)) {
         const s = section(style, n);
-        expect(s, `STYLE.md section ${n} (${key})`).not.toBeNull();
-        expect(s!.body.trim().length, `section ${n} body`).toBeGreaterThan(100);
-        expect(h2s.some((h) => h.includes(s!.title)), `h2 "${s!.title}"`).toBe(true);
+        expect(s?.title, `STYLE.md section ${n} (${key})`).toBe(titles[key as keyof typeof titles]);
+        const sec = new RegExp(`<section id="${key}"[\\s\\S]*?</section>`).exec(out)![0];
+        expect(text(/<h2[^>]*>([\s\S]*?)<\/h2>/.exec(sec)![1]!), `h2 of #${key}`).toContain(s!.title);
+        const prose = text(sec.replace(/<h2[^>]*>[\s\S]*?<\/h2>/, ""));
+        const opening = s!.body.trim().split(/\n\s*\n/)[0]!.replace(/\*\*|`/g, "").replace(/\s+/g, " ").slice(0, 60);
+        expect(prose, `#${key} prose`).toContain(opening);
+        expect(prose.length, `#${key} prose`).toBeGreaterThan(100);
       }
-      expect(Object.keys(STYLE_SECTIONS).sort()).toEqual(["corrections", "gap", "naming", "sources"]);
     });
 
     it("has every anchor of the table, and a row id rule-<id> for every regions.json rule", () => {
