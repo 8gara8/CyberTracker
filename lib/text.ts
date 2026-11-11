@@ -124,7 +124,7 @@ const YEAR = "(?:199\\d|20\\d\\d)";
 const DASHES = "\\-\\u2010\\u2011\\u2013";
 
 /**
- * A day range in one month, read as one date (§0.4 row 147): the first day, then " to " (with "the"
+ * A day range in one month, read as one date (§0.4 row 145): the first day, then " to " (with "the"
  * allowed before the second day), a hyphen or an en dash, or, after "between", " and ". Ordinals allowed.
  */
 const DAY_RANGE = (d1: string, d2: string): string =>
@@ -238,7 +238,7 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
  */
 const GLUED_RATIO_RE = /(?<![\p{L}\p{N}_.,])\d+(?:[.,]\d+)*[xX](?![\p{L}\p{N}])/gu;
 
-/** The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 147). */
+/** The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 145). */
 export function gluedRatios(text: string): string[] {
   return [...text.normalize("NFKC").matchAll(GLUED_RATIO_RE)].map((m) => m[0]);
 }

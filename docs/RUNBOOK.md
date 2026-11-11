@@ -74,7 +74,7 @@ it is kept). All paths are in `/Users/kobol/Projects/CyberTracker`.
 | `logs/D.context.json`, `logs/D.regions-input.json` | The exact context and regions input the validator used (the copy in `drafts/context.json` is the agent's, which it could have edited) | Pass to `npm run validate` |
 | `logs/D.evidence.json` | Every URL the agent could cite and the text seen for each: pack, fetched pages, search results, snapshots | Look up a URL when a `SOURCE_*` or `SNAP_*` code fires |
 | `logs/D.validation.json`, `logs/D.dropped.json` | The last validator report; the items, Angle or Scoreboard entries the soft pass dropped as unverified, and the Lead sentences and region raises it removed because the drop left them citing no item (`removed`) | The report lists each issue's code, path and message |
-| `logs/D.candidates.json`, `packs/D.md`, `packs/D.json` | Every candidate with why it was kept or cut, and under `size_cut` every item (id, feed, score, title) and record the pack's size caps cut; the source pack the agent read | Read when the brief misses an expected story. `logs/D.collect.log` counts the size caps' cuts, and names the feeds whose items they cut. The caps cut unreferenced records first, then news, and never a KEV record, a record that gives a region signal (a JPCERT alert, a TWCERT or JPCERT note reporting exploitation), an exchange filing, the dashboard record or a record a kept candidate references (a patch batch references the records of at most 20 of its release's fixes). With only those left, a pack still over is written as it is and the log says "pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records left; written as it is." (SPEC §4.14) |
+| `logs/D.candidates.json`, `packs/D.md`, `packs/D.json` | Every candidate with why it was kept or cut, and under `size_cut` every item (id, feed, score, title) and record the pack's size caps cut; the source pack the agent read | Read when the brief misses an expected story. `logs/D.collect.log` counts the size caps' cuts, and names the feeds whose items they cut. The caps cut unreferenced records first, then news, and never a KEV record, a record that gives a region signal (a JPCERT alert, a TWCERT or JPCERT note reporting exploitation), an exchange filing, the dashboard record or a record a kept candidate references (a patch batch references the records of at most 20 of its release's fixes), nor an item that gives a region signal (a CERT-FR alert or a CISA emergency directive page), which the item caps never cut either. With only those left, a pack still over is written as it is and the log says "pack: still over the size caps with only KEV, region-signal, exchange, dashboard and referenced records and region-signal items left; written as it is." (SPEC §4.14) |
 | `logs/D.recheck.json` | Dispute intake, the 14-day re-check's flags and reader reports, and the link results after the link check | Read when a correction or withhold is in question |
 | `logs/.lock` | `{ pid, started }` of the run in progress | See "The lock" below |
 | `needs-review/D/` | The failure bundle of a run that ended with an error code | See "needs-review" below |
@@ -187,8 +187,11 @@ in `needs-review/D/D.validation.json` (or rerun the agent with a rerun), check i
 -- drafts/D.json`, then `npm run publish -- --date D` before 11:00. Publish refuses while the run lock is
 held, after 11:00, and off native arm64. A `RELEASE_SOURCE` error is a patch batch publish could not
 date: cite the vendor's own advisory for the release from the pack, with its `published_at`, or, for a
-release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`. The validator catches
-this before publish, so "Not composed" for a release block (`E_PUBLISH`) should no longer occur.
+release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`. Only the release's own
+fixes count: an id with no CVE List record from the vendor's CNA is ignored, and the error names it. The
+release's pack records carry the vendor's own pages as advisory URLs, and its candidate lists the
+exploited fix's first. The validator catches this before publish, so "Not composed" for a release block
+(`E_PUBLISH`) should no longer occur.
 
 A `NUMBER_FORM` error is a ratio written glued to x ("9.9x"), which the validator cannot read as a
 number and so cannot check: write it as the Gap does, "9.9 times", and check the figure against its

@@ -94,13 +94,26 @@ faster?
   as its labels print it, with the "between A and B" and confidence-interval forms read and hints for
   ratios and Gap days; region-signal, exchange and dashboard records are protected from the caps, a
   release's `pack_ids` are filled to 20, and a new rule, RELEASE_SOURCE, fails before publish a patch
-  batch publish could not date. After this pass Kobol reruns (SPEC §10 P3): `npm run check`;
-  `agent:check -- --all`; the timed dry run (`packs/D.md` at most 153,600 bytes with its news items kept,
-  and the `size_cut` list in `logs/D.candidates.json`); and the backdated dry run for 2026-10-14
-  (`--date 2026-10-14`: `pt-microsoft-2026-10` with at most 20 `pack_ids` for its fixes' records, a
-  merged news item or note adding its own id, and its counts unchanged, 1,384 fixes, 61 critical and 1
-  exploited; `packs/2026-10-14.md` at most 153,600 bytes with its news items kept; the TW and JP levels
-  as in the earlier run). Done-when bullet 1 is re-measured on the new pack.
+  batch publish could not date. A third internal review, of the sixth pass, found more, and a seventh
+  pass in the container (2026-11-11) closed it, editing rows 145 and 146 again: a day range in one month
+  ("13 to 14 Oct") reads as a date, a new rule, NUMBER_FORM, fails a ratio glued to x ("9.9x"), and the
+  hints say "at most once"; a release's records carry its vendor's own pages (`vendors.json` v3 adds
+  `schneider-electric.com`) and its advisory URLs list the exploited fix's first, RELEASE_SOURCE counts
+  only the release's own fixes, and an item that gives a region signal is never cut. After this pass
+  Kobol reruns, in this order (SPEC §10 P3): first, before any rerun, copy the earlier runs' pack figures
+  (each release's `pack_ids`, the size-cap lines, the bytes of `packs/D.md`) from
+  `logs/2026-10-14.collect.log`, `logs/2026-10-22.collect.log` and `logs/2026-11-11.collect.log` into the
+  report, since collect overwrites them; then `npm run check`; `agent:check -- --all`; the backdated dry
+  runs for 2026-10-14 and then 2026-10-22 into a fresh `logs/dry-run/tree`, then `validate:all` on that
+  tree (both editions), checking each pack is at most 153,600 bytes with its news items kept, each
+  release has at most 20 `pack_ids` for its fixes' records (a merged news item or note adds its own id)
+  with its counts unchanged (`pt-microsoft-2026-10`: 1,384 fixes, 61 critical, 1 exploited), `size_cut`
+  lists the cuts, and the TW and JP levels match the earlier runs (or differ only by a region-signal
+  record or item the new pack holds); then the timed dry run with the same pack checks. Done-when bullet
+  1 is re-measured on the rerun dry runs (repairs, agent minutes, fetches, words). Still open: EU's
+  CERT-FR alert pattern matches `cert.ssi.gouv.fr`, but the feed's capture links
+  `www.cert.cyber.gouv.fr`, so read one live alert URL with `npm run sources:check -- --id cert-fr` on
+  Kobol before adding its pattern (row 146).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -121,7 +134,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; after the sixth pass Kobol reruns `npm run check`, `agent:check -- --all`, the timed dry run and the 2026-10-14 dry run |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; after the seventh pass Kobol copies the earlier pack figures first, then reruns `npm run check`, `agent:check -- --all`, the 2026-10-14 and 2026-10-22 dry runs with `validate:all` on their tree, and the timed dry run |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |

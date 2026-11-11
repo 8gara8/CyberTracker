@@ -425,7 +425,7 @@ const metricsOnlyNumbers = defineRule({
 // ── NUMBER_FORM ──────────────────────────────────────────────────────────────────────────────────
 
 /**
- * NUMBER_FORM (draft, §0.4 row 147): a prose field writes a ratio glued to x ("9.9x"), which numbersIn() does
+ * NUMBER_FORM (draft, §0.4 row 145): a prose field writes a ratio glued to x ("9.9x"), which numbersIn() does
  * not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong one through.
  * Quoted fields and titles, the sources' own words, are not read. One error per ratio as written, per field.
  */
