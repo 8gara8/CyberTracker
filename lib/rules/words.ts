@@ -310,15 +310,17 @@ function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
     const figures = angleFigures(angle, metrics);
     const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${
       !figures.length ? "."
-        : metrics ? `, nor the figures the metric's label prints (${figureList(figures)}) the first time each is written. Write each label figure once: written again, it counts.`
-          : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written. Write each window length once: written again, it counts.`}`;
+        : metrics ? `, nor the figures the metric's label prints (${figureList(figures)}) the first time each is written.`
+          : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written.`}`;
+    // Only WORDS_OVER says a figure written again counts: WORDS_UNDER's Angle holds no number at all.
+    const once = !figures.length ? "" : metrics ? " Write each label figure once: written again, it counts." : " Write each window length once: written again, it counts.";
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
         `${notCounted}${gluedRatios(angle.text).length ? RATIO_HINT : ""}`));
     } else if (nums.length > 1) {
       out.push(error("WORDS_OVER", "angle.text",
         `angle.text holds ${nums.length} numbers (${nums.map((x) => x.raw).join(", ")}); the Angle states exactly one. Keep one and cut the other${nums.length > 2 ? "s" : ""}.`,
-        notCounted));
+        `${notCounted}${once}`));
     }
   }
   return out;

@@ -562,7 +562,7 @@ describe("LEAD_GROUNDED", () => {
     expect(r.map((e) => e.path)).toEqual(["angle.text"]);
     expect(r[0]!.message).toContain("holds 13");
     expect(r[0]!.hint).toBe("Write the number exactly as metrics.quotable shows it for that path, or fix metric_path. "
-      + "The figures its label prints (26 weeks) may stand beside it as the label writes them, each once; write each label figure once, and no other number.");
+      + "The figures its label prints (26 weeks) may stand beside it as the label writes them, each at most once; no other number may.");
     // The windowed ratios' labels name their window ("new CVE records, pace vs 2023–24, 13 weeks").
     d.angle.metric_path = "flood.vs_reference_ratio";
     d.angle.text = "Over 13 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";

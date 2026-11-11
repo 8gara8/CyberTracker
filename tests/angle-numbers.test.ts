@@ -127,7 +127,7 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
       const got = angleIssues(m, p, twice);
       expect(codes(got), `${p} | ${twice}`).toContain("WORDS_OVER angle.text");
       expect(got.find((e) => e.code === "WORDS_OVER")!.hint, p).toContain("Write each label figure once: written again, it counts.");
-      expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("write each label figure once");
+      expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("may stand beside it as the label writes them, each at most once; no other number may.");
       expect(angleIssues(m, p, once), `${p} | ${once}`).toEqual([]);
     }
     // The figure's every written form counts the second time: "7-day" after "7 days".

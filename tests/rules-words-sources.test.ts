@@ -273,7 +273,9 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
     const under = check(d, W, { edition: "monday" });
     expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
-    expect(under[0]!.hint).toContain("nor the figures the metric's label prints (26 weeks) the first time each is written.");
+    // The Angle holds no number, so its hint does not say a figure written again counts (review of the sixth P3 fix pass).
+    expect(under[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints "
+      + "(26 weeks) the first time each is written.");
     // Every figure of the label: "share listed within 7 days, 26 weeks".
     d.angle.metric_path = "window.w26.p7";
     d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 7 days.";
@@ -308,6 +310,11 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     const r = check(d, W, { edition: "monday", inputs: { metrics: null } });
     expect(r.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (7, 17)")]);
     expect(r[0]!.hint).toContain("nor the Gap's window lengths (26 weeks, 13 weeks) the first time each is written. Write each window length once");
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a while after it.";
+    const under = check(d, W, { edition: "monday", inputs: { metrics: null } });
+    expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
+    expect(under[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the Gap's window lengths "
+      + "(26 weeks, 13 weeks) the first time each is written.");
   });
 
   it("the page total: WORDS_OVER above budgets.words_max, with the parts in the message", () => {
