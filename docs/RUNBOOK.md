@@ -188,20 +188,23 @@ in `needs-review/D/D.validation.json` (or rerun the agent with a rerun), check i
 held, after 11:00, and off native arm64. A `RELEASE_SOURCE` error is a patch batch publish could not
 date: cite the vendor's own advisory for the release from the pack, with its `published_at`, or, for a
 release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`. Only the release's own
-fixes count: an id that is not one of them (no CVE List record from the vendor's CNA published within
-the release's dates, which the error gives, or not exploited) is ignored, and the error names it. Every
-CVE record of a vendor's CNA in the pack carries that vendor's own pages as advisory URLs, after its
-tagged ones, and a release's candidate lists the exploited fix's first. The validator catches this before publish, so "Not composed" for a release block
+fixes count: for a release with no exploited fix, an id that is not one of its fixes (no CVE List record
+from the vendor's CNA published within the release's dates, which the error gives) is ignored, and the
+error names it; a release with an exploited fix is dated from its exploited CVEs. A CVE record of a
+vendor's CNA with no tagged advisory URL carries that vendor's own page instead (one per host, at most
+two; never a commit, bug tracker or mailing list link), and a release's candidate lists the exploited
+fix's first. The validator catches this before publish, so "Not composed" for a release block
 (`E_PUBLISH`) should no longer occur.
 
 A `NUMBER_FORM` error is a ratio written glued to x ("9.9x") or in words ("nearly ten times the
 pace", "tenfold"), which the validator cannot read as a number and so cannot check: write it in digits
 as the Gap does, "N times", with N exactly as `metrics.quotable` or the cited source gives it, since a
 wrong one is then caught. A product, standard or id name that ends in x ("D-Link DIR-823X", "802.1X",
-"Catalyst 9300X", "3x-ui", "Vigor 286x and 296x") is not read as a ratio; if one still fails, keep the
-name exactly as the vendor writes it and rephrase around it, as the hint says ("the 3x series"), never
-a different model, and note the text in the morning's report. The Gap's own "more than twice" stays in
-words.
+"Catalyst 9300X", "3x-ui", "Vigor 286x and 296x") is not read as a ratio. If one still fails (a comma
+list such as "Cisco 350x, 550x and 650x", or "a 30x redirect"), rephrase around it: name the models as
+the vendor lists them, for example "the Vigor 2860 and 2960 series", or follow the name with "series"
+("the 3x series"), never a different model, and note the text in the morning's report. The Gap's own
+"more than twice" stays in words.
 
 ## The Claude CLI and its token
 
