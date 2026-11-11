@@ -45,7 +45,8 @@ export const USAGE = `Usage: node scripts/screenshots.mjs --base URL --out DIR [
   --help               this text
 
 Pages: ${PAGES.map((p) => `${p.name} (${p.path})`).join(", ")}. Widths: ${WIDTHS.join(" and ")} px, full page, at ${SCALE}x.
-Exit 0 written, 1 setup missing, site not answering or a page failing, 2 usage.`;
+Exit 0 written, 1 setup missing, site not answering or a page failing (not 200, or an uncaught page
+error), 2 usage.`;
 
 export class UsageError extends Error {}
 export class SetupError extends Error {}
@@ -147,7 +148,11 @@ export async function launch(playwright, channel, pkg = TOOLS_PACKAGE) {
   }
 }
 
-/** Shoots every page at every width; returns the files written. */
+/**
+ * Shoots every page at every width; returns the files written. A page answering anything but 200 stops the
+ * run at once; an uncaught page error is collected, every image is still written, and then the run throws, so
+ * a broken client component (StaleBanner, TabBar) fails it (exit 1).
+ */
 export async function shoot(browser, base, out, log = console.log) {
   fs.mkdirSync(out, { recursive: true });
   const blocked = new Set();
@@ -178,8 +183,10 @@ export async function shoot(browser, base, out, log = console.log) {
         return route.abort("blockedbyclient");
       });
       const page = await context.newPage();
-      page.on("pageerror", (err) => problems.push(`page error at ${width} px: ${String(err && err.message ? err.message : err).split("\n")[0]}`));
+      let current = "";
+      page.on("pageerror", (err) => problems.push(`${current} at ${width} px: ${String(err && err.message ? err.message : err).split("\n")[0]}`));
       for (const p of PAGES) {
+        current = p.path;
         const url = new URL(p.path, base).href;
         const res = await page.goto(url, { waitUntil: "networkidle", timeout: PAGE_TIMEOUT_MS });
         const status = res ? res.status() : null;
@@ -194,8 +201,11 @@ export async function shoot(browser, base, out, log = console.log) {
       await context.close();
     }
   }
-  for (const line of problems) log(`screenshots: ${line}`);
   if (blocked.size > 0) log(`screenshots: blocked requests to ${[...blocked].sort().join(", ")} (only ${base.origin} is allowed)`);
+  if (problems.length > 0) {
+    const n = problems.length;
+    throw new Error(`${n} uncaught page error${n === 1 ? "" : "s"}, so the run fails (the ${files.length} images were written):\n${problems.map((l) => `  ${l}`).join("\n")}`);
+  }
   return files;
 }
 

@@ -81,13 +81,17 @@ exports.chromium = {
         return {
           async route(pattern, h) { handler = h; save({ route: pattern }); },
           async newPage() {
+            let pageError = null;
             return {
-              on() {},
+              on(event, h) { if (event === "pageerror") pageError = h; },
               async goto(url) {
                 for (const u of [url, "https://fonts.example.net/a.woff2"]) {
                   await handler({ request: () => ({ url: () => u }), continue: async () => save({ allowed: u }), abort: async () => save({ aborted: u }) });
                 }
                 save({ goto: url });
+                if (process.env.FAKE_PAGEERROR && url.endsWith(process.env.FAKE_PAGEERROR) && pageError) {
+                  pageError(new Error("x is undefined\\n    at StaleBanner"));
+                }
                 return { status: () => (url.endsWith("/archive") && process.env.FAKE_404 ? 404 : 200) };
               },
               async evaluate() { return true; },
@@ -252,6 +256,29 @@ describe("a run on a fake playwright-core", () => {
     }
     expect(code).toBe(1);
     expect(stderr).toContain("screenshots: /archive answered 404 at 375 px, not 200");
+    expect(calls(pkg).at(-1)).toEqual({ closed: true });
+  });
+
+  it("an uncaught page error fails the run (exit 1) after every image is written, naming the page and width", async () => {
+    const pkg = fakePlaywright("pageerror");
+    const out = path.join(TMP, "shots", "pageerror");
+    const env = { ...process.env, NODE_PATH: "", HOME: TMP, FAKE_PAGEERROR: "/methodology" };
+    let code = 0;
+    let stderr = "";
+    try {
+      await run(process.execPath, [SCRIPT, "--base", base, "--out", out, "--playwright", pkg], { cwd: TMP, env, timeout: 30_000 });
+    } catch (e) {
+      code = (e as { code: number }).code;
+      stderr = (e as { stderr: string }).stderr;
+    }
+    expect(code).toBe(1);
+    expect(mod.PAGES.map((p) => p.path)).toContain("/methodology");
+    expect(fs.readdirSync(out)).toHaveLength(mod.WIDTHS.length * mod.PAGES.length);
+    expect(stderr).toBe(
+      "screenshots: 2 uncaught page errors, so the run fails (the 8 images were written):\n" +
+        "  /methodology at 375 px: x is undefined\n" +
+        "  /methodology at 1280 px: x is undefined\n",
+    );
     expect(calls(pkg).at(-1)).toEqual({ closed: true });
   });
 

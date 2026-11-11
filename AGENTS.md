@@ -88,7 +88,7 @@ faster?
   cloud container from 2026-11-12 00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel
   lanes (brief, charts, pages, tools), their integration, then an independent review. Of its 39 findings
   27 were confirmed: 25 code fixes with tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of
-  those fixes added one more (`c8f294b`). Spec changes: §0.4 rows 150 to 168. STYLE §14's change leaves
+  those fixes added one more (`c8f294b`). Spec changes: §0.4 rows 150 to 169. STYLE §14's change leaves
   the drafting rule as it was, so a Kobol canary rerun (`agent:check -- --canary`) is optional. The PR
   stays a draft until these Kobol steps (SPEC §10 P4's status) are done: install `playwright-core` in
   `/Users/kobol/.cybertracker/tools` (§9.9 item 6) and record its version in Appendix C; build both
@@ -210,7 +210,7 @@ faster?
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
 | Build the site | `npm run build:sample` and `npm run build:empty` build it from `fixtures/site-content/` and `fixtures/empty-content/` (both are steps of `check`); `npm run build` reads `content/` or `CT_CONTENT_DIR`, then `npm run start` serves it; `CT_LOOK=night` builds full dark until JL's pick (SPEC §6, §9.7; from P4) |
 | Colour check | `npm run color:check` checks every colour pair of `app/globals.css` against Appendix A.5 (`-- --css FILE` for another file); exit 0 passed, 1 a failure, 2 usage; a step of `check` (from P4) |
-| Screenshots | On Kobol, with the site served (`PATH=/opt/homebrew/bin:$PATH npm run start`, rule 2): `/opt/homebrew/bin/node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing, 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
+| Screenshots | On Kobol, with the site served (`PATH=/opt/homebrew/bin:$PATH npm run start`, rule 2): `/opt/homebrew/bin/node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing (not 200, or an uncaught page error), 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
 
 ## 7. Memory
 
