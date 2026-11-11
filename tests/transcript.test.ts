@@ -8,14 +8,14 @@ const dir = path.join(__dirname, "..", "fixtures", "agent");
 const read = (name: string) => fs.readFileSync(path.join(dir, name), "utf8");
 const lines = (events: object[]) => events.map((e) => JSON.stringify(e)).join("\n") + "\n";
 
-// fixtures/agent/transcript-ok.jsonl was recorded on 2.1.319 in the cloud; Kobol re-records it on the
-// pinned 2.1.316 (SPEC §9.6) and then this test expects that version.
+// fixtures/agent/transcript-ok.jsonl was re-recorded on Kobol on the pinned 2.1.316 on 2026-11-11 (SPEC §9.6;
+// first recorded on 2.1.319 in the cloud), so this test expects that version.
 describe("the recorded transcript (fixtures/agent/transcript-ok.jsonl)", () => {
   const t = parseTranscript(read("transcript-ok.jsonl"));
 
   it("reads the init event", () => {
     expect(t.sessionId).toMatch(/^[0-9a-f-]{36}$/);
-    expect(t.version).toBe("2.1.319");
+    expect(t.version).toBe("2.1.316");
     expect([...t.tools].sort()).toEqual(["Edit", "Glob", "Grep", "Read", "WebFetch", "WebSearch", "Write"]);
     expect(t.mcpServers).toEqual([]);
     expect(t.permissionMode).toBe("dontAsk");

@@ -1,8 +1,9 @@
 import { extractUrls } from "../../lib/urls";
 
-// Reads the agent's stream-json transcript (SPEC §8.12). Event shapes were recorded on Claude Code 2.1.319
-// in the cloud on 2026-11-08 (fixtures/agent/transcript-ok.jsonl, which Kobol re-records on the pinned
-// 2.1.316): a {type:"system",subtype:"init"} event carries session_id, model, claude_code_version, tools,
+// Reads the agent's stream-json transcript (SPEC §8.12). Event shapes were first recorded on Claude Code
+// 2.1.319 in the cloud on 2026-11-08; fixtures/agent/transcript-ok.jsonl was re-recorded on Kobol on the
+// pinned 2.1.316 on 2026-11-11: a {type:"system",subtype:"init"} event carries session_id, model,
+// claude_code_version, tools,
 // mcp_servers and permissionMode; tool calls are tool_use blocks inside {type:"assistant"} messages; tool
 // output is tool_result blocks inside {type:"user"} messages; {type:"rate_limit_event"} carries
 // rate_limit_info; the run ends with a {type:"result"} event whose is_error flag (not the exit code, and
