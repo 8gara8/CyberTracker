@@ -108,11 +108,6 @@ function listJson(dir: string, sub: string): string[] {
   }
 }
 
-/** Every `.json` file in `dir/sub`, parsed, sorted by name; [] when the folder is missing (never throws). */
-function readFolder(dir: string, sub: string): RawFile[] {
-  return listJson(dir, sub).map((f) => readJson(dir, f)).filter((f): f is RawFile => f !== null);
-}
-
 const distinct = (codes: readonly string[]) => [...new Set(codes)];
 
 /** The distinct codes of a file's issues, errors and warnings alike, in the validator's order. */
@@ -186,15 +181,16 @@ export function loadContent(dir: string = contentDir(), opts: LoadContentOptions
     else metricsFiles.add(name);
   }
 
-  const status = readFolder(key, "status")
-    .map((raw) => load(raw, raw.file, StatusFile, FILE_BLOCKING_CODES))
+  // Every listed or present file goes through load(), so one that does not parse is skipped with SCHEMA (a null
+  // read), never only a build warning while the site quietly uses the default.
+  const status = listJson(key, "status")
+    .map((name) => load(readJson(key, name), name, StatusFile, FILE_BLOCKING_CODES))
     .filter((s): s is StatusFile => s !== null)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
-  const sbRaw = readJson(key, "scoreboard.json");
-  const scoreboard = sbRaw ? load(sbRaw, sbRaw.file, ScoreboardFile, FILE_BLOCKING_CODES) : null;
-  const corrRaw = readJson(key, "corrections.json");
-  const corrections = (corrRaw ? load(corrRaw, corrRaw.file, CorrectionsFile, FILE_BLOCKING_CODES) : null)
+  const present = (file: string) => fs.existsSync(path.join(key, file));
+  const scoreboard = present("scoreboard.json") ? load(readJson(key, "scoreboard.json"), "scoreboard.json", ScoreboardFile, FILE_BLOCKING_CODES) : null;
+  const corrections = (present("corrections.json") ? load(readJson(key, "corrections.json"), "corrections.json", CorrectionsFile, FILE_BLOCKING_CODES) : null)
     ?? { schema_version: 1 as const, corrections: [], disputes: [] };
 
   // Build warnings: every other error, in any file the site still reads (cross-file codes never hide anything, §6 item 4).

@@ -7,6 +7,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { ContentError, SITE_BLOCKING_CODES, contentLogLines, loadContent, loadMetrics, type Content } from "@/lib/content";
 import { RULES } from "@/lib/rules";
@@ -14,6 +16,7 @@ import { SAFETY_CODES } from "@/lib/rules/safety";
 import type { Brief } from "@/lib/schema/brief";
 import { correctionsFor, indexBy, itemHistory, itemPageIds, neighbours } from "@/lib/site-data";
 import { CANARY_TOKEN } from "@/lib/vocab";
+import { BriefView } from "@/components/brief/BriefView";
 import { briefPropsFor } from "@/components/brief/props";
 import { fixtureConfig } from "@/fixtures/src/inputs";
 import { EMPTY_CONTENT_DIR, SITE_CONTENT_DIR } from "@/fixtures/src/site";
@@ -196,6 +199,22 @@ describe("other files and the Gap", () => {
     expect(content.corrections).toEqual({ schema_version: 1, corrections: [], disputes: [] });
     expect(content.scoreboard).toBeNull();
     expect(dates(content)).toEqual(SAMPLE_DATES);
+  });
+
+  it("an unparsable corrections.json, scoreboard.json or status file is skipped with SCHEMA, never a warning", () => {
+    const dir = copy();
+    for (const f of ["corrections.json", "scoreboard.json", "status/2026-10-16.json"]) fs.writeFileSync(path.join(dir, f), "");
+    const { content, lines } = load(dir);
+    expect(content.skipped).toEqual([
+      { file: "corrections.json", codes: ["SCHEMA"] },
+      { file: "scoreboard.json", codes: ["SCHEMA"] },
+      { file: "status/2026-10-16.json", codes: ["SCHEMA"] },
+    ]);
+    expect(content.warnings).toEqual([]);
+    expect(lines).toContain("content: skipped corrections.json (SCHEMA)");
+    expect(content.status.map((s) => s.date)).toEqual(SAMPLE_DATES);
+    expect(content.corrections).toEqual({ schema_version: 1, corrections: [], disputes: [] });
+    expect(content.scoreboard).toBeNull();
   });
 
   it("without opts.log the lines go to console.warn once per folder per process", () => {
