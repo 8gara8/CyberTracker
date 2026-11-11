@@ -686,6 +686,17 @@ describe("items", () => {
     const order = [...m.on.provisional].sort(recordKeepOrder(m.on.referenced, pinned)).map(tierOf);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(order.slice(0, 10)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
+    // A referenced record that is not KEV comes after every pinned one, though by date and source it sorts before them all:
+    // the latest Arcadyan CVE record, referenced here.
+    const cve = [...m.on.provisional].filter((r) => r.source === "cvelist").sort(recordKeepOrder(new Set()))[0]!;
+    const referenced = new Set([...m.on.referenced, cve.id]);
+    const tier2 = (r: PackRecord) => (r.source === "kev" ? 0 : pinned.has(r.id) ? 1 : referenced.has(r.id) ? 2 : 3);
+    const sorted = [...m.on.provisional].sort(recordKeepOrder(referenced, pinned));
+    const at = (id: string) => sorted.findIndex((r) => r.id === id);
+    for (const id of pinned) expect(at(id), id).toBeLessThan(at(cve.id));
+    expect(sorted.slice(0, 11).map(tier2)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2]);
+    const byDate = [...m.on.provisional].sort(recordKeepOrder(new Set()));
+    for (const id of pinned) expect(byDate.findIndex((r) => r.id === id), id).toBeGreaterThan(byDate.findIndex((r) => r.id === cve.id));
   });
 
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
