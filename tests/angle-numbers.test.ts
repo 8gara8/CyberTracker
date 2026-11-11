@@ -67,7 +67,7 @@ describe("a Gap sentence that names the day by its dates (review of row 145)", (
       const m = set.metrics();
       const quoted = new Set(m.headline.quoted.flatMap((q) => numbersIn(q.display)).map((n) => n.value));
       for (const day of [2, 3, 7, 10, 11, 12]) expect(quoted.has(day), `${set.name} quotes ${day}`).toBe(false);
-      for (const days of ["on 11 and 12 Nov", "Nov 11 and 12", "on 11 or 12 Nov", "from Tuesday 11 to Wednesday 12 Nov",
+      for (const days of ["on 11 and 12 Nov", "between Nov 11 and 12", "on 11 or 12 Nov", "from Tuesday 11 to Wednesday 12 Nov",
         "between Tuesday 11 and Wednesday 12 Nov", "overnight on 11/12 Nov", "11 through 12 Nov", "from Friday 7 to Monday 10 Nov",
         "from Sunday 2 to Monday 3 Nov"]) {
         const text = `Nothing published ${days} cleared the bar for an item.`;
@@ -76,8 +76,26 @@ describe("a Gap sentence that names the day by its dates (review of row 145)", (
       // A spaced dash after the month joins the days at the end of a clause; before a word, it reads a count.
       expect(gapLeadIssues(m, "Nothing cleared the bar on Nov 11 – 12.")).toEqual([]);
       expect(gapLeadIssues(m, "On Nov 11 – 12 flaws cleared the bar.")).toHaveLength(1);
+      // So do "and", "or", "through" and "/" after the month (review of the eighth pass).
+      for (const text of ["Nothing cleared the bar on Nov 11 and 12.", "Nothing cleared the bar on Nov 11/12, Taipei time.",
+        "Nothing cleared the bar on Nov 11 or 12 Taipei time.", "Nothing cleared the bar on Nov 11 through 12 2026."]) {
+        expect(gapLeadIssues(m, text), `${set.name} | ${text}`).toEqual([]);
+      }
+      for (const text of ["On Nov 11 and 12 flaws cleared the bar.", "On Nov 11 or 12 vendors may ship fixes.",
+        "Nothing cleared the bar on Nov 11/12 hours later."]) expect(gapLeadIssues(m, text), `${set.name} | ${text}`).toHaveLength(1);
     });
   }
+
+  it("canary: a miscopied count after a month-first \"and\" or \"or\" range fails LEAD_GROUNDED (review of the eighth pass)", () => {
+    const m = canaryMetrics();
+    // The canary's 26-week median wait is 17 days and its 2023–24 reference 21; 25 is a miscopy.
+    expect(gapLeadIssues(m, "CISA's median wait was 17 days in the 26 weeks to Oct 12 and 21 days in 2023–24.")).toEqual([]);
+    for (const join of ["and", "or"]) {
+      const got = gapLeadIssues(m, `CISA's median wait was 17 days in the 26 weeks to Oct 12 ${join} 25 days in 2023–24.`);
+      expect(got, join).toHaveLength(1);
+      expect(got[0]!.message, join).toContain("25");
+    }
+  });
 });
 
 describe("a metric Angle that copies its quotable row (row 145)", () => {

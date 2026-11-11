@@ -273,6 +273,23 @@ describe("numbersIn", () => {
     expect(raws("from Friday 10 to Monday 7 Nov")).toEqual(["10"]);
   });
 
+  it("month first, joins two days by and, or, through or / only after between or at the end of a clause (review of the eighth pass)", () => {
+    const raws = (text: string) => read(text).map((n) => n[0]);
+    // A count after the second day is a number, as it was at 3e511f6.
+    expect(raws("Fortinet disclosed it on Oct 3 and 12 days later CISA listed it.")).toEqual(["12"]);
+    expect(raws("CISA added two on Nov 4 and 12 more on Nov 6.")).toEqual(["12"]);
+    expect(raws("On Nov 11 or 12 vendors may ship fixes.")).toEqual(["12"]);
+    expect(raws("Listed Oct 3 through 19 days after disclosure.")).toEqual(["19"]);
+    expect(raws("Oct 3 thru 19 flaws")).toEqual(["19"]);
+    expect(raws("Released Nov 11/12 hours later.")).toEqual(["12"]);
+    expect(raws("Mar 3 and 10 more")).toEqual(["10"]);
+    // After "between", at the end of the text or a clause, before a year, "Taipei" or "UTC": one date.
+    for (const text of ["between Oct 3 and 4", "between Oct 3 and 4 flaws were listed", "on Nov 11 and 12.", "Nov 11/12, Taipei",
+      "Nov 11 or 12", "Nov 11 or 12; then", "Nov 11 through 12 2026", "Nov 11 and 12 Taipei time", "Nov 11/12 UTC", "Nov 11 thru 12)"]) {
+      expect(read(text), text).toEqual([]);
+    }
+  });
+
   it("reads units and multipliers, and skips digits glued to words", () => {
     expect(read("$4.5m, 2.3bn, 12 million, 3 thousand, 40 per cent, 7 percent, 15 %")).toEqual([
       ["4.5m", 4_500_000, false, false], ["2.3bn", 2_300_000_000, false, false], ["12 million", 12_000_000, false, false],

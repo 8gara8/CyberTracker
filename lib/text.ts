@@ -148,17 +148,22 @@ const DAY_RANGE = (d1: string, d2: string): string =>
 const DAY_RANGE_MONTH_RE = new RegExp(
   `(?<![\\p{L}\\p{N}.,])${DAY_RANGE("(\\d{1,2})", "(\\d{1,2})")}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu");
 /**
- * "Oct 13 to 14", "Oct 13–14", "Nov 11 and 12", "Nov 11/12", "between Oct 13 and 14". The second day is not
- * a percentage, a decimal or a count in thousands, millions or billions ("bn", "m"), and a dash with spaces
- * around it joins the days only at the end of a clause ("Oct 2 – 12 critical flaws" is a count of 12).
+ * "Oct 13 to 14", "Oct 13–14", "Nov 11 and 12.", "Nov 11/12, Taipei", "between Oct 13 and 14". The second day
+ * is not a percentage, a decimal or a count in thousands, millions or billions ("bn", "m"). " to " and an
+ * unspaced dash always join the days; "and", "or", "through", "thru", "/" and a dash with spaces around it
+ * join them only after "between" or at the end of a clause (CLAUSE_END_RE), so "Oct 3 and 12 days later" and
+ * "Oct 2 – 12 critical flaws" keep their 12.
  */
 const MONTH_DAY_RANGE_RE = new RegExp(
-  `(?<![\\p{L}])(?:[Bb]etween\\s+)?${MONTH}\\.?\\s+(?:the\\s+)?(\\d{1,2})${ORDINAL}` +
-  `(?:\\s+(?:to|and|or|through|thru)\\s+${BEFORE_DAY}|[${DASHES}/]|(\\s[${DASHES}]\\s))(\\d{1,2})${ORDINAL}` +
+  `(?<![\\p{L}])([Bb]etween\\s+)?${MONTH}\\.?\\s+(?:the\\s+)?(\\d{1,2})${ORDINAL}` +
+  `(?:\\s+to\\s+${BEFORE_DAY}|[${DASHES}]|(\\s+(?:and|or|through|thru)\\s+${BEFORE_DAY}|\\/|\\s[${DASHES}]\\s))(\\d{1,2})${ORDINAL}` +
   "(?![\\p{L}\\p{N}])(?![.,]\\d)(?!\\s?(?:%|per\\s?cent|percent))(?!\\s+(?:thousand|million|billion)(?![\\p{L}]))" +
   "(?!\\s?(?:bn|BN|Bn|m|M)(?![\\p{L}\\p{N}]))", "gu");
-/** After a month-first range with a spaced dash: the end of the text or of a clause, or a year. */
-const CLAUSE_END_RE = /^(?:\s*$|[.,;:!?)\]]|\s+(?:199\d|20\d\d)(?!\d))/u;
+/**
+ * After a month-first range joined by a word, "/" or a spaced dash: the end of the text or of a clause, a year,
+ * or "Taipei" or "UTC" ("Nov 11 and 12 Taipei time").
+ */
+const CLAUSE_END_RE = /^(?:\s*$|[.,;:!?)\]]|\s+(?:199\d|20\d\d)(?!\d)|\s+(?:Taipei|UTC)(?![\p{L}]))/u;
 
 /** A day range's days are 1 to 31, the first before the second; anything else is left for the other patterns. */
 const isDayRange = (a: string, b: string): boolean => {
@@ -180,8 +185,8 @@ const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
   /(?<![\p{L}\p{N}])\d{1,2}\s?[aApP]\.?[mM]\.?(?![\p{L}\p{N}])/gu, // "5 pm"
   // Day ranges before the single dates, so neither day of "13 to 14 Oct" or "Oct 13 to 14" is read.
   (s) => s.replace(DAY_RANGE_MONTH_RE, (m, a1?: string, a2?: string, b?: string) => (isDayRange(a1 ?? a2!, b!) ? " " : m)),
-  (s) => s.replace(MONTH_DAY_RANGE_RE, (m, a: string, spaced: string | undefined, b: string, at: number, all: string) =>
-    (isDayRange(a, b) && (!spaced || CLAUSE_END_RE.test(all.slice(at + m.length))) ? " " : m)),
+  (s) => s.replace(MONTH_DAY_RANGE_RE, (m, between: string | undefined, a: string, guarded: string | undefined, b: string, at: number,
+    all: string) => (isDayRange(a, b) && (!guarded || between || CLAUSE_END_RE.test(all.slice(at + m.length))) ? " " : m)),
   new RegExp(`(?<![\\p{L}\\p{N}])\\d{1,2}${ORDINAL}\\s+(?:of\\s+)?${MONTH}\\.?(?![\\p{L}])`, "gu"), // "21 Oct", "21st October"
   new RegExp(`(?<![\\p{L}])${MONTH}\\.?\\s+\\d{1,2}${ORDINAL}(?![\\p{L}\\p{N}])`, "gu"), // "Oct 21", "October 21st"
   new RegExp(`(?<![\\p{L}\\p{N}.,])${YEAR}\\s?[-–]\\s?(?:${YEAR}|\\d{2})(?!\\d|[.,]\\d)`, "gu"), // "2023-24", "2023–2024"
@@ -230,9 +235,10 @@ const MULTIPLIERS: Record<string, number> = { thousand: 1e3, million: 1e6, billi
  * The numbers in a piece of text (§4.12). First removes what is not a quantity: CVE and GHSA ids, ISO
  * dates and timestamps, clock times, day-month dates ("21 Oct", "October 21") and day ranges in one month
  * ("13 to 14 Oct", "13–14 Oct", "between 13 and 14 Oct", "on 11 and 12 Nov", "11 or 12 Nov", "11/12 Nov",
- * "11 through 12 Nov", "from Tuesday 11 to Wednesday 12 Nov", "Oct 13 to 14", "Oct 13-14", "Nov 11 and 12",
+ * "11 through 12 Nov", "from Tuesday 11 to Wednesday 12 Nov", "Oct 13 to 14", "Oct 13-14", "Nov 11 and 12.",
  * days 1 to 31, the first before the second; a range across months is two dates, "30 Oct to 2 Nov"; a
- * month-first range with a spaced dash only at the end of a clause), years 1990 to 2099 and
+ * month-first range joined by "and", "or", "through", "/" or a spaced dash only after "between" or at the end
+ * of a clause), years 1990 to 2099 and
  * year ranges ("2023-24", "2023–24"), version strings (two or more dots, or a leading v) and section
  * marks. Then reads each digit token (thousands separators dropped) with its unit: %, "per cent" or
  * "percent" make a percentage; a following "thousand", "million", "billion", "bn" or an attached "m"
