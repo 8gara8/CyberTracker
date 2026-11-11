@@ -74,12 +74,10 @@ faster?
   whole-tree validation failure and a failed `--force` rerun the right next step, checked the titles of
   sources only withheld items cite and dropped the unassessed chip of a withheld item, with rows 126 to
   132. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
-  `file -L` says arm64. Kobol checks next: JL stores the agent's token
-  (SPEC §9.6), most simply with the helper `~/.cybertracker/store-token.zsh`, outside the repo, which
-  reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
-  transcript re-record and the dry runs of SPEC §10 P3, whose report
-  (`docs/reports/<date>-p3-dry-runs.md`) is written on Kobol. The PR stays a draft until those are in;
-  marking it ready starts the Codex review. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
+  `file -L` says arm64. JL stored the agent's token (SPEC §9.6) on 2026-11-11 at 06:47 Taipei with the
+  helper `~/.cybertracker/store-token.zsh`, outside the repo, which reads a copied token from the
+  clipboard, stores it and tests it (use it for renewals too). The PR stays a draft until the Kobol
+  checks are in; marking it ready starts the Codex review. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
   00:31 UTC; `docs/reports/2026-11-11-p3-dry-runs.md`) `agent:check -- --all` passed 13 of 13, the
   transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
   dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
@@ -105,15 +103,15 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks next |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, timed dry run to rerun |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI
   2.1.316 (arm64, the version Europe uses) in `/Users/kobol/.cybertracker/cli`; config dir
-  `/Users/kobol/.cybertracker/claude` (mode 700). The keychain token `cybertracker-claude-oauth` comes in
-  P3 (JL).
+  `/Users/kobol/.cybertracker/claude` (mode 700). JL stored the keychain token `cybertracker-claude-oauth`
+  on 2026-11-11 (P3).
 - **Ids** (not secrets; kept here and in no code or config file): Vercel project `cybertracker`
   `prj_tnJqehlQCR0vPwIyeG4wptkQswML`, team `team_xxXFmwmVsAfTU86OFG8fcX3S`. The fork base is
   8gara8/EuropeTracker at `2232913cb40bb9d6fe29cbf585dadbc658c89570` (`docs/PROVENANCE.md`).
