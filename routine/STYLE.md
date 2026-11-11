@@ -50,8 +50,8 @@ An item is one news event, of one of nine kinds. Each kind has a bar it must cle
 - **Policy:** laws, takedowns, sanctions and government moves on AI and cyber.
 
 **How many.** Typically 5 to 8 items, never more than 10. A quiet day is never padded: three strong
-items beat seven thin ones, and a day with nothing that clears a bar has no items at all. Fewer items
-are fine; filler is not.
+items beat seven thin ones, and a day with nothing that clears a bar has no items at all, and a Lead of
+Gap sentences only (§6). Fewer items are fine; filler is not.
 
 **Item ids.** A flaw item with a CVE uses its first CVE id in lower case. Other items use their kind's
 prefix and a short slug of lower-case words. An incident slug names the sector, the country and the
@@ -155,12 +155,15 @@ database. The written brief never computes a number of its own.
 
 **Quoting the metrics.** The draft may quote only the values the context marks as quotable, verbatim,
 and only as displayed. A Lead sentence that quotes Gap numbers is flagged as such and may use only the
-numbers in the Gap headline. The headline sentence itself is never rewritten. "Faster" and "slower"
+numbers in the Gap headline. A Lead sentence that cites no item is a Gap sentence: `gap: true` with
+`item_ids` empty, quoting only the Gap headline's numbers, or none. On a day with no items, every Lead
+sentence is one. The headline sentence itself is never rewritten. "Faster" and "slower"
 appear only in the script's own sentence, which says them only when the data clears its test; there is
 no figure from fewer than 30 cases.
 
 **Every number names its denominator and date.** "37% of the 157 flaws CISA listed in the 26 weeks to 6
-Nov", not "37% of flaws". A number in the prose must appear in a cited source or in the metrics file,
+Nov", not "37% of flaws". The Angle holds exactly one number, so it names its window and date instead
+of a denominator ("37% in the 26 weeks to 6 Nov", §12). A number in the prose must appear in a cited source or in the metrics file,
 and the validator checks it. "About" or "nearly" allows rounding at the last non-zero digit, nothing
 more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or the Gap may hold
 only numbers from the metrics or the item's CVE record.
@@ -314,8 +317,10 @@ Every full edition has a Taiwan Lens: what today's events mean for Taiwan, then 
 over-reading it, and the claim it bears on.
 
 - At most 30 words holding exactly one number, from either a cited source or a metrics path (exactly
-  one of the two), with its date. With a metrics path you may name the window its label gives ("in 26
-  weeks", "the 13-week count"); that length is not counted, and no other window length may appear.
+  one of the two), with its date. With a metrics path you may repeat the figures its quotable label
+  prints, as the label writes them ("26 weeks", "within 7 days", "80% interval"), and they are not
+  counted. Any other number counts, so the Angle's one number stands without its denominator: name the
+  window and date, not the count ("37% in the 26 weeks to 9 Nov", not "37% of the 157 flaws").
 - The counterpoint, at most 30 words, is the strongest evidence against over-reading the number, with its
   sources, or exactly "none found" with none.
 - Tie it to an open Scoreboard claim when it bears on one; otherwise leave the claim empty.
