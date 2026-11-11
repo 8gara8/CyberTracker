@@ -787,6 +787,20 @@ describe("items", () => {
     expect(capItems(wide, ITEM_CAPS, held).kept.filter((d) => !capped.kept.includes(d)).length).toBe(1);
   });
 
+  it("held items stop at the 200 the pack schema allows: of 201 held items the 200 best-scored stay and the lowest goes (fourth review of row 146)", () => {
+    const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = Array.from({ length: 201 }, (_, i) => ({
+      ...base, feed_id: `feed-${i % 5}`, key: `h${i}`, url: `https://therecord.media/ct-sample/held-${i}`, coverage: ["exploits"] as ItemDraft["coverage"], score: 60 - i / 10,
+    }));
+    const c = capItems(items, ITEM_CAPS, () => true);
+    expect(c.kept).toHaveLength(ITEM_CAPS.total);
+    expect(ITEM_CAPS.total).toBe(200);
+    expect(c.kept.map((d) => d.url)).not.toContain("https://therecord.media/ct-sample/held-200");
+    expect(c.cutByFeed).toEqual({ "feed-0": 1 });
+    // Held items pass a feed's 30 and a section's 60: five feeds of 40, all in one section, all kept.
+    expect(capItems(items.slice(0, 200), ITEM_CAPS, () => true).kept).toHaveLength(200);
+  });
+
   it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut unreferenced records first (row 146)", () => {
     const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
     const many = (n: number, coverage: (i: number) => ItemDraft["coverage"]) => Array.from({ length: n }, (_, i) => ({

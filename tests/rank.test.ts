@@ -501,6 +501,50 @@ describe("rankCandidates() on built cases", () => {
     expect(cvePackRecords(sap.slice(0, 4), () => true, cfg).map((d) => d.advisory_urls)).toEqual(sap.slice(0, 4).map((_, i) => [note(i), PATCH_DAY]));
   });
 
+  it("a vendor page goes through the advisory URL filter: an http:// or over-500-character page on the vendor's host stays out, and a kept one is normalised (fourth review of row 146)", () => {
+    const long = `https://me.sap.com/notes/3700100?${"q".repeat(520)}`;
+    const refs = ["http://me.sap.com/notes/3700101", long, "https://WWW.ME.SAP.COM/notes/3700102/"];
+    const sap = Array.from({ length: 5 }, (_, i) => untaggedFix(60 + i, "sap", "SAP", i === 0 ? refs : [], 8 - i / 10));
+    expect(long.length).toBeGreaterThan(500);
+    expect(vendorPageUrls(sap[0]!, cfg)).toEqual(["https://me.sap.com/notes/3700102"]);
+    expect(cvePackRecords([sap[0]!], () => true, cfg)[0]!.advisory_urls).toEqual(["https://me.sap.com/notes/3700102"]);
+    const pt = rankCandidates(input({ ...empty, records: sap })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.advisory_urls).toEqual(["https://me.sap.com/notes/3700102"]);
+  });
+
+  it("cvePackRecords() keeps a record's tagged advisory URLs first: tagged ones and vendor pages together past five keep the tagged (fourth review of row 146)", () => {
+    const msrc = (n: number) => `https://msrc.microsoft.com/update-guide/ct-sample/${n}`;
+    const kb = (n: number) => `https://learn.microsoft.com/ct-sample/kb50600${n}`;
+    const of = (tagged: number, untagged: number) => rec("CVE-2026-620101", {
+      assigner: "microsoft", affected: [{ vendor: "Microsoft", product: "Windows" }],
+      // The vendor pages first in the record, so only the order cvePackRecords() puts them in keeps the tagged ones first.
+      references: [
+        ...Array.from({ length: untagged }, (_, i) => ({ url: kb(i), tags: [], from: "cna" as const })),
+        ...Array.from({ length: tagged }, (_, i) => ({ url: msrc(i), tags: ["vendor-advisory"], from: "cna" as const })),
+      ],
+    });
+    expect(cvePackRecords([of(4, 3)], () => true, cfg)[0]!.advisory_urls).toEqual([msrc(0), msrc(1), msrc(2), msrc(3), kb(0)]);
+    expect(cvePackRecords([of(6, 3)], () => true, cfg)[0]!.advisory_urls).toEqual([0, 1, 2, 3, 4].map(msrc));
+    expect(cvePackRecords([of(0, 7)], () => true, cfg)[0]!.advisory_urls).toEqual([0, 1, 2, 3, 4].map(kb));
+  });
+
+  it("a release's advisory URLs list a merged note's after its members' pages (fourth review of row 146)", () => {
+    // Five SAP fixes, one with its note page; a JPCERT note naming another fix merges into the release. No collector gives a note
+    // advisory URLs today (only KEV and CVE List records carry them), so this test gives the note's pack record one by hand.
+    const sap = Array.from({ length: 5 }, (_, i) => untaggedFix(70 + i, "sap", "SAP", i === 0 ? ["https://me.sap.com/notes/3700200"] : [], 8 - i / 10));
+    const base = input({ ...empty, records: sap });
+    const NOTE_URL = "https://www.jpcert.or.jp/ct-sample/jvn-note.html";
+    const note = notePackRecords("jpcert", [{
+      id: "wr264109", title: `SAMPLE weekly report ${sap[3]!.cve_id}`, url: "https://jpcert.or.jp/wr/2026/wr264109.html", text: "SAMPLE",
+      published_at: "2026-10-13T06:00:00Z", cve_ids: [sap[3]!.cve_id], alert: false,
+    }], W.window).map((r) => ({ ...r, advisory_urls: [NOTE_URL] }));
+    // The note gets a pack id that sorts before every CVE List record's, so record id order alone would list its URL first.
+    const records = provisionalRecords([...cvePackRecords(sap, () => true, cfg), ...note]).map((r) => (r.source === "jpcert" ? { ...r, id: "r0000" } : r));
+    const pt = rankCandidates({ ...base, pack: { items: [], records } }).kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.pack_ids[0]).toBe("r0000");
+    expect(pt.advisory_urls).toEqual(["https://me.sap.com/notes/3700200", NOTE_URL]);
+  });
+
   /** A Fortinet record as Fortinet's CNA writes them: one untagged FortiGuard PSIRT page, its own host, and nothing tagged. */
   const fortinetFix = (n: number) => untaggedFix(50 + n, "fortinet", "Fortinet", [`https://fortiguard.fortinet.com/psirt/FG-IR-26-${630000 + n}`], 9.6);
 
