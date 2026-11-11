@@ -137,9 +137,18 @@ const GAP_WINDOW_FIGURES: readonly LabelFigure[] = WINDOW_LENGTHS.flatMap((w) =>
 export function angleFigures(angle: { metric_path?: string | null }, metrics: Metrics | null): LabelFigure[] {
   if (!angle.metric_path) return [];
   if (!metrics) return [...GAP_WINDOW_FIGURES];
+  return rowFigures(angle.metric_path, quotableRows(metrics));
+}
+
+/**
+ * angleFigures() on given rows: the figures the labels of the rows keyed `metricPath` print, in label
+ * order, each as many times as one of those labels prints it (the most of any one row, not the sum, so two
+ * rows that each print "26 weeks" give it once).
+ */
+export function rowFigures(metricPath: string, rows: readonly { readonly key: string; readonly label: string }[]): LabelFigure[] {
   const most = new Map<string, LabelFigure[]>();
-  for (const r of quotableRows(metrics)) {
-    if (r.key !== angle.metric_path) continue;
+  for (const r of rows) {
+    if (r.key !== metricPath) continue;
     const here = new Map<string, LabelFigure[]>();
     for (const f of labelFigures(r.label)) here.set(f.text, [...(here.get(f.text) ?? []), f]);
     for (const [text, fs] of here) if ((most.get(text)?.length ?? 0) < fs.length) most.set(text, fs);

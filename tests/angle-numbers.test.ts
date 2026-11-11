@@ -11,11 +11,11 @@ import { draftInputs } from "@/fixtures/src/inputs";
 import type { EditionName } from "@/fixtures/src/world";
 import { quotableRows } from "@/lib/metrics/headline";
 import { RULES } from "@/lib/rules";
-import { angleFigures, angleNumbers } from "@/lib/rules/grounding";
+import { angleFigures, angleNumbers, figureList, rowFigures } from "@/lib/rules/grounding";
 import type { ValidationIssue } from "@/lib/rules/types";
 import type { DraftBrief } from "@/lib/schema/draft-brief";
 import { Metrics } from "@/lib/schema/metrics";
-import { numbersIn } from "@/lib/text";
+import { numbersBesideFigures, numbersIn } from "@/lib/text";
 import { validateDraft } from "@/lib/validate";
 
 const CODES = ["WORDS_OVER", "WORDS_UNDER", "LEAD_GROUNDED"];
@@ -186,6 +186,30 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
       expect(angleNumbers({ ...sourced, text }, m)).toEqual(numbersIn(text));
       expect(angleNumbers({ ...sourced, text }, null)).toEqual(numbersIn(text));
     }
+  });
+
+  it("gives a figure as often as one label prints it, the most of any one row, and names it once in a hint (review of the sixth P3 fix pass)", () => {
+    // Stub labels: no label prints a figure twice today, and no key but "constant" has two rows.
+    const twice = [{ key: "p", label: "share in the 26 weeks to the date, against the 26 weeks before" }];
+    const figs = rowFigures("p", twice);
+    expect(figs.map((f) => f.text)).toEqual(["26 weeks", "26 weeks"]);
+    expect(figureList(figs)).toBe("26 weeks");
+    // Given twice, the figure is left out twice; a third copy counts.
+    const raws = (text: string) => numbersBesideFigures(text, figs).map((n) => n.raw);
+    expect(raws("37% in the 26 weeks to 6 Nov, against the 26 weeks before.")).toEqual(["37%"]);
+    expect(raws("37% in the 26 weeks to 6 Nov, against the 26 weeks before and 26 weeks earlier.")).toEqual(["37%", "26"]);
+    // Two rows of the key that each print "26 weeks" give it once, not twice; a row of another key gives nothing.
+    const two = [{ key: "p", label: "share, 26 weeks" }, { key: "p", label: "count, 26 weeks" }, { key: "q", label: "count, 26 weeks" }];
+    expect(rowFigures("p", two).map((f) => f.text)).toEqual(["26 weeks"]);
+    expect(numbersBesideFigures("37% in 26 weeks, 26 weeks running.", rowFigures("p", two)).map((n) => n.raw)).toEqual(["37%", "26"]);
+    // One row printing it twice and another once: twice, in label order with the other figures, each named once.
+    const mixed = [{ key: "p", label: "listed within 7 days, 26 weeks" }, { key: "p", label: "26 weeks against 26 weeks" }];
+    expect(rowFigures("p", mixed).map((f) => f.text)).toEqual(["7 days", "26 weeks", "26 weeks"]);
+    expect(figureList(rowFigures("p", mixed))).toBe("7 days, 26 weeks");
+    expect(rowFigures("q", mixed)).toEqual([]);
+    // angleFigures() is rowFigures() of the day's quotable rows.
+    const m = canaryMetrics();
+    for (const r of quotableRows(m)) expect(angleFigures({ metric_path: r.key }, m), r.key).toEqual(rowFigures(r.key, quotableRows(m)));
   });
 
   it("collects the figures of every row under the path, each once, and the Gap's two windows without metrics", () => {
