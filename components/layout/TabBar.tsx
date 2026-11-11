@@ -40,8 +40,10 @@ function activeMainTab(path: string): string | null {
 }
 
 const BAR = "flex items-stretch overflow-x-auto font-mono text-[11px] uppercase tracking-[0.16em] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-const TAB = "flex min-h-10 items-center whitespace-nowrap border-r border-line px-3 no-underline md:px-4";
-const ACTIVE = "bg-fg text-bg";
+// The focus ring is drawn inside the tab (offset -4px): the nav scrolls sideways, so it clips anything outside a
+// tab. On the ink-filled active tab the ring takes the page colour, so it still contrasts.
+const TAB = "flex min-h-10 items-center whitespace-nowrap border-r border-line px-3 no-underline md:px-4 focus-visible:-outline-offset-4";
+const ACTIVE = "bg-fg text-bg focus-visible:outline-bg";
 const IDLE = "text-fg hover:underline";
 
 export function TabBar({ variant, siblings, pathname }: TabBarProps) {

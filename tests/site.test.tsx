@@ -1774,6 +1774,24 @@ describe("Routes", () => {
       expect(out).not.toContain('aria-current="page"');
     });
 
+    it("every tab draws its focus ring inset, so the scrolling nav cannot clip it; the ink-filled active tab's ring is the page colour", () => {
+      const bars = [html(<TabBar variant="family" siblings={SIBLINGS} />), ...["/", "/archive", "/items/x"].map((p) => html(<TabBar variant="main" pathname={p} />))];
+      let active = 0;
+      for (const out of bars) {
+        const $ = load(out);
+        expect($("nav").attr("class")).toContain("overflow-x-auto");
+        const tabs = $("nav a").toArray();
+        expect(tabs.length).toBeGreaterThanOrEqual(3);
+        for (const a of tabs) {
+          const cls = ($(a).attr("class") ?? "").split(/\s+/);
+          expect(cls).toContain("focus-visible:-outline-offset-4");
+          expect(cls.includes("focus-visible:outline-bg")).toBe($(a).attr("aria-current") !== undefined);
+          if ($(a).attr("aria-current")) active += 1;
+        }
+      }
+      expect(active).toBe(3);
+    });
+
     it("Masthead holds both tab bars; Footer the audit trail, RSS and the error form", () => {
       const head = html(<Masthead />);
       expect(head.startsWith("<header")).toBe(true);
