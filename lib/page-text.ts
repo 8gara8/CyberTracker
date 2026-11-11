@@ -397,3 +397,13 @@ export function scriptParts(brief: PageBrief, metrics: Metrics | null, opts: Scr
 export function scriptText(brief: PageBrief, metrics: Metrics | null, opts: ScriptOptions = {}): string {
   return scriptParts(brief, metrics, opts).join("\n");
 }
+
+// ── P4 additions (gap lane) ──────────────────────────────────────────────────────────────────────
+
+/**
+ * A Gap chart's name as chartCaptions() writes it for a null block ("The Flood", "The Window",
+ * "AI-credited"), for the charts' own uncounted text: the "Data table: <chart name>" summaries (§7).
+ */
+export function chartName(chart: keyof typeof CHART_NAMES): string {
+  return CHART_NAMES[chart];
+}
