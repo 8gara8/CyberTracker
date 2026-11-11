@@ -11,7 +11,9 @@ import {
   buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
+  dayReads, hourlyZip, wantsStandIn, zipsAsRead,
 } from "../lib/collect";
+import { endOfDayAsset, hourlyAsset, REPOS } from "../lib/feeds/github";
 import { loadConfig, matchCredit } from "../lib/config";
 import { addDays } from "../lib/dates";
 import { parseEpssCsv } from "../lib/feeds/epss";
@@ -224,6 +226,51 @@ describe("zipPlan", () => {
     const ok = { ...skippedOutcome(), skipped: false, ok: true, newest: "2026-10-13T19:58:00Z" };
     expect(feedState("cvelist", { ...ok, staleNote: zipsShortNote(zipsReach(p.zips), rw) }, { fresh_days: 2 }, Date.parse(rw.end))).toMatchObject({ state: "stale", label: "STALE" });
     expect(feedState("cvelist", ok, { fresh_days: 2 }, Date.parse(rw.end)).state).toBe("ok");
+  });
+
+  it("only T − 1's end-of-day zip answering 404 gets a stand-in, X's hourly zip at its newest tag (A1)", () => {
+    const eod13 = { ...endOfDayAsset("2026-10-13"), kind: "end_of_day" as const, utc_day: "2026-10-13" };
+    const eod12 = { ...endOfDayAsset("2026-10-12"), kind: "end_of_day" as const, utc_day: "2026-10-12" };
+    expect(wantsStandIn(eod13, "2026-10-14", "http_404")).toBe(true);
+    // Another error is a failure as before; an older end-of-day zip (a catch-up day) has no stand-in.
+    expect(wantsStandIn(eod13, "2026-10-14", "http_503")).toBe(false);
+    expect(wantsStandIn(eod13, "2026-10-14", "timeout")).toBe(false);
+    expect(wantsStandIn(eod12, "2026-10-14", "http_404")).toBe(false);
+    expect(wantsStandIn(eod13, "2026-10-15", "http_404")).toBe(false);
+    const hourly = hourlyZip("2026-10-13", "cve_2026-10-13_2300Z")!;
+    expect(wantsStandIn(hourly, "2026-10-14", "http_404")).toBe(false);
+    expect(hourly).toEqual({ ...hourlyAsset("2026-10-13", "2300"), kind: "hourly", utc_day: "2026-10-13" });
+    expect(hourlyZip("2026-10-13", "cve_2026-10-14_0000Z")).toBeNull();
+    expect(hourlyZip("2026-10-13", "cve_2026-10-13_at_end_of_day")).toBeNull();
+    expect(hourlyZip("2026-10-13", null)).toBeNull();
+  });
+
+  it("a day whose own zip an hourly zip stood in for is never ok; one whose X + 1 zip it stood in for is (A1)", () => {
+    const sub = hourlyZip("2026-10-12", "cve_2026-10-12_2300Z")!;
+    const standIns = new Map([[endOfDayAsset("2026-10-12").asset, sub]]);
+    const days: { date: string; zips: [string, string] }[] = [
+      { date: "2026-10-11", zips: [endOfDayAsset("2026-10-11").asset, endOfDayAsset("2026-10-12").asset] },
+      { date: "2026-10-12", zips: [endOfDayAsset("2026-10-12").asset, hourlyAsset("2026-10-13", "2000").asset] },
+    ];
+    expect(dayReads(days, standIns, () => true)).toEqual([
+      { date: "2026-10-11", zips: [endOfDayAsset("2026-10-11").asset, sub.asset], ok: true },
+      { date: "2026-10-12", zips: [endOfDayAsset("2026-10-12").asset, hourlyAsset("2026-10-13", "2000").asset], ok: false },
+    ]);
+    expect(dayReads(days, new Map(), (a) => a !== endOfDayAsset("2026-10-11").asset).map((d) => d.ok)).toEqual([false, true]);
+    const plan = zipPlan({ date: DATE, recordWindow: rw, runUtcDay: "2026-10-13", hourlyTag: FEED_WORLD.hourlyTag, knownDays: null });
+    expect(zipsAsRead(plan.zips, standIns).map((z) => z.asset)).toEqual([sub.asset, "2026-10-13_delta_CVEs_at_2000Z.zip"]);
+  });
+
+  it("the zips read reach only as far as they cover without a gap: a stand-in ending at 23:00 stops there (A1)", () => {
+    const sub = hourlyZip("2026-10-12", "cve_2026-10-12_2300Z")!;
+    const t = hourlyZip("2026-10-13", FEED_WORLD.hourlyTag)!;
+    expect(zipsReach([sub, t])).toBe("2026-10-12T23:00:00Z");
+    expect(zipsShortNote(zipsReach([sub, t]), rw)).toBe("Stale: the CVE List zips read end at 23:00 UTC on 2026-10-12, before the record window ends at 20:00 UTC on 2026-10-13.");
+    // An afternoon-style run (T = D): D − 1's stand-in at 23:00 reaches past the record window's end (20:00).
+    const d1 = hourlyZip("2026-10-13", "cve_2026-10-13_2300Z")!;
+    const eod12 = { ...endOfDayAsset("2026-10-12"), kind: "end_of_day" as const, utc_day: "2026-10-12" };
+    expect(zipsReach([eod12, d1, hourlyZip("2026-10-14", "cve_2026-10-14_0000Z")!])).toBe("2026-10-13T23:00:00Z");
+    expect(zipsShortNote(zipsReach([eod12, d1]), rw)).toBeNull();
   });
 
   it("plans no missed day after more than 25, when the metrics count none (a backfill --catch-up fills them)", () => {
@@ -971,6 +1018,121 @@ describe("collect's other runs", () => {
     expect(planted.length).toBe(1);
     expect(planted[0]!.flags).toEqual(["injection_like"]);
     expect(r.pack.injection_flags).toBeGreaterThan(0);
+  });
+});
+
+// ── T − 1's end-of-day zip not out yet (A1, ruling R37's stand-in) ──────────────────────────────
+
+describe("T − 1's end-of-day zip not out yet: its newest hourly zip stands in (A1)", () => {
+  /** 08:25 Taipei on D, 00:25 UTC on D (T = D): the hour of Kobol's timed dry run of 2026-11-11. */
+  const EARLY = Date.parse("2026-10-14T00:25:00Z");
+  const release = (tag: string, asset: string) => `https://github.com/CVEProject/cvelistV5/releases/download/${tag}/${asset}`;
+  const eodUrl = (d: string) => release(`cve_${d}_at_end_of_day`, `${d}_delta_CVEs_at_end_of_day.zip`);
+  const hourlyUrl = (d: string, hhmm: string) => release(`cve_${d}_${hhmm}Z`, `${d}_delta_CVEs_at_${hhmm}Z.zip`);
+  const EOD = (d: string) => `${d}_delta_CVEs_at_end_of_day.zip`;
+
+  /** git-refs.json in a feeds copy, its CVE List refs edited. */
+  const editRefs = (feeds: string, edit: (refs: Record<string, string>) => void) => {
+    const file = path.join(feeds, "git-refs.json");
+    const refs = JSON.parse(fs.readFileSync(file, "utf8")) as { repos: Record<string, Record<string, string>> };
+    edit(refs.repos[REPOS.cvelist]!);
+    fs.writeFileSync(file, JSON.stringify(refs, null, 2));
+  };
+
+  /** fixtureGit over `feeds`, recording each CVE List ls-remote's patterns; a list of only `failTags`'s tags answers null. */
+  const recordingGit = (feeds: string, lists: string[][], failTags: string | null = null): GitSource => {
+    const base = fixtureGit(feeds);
+    return {
+      ...base,
+      lsRemote: async (repo, patterns) => {
+        if (repo === REPOS.cvelist) lists.push([...patterns]);
+        if (failTags && patterns.length === 1 && patterns[0] === `refs/tags/cve_${failTags}_*`) return null;
+        return base.lsRemote(repo, patterns);
+      },
+    };
+  };
+
+  const go = (root: string, feeds: string, git: GitSource, log: string[], at = EARLY) => {
+    process.env.CT_FIXTURE_FEEDS = feeds;
+    return collect({ date: DATE, deadline: at + 300_000, root, deps: { now: () => at, aiMatch, fetch: fetchFeed, git, log: (l) => log.push(l) } });
+  };
+  const cvelist = (r: Awaited<ReturnType<typeof collect>>) => r.index.feeds.find((f) => f.id === "cvelist")!;
+
+  it("a run at 00:25 UTC on D reads D − 1's newest hourly zip for its end-of-day zip, and cvelist is ok", async () => {
+    const feeds = feedsVariant((idx) => { idx[eodUrl("2026-10-13")] = { status: 404 }; });
+    const lists: string[][] = [];
+    const log: string[] = [];
+    const r = await go(tempRoot(true), feeds, recordingGit(feeds, lists), log);
+    // T's own tags first (none yet for 14 Oct in the fixture world), then D − 1's after the 404.
+    expect(lists).toEqual([["refs/heads/main", "refs/tags/cve_2026-10-14_*"], ["refs/tags/cve_2026-10-13_*"]]);
+    expect(log).toContain(`cvelist: ${EOD("2026-10-13")} is not out yet (HTTP 404); read cve_2026-10-13_2000Z instead, so the records changed after 20:00 UTC on 2026-10-13 wait for a later run.`);
+    expect(cvelist(r)).toMatchObject({ status: "ok", error_class: null, note: null });
+    expect(r.pack.degraded).toBe(false);
+    expect(r.summary.join("\n")).not.toMatch(/cvelist/);
+    expect(r.inputs.cvelist.zips.map((z) => [z.asset, z.kind, z.utc_day])).toEqual([
+      [EOD("2026-10-12"), "end_of_day", "2026-10-12"], ["2026-10-13_delta_CVEs_at_2000Z.zip", "hourly", "2026-10-13"],
+    ]);
+    // The cutoff day counts with D − 1's hourly copy as its X + 1 zip, as every morning counts it with T's.
+    expect(r.inputs.cvelist.days).toEqual([{ date: "2026-10-12", zips: [EOD("2026-10-12"), "2026-10-13_delta_CVEs_at_2000Z.zip"], ok: true }]);
+    const morning = await run(tempRoot(true));
+    const cves = (x: typeof r) => x.pack.records.filter((p) => p.source === "cvelist").map((p) => p.record_id);
+    expect(cves(r)).toEqual(cves(morning));
+    expect(cves(r).length).toBeGreaterThan(0);
+  });
+
+  it("when D − 1's tags cannot be listed either, cvelist fails as before and the log says why", async () => {
+    const feeds = feedsVariant((idx) => { idx[eodUrl("2026-10-13")] = { status: 404 }; });
+    const lists: string[][] = [];
+    const log: string[] = [];
+    const r = await go(tempRoot(true), feeds, recordingGit(feeds, lists, "2026-10-13"), log);
+    expect(lists[1]).toEqual(["refs/tags/cve_2026-10-13_*"]);
+    expect(log).toContain(`cvelist: ${EOD("2026-10-13")} is not out yet (HTTP 404), and the hourly tags of 2026-10-13 could not be listed, so no hourly zip stands in for it.`);
+    expect(cvelist(r)).toMatchObject({ status: "failed", error_class: "http_404" });
+    expect(r.pack.degraded).toBe(true);
+    expect(r.inputs.cvelist.days).toEqual([{ date: "2026-10-12", zips: [EOD("2026-10-12"), EOD("2026-10-13")], ok: false }]);
+  });
+
+  it("on a morning whose cutoff end-of-day zip is late, the stand-in day is not counted and the hour no zip covers makes cvelist stale", async () => {
+    // T = D − 1 (20:37 UTC on 13 Oct): the cutoff, 12 Oct, is T − 1, and its end-of-day zip answers 404.
+    const feeds = feedsVariant((idx) => {
+      idx[eodUrl("2026-10-12")] = { status: 404 };
+      idx[hourlyUrl("2026-10-12", "2300")] = { file: `cvelist/zips/${EOD("2026-10-12")}`, content_type: "application/zip" };
+    });
+    editRefs(feeds, (refs) => { refs["refs/tags/cve_2026-10-12_2300Z"] = "c0de000000000000000000000000000000002300"; });
+    const lists: string[][] = [];
+    const log: string[] = [];
+    const r = await go(tempRoot(true), feeds, recordingGit(feeds, lists), log, T0);
+    expect(lists[1]).toEqual(["refs/tags/cve_2026-10-12_*"]);
+    expect(r.inputs.cvelist.zips.map((z) => [z.asset, z.kind])).toEqual([["2026-10-12_delta_CVEs_at_2300Z.zip", "hourly"], ["2026-10-13_delta_CVEs_at_2000Z.zip", "hourly"]]);
+    // 12 Oct was read only from an hourly zip: not ok, so it stays missing and a later run counts it from its end-of-day zip.
+    expect(r.inputs.cvelist.days).toEqual([{ date: "2026-10-12", zips: [EOD("2026-10-12"), "2026-10-13_delta_CVEs_at_2000Z.zip"], ok: false }]);
+    const note = "Stale: the CVE List zips read end at 23:00 UTC on 2026-10-12, before the record window ends at 20:00 UTC on 2026-10-13.";
+    expect(cvelist(r)).toMatchObject({ status: "stale", note });
+    expect(log).toContain(`cvelist: ${note}`);
+    expect(log).toContain(`cvelist: ${EOD("2026-10-12")} is not out yet (HTTP 404); read cve_2026-10-12_2300Z instead, so the records changed after 23:00 UTC on 2026-10-12 wait for a later run.`);
+    expect(r.pack.degraded).toBe(false);
+  });
+
+  it("an older missing end-of-day zip (a catch-up day) has no stand-in and stays as before", async () => {
+    const feeds = feedsVariant((idx) => {
+      idx[eodUrl("2026-10-11")] = { status: 404 };
+      idx[eodUrl("2026-10-13")] = { status: 404 };
+    });
+    const root = tempRoot(true);
+    const daysFile = path.join(root, "content", "state", "days.json");
+    const days = JSON.parse(fs.readFileSync(daysFile, "utf8")) as { days: [string, ...unknown[]][] };
+    days.days = days.days.filter((d) => d[0] !== "2026-10-11");
+    fs.writeFileSync(daysFile, JSON.stringify(days));
+    const lists: string[][] = [];
+    const log: string[] = [];
+    const r = await go(root, feeds, recordingGit(feeds, lists), log);
+    expect(lists).toEqual([["refs/heads/main", "refs/tags/cve_2026-10-14_*"], ["refs/tags/cve_2026-10-13_*"]]);
+    expect(log.filter((l) => l.includes("is not out yet"))).toEqual([expect.stringContaining(EOD("2026-10-13"))]);
+    expect(r.inputs.cvelist.days).toEqual([
+      { date: "2026-10-11", zips: [EOD("2026-10-11"), EOD("2026-10-12")], ok: false },
+      { date: "2026-10-12", zips: [EOD("2026-10-12"), "2026-10-13_delta_CVEs_at_2000Z.zip"], ok: true },
+    ]);
+    expect(cvelist(r)).toMatchObject({ status: "ok" });
   });
 });
 

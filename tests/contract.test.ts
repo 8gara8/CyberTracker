@@ -29,7 +29,7 @@ describe("the P2 contract", () => {
 
   it("keeps the harness limits of §8.3", () => {
     expect(FEED_TIMEOUTS).toEqual({ default: 15_000, kev: 30_000, nvd: 30_000, myjvn: 30_000, epss: 60_000, deltaLog: 90_000, zip: 90_000 });
-    expect(FEED_MAX_BYTES).toEqual({ default: 5 * MB, kev: 20 * MB, epss: 20 * MB, payload: 20 * MB, deltaLog: 64 * MB, zip: 64 * MB, snapshot: 3 * MB });
+    expect(FEED_MAX_BYTES).toEqual({ default: 5 * MB, kev: 20 * MB, epss: 20 * MB, payload: 20 * MB, nvd: 16 * MB, deltaLog: 64 * MB, zip: 64 * MB, snapshot: 3 * MB });
   });
 
   it("keeps the values the spec states", () => {

@@ -121,7 +121,10 @@ export const ZipRead = z.strictObject({
   records: Count,
 });
 
-/** One UTC day counted from the zips: [X's end-of-day asset, X + 1's end-of-day asset or T's newest hourly asset]. */
+/**
+ * One UTC day counted from the zips: [X's end-of-day asset, X + 1's end-of-day asset or an hourly asset (T's newest, or
+ * T − 1's newest standing in for its end-of-day zip, §8.3)]. A day whose own end-of-day zip had a stand-in is never ok.
+ */
 export const DayRead = z.strictObject({
   date: IsoDate,
   zips: z.tuple([z.string().min(1), z.string().min(1)]),

@@ -16,7 +16,7 @@ import { cveRecordRawUrl, rawAtCommit, type ReleaseAsset } from "../../lib/feeds
 import { FEED_MAX_BYTES, FEED_TIMEOUTS, type FetchBudget, type FetchErrorClass, type fetchFeed, type FetchResult } from "../../lib/feeds/http";
 import { parseKev } from "../../lib/feeds/kev";
 import { myjvnPageUrls, parseMyJvn } from "../../lib/feeds/myjvn";
-import { nvdUrls, parseNvdPage } from "../../lib/feeds/nvd";
+import { NVD_PAGE_SIZE, nvdUrls, parseNvdPage } from "../../lib/feeds/nvd";
 import type { CachePaths } from "../../lib/feeds/cache";
 import { parseRss } from "../../lib/feeds/rss";
 import { FeedParseError, type CvdDashboard, type DeltaLogEntry, type EpssDay, type EpssScore, type ExchangeNotice, type GhsaAdvisory, type JvnNote, type KevCatalog, type RawItem } from "../../lib/feeds/types";
@@ -419,11 +419,15 @@ export async function readRss(entry: FetchedFeed, ctx: FeedCtx): Promise<Read<{ 
   }, { body: (b) => cacheWrite(ctx, ctx.paths.feedBody(entry.id, "xml"), b) });
 }
 
-/** NIST's own scores for the window's published records: page 1, and page 2 (6 s later) only when page 1 says there are more. */
+/**
+ * NIST's own scores for the window's published records: page 1, and page 2 (6 s later) only when page 1 says there are
+ * more, each under NVD's own body cap (FEED_MAX_BYTES.nvd). A window past two pages is logged: its tail is not read.
+ */
 export async function readNvd(entry: FetchedFeed, ctx: FeedCtx, window: { start: string; end: string }): Promise<Read<{ total: number; scores: Map<string, { score: number; version: "4.0" | "3.1"; vector: string }> }>> {
-  const [p1, p2] = nvdUrls(entry.url, window);
+  const urls = nvdUrls(entry.url, window);
+  const [p1, p2] = urls;
   const one = async (url: string, n: number) => {
-    const r = await get(ctx, url, "nvd");
+    const r = await get(ctx, url, "nvd", "nvd");
     if (!r.ok || !r.body) return r.error ?? "network";
     cacheWrite(ctx, ctx.paths.feedBody(entry.id, `p${n}.json`), r.body);
     try {
@@ -434,6 +438,10 @@ export async function readNvd(entry: FetchedFeed, ctx: FeedCtx, window: { start:
   };
   const first = await one(p1!, 1);
   if (typeof first === "string") return failed(first, p1!);
+  const readable = urls.length * NVD_PAGE_SIZE;
+  if (first.page.total > readable) {
+    ctx.log(`nvd: ${first.page.total} records in the window, more than the ${readable} two pages hold; the last ${first.page.total - readable} were not read.`);
+  }
   const scores = new Map(first.page.scores);
   if (first.page.total > first.page.scores.size && first.page.total > 2000) {
     await ctx.sleep(6_000);

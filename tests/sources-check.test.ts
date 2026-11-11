@@ -14,7 +14,7 @@ import { parseNvdPage } from "../lib/feeds/nvd";
 import { parseRss } from "../lib/feeds/rss";
 import { blockedReason } from "../lib/sources";
 import { BLOCKED_HOSTS } from "../lib/vocab";
-import { fetchFeed } from "../lib/feeds/http";
+import { FEED_MAX_BYTES, fetchFeed } from "../lib/feeds/http";
 import { checkFeeds, formatCheckTable, main, type CheckRow } from "../scripts/collect";
 import { fixtureGit, type GitSource } from "../scripts/lib/git-source";
 import { EPSS_FILLER_ROWS, fixtureCveIds, keepsHost, main as scrubMain, SAMPLE_LINK_HOST, SCRUB_ITEMS_MAX, scrubFeed, scrubOptionsFor, ScrubRefused } from "../fixtures/src/scrub-feed";
@@ -154,6 +154,19 @@ describe("checkFeeds reads in two waves and keeps its own cache (B1, B2)", () =>
 });
 
 describe("checkFeeds exit codes and options", () => {
+  it("reads NVD under the cap collect uses, FEED_MAX_BYTES.nvd, not the 5 MiB default", async () => {
+    const nvdUrl = (fetched.find((f) => f.kind === "nvd") as { url: string }).url;
+    const caps: number[] = [];
+    const fetch: typeof fetchFeed = (url, opts) => {
+      if (url.startsWith(`${nvdUrl}?`)) caps.push(opts?.maxBytes ?? -1);
+      return fetchFeed(url, opts);
+    };
+    const { rows } = await checkFeeds({ now: T0, root: tempRoot(), deps: { fetch } });
+    expect(rows.find((r) => r.id === "nvd")).toMatchObject({ status: "OK" });
+    expect(caps).toEqual([FEED_MAX_BYTES.nvd]);
+    expect(FEED_MAX_BYTES.nvd).toBeGreaterThan(FEED_MAX_BYTES.default);
+  });
+
   it("exits 1 when a priority-1 entry is STALE", async () => {
     process.env.CT_FIXTURE_FEEDS = feedsVariant((idx) => {
       idx["https://therecord.media/feed"] = { file: "rss/stale.xml", content_type: "application/rss+xml" };

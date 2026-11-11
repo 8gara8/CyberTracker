@@ -118,13 +118,51 @@ export const MISSING_DAYS_MAX = CATCH_UP_DAYS;
 
 export type PlannedZip = ReleaseAsset & { kind: "end_of_day" | "hourly"; utc_day: string };
 
+/** UTC day X's hourly zip at `tag` (`cve_X_HHMMZ`), or null when `tag` is not one of X's hourly tags. */
+export function hourlyZip(day: string, tag: string | null): PlannedZip | null {
+  const m = tag ? /^cve_(\d{4}-\d{2}-\d{2})_(\d{4})Z$/.exec(tag) : null;
+  if (!m || m[1] !== day) return null;
+  return { ...hourlyAsset(day, m[2]!), kind: "hourly", utc_day: day };
+}
+
 /** The zip for UTC day X: X's end-of-day asset before the run's UTC day T, T's newest hourly asset on T, nothing after. */
 function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): PlannedZip | null {
   if (day < runUtcDay) return { ...endOfDayAsset(day), kind: "end_of_day", utc_day: day };
-  if (day > runUtcDay || !hourlyTag) return null;
-  const m = /^cve_(\d{4}-\d{2}-\d{2})_(\d{4})Z$/.exec(hourlyTag);
-  if (!m || m[1] !== day) return null;
-  return { ...hourlyAsset(day, m[2]!), kind: "hourly", utc_day: day };
+  if (day > runUtcDay) return null;
+  return hourlyZip(day, hourlyTag);
+}
+
+/**
+ * Ruling R37's stand-in (§8.3): X = T − 1's end-of-day zip comes out about 00:33 to 00:42 UTC on T, and
+ * sometimes later (Kobol, November 2026), so a run in the first part of T finds it missing (HTTP 404). Only
+ * that zip gets a stand-in, X's newest hourly zip; any other error, and a missing older end-of-day zip (a
+ * catch-up day), fail as before.
+ */
+export function wantsStandIn(z: PlannedZip, runUtcDay: string, error: FetchErrorClass | null): boolean {
+  return z.kind === "end_of_day" && z.utc_day === addDays(runUtcDay, -1) && error === "http_404";
+}
+
+/** The plan's zips as read: each end-of-day zip an hourly zip stood in for (`standIns`, keyed by the planned asset) replaced by it. */
+export function zipsAsRead(zips: readonly PlannedZip[], standIns: ReadonlyMap<string, PlannedZip>): PlannedZip[] {
+  return zips.map((z) => standIns.get(z.asset) ?? z);
+}
+
+/**
+ * inputs.json's days (§8.3): each planned day X with the assets read for it, ok when both parsed. X's own
+ * zip must be its end-of-day zip: a day an hourly zip stood in for is never ok, so it stays missing and a
+ * later run reads its end-of-day zip and counts it in full. X + 1's zip may be the stand-in, as T's hourly
+ * zip is X + 1's on every morning.
+ */
+export function dayReads(
+  days: readonly { date: string; zips: readonly [string, string] }[],
+  standIns: ReadonlyMap<string, PlannedZip>,
+  ok: (asset: string) => boolean,
+): { date: string; zips: [string, string]; ok: boolean }[] {
+  return days.map((d) => {
+    const [own, planned] = d.zips;
+    const next = standIns.get(planned)?.asset ?? planned;
+    return { date: d.date, zips: [own, next], ok: !standIns.has(own) && ok(own) && ok(next) };
+  });
 }
 
 /**
@@ -136,7 +174,8 @@ function zipFor(day: string, runUtcDay: string, hourlyTag: string | null): Plann
  * reads D − 2's and D − 1's end-of-day zips and D's hourly zip. Without days.json (`knownDays` null or
  * empty), or when its newest day is more than 25 days before the cutoff (the metrics count no day then,
  * §8.4), only the window's zips. `days` lists each counted day with its two assets. Assets come oldest
- * first, end-of-day before hourly.
+ * first, end-of-day before hourly. When T − 1's end-of-day zip is not out yet, collect reads its newest
+ * hourly zip in its place (wantsStandIn(), zipsAsRead(), dayReads()).
  */
 export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: string; hourlyTag: string | null; knownDays: readonly string[] | null; maxDays?: number }): { zips: PlannedZip[]; days: { date: string; zips: [string, string] }[]; missing: string[] } {
   const cutoff = addDays(o.date, -2);
@@ -171,12 +210,14 @@ export function zipPlan(o: { date: string; recordWindow: TimeWindow; runUtcDay: 
 }
 
 /**
- * The instant the zips read reach (§8.3): an end-of-day zip of X reaches X + 1 at 00:00Z, T's hourly zip
- * its tag's hour; the latest of them, or null when none was read.
+ * The instant the zips read reach without a gap (§8.3), from the oldest zip's day: an end-of-day zip of X
+ * reaches X + 1 at 00:00Z; an hourly zip (T's, or T − 1's standing in for its end-of-day zip) covers its
+ * day from 00:00Z to its tag's hour. The reach stops at the first hour no zip covers; null when none was read.
  */
 export function zipsReach(zips: readonly PlannedZip[]): string | null {
   let reach: string | null = null;
-  for (const z of zips) {
+  for (const z of [...zips].sort((a, b) => byCodeUnit(a.utc_day, b.utc_day))) {
+    if (reach !== null && `${z.utc_day}T00:00:00Z` > reach) break;
     const end = z.kind === "end_of_day" ? `${addDays(z.utc_day, 1)}T00:00:00Z` : tagTime(z.tag);
     if (end && (reach === null || end > reach)) reach = end;
   }
