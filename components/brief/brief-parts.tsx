@@ -1,6 +1,7 @@
 // Small pieces the brief components share (SPEC §7 "Brief components"; owner: brief lane). Ids in `id` and `#`
 // hrefs are only item and source ids that match their §4.3 patterns (§7 "Untrusted text" item 2); content goes
 // through PlainText or Counted; templates are filled with a function, so a `$` in content stays as written.
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { ID_PATTERNS, ITEM_ID_MAX } from "@/lib/schema/common";
 import type { Item } from "@/lib/schema/item";
@@ -52,11 +53,19 @@ export function ItemLinks({ ids, itemsById }: { ids: readonly string[]; itemsByI
   return <span className="whitespace-nowrap">{items.map((it) => <ReadLink key={it.id} item={it} />)}</span>;
 }
 
-/** An item's headline as a link to its card or row on this page; an item not in the brief is its id in mono. */
-export function ItemRef({ id, itemsById }: { id: string; itemsById: Record<string, Item> }) {
+/** Item id → the newest earlier loaded edition holding it and that copy's stored headline (BriefViewProps.earlierItems). */
+export type EarlierItems = Record<string, { date: string; headline: string }>;
+
+/**
+ * An item's headline as a link to its card or row on this page, or, for an item of an earlier edition, to its
+ * card there (/brief/<date>#<id>); an item no loaded brief holds is its id in mono.
+ */
+export function ItemRef({ id, itemsById, earlierItems }: { id: string; itemsById: Record<string, Item>; earlierItems?: EarlierItems }) {
   const item = itemsById[id];
   const anchor = itemAnchor(id);
   if (item && anchor) return <a href={`#${anchor}`}><PlainText text={item.headline} /></a>;
+  const earlier = earlierItems?.[id];
+  if (earlier && anchor) return <Link href={`/brief/${earlier.date}#${anchor}`}><PlainText text={earlier.headline} /></Link>;
   return <span className="font-mono text-[12px]"><PlainText text={id} /></span>;
 }
 

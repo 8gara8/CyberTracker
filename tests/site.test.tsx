@@ -390,8 +390,11 @@ describe("Sample", () => {
       const $ = page(propsFor(WED));
       expect($('#regions a[href="/methodology#rule-campaign-target"]').length).toBe(1);
       expect($('#regions a[href="#also-today"]').text()).toMatch(/^GLOBAL · \d+ items?$/);
-      // The US row's rules fired on an item from another edition: shown as its id, not linked.
-      expect($("#regions").text()).toContain(WITHHELD_ID);
+      // The US row's rules fired on an item from an earlier edition: its stored headline, linking that edition's card.
+      const earlier = $(`#regions a[href="/brief/${MONDAY}#${WITHHELD_ID}"]`);
+      expect(earlier.length).toBe(2);
+      for (const a of earlier.toArray()) expect($(a).text()).toBe(WITHHELD_HEADLINE);
+      expect($("#regions").text()).not.toContain(WITHHELD_ID);
       expect($(`#regions a[href="#${WITHHELD_ID}"]`).length).toBe(0);
       expect($("#regions").text()).toContain("Editor raised: ");
       expect($("#regions").text()).toContain("Rules alone: HIGH");

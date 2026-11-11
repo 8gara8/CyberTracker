@@ -3,7 +3,8 @@
 // stored reason, each counted; the pips and the glyph are aria-hidden inside the counted head, and their hidden
 // words ("level 2 of 4", "up from BASELINE") follow it, outside. The reason shows once: truncated while closed,
 // wrapped when open. Open: BASELINE_TOOLTIP on a baseline row (also the summary's title); "Yesterday: <WORD>";
-// each fired rule "<rule_id> · <WORD>" linking /methodology#rule-<rule_id>, with its items; when raised,
+// each fired rule "<rule_id> · <WORD>" linking /methodology#rule-<rule_id>, with its items (an item of an earlier
+// edition by its stored headline, linking that edition's card); when raised,
 // EDITOR_RAISED (its reason counted) and "Rules alone: <WORD>". GlobalRow: "GLOBAL · <n> items" linking
 // #also-today, with no level.
 import Link from "next/link";
@@ -15,12 +16,14 @@ import { fmtInt } from "@/lib/metrics/stats";
 import { BASELINE_TOOLTIP, EDITOR_RAISED, REGION_CHANGE, REGION_LEVEL_INFO } from "@/lib/vocab";
 import { COUNTED, Counted } from "@/components/ui/Counted";
 import { SeverityPips, levelWords } from "@/components/ui/SeverityPips";
-import { ItemLinks, ItemRef, configAnchor } from "./brief-parts";
+import { ItemLinks, ItemRef, configAnchor, type EarlierItems } from "./brief-parts";
 
 export interface RegionRowProps {
   row: RegionRowData;
   /** The brief's items by id, for the fired rules' item links. */
   itemsById: Record<string, Item>;
+  /** BriefViewProps.earlierItems: the rules' items from earlier editions. */
+  earlierItems: EarlierItems;
 }
 
 /** The change glyph's hidden words: "up from ELEVATED", "down from HIGH", "same as yesterday"; none for new. */
@@ -35,19 +38,19 @@ export function changeWords(row: Pick<RegionRowData, "change" | "previous_level"
 /** "Editor raised: {reason}" split around its placeholder, so only the stored reason is counted. */
 const [RAISED_BEFORE, RAISED_AFTER] = EDITOR_RAISED.split("{reason}") as [string, string];
 
-/** A list of item links: each item's headline when it is in this brief, else its id. */
-function Items({ ids, itemsById }: { ids: readonly string[]; itemsById: Record<string, Item> }) {
+/** A list of item links: each item's headline (in this brief, or the earlier edition holding it), else its id. */
+function Items({ ids, itemsById, earlierItems }: { ids: readonly string[]; itemsById: Record<string, Item>; earlierItems: EarlierItems }) {
   const unique = [...new Set(ids)];
   if (!unique.length) return null;
   return (
     <>
       {": "}
-      {unique.map((id, i) => <Fragment key={id}>{i ? "; " : ""}<ItemRef id={id} itemsById={itemsById} /></Fragment>)}
+      {unique.map((id, i) => <Fragment key={id}>{i ? "; " : ""}<ItemRef id={id} itemsById={itemsById} earlierItems={earlierItems} /></Fragment>)}
     </>
   );
 }
 
-export function RegionRow({ row, itemsById }: RegionRowProps) {
+export function RegionRow({ row, itemsById, earlierItems }: RegionRowProps) {
   const summary = regionSummary(row);
   const glyph = REGION_CHANGE[row.change];
   const hidden = [levelWords("region", row.level), changeWords(row)].filter(Boolean).join(", ");
@@ -83,7 +86,7 @@ export function RegionRow({ row, itemsById }: RegionRowProps) {
               return (
                 <li key={`${f.rule_id}-${i}`}>
                   {anchor ? <Link href={`/methodology#rule-${anchor}`} className="font-mono text-[12px]">{label}</Link> : <span className="font-mono text-[12px]">{label}</span>}
-                  <Items ids={f.item_ids} itemsById={itemsById} />
+                  <Items ids={f.item_ids} itemsById={itemsById} earlierItems={earlierItems} />
                 </li>
               );
             })}

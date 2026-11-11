@@ -38,7 +38,7 @@ export type { BriefViewProps } from "./props";
 
 const plural = (n: number, one: string, many: string) => `${fmtInt(n)} ${n === 1 ? one : many}`;
 
-export function BriefView({ brief, metrics, gapOk, annotations, correctionsByItem, heldItems, itemPages, editionDates, isLatest, prevDate, nextDate }: BriefViewProps) {
+export function BriefView({ brief, metrics, gapOk, annotations, correctionsByItem, heldItems, itemPages, editionDates, earlierItems, isLatest, prevDate, nextDate }: BriefViewProps) {
   const dataOnly = brief.edition === "data_only";
   const index = sourceIndex(brief.sources);
   const sourcesById = indexBy(brief.sources);
@@ -76,7 +76,7 @@ export function BriefView({ brief, metrics, gapOk, annotations, correctionsByIte
 
       <Section id="regions" number={2} title="Regions">
         <div className="border-t border-dotted border-line">
-          {brief.regions.rows.map((row) => <RegionRow key={row.code} row={row} itemsById={itemsById} />)}
+          {brief.regions.rows.map((row) => <RegionRow key={row.code} row={row} itemsById={itemsById} earlierItems={earlierItems} />)}
           <GlobalRow itemCount={brief.regions.global.item_count} />
         </div>
       </Section>
