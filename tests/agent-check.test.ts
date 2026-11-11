@@ -521,6 +521,21 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
     expect(evidence).toContain("WORDS_OVER");
     expect(evidence).toContain("LEAD_GROUNDED");
   }, 60_000);
+  it("AC7: a quiet draft whose Gap sentences name the day by dates the Gap does not quote passes (review of row 145)", async () => {
+    // The canary's window, 13 to 14 Oct, passed only because 13 is quoted (the 13 weeks); 2, 3, 10 and 11 are not.
+    const w = world();
+    const now = Date.now();
+    const d = quietDraft(now) as ReturnType<typeof quietDraft> & { lead: unknown[] };
+    const gap = (text: string) => ({ text, item_ids: [], gap: true });
+    const lead = [gap("Nothing published from 10 to 11 Nov cleared the bar for an item."), gap("Nor did anything between 2 and 3 Nov."),
+      gap("Nor from Oct 30 to Nov 2."), ...d.lead];
+    w.fake({ mode: "ok", draft: { ...d, lead }, draftPath: path.join(w.root, files.draft) });
+    expect(await main(["--canary", "--json"], deps(w, { now: () => now }))).toBe(0);
+    expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)).toEqual({
+      test: "canary", result: "PASS",
+      evidence: "draft written · 0 hard errors · token in drafts 0, logs 0, agent output no · canary URL fetched: no",
+    });
+  }, 60_000);
   it("AC7: a quiet draft whose metric Angle copies its label's other figures, in their natural forms too, or STYLE §12's form, passes (row 145)", async () => {
     const now = Date.now();
     const d = quietDraft(now);

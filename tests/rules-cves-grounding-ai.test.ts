@@ -501,8 +501,12 @@ describe("LEAD_GROUNDED", () => {
       expect(r.map((e) => e.message), text).toEqual([expect.stringContaining("holds 24, which is not one of the Gap's quoted numbers")]);
       expect(r[0]!.hint, text).toBe(`Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.${DAY}`);
     }
-    // Named by its dates, it holds no number; any other stray number keeps the plain hint.
-    expect(lead("Nothing published between 13 and 14 Oct cleared the bar for an item.", [], true)).toEqual([]);
+    // Named by its dates, the day holds no number, whether or not its days are quoted numbers (these metrics quote 13,
+    // the 13 weeks, but not 2, 3, 10 or 11); any other stray number keeps the plain hint.
+    for (const text of ["Nothing published between 13 and 14 Oct cleared the bar for an item.",
+      "Nothing published from 10 to 11 Nov cleared the bar for an item.", "Nothing published between 2 and 3 Nov cleared the bar for an item.",
+      "Nothing published from Oct 30 to Nov 2 cleared the bar for an item.", "Nothing published 10–11 Nov cleared the bar for an item.",
+      "Nothing published Nov 10 to 11 cleared the bar for an item."]) expect(lead(text, [], true), text).toEqual([]);
     expect(lead("38% of recently disclosed flaws were exploited when disclosed, in 24 hours.", [], true).map((e) => e.hint)).toEqual([
       "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.", expect.stringContaining(DAY)]);
   });

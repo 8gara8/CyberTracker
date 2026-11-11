@@ -39,6 +39,32 @@ function angleIssues(metrics: Metrics, metricPath: string, text: string): Valida
 }
 const codes = (xs: readonly ValidationIssue[]) => [...new Set(xs.map((x) => `${x.code} ${x.path}`))].sort();
 
+/** The Monday draft with a zero-item Gap sentence first in its Lead, on `metrics`; only LEAD_GROUNDED's Lead issues. */
+function gapLeadIssues(metrics: Metrics, text: string): ValidationIssue[] {
+  const d: DraftBrief = mondayDraft();
+  d.lead = [{ text, item_ids: [], gap: true }, ...d.lead.slice(1)];
+  const r = validateDraft(d, { ...draftInputs("monday"), metrics, rules: RULES_HERE });
+  return r.errors.filter((e) => e.code === "LEAD_GROUNDED" && e.path.startsWith("lead[0]"));
+}
+
+describe("a Gap sentence that names the day by its dates (review of row 145)", () => {
+  for (const set of SETS) {
+    it(`${set.name}: holds no number, whether or not its days are quoted`, () => {
+      const m = set.metrics();
+      const quoted = new Set(m.headline.quoted.flatMap((q) => numbersIn(q.display)).map((n) => n.value));
+      // Days no set quotes, so the test does not pass by luck as the canary's 13 to 14 Oct did.
+      for (const day of [2, 3, 10, 11, 30]) expect(quoted.has(day), `${set.name} quotes ${day}`).toBe(false);
+      for (const text of ["Nothing published from 10 to 11 Nov cleared the bar for an item.",
+        "Nothing published between 2 and 3 Nov cleared the bar for an item.", "Nothing published from Oct 30 to Nov 2 cleared the bar for an item.",
+        "Nothing published 10–11 Nov cleared the bar for an item.", "Nothing published Nov 10 to 11 cleared the bar for an item."]) {
+        expect(gapLeadIssues(m, text), `${set.name} | ${text}`).toEqual([]);
+      }
+      // A day count beside the dates is still a number the Gap does not quote.
+      expect(gapLeadIssues(m, "Nothing published from 10 to 11 Nov cleared the bar, 3 days running.")).toHaveLength(1);
+    });
+  }
+});
+
 describe("a metric Angle that copies its quotable row (row 145)", () => {
   for (const set of SETS) {
     it(`${set.name}: "<label>: <display>." passes WORDS_OVER, WORDS_UNDER and LEAD_GROUNDED for every row`, () => {
