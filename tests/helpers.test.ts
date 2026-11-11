@@ -128,8 +128,32 @@ describe("labelFigures and numbersBesideFigures (row 145)", () => {
       "39% were listed 2 – 30 days after.", "39% were listed 2 TO 30 DAYS after."]) expect(raw(t, nDay), t).toEqual(["39%"]);
     expect(raw("The 80% interval of the 26-week share starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
     expect(raw("The 80 per cent interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
+    // "between 2 and 30 days" is the range too, and "confidence" or "credible" may stand before "interval" (review of row 145).
+    for (const t of ["39% were listed between 2 and 30 days after.", "39% were listed Between 2 And 30 days after.", "39% were listed between 2  and  30 days after."])
+      expect(raw(t, nDay), t).toEqual(["39%"]);
+    expect(raw("37 were listed between 31 and 365 days after.", "listed 31 to 365 days after, 26 weeks")).toEqual(["37"]);
+    for (const t of ["The 80% confidence interval starts at 32%.", "The 80% credible interval starts at 32%.", "The 80 per cent confidence interval starts at 32%.",
+      "The 80% Confidence Intervals start at 32%.", "The 80%-confidence interval starts at 32%."])
+      expect(raw(t, "80% interval low, at disclosure, 26 weeks"), t).toEqual(["32%"]);
     expect(raw("CISA listed 1 in the past 30 days.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1"]);
-    expect(raw("55% were listed within 7 days, a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+    expect(raw("55% were listed within a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+  });
+  it("leaves out each figure only as many times as it is given, the first ones written, and counts any later one", () => {
+    // A label prints each figure once, so a second "7 days" is a number of its own (review of row 145).
+    const P7 = "share listed within 7 days, 26 weeks";
+    expect(raw("55% were listed within 7 days, a 7-day window.", P7)).toEqual(["55%", "7"]);
+    expect(raw("In the 26 weeks to 12 Oct, 55% were listed within 7 days, 7 days sooner than in 2023–24.", P7)).toEqual(["55%", "7"]);
+    expect(raw("37% in 26 weeks, and 26 weeks more.", W26)).toEqual(["37%", "26"]);
+    expect(raw("39% were listed 2 to 30 days after, and fixes took 2 to 30 days.", "n-day race (listed 2 to 30 days after), 26 weeks"))
+      .toEqual(["39%", "2", "30"]);
+    expect(raw("An 80% interval from 32%, and 80% intervals are wide.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%", "80%"]);
+    expect(raw("22 flaws more than 365 days old, some unpatched for 365 days.", "old flaws newly listed (more than 365 days old), 26 weeks"))
+      .toEqual(["22", "365"]);
+    // Text order: the first one written is the label's, whatever comes between.
+    expect(raw("Within 7 days: 55% were listed within 7 days.", P7)).toEqual(["55%", "7"]);
+    // A figure given twice is left out twice.
+    const twice = [...labelFigures(P7), ...labelFigures(P7)];
+    expect(numbersBesideFigures("55% within 7 days, 7 days sooner, in 26 weeks, 26 weeks on.", twice).map((n) => n.raw)).toEqual(["55%"]);
   });
   it("counts the figure when its unit runs on into old or long, or it is part of another number or range", () => {
     expect(raw("37% of 26-week-old flaws.", W26)).toEqual(["37%", "26"]);
@@ -144,6 +168,14 @@ describe("labelFigures and numbersBesideFigures (row 145)", () => {
     const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
     expect(raw("39% were listed 30 days after.", nDay)).toEqual(["39%", "30"]);
     expect(raw("80% of flaws, 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+    // "and" joins a range only after "between": "2 and 30 days" is two numbers, and a "between" range's end is not a figure alone.
+    expect(raw("39% were listed 2 and 30 days after.", nDay)).toEqual(["39%", "2", "30"]);
+    expect(raw("39% were listed between 2 or 30 days after.", nDay)).toEqual(["39%", "2", "30"]);
+    expect(raw("37% over between 13 and 26 weeks.", W26)).toEqual(["37%", "13", "26"]);
+    expect(raw("1 flaw, listed between 2 and 30 days after.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1", "2", "30"]);
+    // Only "confidence" or "credible" may stand between the percent and "interval".
+    expect(raw("An 80% wide interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+    expect(raw("An 80% confidence level starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
   });
   it("lets a figure run on into old when its label writes it as an age, and only then", () => {
     const OLD = "old flaws newly listed (more than 365 days old), 26 weeks";

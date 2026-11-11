@@ -101,6 +101,7 @@ word DONE.
 - [ ] Every CVE id appears in the context or in a source you cited.
 - [ ] Every name and number in the Lead appears in the items or the metrics.
 - [ ] A Lead sentence that cites no item has `"gap": true` and quotes only Gap headline numbers.
+- [ ] Angle label figures appear once; ratios say "times", not "x"; Gap sentences name dates, not hours.
 - [ ] The Taiwan Lens is not empty: its analysis is written and its six rows are present, in order.
 - [ ] Every attribution names its attributor in the same sentence.
 - [ ] No victim is named on a gang's claim alone.

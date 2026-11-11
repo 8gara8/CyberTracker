@@ -76,6 +76,62 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     });
   }
 
+  it("a label figure is left out once: written a second time, it is a number (WORDS_OVER), and written once it still passes", () => {
+    // The review's honest-looking drafts on the canary, each a made-up second figure (fifth P3 fix pass).
+    const m = canaryMetrics();
+    const cases: readonly [string, string, string][] = [
+      ["window.w26.p7", "In the 26 weeks to 12 Oct, CISA listed 55% of recently disclosed flaws within 7 days, 7 days sooner than in 2023–24.",
+        "In the 26 weeks to 12 Oct, CISA listed 55% of recently disclosed flaws within 7 days."],
+      ["home_vendors.tw.d30_n", "In the 30 days to 12 Oct, CISA added 1 Taiwanese-vendor flaw, listed 30 days after its disclosure.",
+        "In the 30 days to 12 Oct, CISA added 1 Taiwanese-vendor flaw to its KEV catalog."],
+      ["home_vendors.tw.d90_n", "CISA added 1 Taiwanese-vendor flaw to KEV in the 90 days to 12 Oct, 90 days after a fix shipped.",
+        "CISA added 1 Taiwanese-vendor flaw to KEV in the 90 days to 12 Oct."],
+      ["window.w26.old_listed_n", "In the 26 weeks to 12 Oct, CISA newly listed 22 flaws more than 365 days old, some unpatched for 365 days.",
+        "In the 26 weeks to 12 Oct, CISA newly listed 22 flaws more than 365 days old."],
+      ["window.w26.n_day_share", "In the 26 weeks to 12 Oct, 39% of flaws were listed 2 to 30 days after disclosure, and fixes took 2 to 30 days.",
+        "In the 26 weeks to 12 Oct, 39% of flaws were listed 2 to 30 days after disclosure."],
+      ["window.w26.k7_n", "In the 26 weeks to 12 Oct, CISA listed 87 flaws within 7 days, and patches took 7 days more.",
+        "In the 26 weeks to 12 Oct, CISA listed 87 flaws within 7 days of disclosure."],
+      ["window.w26.at_disclosure_ci80.0", "The 26-week share exploited at disclosure, to 12 Oct, has an 80% interval from 32%, and 80% intervals are wide.",
+        "The 26-week share exploited at disclosure, to 12 Oct, has an 80% interval from 32%."],
+      ["window.w26.at_disclosure_share", "In the 26 weeks to 12 Oct, 37% of recently disclosed flaws were exploited at disclosure; the rest waited 26 weeks.",
+        "In the 26 weeks to 12 Oct, 37% of recently disclosed flaws were exploited at disclosure."],
+    ];
+    for (const [p, twice, once] of cases) {
+      const got = angleIssues(m, p, twice);
+      expect(codes(got), `${p} | ${twice}`).toContain("WORDS_OVER angle.text");
+      expect(got.find((e) => e.code === "WORDS_OVER")!.hint, p).toContain("Write each label figure once: written again, it counts.");
+      expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("write each label figure once");
+      expect(angleIssues(m, p, once), `${p} | ${once}`).toEqual([]);
+    }
+    // The figure's every written form counts the second time: "7-day" after "7 days".
+    expect(codes(angleIssues(m, "window.w26.p7", "In the 26 weeks to 12 Oct, 55% of flaws were listed within 7 days, a 7-day window.")))
+      .toContain("WORDS_OVER angle.text");
+  });
+
+  it("a label's range may be written \"between 2 and 30 days\", and its interval an \"80% confidence interval\"", () => {
+    // The review's natural forms, which counted on the one-shot canary (fifth P3 fix pass).
+    const m = canaryMetrics();
+    for (const [p, text] of [
+      ["window.w26.n_day_share", "In the 26 weeks to 12 Oct, 39% of recently disclosed flaws were listed between 2 and 30 days after disclosure."],
+      ["window.w26.late_listed_n", "In the 26 weeks to 12 Oct, 37 recently disclosed flaws were listed between 31 and 365 days after disclosure."],
+      ["window.w26.at_disclosure_ci80.0", "The 80% confidence interval for the 26-week share exploited at disclosure, to 12 Oct, starts at 32%."],
+      ["window.w26.at_disclosure_ci80.1", "The 80% credible interval for the 26-week share exploited at disclosure, to 12 Oct, reaches 42%."],
+    ] as const) expect(angleIssues(m, p, text), `${p} | ${text}`).toEqual([]);
+    // Without "between", "2 and 30 days" is two more numbers.
+    const got = angleIssues(m, "window.w26.n_day_share", "In the 26 weeks to 12 Oct, 39% of recently disclosed flaws were listed 2 and 30 days after disclosure.");
+    expect(codes(got)).toEqual(["LEAD_GROUNDED angle.text", "WORDS_OVER angle.text"]);
+    expect(got.find((e) => e.code === "WORDS_OVER")!.message).toContain("3 numbers (39%, 2, 30)");
+  });
+
+  it("a ratio glued to x holds no number: WORDS_UNDER's hint says to write it as the Gap does, \"1.9 times\"", () => {
+    const m = canaryMetrics();
+    const got = angleIssues(m, "window.kev_pace_ratio", "In the 26 weeks to 12 Oct, CISA's KEV additions ran at 1.9x the 2023–24 pace.");
+    expect(codes(got)).toEqual(["WORDS_UNDER angle.text"]);
+    expect(got[0]!.hint).toContain('Write a ratio as the Gap does, "1.9 times", never "1.9x"');
+    expect(angleIssues(m, "window.kev_pace_ratio", "In the 26 weeks to 12 Oct, CISA's KEV additions ran at 1.9 times the 2023–24 pace.")).toEqual([]);
+  });
+
   it("a path whose labels print no figure counts a window like any number", () => {
     const m = canaryMetrics();
     expect(angleFigures({ metric_path: "window.reference.at_disclosure_share" }, m)).toEqual([]);

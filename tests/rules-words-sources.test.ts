@@ -240,6 +240,18 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(two[0]!.message).toContain("2 numbers (24, 3)");
     d.angle.text = "New CVE records are arriving at 5.2 times the 2023–24 pace.";
     expect(check(d, W)).toEqual([]);
+    expect(none[0]!.hint).not.toContain("1.9 times");
+    // A ratio glued to x is no number; the hint says to write it as the Gap does (review of row 145).
+    for (const t of ["New CVE records are arriving at 5.2x the 2023–24 pace.", "New CVE records are arriving at 5.2X the 2023–24 pace.",
+      "New CVE records are arriving at 5x the 2023–24 pace."]) {
+      d.angle.text = t;
+      const r = check(d, W);
+      expect(codesOf(r), t).toEqual(["WORDS_UNDER angle.text"]);
+      expect(r[0]!.hint, t).toBe("Dates, years, CVE ids and version strings are not counted as numbers. "
+        + 'Write a ratio as the Gap does, "1.9 times", never "1.9x": a number glued to x is not read as a number.');
+    }
+    d.angle.text = "New CVE records on x86 builds are arriving faster than in 2023–24.";
+    expect(check(d, W)[0]!.hint).not.toContain("1.9 times");
     d.angle.text = `${words(30)} 24.`;
     expect(codesOf(check(d, W))).toEqual(["WORDS_OVER angle.text"]);
     expect(check(d, W)[0]!.message).toBe("angle.text has 31 words; the limit is 30. Cut at least 1.");
@@ -255,11 +267,12 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     const wrong = check(d, W, { edition: "monday" });
     expect(codesOf(wrong)).toEqual(["WORDS_OVER angle.text"]);
     expect(wrong[0]!.message).toContain("2 numbers (13, 17)");
-    expect(wrong[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints: 26 weeks.");
+    expect(wrong[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints "
+      + "(26 weeks) the first time each is written. Write each label figure once: written again, it counts.");
     d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
     const under = check(d, W, { edition: "monday" });
     expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
-    expect(under[0]!.hint).toContain("nor the figures the metric's label prints: 26 weeks.");
+    expect(under[0]!.hint).toContain("nor the figures the metric's label prints (26 weeks) the first time each is written.");
     // Every figure of the label: "share listed within 7 days, 26 weeks".
     d.angle.metric_path = "window.w26.p7";
     d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 7 days.";
@@ -267,7 +280,7 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 30 days.";
     const p7 = check(d, W, { edition: "monday" });
     expect(p7.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (55%, 30)")]);
-    expect(p7[0]!.hint).toContain("nor the figures the metric's label prints: 7 days, 26 weeks.");
+    expect(p7[0]!.hint).toContain("nor the figures the metric's label prints (7 days, 26 weeks) the first time each is written.");
     // A path whose labels print no figure counts the window like any number.
     d.angle.metric_path = "window.reference.at_disclosure_share";
     d.angle.text = "In 2023–24, 37% of recently disclosed flaws on CISA's list were exploited at disclosure, over 26 weeks.";
@@ -293,7 +306,7 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list within 7 days, a median 17 days after it.";
     const r = check(d, W, { edition: "monday", inputs: { metrics: null } });
     expect(r.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (7, 17)")]);
-    expect(r[0]!.hint).toContain("nor the Gap's window lengths: 26 weeks, 13 weeks.");
+    expect(r[0]!.hint).toContain("nor the Gap's window lengths (26 weeks, 13 weeks) the first time each is written. Write each window length once");
   });
 
   it("the page total: WORDS_OVER above budgets.words_max, with the parts in the message", () => {

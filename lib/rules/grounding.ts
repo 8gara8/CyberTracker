@@ -128,22 +128,26 @@ const GAP_WINDOW_FIGURES: readonly LabelFigure[] = WINDOW_LENGTHS.flatMap((w) =>
 /**
  * The figures a metric Angle may print beside its number (§4.12, §0.4 row 145): those the labels of its
  * `metric_path`'s quotable rows print (quotableRows(); "26 weeks", "7 days", "2 to 30 days", "80%
- * interval"), each once, in label order. With no metrics file, the Gap's window lengths, 26 weeks and 13
- * weeks. A sourced Angle, or a path with no quotable row, has none.
+ * interval"), in label order, each as many times as one label prints it (once, for every label today):
+ * numbersBesideFigures() leaves out that many written occurrences and counts any later one. With no
+ * metrics file, the Gap's window lengths, 26 weeks and 13 weeks, once each. A sourced Angle, or a path
+ * with no quotable row, has none.
  */
 export function angleFigures(angle: { metric_path?: string | null }, metrics: Metrics | null): LabelFigure[] {
   if (!angle.metric_path) return [];
   if (!metrics) return [...GAP_WINDOW_FIGURES];
-  const out = new Map<string, LabelFigure>();
+  const most = new Map<string, LabelFigure[]>();
   for (const r of quotableRows(metrics)) {
     if (r.key !== angle.metric_path) continue;
-    for (const f of labelFigures(r.label)) if (!out.has(f.text)) out.set(f.text, f);
+    const here = new Map<string, LabelFigure[]>();
+    for (const f of labelFigures(r.label)) here.set(f.text, [...(here.get(f.text) ?? []), f]);
+    for (const [text, fs] of here) if ((most.get(text)?.length ?? 0) < fs.length) most.set(text, fs);
   }
-  return [...out.values()];
+  return [...most.values()].flat();
 }
 
-/** "26 weeks, 7 days": figures for a message. */
-export const figureList = (figures: readonly LabelFigure[]): string => figures.map((f) => f.text).join(", ");
+/** "26 weeks, 7 days": figures for a message, each named once. */
+export const figureList = (figures: readonly LabelFigure[]): string => [...new Set(figures.map((f) => f.text))].join(", ");
 
 /**
  * The numbers the Angle's text holds (§4.12, §0.4 row 145): numbersIn(), except that with a
@@ -174,6 +178,14 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 }
 
 // ── LEAD_GROUNDED ────────────────────────────────────────────────────────────────────────────────
+
+const GAP_DAY_HINT = ' A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours.';
+
+/** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
+function hoursLength(text: string, n: NumberToken): boolean {
+  const raw = n.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{N}.,])${raw}(?:\\s+|[-\\u2010\\u2011\\u2013])(?:hours?|hrs?)(?![\\p{L}\\p{N}])`, "iu").test(text.normalize("NFKC"));
+}
 
 /**
  * LEAD_GROUNDED (the Angle's source text draft only): each Lead sentence cites real items, or is a Gap
@@ -218,7 +230,7 @@ const leadGrounded = defineRule({
           if (!exactIn(n, quoted)) {
             out.push(error("LEAD_GROUNDED", `${p}.text`,
               `${p} is a Gap sentence (gap: true) but holds ${shown(n)}, which is not one of the Gap's quoted numbers (${list(metrics.headline.quoted.map((q) => q.display))}).`,
-              "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from."));
+              `Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.${hoursLength(s.text, n) ? GAP_DAY_HINT : ""}`));
           }
           continue;
         }
@@ -262,7 +274,7 @@ const leadGrounded = defineRule({
             if (!ok) {
               out.push(error("LEAD_GROUNDED", "angle.text",
                 `angle.text holds ${shown(n)}, but angle.metric_path "${a.metric_path}" is ${displays.length ? list(displays) : String(raw)} as the Gap shows it.`,
-                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them; no other number may.` : ""}`));
+                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them, each once; write each label figure once, and no other number.` : ""}`));
             }
           }
         }

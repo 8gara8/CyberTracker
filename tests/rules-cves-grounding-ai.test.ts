@@ -493,6 +493,20 @@ describe("LEAD_GROUNDED", () => {
     expect(lead("Ivanti's flaw is one of 179 KEV additions in 26 weeks.", [I.criticalExploited])).toEqual([]);
   });
 
+  it("tells a Gap sentence that names the day as a length of hours to name it by its dates (review of row 145)", () => {
+    const DAY = ' A Gap sentence names the day by its dates ("13 to 14 Oct"), never as a length of hours.';
+    for (const text of ["Nothing in the 24 hours to 04:30 Taipei cleared the bar for an item.", "Nothing in the 24-hour window cleared the bar.",
+      "Nothing in the last 24 hrs cleared the bar."]) {
+      const r = lead(text, [], true);
+      expect(r.map((e) => e.message), text).toEqual([expect.stringContaining("holds 24, which is not one of the Gap's quoted numbers")]);
+      expect(r[0]!.hint, text).toBe(`Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.${DAY}`);
+    }
+    // Named by its dates, it holds no number; any other stray number keeps the plain hint.
+    expect(lead("Nothing published between 13 and 14 Oct cleared the bar for an item.", [], true)).toEqual([]);
+    expect(lead("38% of recently disclosed flaws were exploited when disclosed, in 24 hours.", [], true).map((e) => e.hint)).toEqual([
+      "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.", expect.stringContaining(DAY)]);
+  });
+
   it("matches other numbers against the cited items' text and CVE blocks, rounding as written", () => {
     expect(lead("Shadowserver counts about 9,000 unpatched Ivanti gateways.", [I.criticalExploited])).toEqual([]);
     expect(lead("Microsoft fixed about 1,400 flaws.", [I.patchBatch])).toEqual([]);
@@ -543,7 +557,7 @@ describe("LEAD_GROUNDED", () => {
     expect(r.map((e) => e.path)).toEqual(["angle.text"]);
     expect(r[0]!.message).toContain("holds 13");
     expect(r[0]!.hint).toBe("Write the number exactly as metrics.quotable shows it for that path, or fix metric_path. "
-      + "The figures its label prints (26 weeks) may stand beside it as the label writes them; no other number may.");
+      + "The figures its label prints (26 weeks) may stand beside it as the label writes them, each once; write each label figure once, and no other number.");
     // The windowed ratios' labels name their window ("new CVE records, pace vs 2023–24, 13 weeks").
     d.angle.metric_path = "flood.vs_reference_ratio";
     d.angle.text = "Over 13 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";
