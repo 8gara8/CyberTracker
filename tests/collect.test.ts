@@ -571,7 +571,10 @@ describe("items", () => {
 
     // The release: its counts cover all 390 fixes; its pack_ids name at most 20 records, every one still in the pack.
     const pt = kept.find((c) => c.kind === "patch_batch")!;
-    expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id] });
+    expect(pt.release).toEqual({
+      release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id],
+      first_published: "2026-10-13", last_published: "2026-10-13",
+    });
     expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
     const inPack = new Set([...built.pack.items.map((i) => i.id), ...built.pack.records.map((r) => r.id)]);
     for (const id of pt.pack_ids) expect(inPack.has(id)).toBe(true);

@@ -5,6 +5,7 @@
 // cve_ids, record kinds, notes without a record, ties, the by_reason keys and advisory_urls).
 
 import { matchVendor, type AiCreditMatch, type CompiledConfig, type LoadedConfig } from "./config";
+import { utcDateOf } from "./dates";
 import { advisoryUrlFilter, cveIdsIn } from "./collect";
 import { ADVISORY_TAGS } from "./feeds/cvelist";
 import { epssJump } from "./feeds/epss";
@@ -266,6 +267,8 @@ interface Bundle {
   members: CveRecord[];
   exploited: string[];
   critical: number | null;
+  /** The members' earliest and latest published_at (instants). */
+  first: string;
   newest: string;
 }
 
@@ -278,7 +281,9 @@ function bundles(ctx: Ctx): Bundle[] {
     if (!vendor || !vendor.cna.length) continue;
     const members = [...ctx.recs.values()].filter((r) => !!r.assigner && vendor.cna.includes(r.assigner) && ctx.inRecordWindow(r.published_at));
     if (members.length < rel.min_records) continue;
-    const newest = members.map((r) => r.published_at!).sort(byCodeUnit).at(-1)!;
+    const dates = members.map((r) => r.published_at!).sort(byCodeUnit);
+    const first = dates[0]!;
+    const newest = dates.at(-1)!;
     const month = newest.slice(0, 7);
     let releaseId = `rel-${vendor.id}-${month}`;
     let id = `pt-${vendor.id}-${month}`;
@@ -289,7 +294,7 @@ function bundles(ctx: Ctx): Bundle[] {
     const exploited = members.filter((r) => ctx.kev.has(r.cve_id) || r.ssvc?.exploitation === "active").map((r) => r.cve_id).sort(compareCveIds);
     const rated = members.filter((r) => r.cna_severity !== null);
     const critical = rated.length ? rated.filter(isCritical).length : null;
-    out.push({ vendor, releaseId, id, members, exploited, critical, newest });
+    out.push({ vendor, releaseId, id, members, exploited, critical, first, newest });
   }
   return out;
 }
@@ -490,7 +495,11 @@ function releaseWork(ctx: Ctx, b: Bundle): Work {
     id: b.id, kind: "patch_batch", reasons: [], title: candidateTitle(title, "cvelist"), cve_ids: [...b.exploited],
     vendor: b.vendor.name, vendor_country: b.vendor.country, product: null, cvss: null, epss: null, kev: null, ssvc: null,
     ai_credit_match: null, exploit_reference: false,
-    release: { release_id: b.releaseId, vendor: b.vendor.name, total, critical: b.critical, exploited: n, exploited_cve_ids: [...b.exploited] },
+    release: {
+      release_id: b.releaseId, vendor: b.vendor.name, total, critical: b.critical, exploited: n, exploited_cve_ids: [...b.exploited],
+      // The span RELEASE_SOURCE and releaseBlockOf() read membership from (releaseMember(), §0.4 row 146).
+      first_published: utcDateOf(b.first), last_published: utcDateOf(b.newest),
+    },
     record_url: null, advisory_urls: [], pack_ids: packIds,
   };
   const home = b.vendor.country === "TW" || b.vendor.country === "JP";

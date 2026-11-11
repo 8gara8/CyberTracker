@@ -35,6 +35,8 @@ export const Candidate = z.strictObject({
     critical: Count.nullable(),
     exploited: Count,
     exploited_cve_ids: z.array(CveId),
+    first_published: IsoDate.describe("The earliest UTC publication date (cveMetadata.datePublished) of the release's fixes"),
+    last_published: IsoDate.describe("The latest UTC publication date of the release's fixes"),
   }).nullable().describe("Patch-batch bundles only"),
   record_url: z.string().min(1).nullable(),
   advisory_urls: z.array(z.string().min(1)),

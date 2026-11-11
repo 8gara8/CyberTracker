@@ -103,7 +103,9 @@
         "exploited": 1,
         "exploited_cve_ids": [
           "CVE-2026-96951"
-        ]
+        ],
+        "first_published": "2026-10-13",
+        "last_published": "2026-10-13"
       },
       "record_url": "https://cve.org/CVERecord?id=CVE-2026-96951",
       "advisory_urls": [],

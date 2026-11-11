@@ -424,19 +424,31 @@ export interface ReleaseBasis<S> {
   problem: "no_date" | null;
 }
 
+/** The release's own fixes' publication dates, as the candidate carries them (§4.15). */
+export type ReleaseSpan = { first_published: string; last_published: string };
+
+/** "on 2026-10-13", or "from 2026-10-12 to 2026-10-13": the dates a release's fixes were published. */
+export const releaseSpanText = (r: ReleaseSpan): string =>
+  r.first_published === r.last_published ? `on ${r.first_published}` : `from ${r.first_published} to ${r.last_published}`;
+
 /**
  * Whether a CVE id the item names is one of the release's fixes, so it may date, title and link the block:
- * one of the release's exploited CVE ids (its candidate's own), or an id whose CVE List record was
- * assigned by one of the vendor's CNAs (vendors.json `cna`), which is how rank bundles a release (§5.12
- * step 2). An id with no record, or a record from another CNA, is not.
+ * one of the release's exploited CVE ids (its candidate's own), or an id whose published CVE List record
+ * was assigned by one of the vendor's CNAs (vendors.json `cna`) and published within the release's span
+ * (its fixes' first and last UTC publication dates), which is how rank bundles a release: a record of the
+ * vendor's CNA published in the record window (§5.12 step 2). An id with no record, a record from another
+ * CNA, and an older (or later) record of the vendor's own CNA are not, so none of them dates the block
+ * outside the release.
  */
 export function releaseMember(
-  cveId: string, release: { exploited_cve_ids: readonly string[] }, vendor: Pick<Vendor, "cna"> | null, records: CveLookup | null,
+  cveId: string, release: { exploited_cve_ids: readonly string[] } & ReleaseSpan, vendor: Pick<Vendor, "cna"> | null, records: CveLookup | null,
 ): boolean {
   const id = cveId.toUpperCase();
   if (release.exploited_cve_ids.some((x) => x.toUpperCase() === id)) return true;
-  const assigner = records?.get(id)?.assigner ?? null;
-  return vendor !== null && assigner !== null && vendor.cna.includes(assigner);
+  const rec = records?.get(id);
+  if (!rec || rec.state !== "PUBLISHED" || vendor === null || rec.assigner === null || !vendor.cna.includes(rec.assigner)) return false;
+  const d = rec.date_published;
+  return d !== null && release.first_published <= d && d <= release.last_published;
 }
 
 /**
@@ -448,7 +460,7 @@ export function releaseMember(
  */
 export function releaseBasisOf<S extends { id: string; published_at: string | null }>(
   item: { source_ids: readonly string[]; cve_ids: readonly string[] },
-  release: { vendor: string; exploited_cve_ids: readonly string[] },
+  release: { vendor: string; exploited_cve_ids: readonly string[] } & ReleaseSpan,
   sources: readonly S[],
   viewOf: (s: S) => { publisher: string; tier: number } | undefined,
   config: Pick<LoadedConfig, "vendors">,
@@ -500,7 +512,7 @@ const releaseSource = defineRule({
         : `no CVE List record of ${list([...basis.bundle])} gives a publication date`;
       const one = basis.ignored.length === 1;
       const ignoredText = basis.ignored.length === 0 ? ""
-        : ` (${list([...basis.ignored])} ${one ? "is" : "are"} not among the release's fixes: ${one ? "it has" : "they have"} no CVE List record from ${vendorName}'s CNA, so ${one ? "it is" : "they are"} ignored)`;
+        : ` (${list([...basis.ignored])} ${one ? "is" : "are"} not among the release's fixes: ${one ? "it has" : "they have"} no CVE List record from ${vendorName}'s CNA published ${releaseSpanText(release)}, so ${one ? "it is" : "they are"} ignored)`;
       const own = basis.source
         ? `Give ${basis.source.id} the published_at its page shows`
         : `Cite ${basis.vendor ? `${vendorName}'s own advisory for the release from the pack (a tier 1 source on ${vendorName}'s domain)` : "the vendor's own advisory for the release"}, with its published_at`;

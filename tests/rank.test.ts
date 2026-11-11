@@ -2,6 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { releaseMember } from "../lib/rules/sources";
+import type { CveRecordInfo } from "../lib/rules/types";
 import { cveIdsIn, cvePackRecords, ghsaPackRecords, kevPackRecords, notePackRecords, packWindow, provisionalRecords, recordWindow } from "../lib/collect";
 import { loadConfig, matchCredit, type LoadedConfig } from "../lib/config";
 import { parseCveRecord } from "../lib/feeds/cvelist";
@@ -179,7 +181,10 @@ describe("rankCandidates() on the 2026-10-14 fixture morning", () => {
     const out = run();
     const pt = out.kept.find((c) => c.id === "pt-microsoft-2026-10")!;
     expect(pt.kind).toBe("patch_batch");
-    expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 9, critical: 4, exploited: 1, exploited_cve_ids: ["CVE-2026-96951"] });
+    expect(pt.release).toEqual({
+      release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 9, critical: 4, exploited: 1, exploited_cve_ids: ["CVE-2026-96951"],
+      first_published: "2026-10-13", last_published: "2026-10-13",
+    });
     expect(pt.cve_ids).toEqual(["CVE-2026-96951"]);
     expect(pt.score).toBe(RANK_WEIGHTS.base.release_exploited);
     // pack_ids: the exploited member's CVE List record, then the critical ones by CVSS, then the rest by CVSS, at most 20
@@ -316,6 +321,7 @@ describe("rankCandidates() on built cases", () => {
     const pt = out.kept.find((c) => c.kind === "patch_batch")!;
     expect(pt.release).toEqual({
       release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 32, exploited: 3, exploited_cve_ids: exploited.map((r) => r.cve_id),
+      first_published: "2026-10-13", last_published: "2026-10-13",
     });
     expect(pt.title).toContain("390 fixes, 3 exploited");
     expect(RELEASE_PACK_IDS_MAX).toBe(20);
@@ -398,7 +404,9 @@ describe("rankCandidates() on built cases", () => {
     const fixes = [...scores.map((sc, i) => adobeFix(i, sc)), ...[40, 41, 42].map((n) => adobeFix(n, null))];
     const base = input({ ...empty, records: shuffled(fixes, 7) });
     const pt = rankCandidates(base).kept.find((c) => c.kind === "patch_batch")!;
-    expect(pt.release).toEqual({ release_id: "rel-adobe-2026-10", vendor: "Adobe", total: 35, critical: 0, exploited: 0, exploited_cve_ids: [] });
+    expect(pt.release).toEqual({
+      release_id: "rel-adobe-2026-10", vendor: "Adobe", total: 35, critical: 0, exploited: 0, exploited_cve_ids: [], first_published: "2026-10-13", last_published: "2026-10-13",
+    });
     expect(pt.cve_ids).toEqual([]);
     const order = [...fixes].sort((a, b) => (b.cvss?.score ?? -1) - (a.cvss?.score ?? -1) || compareCveIds(a.cve_id, b.cve_id)).map((r) => r.cve_id);
     expect(releasePackMembers({ members: shuffled(fixes, 11), exploited: [] })).toEqual(order.slice(0, RELEASE_PACK_IDS_MAX));
@@ -419,6 +427,26 @@ describe("rankCandidates() on built cases", () => {
     expect(small.advisory_urls).toEqual([ADOBE_BULLETIN]);
     const critLow: CveRecord = { ...fixes[0]!, cve_id: "CVE-2026-619999", cna_severity: "CRITICAL", cvss: { score: 7.0, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } };
     expect(releasePackMembers({ members: [...eight, critLow], exploited: [eight[1]!.cve_id] }).slice(0, 2)).toEqual([eight[1]!.cve_id, "CVE-2026-619999"]);
+  });
+
+  it("a release carries its fixes' first and last UTC publication dates, and releaseMember() takes exactly the records rank bundles (fourth review of row 146)", () => {
+    // The record window for 2026-10-14 is 2026-10-12T20:00Z to 2026-10-13T20:00Z. Two fixes on the 12th's evening, four on the
+    // 13th; two older Adobe records the delta zips carry because they were updated in the window, and one published after it.
+    const fixes = [0, 1, 2, 3, 4, 5].map((n) => ({ ...adobeFix(n, 7.5), published_at: n < 2 ? `2026-10-12T21:3${n}:00Z` : `2026-10-13T17:0${n}:00Z` }));
+    const older = [6, 7].map((n) => ({ ...adobeFix(n, 9.8), cna_severity: "CRITICAL", published_at: "2026-07-14T17:00:00Z", date_published: "2026-07-14", updated_at: "2026-10-13T10:00:00Z" }));
+    const after = { ...adobeFix(8, 9.8), published_at: "2026-10-14T00:30:00Z", date_published: "2026-10-14" };
+    const records = [...fixes, ...older, after].map((r) => ({ ...r, date_published: r.published_at.slice(0, 10) }));
+    const pt = rankCandidates(input({ ...empty, records })).kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.release).toMatchObject({ release_id: "rel-adobe-2026-10", total: 6, critical: 0, first_published: "2026-10-12", last_published: "2026-10-13" });
+    // The CVE List lookup the validator and publish read holds all nine; only the six fixes are the release's.
+    const lookup = new Map(records.map((r): [string, CveRecordInfo] => [r.cve_id, {
+      cve_id: r.cve_id, state: "PUBLISHED", date_published: r.date_published, date_updated: r.date_updated, assigner: r.assigner, vendors: ["Adobe"],
+      products: ["Acrobat Reader"], title: r.title, exploit_reference: false, kev_date_added: null, credits: [],
+    }]));
+    const adobe = cfg.vendors.vendors.find((v) => v.id === "adobe")!;
+    const inWindow = (ts: string) => Date.parse(ts) >= Date.parse(W.recordWindow.start) && Date.parse(ts) < Date.parse(W.recordWindow.end);
+    expect(records.map((r) => [r.cve_id, releaseMember(r.cve_id, pt.release!, adobe, lookup)])).toEqual(records.map((r) => [r.cve_id, inWindow(r.published_at)]));
+    expect(records.filter((r) => releaseMember(r.cve_id, pt.release!, adobe, lookup)).map((r) => r.cve_id)).toEqual(fixes.map((r) => r.cve_id));
   });
 
   /** A fix of `vendor` (its CNA `assigner`) whose CNA references carry no tag, as SAP's, Siemens' and Schneider's do. */

@@ -586,7 +586,8 @@ export function confirmBlock(b: BareCveBlock, item: Pick<Item, "flaw_evidence" |
  * counts come from the candidate's release (total, critical, exploited). Null when the item has no release.
  * `records` (optional, added by L3) gives the bundle's publication dates; applyDraft passes the CVE List.
  * The bundle is the release's exploited CVEs, else those of the item's that are the release's own fixes
- * (releaseMember(): a record from one of the vendor's CNAs). Throws ComposeError when no date can be found
+ * (releaseMember(): a record from one of the vendor's CNAs published within the release's span, its
+ * `first_published` to `last_published`). Throws ComposeError when no date can be found
  * (with a date there is always a page).
  */
 export function releaseBlockOf(
