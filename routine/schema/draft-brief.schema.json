@@ -31,7 +31,7 @@
           },
           "gap": {
             "type": "boolean",
-            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted"
+            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted, so name the day by its dates (\"13 to 14 Oct\"), never as a length of hours"
           }
         },
         "required": ["text","item_ids","gap"],
@@ -44,7 +44,7 @@
       "properties": {
         "text": {
           "type": "string",
-          "description": "At most 30 words, holding exactly one number. With a metric_path, the figures its quotable label prints (\"26 weeks\", \"within 7 days\", \"80% interval\") are not counted; name the window and date, not a denominator"
+          "description": "At most 30 words, holding exactly one number. With a metric_path, the figures its quotable label prints (\"26 weeks\", \"within 7 days\", \"80% interval\") are not counted the first time each is written; name the window and date, not a denominator. Write a ratio as the Gap does, \"1.9 times\", never \"1.9x\""
         },
         "source_id": {
           "description": "The source of the number; exactly one of source_id and metric_path is non-null",
