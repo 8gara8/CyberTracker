@@ -79,7 +79,11 @@ faster?
   reads a copied token from the clipboard, stores it and tests it; then `agent:check -- --all`, the
   transcript re-record and the dry runs of SPEC §10 P3, whose report
   (`docs/reports/<date>-p3-dry-runs.md`) is written on Kobol. The PR stays a draft until those are in;
-  marking it ready starts the Codex review.
+  marking it ready starts the Codex review. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
+  00:31 UTC; `docs/reports/2026-11-11-p3-dry-runs.md`) `agent:check -- --all` passed 13 of 13, the
+  transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
+  dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
+  plan with rows 133 to 143, and `agent:check -- --canary` and the timed dry run are to be rerun on Kobol.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30

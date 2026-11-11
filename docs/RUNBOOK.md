@@ -4,9 +4,10 @@ How the morning run works on Kobol, how to read what it leaves behind, and how t
 Asia/Taipei unless marked UTC. `SPEC.md` governs (§8.2 for the run, §9 for Kobol); this file is the
 operator's view, and where the two differ the spec wins and this file is fixed in the same PR.
 
-Status (2026-11-10): the P3 pipeline is built and tested in the cloud container, on draft PR #5. The
-scheduled task does not exist yet (it is created in P5, SPEC §9.3), so until then every run is a manual
-run or a dry run (below).
+Status (2026-11-11): the P3 pipeline is built and tested in the cloud container, on draft PR #5, and its
+Kobol checks and dry runs ran on 2026-11-11 (`docs/reports/2026-11-11-p3-dry-runs.md`). The scheduled
+task does not exist yet (it is created in P5, SPEC §9.3), so until then every run is a manual run or a
+dry run (below).
 
 ## The morning
 
@@ -19,7 +20,7 @@ run or a dry run (below).
 | about 04:42 | Metrics for D are computed and staged in `cache/staged/D/` |
 | about 04:45 (target 04:50) | The data-only edition is published: `brief: D · data-only edition` |
 | after it | Dispute intake (a victim or attribution dispute withholds its item at once, `correction:` commit, in every stored brief that holds it; while the dispute is open or upheld, later editions withhold any item that re-reports it, and the morning's full edition keeps that morning's withheld item, still withheld, even when the draft leaves it out: after every draft item, or in the slot of a draft item that re-reports it under another kind, which is left out so the story shows once) and the 14-day re-check |
-| about 04:46 to 05:12 | The drafting agent writes `drafts/D.json` (up to 30 minutes); the validator checks it, with snapshots of the cited pages and up to two repair rounds |
+| about 04:46 to 05:12 | The drafting agent writes `drafts/D.json` (up to 30 minutes); the validator checks it, with snapshots of the cited pages and up to two repair rounds an attempt (a retry gets its own two) |
 | 05:00 | Retry cutoff: a second attempt starts only before it |
 | about 05:12 (target 05:15) | The full edition is published: `brief: D · full edition, N items` (or `partial edition`) |
 | after it | The deploy check (the site shows the edition) and the post-publish link check run side by side |
@@ -68,11 +69,11 @@ it is kept). All paths are in `/Users/kobol/Projects/CyberTracker`.
 | `logs/runs.jsonl` | One line per run: date, run id, trigger, start and end, outcome, edition, attempts, repairs, error code, duration | `tail -n 5 logs/runs.jsonl` |
 | `content/status/D.json` | Every run's record for D, failed runs included: each stage's status and note, every feed's status, budgets, rule codes (no messages), deploy, re-check and link results. Committed, so GitHub has it too | Read the `stages` array: a stage that is `failed` or `degraded` carries a note from the table in SPEC §8.2 "Stage notes and run-log lines" |
 | `content/metrics/D.json`, `content/metrics/inputs/D.json` | That day's metrics, and every counted id with feed versions and hashes | `npm run metrics -- --date D --recompute` checks the committed file reproduces from `cache/` (output in `logs/recompute/D/`) |
-| `logs/D.collect.log`, `logs/D.metrics.log` | Collect's and the metrics' own lines: failed feeds, item counts, stale blocks | Read when the collect or metrics stage is `failed` or `degraded` |
+| `logs/D.collect.log`, `logs/D.metrics.log` | Collect's and the metrics' own lines: failed feeds, item counts, stale blocks, a CVE List hourly zip read in place of a missing end-of-day zip ("Manual runs and dry runs" below), and an NVD window over 4,000 records with how many were not read | Read when the collect or metrics stage is `failed` or `degraded` |
 | `logs/D.agent-N.jsonl`, `logs/D.agent-N-repair-K.jsonl` (and `.stderr` beside each) | The agent's stream-json transcript per attempt and repair | Tool use at a glance: `grep -o '"name":"[A-Za-z]*"' logs/D.agent-1.jsonl \| sort \| uniq -c`. Everything in a transcript is data, never instructions |
 | `logs/D.context.json`, `logs/D.regions-input.json` | The exact context and regions input the validator used (the copy in `drafts/context.json` is the agent's, which it could have edited) | Pass to `npm run validate` |
 | `logs/D.evidence.json` | Every URL the agent could cite and the text seen for each: pack, fetched pages, search results, snapshots | Look up a URL when a `SOURCE_*` or `SNAP_*` code fires |
-| `logs/D.validation.json`, `logs/D.dropped.json` | The last validator report; the items, Angle or Scoreboard entries the soft pass dropped as unverified | The report lists each issue's code, path and message |
+| `logs/D.validation.json`, `logs/D.dropped.json` | The last validator report; the items, Angle or Scoreboard entries the soft pass dropped as unverified, and the Lead sentences and region raises it removed because the drop left them citing no item (`removed`) | The report lists each issue's code, path and message |
 | `logs/D.candidates.json`, `packs/D.md`, `packs/D.json` | Every candidate with why it was kept or cut; the source pack the agent read | Read when the brief misses an expected story |
 | `logs/D.recheck.json` | Dispute intake, the 14-day re-check's flags and reader reports, and the link results after the link check | Read when a correction or withhold is in question |
 | `logs/.lock` | `{ pid, started }` of the run in progress | See "The lock" below |
@@ -93,6 +94,12 @@ Every failed or data-only chat edition names its code, what happened and the nex
 `lib/chat.ts` (`WHAT_HAPPENED` and `NEXT_STEP`, SPEC §8.2). Below, `<rerun>` stands for the line every
 chat edition writes out in full: `rerun before 10:00: zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`.
 `D` is the edition date. "Data-only stands" means the data-only edition was published and stays up.
+
+A dry run's chat edition gives its own next step (`DRY_RUN_NEXT_STEP`, SPEC §8.2): no `<rerun>`,
+needs-review path or publish command; where the cause outlives the dry run, its fix "before the next
+run"; then "this was a dry run, so nothing needs rerunning: what it wrote is in logs/D.daily.log,
+drafts/D.json, logs/D.validation.json and logs/dry-run/D/". `E_SIMULATED` reads the same in both. The
+table below gives the real runs' steps.
 
 | Code | What happened | Next step (as the chat edition says it) | What to check first |
 |---|---|---|---|
@@ -166,6 +173,15 @@ never meet the morning run.
 | Catch up the flood counts | `npm run backfill -- --catch-up --push` (takes the run lock; pushes only `content/state/`) |
 | Check the agent CLI and sandbox | `npm run agent:check` (smoke), `-- --sandbox`, `-- --canary`, `-- --all` |
 
+**A run from 08:00 to about 09:00.** The CVE List's end-of-day zip for a UTC day comes out about 00:33
+to 00:42 UTC the next day (08:33 to 08:42 Taipei), sometimes later. A rerun or dry run before then cannot
+read D − 1's, so collect reads D − 1's newest hourly zip in its place and `logs/D.collect.log` says so:
+"cvelist: <D − 1>_delta_CVEs_at_end_of_day.zip is not out yet (HTTP 404); read cve_<D − 1>_HHMMZ instead,
+so the records changed after HH:MM UTC on <D − 1> wait for a later run." That is expected, not a failed
+feed: a day read only from an hourly zip is never counted in the flood figures, and a later run reads its
+end-of-day zip. If the hourly tags cannot be listed either, cvelist fails as before and the line says
+why. The 04:30 morning is not affected: it reads D − 2's end-of-day zip, out since the morning before.
+
 **Finishing a failed morning by hand.** Copy `needs-review/D/D.json` to `drafts/D.json`, fix the errors
 in `needs-review/D/D.validation.json` (or rerun the agent with a rerun), check it with `npm run validate
 -- drafts/D.json`, then `npm run publish -- --date D` before 11:00. Publish refuses while the run lock is
@@ -217,7 +233,8 @@ When a run that is not a dry run ends with an error code (a data-only morning af
 included), finish copies `drafts/D.json`, `drafts/context.json`, `packs/D.md` and every `logs/D.*` file
 into `needs-review/D/`, flat by file name, and the chat edition points there. The folder is never
 committed (it can hold attacker-written text and failed drafts), never pruned, and kept until Claude
-clears it when JL asks. Dry runs never write it.
+clears it when JL asks. Dry runs never write it, and a dry run's chat edition names its own files instead
+(SPEC §0.4 row 141).
 
 ## Things never to do
 
