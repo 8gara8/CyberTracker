@@ -557,12 +557,25 @@ describe("Plain text", () => {
       expect(hits).toEqual([]);
     });
 
+    // Every static import, export-from and dynamic import(), in either quote style, resolved to a repo path.
+    const SPECIFIER = /^\s*(import|export)\b([^;]*?)\bfrom\s*(["'])([^"']+)\3|\bimport\s*\(\s*(["'])([^"']+)\5/gm;
+    const resolveSpec = (from: string, s: string) =>
+      (s.startsWith("@/") ? s.slice(2) : s.startsWith(".") ? path.posix.join(path.posix.dirname(from), s) : s).replace(/\.(tsx?|jsx?|mjs)$/, "");
+    const importsOf = (f: string) =>
+      [...body(f).matchAll(SPECIFIER)].map((m) => ({ to: resolveSpec(f, m[4] ?? m[6]!), typeOnly: m[1] !== undefined && /^\s*type\b/.test(m[2]!) }));
+    const importersOf = (target: string, valuesOnly = false) => files.filter((f) => importsOf(f).some((i) => i.to === target && !(valuesOnly && i.typeOnly)));
+
+    it("reads relative, aliased, single-quoted and dynamic specifiers as the same module", () => {
+      const forms = ["import { a } from '../../components/Markdown';", 'export { a } from "@/components/Markdown";', 'const m = await import("../../components/Markdown.tsx");'];
+      expect(forms.map((src) => [...src.matchAll(SPECIFIER)].map((m) => resolveSpec("app/about/page.tsx", m[4] ?? m[6]!)))).toEqual([["components/Markdown"], ["components/Markdown"], ["components/Markdown"]]);
+      expect(resolveSpec("lib/x.ts", "./markdown")).toBe("lib/markdown");
+    });
+
     it("lib/markdown and components/Markdown are imported only by app/methodology/page.tsx", () => {
-      const importers = (re: RegExp) => files.filter((f) => re.test(body(f)));
+      expect(importersOf("components/Markdown")).toEqual(["app/methodology/page.tsx"]);
       // A value import of lib/markdown: only the page. components/Markdown.tsx may import its types only.
-      expect(importers(/^import\s+(?!type\b)[^;]*from\s+"(?:@\/lib\/markdown|(?:\.\.\/)+lib\/markdown|\.\/markdown)"/m)).toEqual(["app/methodology/page.tsx"]);
-      expect(importers(/from\s+"(?:@\/lib\/markdown|(?:\.\.\/)+lib\/markdown|\.\/markdown)"/).filter((f) => f !== "app/methodology/page.tsx")).toEqual(["components/Markdown.tsx"]);
-      expect(importers(/from\s+"(?:@\/components\/Markdown|(?:\.\.\/)+Markdown|\.\/Markdown)"/)).toEqual(["app/methodology/page.tsx"]);
+      expect(importersOf("lib/markdown", true)).toEqual(["app/methodology/page.tsx"]);
+      expect(importersOf("lib/markdown")).toEqual(["app/methodology/page.tsx", "components/Markdown.tsx"]);
     });
   });
 });
