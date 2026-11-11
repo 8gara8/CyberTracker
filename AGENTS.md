@@ -82,9 +82,14 @@ faster?
   transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
   dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
   plan with rows 134 to 143 (row 133 came from that `agent:check`, row 144 from the pass's review). The
-  rerun on Kobol (10:05 to 10:15 Taipei) stopped when the canary, safe but invalid, failed on an Angle
-  naming its own 26-week window, which the number rules counted; row 145 fixed that in the container, and
-  `agent:check -- --all` and the timed dry run are to be rerun on Kobol.
+  rerun on Kobol (10:05 to 10:15 Taipei, 02:05 to 02:15 UTC) stopped when the canary, safe but invalid,
+  failed on an Angle naming its own 26-week window, which the number rules counted. The timed dry run at
+  10:24 Taipei (02:24 UTC) on `0c8c4d4` then passed every Done-when limit (data-only 31 s, full 2 min
+  18 s, end 2 min 21 s, 6 items, 918 words, 0 repairs), and `agent:check -- --all` on `989bdff` (row 145's
+  first fix) passed 13 of 13 (report `a6a1042`). The dry runs also showed that the pack held no news
+  items. A fifth fix pass in the container fixed both (rows 145 and 146): a metric Angle may repeat any
+  figure its quotable labels print, and the pack's size caps cut records before news, with a release's
+  `pack_ids` bounded. Kobol reruns `agent:check -- --all` and the timed dry run.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -105,7 +110,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, timed dry run to rerun |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; canary and timed dry run to rerun after the fifth pass |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
