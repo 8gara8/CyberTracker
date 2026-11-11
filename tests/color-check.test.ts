@@ -275,7 +275,7 @@ describe("app/globals.css", () => {
     expect(out.at(-1)).toMatch(/^color:check: \d+ lines, 0 failed, \d+ exempt; smallest colour-vision delta E 12\.5 /);
     expect(out.some((l) => /^ok +contrast +:root +--ink on --bg \(#14161A on #F3EEE3\) 15\.65:1/.test(l))).toBe(true);
     expect(out.some((l) => /^exempt +contrast +:root +--border on --card .* 1\.72:1, exempt: /.test(l))).toBe(true);
-    expect(out.every((l) => !l.includes("—"))).toBe(true);
+    expect(out.every((l) => !l.includes(String.fromCharCode(0x2014)))).toBe(true);
   });
 
   it("after the pick (BLOCKS without the full-dark look) the same file still passes", () => {
