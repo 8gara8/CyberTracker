@@ -203,6 +203,7 @@ const TOP_LEVEL: [string, z.ZodType, unknown][] = [
   ["CandidateLogFile", S.CandidateLogFile, {
     schema_version: 1, date: D, ranked: 1, kept: [], cut: [{ id: "cve-2026-0001", score: 10, reason: "below_cap", pack_ids: ["r0001"], cve_ids: ["CVE-2026-0001"] }],
     log: [{ code: "MERGED", detail: "SAMPLE detail" }],
+    size_cut: { over: false, items: [{ id: "p0007", feed_id: "therecord", score: 31.5, title: "SAMPLE title" }], records: [{ id: "r0012", source: "myjvn", record_id: "JVNDB-2026-012901" }] },
   }],
   ["ReferenceJoinFile", S.ReferenceJoinFile, {
     ...refHead, kev_catalog_version: "2026.11.06", kev_data_commit: COMMIT, rows: [["CVE-2026-0001", "2026-11-05", "SAMPLE", null]],

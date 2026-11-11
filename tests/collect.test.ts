@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
+  buildPack, capItems, capRecords, cveIdsIn, cvePackRecords, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn, kevPackRecords,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
   dayReads, hourlyZip, wantsStandIn, zipsAsRead,
@@ -19,14 +19,14 @@ import { addDays } from "../lib/dates";
 import { parseEpssCsv } from "../lib/feeds/epss";
 import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
-import type { CveRecord, RawItem } from "../lib/feeds/types";
+import type { CveRecord, KevEntry, RawItem } from "../lib/feeds/types";
 import { sha256Hex } from "../lib/json";
-import type { AiHit } from "../lib/rank";
+import { rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, type AiHit, type RankInput } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
 import { CANARY_URL_MARK } from "../lib/vocab";
 import { matchRecord } from "../lib/metrics/ai-credit";
-import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
+import { CandidateLogFile, CandidatesFile, CollectInputsFile, FeedIndexFile, Pack, PackSizeCut, type FeedIndexEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
 import type { FetchedFeed } from "../lib/schema/registry";
 import { fixtureKevRows, FEED_WORLD } from "../fixtures/src/feeds";
 import { collect, CollectTimeout, FixtureGuardError, fixtureGuard, main } from "../scripts/collect";
@@ -292,6 +292,16 @@ const itemCtx: ItemContext = {
   publishers: { sourceTiers: cfg.sourceTiers, vendors: cfg.vendors }, regions: regionsConfig(cfg),
 };
 const raw = (title: string, url: string, at = "2026-10-13T10:00:00Z", snippet = ""): RawItem => ({ title, url, published_at: at, snippet });
+/** Referenced CVE records that alone nearly fill the 150 KB Markdown cap. */
+const REF_RECORDS = 125;
+
+/** buildPack()'s audit (row 146): exactly the items and records the pack lost, as the input held them, in id order, and schema-valid. */
+function expectAudit(built: ReturnType<typeof buildPack>, items: readonly PackItem[], records: readonly PackRecord[]): void {
+  const leftIds = new Set([...built.pack.items.map((i) => i.id), ...built.pack.records.map((r) => r.id)]);
+  expect(PackSizeCut.parse(built.sizeCut)).toEqual(built.sizeCut);
+  expect(built.sizeCut.items).toEqual(items.filter((i) => !leftIds.has(i.id)).sort((a, b) => (a.id < b.id ? -1 : 1)).map((i) => ({ id: i.id, feed_id: i.feed_id, score: i.score, title: i.title })));
+  expect(built.sizeCut.records).toEqual(records.filter((r) => !leftIds.has(r.id)).sort((a, b) => (a.id < b.id ? -1 : 1)).map((r) => ({ id: r.id, source: r.source, record_id: r.record_id })));
+}
 
 describe("scores and keywords", () => {
   it("packScore is 10 × (4 − priority) + 3 × keyword hits (at most 5) + recency 0 to 5 + 4 for tier 1", () => {
@@ -334,7 +344,7 @@ describe("scores and keywords", () => {
 });
 
 describe("items", () => {
-  it("the size caps never cut a referenced or KEV record, cut records from the end of capRecords' order, and recount (B7)", () => {
+  it("the size caps never cut a referenced or KEV record, cut records from the end of capRecords' order before any item, and recount (B7, row 146)", () => {
     const rec = (i: number, source: "kev" | "cvelist" | "myjvn", date: string, flagged = 0) => ({
       key: `${source}:${i}`, source, record_id: source === "myjvn" ? `JVNDB-2026-${String(100000 + i)}` : `CVE-2026-${String(10000 + i)}`,
       url: source === "myjvn" ? `https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-${100000 + i}.html` : `https://www.cve.org/CVERecord?id=CVE-2026-${10000 + i}`,
@@ -368,22 +378,150 @@ describe("items", () => {
     const left = built.pack.records;
     expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
     expect(built.sizeCut.over).toBe(false);
-    expect(built.sizeCut.records).toBeGreaterThan(0);
+    expect(built.sizeCut.records.length).toBeGreaterThan(100);
     // Every referenced record and every KEV record stays; only MyJVN notes go, the oldest first.
     expect(left.filter((r) => r.source === "cvelist").length).toBe(120);
     expect(left.filter((r) => r.source === "kev").length).toBe(3);
     const notes = left.filter((r) => r.source === "myjvn");
-    expect(notes.length).toBe(200 - built.sizeCut.records);
+    expect(notes.length).toBe(200 - built.sizeCut.records.length);
+    expect(notes.length).toBeGreaterThan(0);
     expect(notes.every((r) => r.date === "2026-10-13")).toBe(true);
-    // The unreferenced items went before any record; the referenced ones stay while unreferenced records remain.
-    expect(built.sizeCut.items).toBe(40);
-    expect(built.pack.items.map((i) => i.id)).toEqual(items.slice(0, 20).map((i) => i.id));
+    // The unreferenced records went before any item (row 146): every item, referenced or not, stays.
+    expect(built.sizeCut.items.length).toBe(0);
+    expect(built.pack.items.map((i) => i.id)).toEqual(items.map((i) => i.id));
     // feeds[] and injection_flags describe what is left: of the two flagged notes, the one dated D - 3 is gone.
     const kept = new Map(built.pack.feeds.map((f) => [f.id, f.items_kept]));
     expect(kept.get("myjvn")).toBe(notes.length);
-    expect((kept.get("therecord") ?? 0) + (kept.get("krebs") ?? 0)).toBe(20);
+    expect((kept.get("therecord") ?? 0) + (kept.get("krebs") ?? 0)).toBe(60);
     expect(built.pack.injection_flags).toBe(notes.filter((r) => (flaggedOf.get(`myjvn:${r.record_id}`) ?? 0) > 0).length);
     expect(built.pack.injection_flags).toBe(1);
+    expectAudit(built, items, capped.kept);
+    expect(built.sizeCut.records.every((r) => r.source === "myjvn")).toBe(true);
+  });
+
+  it("the size caps cut unreferenced records, then unreferenced items, then referenced items lowest score first, never a KEV or referenced record (row 146)", () => {
+    const rec = (i: number, source: "kev" | "cvelist" | "myjvn") => ({
+      key: `${source}:${i}`, source, record_id: source === "myjvn" ? `JVNDB-2026-${String(100000 + i)}` : `CVE-2026-${String(10000 + i)}`,
+      url: source === "myjvn" ? `https://jvndb.jvn.jp/ja/contents/2026/JVNDB-2026-${100000 + i}.html` : `https://www.cve.org/CVERecord?id=CVE-2026-${10000 + i}`,
+      advisory_urls: [], title: `SAMPLE ${"t".repeat(150)}`, text: `SAMPLE ${"x".repeat(900)}`, date: "2026-10-13", vendor: null, product: null,
+      cve_ids: source === "myjvn" ? [] : [`CVE-2026-${10000 + i}`], facts: {}, flags: [], flagged: 0,
+    });
+    const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = toPackItems(capItems(Array.from({ length: 40 }, (_, i) => ({
+      ...base, key: `k${i}`, url: `https://therecord.media/ct-sample/item-${i}`, snippet: "s".repeat(290), score: 50 - i / 10,
+    }))).kept);
+    // Every other item is referenced, so unreferenced items score above referenced ones: the group, not the score, comes first.
+    const refItems = items.filter((_, i) => i % 2 === 1);
+    /** 3 KEV records, `n` referenced CVE records and 40 unreferenced MyJVN notes, with the 40 items. */
+    const build = (n: number) => {
+      const drafts = [
+        ...Array.from({ length: 3 }, (_, i) => rec(i, "kev")),
+        ...Array.from({ length: n }, (_, i) => rec(100 + i, "cvelist")),
+        ...Array.from({ length: 40 }, (_, i) => rec(1000 + i, "myjvn")),
+      ];
+      const capped = capRecords(provisionalRecords(drafts), new Set());
+      const referenced = new Set([...capped.kept.filter((r) => r.source === "cvelist").map((r) => r.id), ...refItems.map((i) => i.id)]);
+      const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capped.kept, injectionFlags: 0 }, cfg.sources, { referenced });
+      expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+      expect(built.sizeCut.over).toBe(false);
+      expect(built.pack.records.filter((r) => r.source === "kev")).toHaveLength(3);
+      expect(built.pack.records.filter((r) => r.source === "cvelist")).toHaveLength(n);
+      expectAudit(built, items, capped.kept);
+      return { built, referenced };
+    };
+    // 80 referenced records: some of the notes make room, and every item stays.
+    const light = build(80);
+    expect(light.built.sizeCut.records.length).toBeGreaterThan(0);
+    expect(light.built.sizeCut.records.length).toBeLessThan(40);
+    expect(light.built.sizeCut.items.length).toBe(0);
+    // 125: every note goes, then every unreferenced item, then the lowest-scored referenced items, so what is left is the best of them.
+    const { built, referenced } = build(REF_RECORDS);
+    expect(built.pack.records.filter((r) => r.source === "myjvn")).toHaveLength(0);
+    const leftItems = built.pack.items.map((i) => i.id);
+    expect(leftItems.every((id) => referenced.has(id))).toBe(true);
+    expect(leftItems.length).toBeGreaterThan(0);
+    expect(leftItems.length).toBeLessThan(refItems.length);
+    expect(leftItems).toEqual(refItems.slice(0, leftItems.length).map((i) => i.id));
+    expect(built.sizeCut.items.length).toBe(items.length - leftItems.length);
+    expect(built.sizeCut.records.length).toBe(40);
+    expect(built.sizeCut.items.every((i) => i.feed_id === "therecord" && i.title === "SAMPLE base item")).toBe(true);
+  });
+
+  it("a Patch Tuesday morning like Kobol's 2026-11-11 keeps its news under the 150 KB cap, with the release's pack_ids bounded and its counts whole (row 146)", () => {
+    // 390 Microsoft fixes (1 newly on KEV, 30 critical, 359 high; about 190 KB of Markdown together, as on Kobol), 9 other new KEV
+    // entries with no CVE List record, 250 Arcadyan (TW) records a test keeps but the candidate cap leaves out, and 90 news items.
+    // Before row 146 the release referenced all 390 fixes, the 400-record cap kept them over the Arcadyan records, and the size caps
+    // cut every news item and stopped over the cap.
+    const at = (n: number) => `2026-10-13T${String(10 + Math.floor(n / 60) % 9).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00Z`;
+    const cve = (n: number, over: Partial<CveRecord>): CveRecord => ({
+      cve_id: `CVE-2026-${600000 + n}`, state: "PUBLISHED", date_published: "2026-10-13", assigner: "microsoft", scored: true, credits: [],
+      affected: [{ vendor: "Microsoft", product: "Windows" }], published_at: at(n), updated_at: at(n), date_updated: "2026-10-13",
+      title: `SAMPLE Windows flaw ${n}`, description: `SAMPLE ${"windows ".repeat(40)}`, cvss: { score: 7.5, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" },
+      cna_severity: "HIGH", ssvc: null, kev_marker: null, references: [], exploit_reference: false, ...over,
+    });
+    const exploited = cve(0, { cvss: { score: 8.8, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } });
+    const critical = Array.from({ length: 30 }, (_, i) => cve(1 + i, { cna_severity: "CRITICAL", cvss: { score: 9 + (i % 10) / 10, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } }));
+    const high = Array.from({ length: 359 }, (_, i) => cve(31 + i, {}));
+    const tw = Array.from({ length: 250 }, (_, i) => cve(1000 + i, {
+      assigner: "example", affected: [{ vendor: "Arcadyan", product: "SAMPLE Router" }], cvss: null, cna_severity: null, title: `SAMPLE router flaw ${i}`,
+      description: `SAMPLE ${"router ".repeat(130)}`,
+    }));
+    const records = [exploited, ...critical, ...high, ...tw];
+    const kev = (id: string): KevEntry => ({
+      cveID: id, vendorProject: "Example Corp", product: "Example Server", vulnerabilityName: `SAMPLE KEV ${id}`, dateAdded: "2026-10-13",
+      shortDescription: "SAMPLE.", requiredAction: "Apply updates.", dueDate: "2026-11-03", knownRansomwareCampaignUse: "Unknown", forensicTriage: null, notes: "", cwes: [],
+    });
+    const newKevIds = [exploited.cve_id, ...Array.from({ length: 9 }, (_, i) => `CVE-2026-${700000 + i}`)];
+    const catalog = { catalogVersion: "2026.10.13", dateReleased: "2026-10-13T17:02:11Z", count: 10, vulnerabilities: newKevIds.map(kev) };
+    const feedsFor = ["therecord", "securityweek", "krebs", "thehackernews", "techcrunch-security"];
+    const coverages: ItemDraft["coverage"][] = [["exploits"], ["breaches"], ["ai"], ["policy"]];
+    const draft0 = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = toPackItems(capItems(Array.from({ length: 90 }, (_, i) => ({
+      ...draft0, feed_id: feedsFor[i % 5]!, key: `k${i}`, url: `https://therecord.media/ct-sample/pt-${i}`, title: `SAMPLE story ${i} on a breach`,
+      snippet: `SAMPLE ${"s".repeat(280)}`, coverage: [...coverages[i % 4]!], score: 30 + (i % 19),
+    }))).kept);
+    expect(items).toHaveLength(90);
+
+    // collect's steps 7 to 11 (scripts/collect.ts), pure.
+    const rankBase: Omit<RankInput, "pack"> = {
+      date: DATE, window, recordWindow: recordWindow(window), catalog, newKevIds, records, epss: { e: null, e1: null, e7: null }, ghsa: [],
+      earlierReleaseIds: [], config: { loaded: cfg, compiled: cfg.compiled, watchWindows: [] }, kevSource: "kev-index", aiMatch,
+    };
+    const keep = recordKeepIds(rankBase);
+    const provisional = provisionalRecords([
+      ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ]);
+    const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
+    const capR = capRecords(provisional, new Set(ranked.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id))));
+    expect(capR.cut).toBe(0);
+    const kept = remapIds(ranked.kept, ranked.cut, ranked.log, capR.idMap).kept;
+    const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+    const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capR.kept, injectionFlags: 0 }, cfg.sources, { referenced });
+
+    // The release: its counts cover all 390 fixes; its pack_ids name at most 20 records, every one still in the pack.
+    const pt = kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id] });
+    expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
+    const inPack = new Set([...built.pack.items.map((i) => i.id), ...built.pack.records.map((r) => r.id)]);
+    for (const id of pt.pack_ids) expect(inPack.has(id)).toBe(true);
+    // The 359 high fixes no test keeps never reach the pack.
+    const recordIds = new Set(capR.kept.map((r) => r.record_id));
+    for (const r of high) expect(recordIds.has(r.cve_id)).toBe(false);
+
+    // Under the cap, with every news item kept: only unreferenced records went, never a KEV or referenced one.
+    expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(built.sizeCut.over).toBe(false);
+    expect(built.sizeCut.items).toEqual([]);
+    expect(built.pack.items).toHaveLength(90);
+    expect(built.sizeCut.records.length).toBeGreaterThan(100);
+    for (const r of built.sizeCut.records) {
+      expect(r.source).toBe("cvelist");
+      expect(referenced.has(r.id)).toBe(false);
+    }
+    expect(built.pack.records.filter((r) => r.source === "kev")).toHaveLength(10);
+    for (const id of referenced) if (/^[pr]\d{4,}$/.test(id)) expect(inPack.has(id), id).toBe(true);
+    expectAudit(built, items, capR.kept);
   });
 
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
@@ -426,7 +564,7 @@ describe("items", () => {
     expect(toPackItems(c.kept).map((i) => i.id).slice(0, 2)).toEqual(["p0001", "p0002"]);
   });
 
-  it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut items first", () => {
+  it("caps at 60 per coverage section and 200 in all; at 400 records KEV is never cut; the size caps cut unreferenced records first (row 146)", () => {
     const base = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
     const many = (n: number, coverage: (i: number) => ItemDraft["coverage"]) => Array.from({ length: n }, (_, i) => ({
       ...base, feed_id: `feed-${i % 20}`, key: `k${i}`, url: `https://therecord.media/ct-sample/item-${i}`, coverage: coverage(i), score: 50 - i / 10,
@@ -450,9 +588,14 @@ describe("items", () => {
     const items = toPackItems(capItems(many(200, (i) => [(["exploits", "breaches", "ai", "policy", "taiwan", "japan"] as const)[i % 6]!]).map((d) => ({ ...d, snippet: "s".repeat(290) }))).kept);
     const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capped.kept, injectionFlags: 0 }, cfg.sources);
     expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
-    expect(built.sizeCut.items).toBe(items.length);
-    expect(built.sizeCut.records).toBeGreaterThan(0);
+    // Every EPSS record went before any item; then the lowest-scored items, until it fit.
+    expect(built.sizeCut.records.length).toBe(340);
     expect(built.pack.records.filter((r) => r.source === "kev").length).toBe(60);
+    expect(built.sizeCut.items.length).toBeGreaterThan(0);
+    expect(built.sizeCut.items.length).toBeLessThan(items.length);
+    const byScore = [...items].sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1));
+    expect(built.pack.items.map((i) => i.id).sort()).toEqual(byScore.slice(0, built.pack.items.length).map((i) => i.id).sort());
+    expectAudit(built, items, capped.kept);
   });
 
   it("a planted instruction is flagged, counted and wrapped in the Markdown", async () => {
@@ -690,7 +833,9 @@ describe("collect on the fixture world (2026-10-14)", () => {
     expect(CollectInputsFile.parse(JSON.parse(first["cache/feeds/inputs.json"]!))).toEqual(result.inputs);
     expect(Pack.parse(JSON.parse(first[`packs/${DATE}.json`]!))).toEqual(result.pack);
     expect(CandidatesFile.parse(JSON.parse(first[`packs/${DATE}.candidates.json`]!))).toEqual(result.candidates);
-    CandidateLogFile.parse(JSON.parse(first[`logs/${DATE}.candidates.json`]!));
+    // Within both caps, so the size caps cut nothing and the log says so (row 146).
+    expect(CandidateLogFile.parse(JSON.parse(first[`logs/${DATE}.candidates.json`]!)).size_cut).toEqual({ over: false, items: [], records: [] });
+    expect(first[`logs/${DATE}.collect.log`]).not.toContain("the size caps cut");
     expect(first[`packs/${DATE}.md`]!.startsWith(`# Source pack ${DATE}\n`)).toBe(true);
     for (const l of first[`packs/${DATE}.md`]!.split("\n")) expect(l.length).toBeLessThanOrEqual(MD_LINE_MAX);
     expect(first[`logs/${DATE}.collect.log`]).toContain(result.summary[0]!);
@@ -785,6 +930,61 @@ describe("collect on the fixture world (2026-10-14)", () => {
 });
 
 describe("collect's other runs", () => {
+  it("a morning over the 150 KB Markdown cap cuts unreferenced records first, then news, and lists every cut in logs/D.candidates.json (row 146)", async () => {
+    // Nine newsrooms with 30 long, distinct stories each, on the fixture world: about 200 KB of Markdown before the size caps.
+    const gen: Record<string, string> = {
+      "https://therecord.media/feed": "therecord.media", "https://www.securityweek.com/feed/": "www.securityweek.com",
+      "https://techcrunch.com/category/security/feed/": "techcrunch.com", "https://feeds.feedburner.com/TheHackersNews": "thehackernews.com",
+      "https://www.microsoft.com/en-us/security/blog/feed/": "www.microsoft.com", "https://krebsonsecurity.com/feed/": "krebsonsecurity.com",
+      "https://googleprojectzero.blogspot.com/feeds/posts/default": "googleprojectzero.blogspot.com",
+      "https://www.ithome.com.tw/rss/security": "www.ithome.com.tw", "https://www.security-next.com/feed": "www.security-next.com",
+    };
+    // Words of their own per story, so no two titles are near-identical (dedupe) and none matches a candidate.
+    const pick = (seed: number, n: number) => Array.from({ length: n }, (_, j) => `w${seed}q${j}`).join(" ");
+    const feeds = feedsVariant((index) => {
+      Object.keys(gen).forEach((url, f) => { index[url] = { file: `rss/gen-${f}.xml`, content_type: "application/rss+xml" }; });
+    });
+    Object.entries(gen).forEach(([, host], f) => {
+      const items = Array.from({ length: 30 }, (_, k) => {
+        const at = new Date(Date.parse("2026-10-13T10:00:00Z") + (f * 30 + k) * 60_000).toUTCString();
+        const seed = f * 1000 + k * 10;
+        return `<item><title>SAMPLE ransomware ${pick(seed, 28)}</title><link>https://${host}/ct-sample/gen-${f}-${k}</link><pubDate>${at}</pubDate><description>SAMPLE ${pick(seed + 5, 60)}</description></item>`;
+      });
+      fs.writeFileSync(path.join(feeds, "rss", `gen-${f}.xml`), `<?xml version="1.0" encoding="utf-8"?>\n<rss version="2.0"><channel><title>SAMPLE</title><link>https://${host}/</link><description>SAMPLE</description>\n${items.join("\n")}\n</channel></rss>\n`);
+    });
+    const root = tempRoot(true);
+    const log: string[] = [];
+    const r = await run(root, { feeds, log });
+    const md = readOut(root, `packs/${DATE}.md`);
+    expect(Buffer.byteLength(md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    const sizeCut = CandidateLogFile.parse(JSON.parse(readOut(root, `logs/${DATE}.candidates.json`))).size_cut;
+    expect(sizeCut.over).toBe(false);
+    expect(sizeCut.items.length).toBeGreaterThan(0);
+    // Every kept candidate's own item and pack_ids are still there; only unreferenced records and items went.
+    const referenced = new Set(r.candidates.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^[pr]\d{4,}$/.test(id)));
+    const inPack = new Set([...r.pack.items.map((i) => i.id), ...r.pack.records.map((x) => x.id)]);
+    for (const id of referenced) expect(inPack.has(id), id).toBe(true);
+    for (const x of [...sizeCut.items, ...sizeCut.records]) expect(inPack.has(x.id) || referenced.has(x.id), x.id).toBe(false);
+    // An item went only once every record the caps may cut was gone: what is left is KEV and referenced records.
+    expect(sizeCut.records.length).toBeGreaterThan(0);
+    for (const x of r.pack.records) expect(x.source === "kev" || referenced.has(x.id), x.id).toBe(true);
+    expect(sizeCut.records.every((x) => x.source !== "kev")).toBe(true);
+    // The audit names each cut item as the pack held it: a sanitised title, its feed and its score, in id order.
+    expect(sizeCut.items.map((i) => i.id)).toEqual([...sizeCut.items.map((i) => i.id)].sort());
+    expect(sizeCut.records.map((x) => x.id)).toEqual([...sizeCut.records.map((x) => x.id)].sort());
+    for (const i of sizeCut.items) {
+      expect(i.title).toMatch(/^SAMPLE /);
+      expect(cfg.sources.feeds.some((f) => f.id === i.feed_id)).toBe(true);
+    }
+    // The collect log keeps its count line and names the cut items per feed.
+    const text = readOut(root, `logs/${DATE}.collect.log`);
+    expect(text).toContain(`pack: the size caps cut ${sizeCut.items.length} items and ${sizeCut.records.length} records.`);
+    const byFeed = new Map<string, number>();
+    for (const i of sizeCut.items) byFeed.set(i.feed_id, (byFeed.get(i.feed_id) ?? 0) + 1);
+    expect(text).toContain(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${DATE}.candidates.json).`);
+    expect(log.filter((l) => l.startsWith("pack: the size caps cut"))).toHaveLength(1);
+  });
+
   it("a deadline already past throws CollectTimeout and writes nothing", async () => {
     const root = tempRoot(true);
     await expect(run(root, { deadline: T0 - 1 })).rejects.toBeInstanceOf(CollectTimeout);

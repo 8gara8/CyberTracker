@@ -10,7 +10,8 @@ import { parseGhsa } from "../lib/feeds/ghsa";
 import { kevBaseline, parseKev } from "../lib/feeds/kev";
 import type { CveRecord, EpssDay, GhsaAdvisory, KevCatalog, KevEntry } from "../lib/feeds/types";
 import { parseDeltaZip } from "../lib/feeds/zip";
-import { activeWatchWindows, buildCandidates, RANK_WEIGHTS, rankCandidates, recordKeepIds, type AiHit, type RankInput } from "../lib/rank";
+import { compareCveIds } from "../lib/ids";
+import { activeWatchWindows, buildCandidates, RANK_WEIGHTS, rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, releasePackMembers, type AiHit, type RankInput } from "../lib/rank";
 import { sanitize } from "../lib/sanitize";
 import { Candidate } from "../lib/schema/context";
 import { CandidateLogFile, CandidatesFile, CutEntry, RankLogEntry, type PackItem, type PackRecord } from "../lib/schema/pack";
@@ -154,7 +155,7 @@ describe("rankCandidates() on the 2026-10-14 fixture morning", () => {
     for (const l of out.log) RankLogEntry.parse(l);
     expect(out.kept.length).toBeLessThanOrEqual(cfg.run.budgets.candidates_max);
     CandidatesFile.parse({ schema_version: 1, date: DATE, kept: out.kept, cut: { count: out.cut.length, by_reason: { below_cap: 0, merged: 2, bundled: 8 } } });
-    CandidateLogFile.parse({ schema_version: 1, date: DATE, ranked: out.ranked, kept: out.kept.map((c) => c.id), cut: out.cut, log: out.log });
+    CandidateLogFile.parse({ schema_version: 1, date: DATE, ranked: out.ranked, kept: out.kept.map((c) => c.id), cut: out.cut, log: out.log, size_cut: { over: false, items: [], records: [] } });
     expect(out.kept.every((c, i) => c.rank === i + 1)).toBe(true);
   });
 
@@ -181,7 +182,11 @@ describe("rankCandidates() on the 2026-10-14 fixture morning", () => {
     expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 9, critical: 4, exploited: 1, exploited_cve_ids: ["CVE-2026-96951"] });
     expect(pt.cve_ids).toEqual(["CVE-2026-96951"]);
     expect(pt.score).toBe(RANK_WEIGHTS.base.release_exploited);
-    expect(pt.pack_ids).toHaveLength(9);
+    // pack_ids: the exploited member's CVE List record, then the critical ones by CVSS, never the other four (§0.4 row 146).
+    const byId = new Map(input().pack.records.map((r) => [r.id, r]));
+    expect(pt.pack_ids.map((id) => `${byId.get(id)!.source} ${byId.get(id)!.record_id}`).sort()).toEqual(
+      ["CVE-2026-96951", "CVE-2026-70157", "CVE-2026-84015", "CVE-2026-102210", "CVE-2026-102238"].map((id) => `cvelist ${id}`).sort(),
+    );
     expect(out.kept.some((c) => c.id === "cve-2026-96951")).toBe(true);
     const bundled = out.cut.filter((c) => c.reason === "bundled:rel-microsoft-2026-10");
     expect(bundled.map((c) => c.cve_ids[0])).toEqual(["CVE-2026-70157", "CVE-2026-84011", "CVE-2026-84012", "CVE-2026-84015", "CVE-2026-102210", "CVE-2026-102234", "CVE-2026-102238", "CVE-2026-102860"]);
@@ -288,6 +293,64 @@ describe("rankCandidates() on built cases", () => {
     expect(by.get("cve-2025-2222")).toMatchObject({ score: 20, reasons: ["EPSS +0.14 in a day"] });
     expect(by.get("cve-2025-3333")).toMatchObject({ score: 40, reasons: ["EPSS crossed 0.99"] });
     expect(by.get("cve-2025-1111")?.epss).toEqual({ score: 0.95, percentile: 0.995, change_24h: 0.45, date: "2026-10-13" });
+  });
+
+  /** A Microsoft fix published in the record window, as a Patch Tuesday zip holds it. */
+  const msFix = (n: number, severity: string, score: number | null) => rec(`CVE-2026-${500000 + n}`, {
+    assigner: "microsoft", affected: [{ vendor: "Microsoft", product: "Windows" }], cna_severity: severity,
+    cvss: score === null ? null : { score, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" }, published_at: `2026-10-13T17:${String(n % 60).padStart(2, "0")}:00Z`,
+  });
+
+  it("a 390-fix release references at most RELEASE_PACK_IDS_MAX records: the exploited, then the critical by CVSS; its counts cover every fix (row 146)", () => {
+    // 3 fixes on the catalog (added long ago, so exploited but not new), 30 critical with CVSS 9.0 to 9.9, 2 critical unscored, 355 high.
+    const exploited = [0, 1, 2].map((n) => msFix(n, "HIGH", 8.8));
+    const critical = Array.from({ length: 30 }, (_, i) => msFix(10 + i, "CRITICAL", 9 + (i % 10) / 10));
+    const unscored = [50, 51].map((n) => msFix(n, "CRITICAL", null));
+    const high = Array.from({ length: 355 }, (_, i) => msFix(100 + i, "HIGH", 7.5));
+    const records = [...exploited, ...critical, ...unscored, ...high];
+    const catalog = catalogOf(exploited.map((r) => kevEntry(r.cve_id, { vendorProject: "Microsoft", product: "Windows", dateAdded: "2026-09-01" })));
+    const base = input({ ...empty, records, catalog });
+    const out = rankCandidates(base);
+    const pt = out.kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.release).toEqual({
+      release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 32, exploited: 3, exploited_cve_ids: exploited.map((r) => r.cve_id),
+    });
+    expect(pt.title).toContain("390 fixes, 3 exploited");
+    expect(RELEASE_PACK_IDS_MAX).toBe(20);
+    expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
+    const byId = new Map(base.pack.records.map((r) => [r.id, r]));
+    const named = pt.pack_ids.map((id) => byId.get(id)!);
+    expect(named.every((r) => r.source === "cvelist")).toBe(true);
+    const ids = new Set(named.map((r) => r.record_id));
+    for (const r of exploited) expect(ids.has(r.cve_id)).toBe(true);
+    // The other 17 are the highest-scored critical fixes; no unscored or high one.
+    const chosen = critical.filter((r) => ids.has(r.cve_id));
+    expect(chosen).toHaveLength(17);
+    const lowestChosen = Math.min(...chosen.map((r) => r.cvss!.score));
+    expect(critical.filter((r) => !ids.has(r.cve_id)).every((r) => r.cvss!.score <= lowestChosen)).toBe(true);
+    for (const r of [...unscored, ...high]) expect(ids.has(r.cve_id)).toBe(false);
+    // In that order: the exploited by CVE id, then the critical by CVSS descending, then CVE id.
+    const order = [...chosen].sort((a, b) => b.cvss!.score - a.cvss!.score || compareCveIds(a.cve_id, b.cve_id)).map((r) => r.cve_id);
+    expect(releasePackMembers({ members: shuffled(records, 3), exploited: exploited.map((r) => r.cve_id) })).toEqual([...exploited.map((r) => r.cve_id), ...order]);
+    // The pack keeps those records, the exploited ones (their own candidates) and the critical ones a test of their own keeps (CVSS 9+ on a
+    // widely deployed vendor), never a fix no test keeps.
+    const keep = recordKeepIds(base);
+    for (const r of [...exploited, ...critical]) expect(keep.has(r.cve_id)).toBe(true);
+    for (const r of [...unscored, ...high]) expect(keep.has(r.cve_id)).toBe(false);
+    for (const r of exploited) expect(out.kept.find((c) => c.id === r.cve_id.toLowerCase())?.pack_ids).toHaveLength(1);
+  });
+
+  it("past RELEASE_PACK_IDS_MAX exploited fixes the release names the first 20 by CVE id, and the pack keeps every exploited fix's record", () => {
+    const exploited = Array.from({ length: 25 }, (_, i) => msFix(i, "HIGH", 8.8));
+    const records = [...exploited, msFix(40, "CRITICAL", 9.8)];
+    const catalog = catalogOf(exploited.map((r) => kevEntry(r.cve_id, { vendorProject: "Microsoft", product: "Windows", dateAdded: "2026-09-01" })));
+    const base = input({ ...empty, records, catalog });
+    const pt = buildCandidates(base).candidates.find((c) => c.kind === "patch_batch")!;
+    const byId = new Map(base.pack.records.map((r) => [r.id, r.record_id]));
+    expect(pt.pack_ids.map((id) => byId.get(id)).sort()).toEqual(exploited.slice(0, 20).map((r) => r.cve_id).sort());
+    expect(pt.release).toMatchObject({ total: 26, critical: 1, exploited: 25 });
+    const keep = recordKeepIds(base);
+    for (const r of records) expect(keep.has(r.cve_id)).toBe(true);
   });
 
   it("bundles schneider-electric once its cna is set", () => {

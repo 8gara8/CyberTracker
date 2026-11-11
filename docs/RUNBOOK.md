@@ -74,7 +74,7 @@ it is kept). All paths are in `/Users/kobol/Projects/CyberTracker`.
 | `logs/D.context.json`, `logs/D.regions-input.json` | The exact context and regions input the validator used (the copy in `drafts/context.json` is the agent's, which it could have edited) | Pass to `npm run validate` |
 | `logs/D.evidence.json` | Every URL the agent could cite and the text seen for each: pack, fetched pages, search results, snapshots | Look up a URL when a `SOURCE_*` or `SNAP_*` code fires |
 | `logs/D.validation.json`, `logs/D.dropped.json` | The last validator report; the items, Angle or Scoreboard entries the soft pass dropped as unverified, and the Lead sentences and region raises it removed because the drop left them citing no item (`removed`) | The report lists each issue's code, path and message |
-| `logs/D.candidates.json`, `packs/D.md`, `packs/D.json` | Every candidate with why it was kept or cut; the source pack the agent read | Read when the brief misses an expected story |
+| `logs/D.candidates.json`, `packs/D.md`, `packs/D.json` | Every candidate with why it was kept or cut, and under `size_cut` every item (id, feed, score, title) and record the pack's size caps cut; the source pack the agent read | Read when the brief misses an expected story. `logs/D.collect.log` counts the size caps' cuts, and names the feeds whose items they cut |
 | `logs/D.recheck.json` | Dispute intake, the 14-day re-check's flags and reader reports, and the link results after the link check | Read when a correction or withhold is in question |
 | `logs/.lock` | `{ pid, started }` of the run in progress | See "The lock" below |
 | `needs-review/D/` | The failure bundle of a run that ended with an error code | See "needs-review" below |
