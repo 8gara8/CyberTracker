@@ -411,6 +411,19 @@ describe("Sample", () => {
       expect(n).toBeGreaterThan(10);
     });
 
+    it("a metric Scoreboard entry never prints its raw stored value after the formatted summary", () => {
+      const props = clone(propsFor(WED));
+      const e = props.brief.scoreboard.entries[0]!;
+      Object.assign(e, {
+        origin: "metric", value: 0.3694, reported_value: null, quote: null, claim_type: null, source_url: null,
+        summary: "First reading: the 26-week share of listed flaws exploited at disclosure is 37% (80% range 32% to 42%).",
+        metrics_ref: { file: `metrics/${WED}.json`, path: "window.w26.at_disclosure_share" },
+      });
+      const t = page(props)("#scoreboard").text();
+      expect(t).toContain("is 37% (80% range 32% to 42%).");
+      expect(t).not.toContain("0.3694");
+    });
+
     it("renders EPSS movers in a data-only edition only", () => {
       const props = clone(propsFor(DATA_ONLY));
       props.brief.epss_movers = [{ cve_id: "CVE-2026-88779", score: 0.41234, delta_7d: 0.12, percentile: 0.98 }];

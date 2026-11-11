@@ -1,8 +1,9 @@
 // SPEC §7 "Brief components", ScoreboardSection. Mondays (week_in_review set): the week in review's text, the
 // ScoreboardTable (Claim, Status, Zone, Reading "as of <date>"; words only: OPEN, HIT, MISS, VOID; SUPPORT,
 // CHALLENGE, BETWEEN, NO READING) and StrongestAgainst (a panel "Strongest evidence against": the text or
-// NONE_FOUND, refs, claim id). Every day: each entry "<entry id> · <claim_id> · <DIRECTION>", its summary, value
-// or reported_value, quote and link; with none, SCOREBOARD_NO_ENTRY from scoreboard.last, or "No Scoreboard
+// NONE_FOUND, refs, claim id). Every day: each entry "<entry id> · <claim_id> · <DIRECTION>", its summary, a
+// report entry's reported_value, quote and link (a metric entry's summary already holds its reading formatted, so
+// its raw stored value is not printed); with none, SCOREBOARD_NO_ENTRY from scoreboard.last, or "No Scoreboard
 // entries yet." Nothing here is counted (§4.12: the week in review, the strongest evidence and the entries'
 // summaries are not in the total).
 import type { Brief, WeekInReview } from "@/lib/schema/brief";
@@ -79,9 +80,13 @@ export function StrongestAgainst({ against, index }: { against: WeekInReview["st
   );
 }
 
-/** One entry: "<entry id> · <claim_id> · <DIRECTION>", the summary, the value, the quote and the link. */
+/**
+ * One entry: "<entry id> · <claim_id> · <DIRECTION>", the summary, the reported value, the quote and the link. A
+ * metric entry's `value` is the raw reading (0.3712); its summary already gives it formatted ("37% (80% range
+ * 32% to 42%)", metricEntrySummary()), so it is not printed again.
+ */
 function Entry({ entry }: { entry: ScoreboardEntry }) {
-  const value = entry.reported_value ?? (entry.value !== null ? String(entry.value) : null);
+  const value = entry.reported_value;
   return (
     <li className="border-l-2 border-rule pl-3">
       <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-fg">
