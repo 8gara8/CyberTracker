@@ -190,6 +190,26 @@ export const RankLogEntry = z.strictObject({
   detail: z.string().max(300),
 });
 
+/**
+ * What buildPack()'s size caps cut (§4.14 Caps), each as the pack held it (strings already sanitised), in
+ * id order: the items with their feed, score and title, the records with their source and record id.
+ * `over`: still over a cap with only KEV and referenced records left, so the pack was written as it was.
+ */
+export const PackSizeCut = z.strictObject({
+  over: z.boolean(),
+  items: z.array(z.strictObject({
+    id: z.string().regex(ID_PATTERNS.packItem, { error: 'Expected a pack item id like "p0001"' }),
+    feed_id: ConfigId,
+    score: z.number(),
+    title: z.string().max(200),
+  })),
+  records: z.array(z.strictObject({
+    id: z.string().regex(ID_PATTERNS.packRecord, { error: 'Expected a pack record id like "r0001"' }),
+    source: PackRecordSource,
+    record_id: z.string().min(1),
+  })),
+});
+
 /** packs/D.candidates.json (§8.3). */
 export const CandidatesFile = z.strictObject({
   schema_version: z.literal(1),
@@ -198,7 +218,7 @@ export const CandidatesFile = z.strictObject({
   cut: z.strictObject({ count: Count, by_reason: z.strictObject({ below_cap: Count, merged: Count, bundled: Count }) }),
 });
 
-/** logs/D.candidates.json: the full ranking log. */
+/** logs/D.candidates.json: the full ranking log, and what the pack's size caps cut. */
 export const CandidateLogFile = z.strictObject({
   schema_version: z.literal(1),
   date: IsoDate,
@@ -206,6 +226,7 @@ export const CandidateLogFile = z.strictObject({
   kept: z.array(z.string()),
   cut: z.array(CutEntry),
   log: z.array(RankLogEntry),
+  size_cut: PackSizeCut,
 });
 
 export type PackFlag = z.infer<typeof PackFlag>;
@@ -223,5 +244,6 @@ export type DayRead = z.infer<typeof DayRead>;
 export type CollectInputsFile = z.infer<typeof CollectInputsFile>;
 export type CutEntry = z.infer<typeof CutEntry>;
 export type RankLogEntry = z.infer<typeof RankLogEntry>;
+export type PackSizeCut = z.infer<typeof PackSizeCut>;
 export type CandidatesFile = z.infer<typeof CandidatesFile>;
 export type CandidateLogFile = z.infer<typeof CandidateLogFile>;

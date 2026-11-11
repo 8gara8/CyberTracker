@@ -155,7 +155,7 @@ describe("rankCandidates() on the 2026-10-14 fixture morning", () => {
     for (const l of out.log) RankLogEntry.parse(l);
     expect(out.kept.length).toBeLessThanOrEqual(cfg.run.budgets.candidates_max);
     CandidatesFile.parse({ schema_version: 1, date: DATE, kept: out.kept, cut: { count: out.cut.length, by_reason: { below_cap: 0, merged: 2, bundled: 8 } } });
-    CandidateLogFile.parse({ schema_version: 1, date: DATE, ranked: out.ranked, kept: out.kept.map((c) => c.id), cut: out.cut, log: out.log });
+    CandidateLogFile.parse({ schema_version: 1, date: DATE, ranked: out.ranked, kept: out.kept.map((c) => c.id), cut: out.cut, log: out.log, size_cut: { over: false, items: [], records: [] } });
     expect(out.kept.every((c, i) => c.rank === i + 1)).toBe(true);
   });
 

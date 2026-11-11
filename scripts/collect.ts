@@ -561,8 +561,14 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
   const built = buildPack({ date: D, window, generatedAt, cutoff, degraded, items, records: capR.kept, ...recount(items, capR.kept) }, config.sources, {
     lookbackHours: run.pack.lookback_hours, referenced: referencedFinal, recount,
   });
-  if (built.sizeCut.items || built.sizeCut.records) log(`pack: the size caps cut ${built.sizeCut.items} items and ${built.sizeCut.records} records.`);
-  if (built.sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
+  const sizeCut = built.sizeCut;
+  if (sizeCut.items.length || sizeCut.records.length) log(`pack: the size caps cut ${sizeCut.items.length} items and ${sizeCut.records.length} records.`);
+  if (sizeCut.items.length) {
+    const byFeed = new Map<string, number>();
+    for (const it of sizeCut.items) byFeed.set(it.feed_id, (byFeed.get(it.feed_id) ?? 0) + 1);
+    log(`pack: items the size caps cut, by feed: ${[...byFeed].sort(([a], [b]) => byCodeUnit(a, b)).map(([id, n]) => `${id} ${n}`).join(", ")} (each listed in logs/${D}.candidates.json).`);
+  }
+  if (sizeCut.over) log("pack: still over the size caps with only KEV and referenced records left; written as it is.");
   const pack = built.pack;
   const index: FeedIndexFile = { schema_version: 1, date: D, generated_at: generatedAt, feeds: indexFeedsFor(pack.records) };
   const inPack = new Set([...pack.items.map((i) => i.id), ...pack.records.map((r) => r.id)]);
@@ -578,7 +584,8 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     ...remapped.log,
     ...(perId.overCap ? [{ code: "CVE_FETCH_CAP" as const, detail: `${perId.overCap} dashboard ledger ids over the per-id cap of ${PER_ID_MAX}; ${perId.ledger.length} fetched after the KEV ids.` }] : []),
   ];
-  const candidateLog = { schema_version: 1 as const, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog };
+  // The size caps' cuts (§0.4 row 146): every item and record buildPack() cut, as the pack held it, in id order.
+  const candidateLog: CandidateLogFile = { schema_version: 1, date: D, ranked: ranked.ranked, kept: kept.map((c) => c.id), cut, log: rankLog, size_cut: sizeCut };
 
   const kevData = kr?.data ?? null;
   const er = epss as Read<{ e: EpssDay | null; files: { role: "e" | "e1" | "e7"; date: string; sha256: string }[] }> | null;

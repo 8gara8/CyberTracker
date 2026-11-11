@@ -21,7 +21,7 @@ import { injectionLike, sanitize, sanitizeFlagged, wrapUntrusted } from "./sanit
 import type { EpssMover } from "./schema/metrics";
 import type { RunFile, SourceTiersFile } from "./schema/config";
 import type { Evidence } from "./schema/misc";
-import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type RankLogEntry } from "./schema/pack";
+import { Pack, PACK_ITEMS_MAX, PACK_RECORDS_MAX, type CutEntry, type FeedIndexEntry, type FeedIndexFile, type PackFeed, type PackItem, type PackRecord, type PackRecordSource, type PackSizeCut, type RankLogEntry } from "./schema/pack";
 import type { Candidate } from "./schema/context";
 import type { FetchedFeed, FetchedFeedKind, SourcesFile } from "./schema/registry";
 import { ID_PATTERNS, type TimeWindow } from "./schema/common";
@@ -894,9 +894,11 @@ export interface BuildPackOptions {
  * references; then the items no kept candidate references, lowest score first; then the referenced items,
  * lowest score first (§0.4 row 146: news goes only after every record the caps may cut). When only KEV and
  * referenced records remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags` are
- * recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
+ * recounted after each cut. Returns the pack, its Markdown and what the size caps cut (`sizeCut`, for
+ * logs/D.candidates.json): each cut item's id, feed, score and title and each cut record's id, source and
+ * record id, as the pack held them, in id order (§0.4 row 146).
  */
-export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number; over: boolean } } {
+export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: PackSizeCut } {
   const referenced = opts.referenced ?? new Set<string>();
   let items = [...input.items];
   let records = [...input.records];
@@ -929,7 +931,14 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
       md = renderPackMd(pack, registry, opts);
     }
   }
-  return { pack, md, sizeCut: { items: input.items.length - items.length, records: input.records.length - records.length, over: over() } };
+  const byId = (a: { id: string }, b: { id: string }) => byCodeUnit(a.id, b.id);
+  return {
+    pack, md, sizeCut: {
+      over: over(),
+      items: input.items.filter((i) => gone.has(i.id)).sort(byId).map((i) => ({ id: i.id, feed_id: i.feed_id, score: i.score, title: i.title })),
+      records: input.records.filter((r) => gone.has(r.id)).sort(byId).map((r) => ({ id: r.id, source: r.source, record_id: r.record_id })),
+    },
+  };
 }
 
 /** A schema-valid empty pack, degraded (a crash or timeout, §4.14 Degraded). */
