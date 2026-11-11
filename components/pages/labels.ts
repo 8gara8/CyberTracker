@@ -1,17 +1,7 @@
-// Short words the pages show that lib/vocab.ts does not hold yet (SPEC §6 Route details, §7). Owner: pages
-// lane. The integration step may move them into lib/vocab.ts (the items lane's CorrectionBanner shows the
-// same type words).
+// Short words the pages show that lib/vocab.ts does not hold (SPEC §6 Route details, §7). A correction's type
+// word is CORRECTION_WORD (components/brief/CorrectionBanner.tsx), shared by the brief and the pages.
 import type { Edition } from "@/lib/schema/common";
-import type { CorrectionType } from "@/lib/schema/misc";
 import type { BlockReason, FinderFamily, FinderKind } from "@/lib/vocab";
-
-/** A correction's type word (§7 CorrectionBanner: CORRECTED, CLARIFIED, UPDATED or NAME REMOVED). */
-export const CORRECTION_TYPE_WORD: Record<CorrectionType, string> = {
-  correction: "CORRECTED",
-  clarification: "CLARIFIED",
-  update: "UPDATED",
-  name_removed: "NAME REMOVED",
-};
 
 /** The edition word of an item page's timeline: "<date> · <edition word> edition". */
 export const EDITION_WORD: Record<Edition, string> = {

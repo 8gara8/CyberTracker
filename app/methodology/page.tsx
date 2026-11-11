@@ -10,7 +10,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Markdown } from "@/components/Markdown";
 import { PageHeader, Section } from "@/components/layout/chrome";
-import { BLOCK_REASON_LABEL, CORRECTION_TYPE_WORD, FINDER_FAMILY_LABEL, FINDER_KIND_LABEL } from "@/components/pages/labels";
+import { CORRECTION_WORD } from "@/components/brief/CorrectionBanner";
+import { BLOCK_REASON_LABEL, FINDER_FAMILY_LABEL, FINDER_KIND_LABEL } from "@/components/pages/labels";
 import { FEED_DAYS, STYLE_SECTIONS, correctionsNewestFirst, feedRows, lastStatusDays, newestMetrics } from "@/components/pages/methodology-data";
 import { PlainText } from "@/components/ui/PlainText";
 import { loadConfig } from "@/lib/config";
@@ -46,7 +47,9 @@ function Defs({ rows }: { rows: { term: ReactNode; text: ReactNode; key: string 
     <dl className="space-y-1.5 text-[15px]">
       {rows.map((r) => (
         <div key={r.key}>
-          <dt className="inline font-semibold">{r.term}:</dt> <dd className="inline">{r.text}</dd>
+          {/* A term that holds a colon itself ("AI: unassessed", the chip's own words) takes " ·", never a second colon. */}
+          <dt className="inline font-semibold">{r.term}{typeof r.term === "string" && r.term.includes(":") ? " ·" : ":"}</dt>{" "}
+          <dd className="inline">{r.text}</dd>
         </div>
       ))}
     </dl>
@@ -312,7 +315,7 @@ export default function MethodologyPage() {
                 ) : (
                   <>{shortDate(c.edition_date)} · {c.item_id}</>
                 )}{" "}
-                · <span className="font-mono text-[12px] font-semibold">{CORRECTION_TYPE_WORD[c.type]}</span> · <PlainText text={c.reason} />
+                · <span className="font-mono text-[12px] font-semibold">{CORRECTION_WORD[c.type]}</span> · <PlainText text={c.reason} />
               </li>
             ))}
           </ol>

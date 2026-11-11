@@ -11,6 +11,7 @@ import type { Source } from "@/lib/schema/common";
 import type { CveBlock, Item, ReleaseBlock } from "@/lib/schema/item";
 import { shortDate } from "@/lib/format";
 import { fmt1, fmt2, fmtInt, fmtPct } from "@/lib/metrics/stats";
+import { cveRecordUrl, ghsaRecordUrl } from "@/lib/record-links";
 import {
   ACTOR_NEXUS_INFO, AI_CONFIDENCE_INFO, AI_ROLE_INFO, ATTRIBUTION_BASIS_INFO, CLAIM_TYPE_INFO, DISCOVERY_CREDIT_INFO,
   EXPLOITATION_BASIS_INFO, INCIDENT_STATUS_INFO, KIND_INFO, NOT_VENDOR_CONFIRMED, SECTORS, TOPIC_INFO,
@@ -29,8 +30,6 @@ export interface ItemDetailsProps {
   sourcesById: Record<string, Source>;
 }
 
-const CVE_PAGE = "https://www.cve.org/CVERecord?id=";
-const GHSA_PAGE = "https://github.com/advisories/";
 
 const SCORER: Record<NonNullable<CveBlock["cvss"]>["scorer"], (assigner: string) => string> = {
   cna: (assigner) => `the CNA (${assigner})`,
@@ -72,7 +71,7 @@ function CveRows({ cve }: { cve: CveBlock }) {
   return (
     <>
       <Row term="CVE">
-        <ExternalLink href={`${CVE_PAGE}${cve.cve_id}`} className="font-mono">{cve.cve_id}</ExternalLink>
+        <ExternalLink href={cveRecordUrl(cve.cve_id)} className="font-mono">{cve.cve_id}</ExternalLink>
         {" · "}<PlainText text={cve.title} />
         {" · "}published {shortDate(cve.date_published)}, updated {shortDate(cve.date_updated)}
       </Row>
@@ -131,7 +130,7 @@ function CveRows({ cve }: { cve: CveBlock }) {
       ) : null}
       {cve.ghsa_ids.length ? (
         <Row term="GitHub advisories">
-          <Dotted>{cve.ghsa_ids.map((g) => <ExternalLink key={g} href={`${GHSA_PAGE}${g}`} className="font-mono">{g}</ExternalLink>)}</Dotted>
+          <Dotted>{cve.ghsa_ids.map((g) => <ExternalLink key={g} href={ghsaRecordUrl(g)} className="font-mono">{g}</ExternalLink>)}</Dotted>
         </Row>
       ) : null}
     </>

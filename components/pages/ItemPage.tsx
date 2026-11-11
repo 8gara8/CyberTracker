@@ -29,8 +29,9 @@ import type { Correction } from "@/lib/schema/misc";
 import { correctionsFor, itemHistory, type ItemEdition } from "@/lib/site-data";
 import { normalizeUrl } from "@/lib/urls";
 import { EXPLOITATION_BASIS_INFO, KIND_INFO, WITHHELD_HEADLINE, WITHHELD_TEXT } from "@/lib/vocab";
-import { CORRECTION_TYPE_WORD, EDITION_WORD } from "./labels";
-import { cveRecordUrl, ghsaRecordUrl, kevRecordUrl, nvdRecordUrl } from "./records";
+import { CORRECTION_WORD } from "@/components/brief/CorrectionBanner";
+import { cveRecordUrl, ghsaRecordUrl, kevRecordUrl, nvdRecordUrl } from "@/lib/record-links";
+import { EDITION_WORD } from "./labels";
 
 type ItemContent = Pick<Content, "briefs" | "corrections">;
 
@@ -111,7 +112,7 @@ function timeline(content: ItemContent, id: string, history: readonly ItemEditio
       date: c.date,
       rank: 8,
       key: `correction-${c.id}`,
-      body: <>{c.id} · {CORRECTION_TYPE_WORD[c.type]} · {c.field}: <PlainText text={c.reason} /></>,
+      body: <>{c.id} · {CORRECTION_WORD[c.type]} · {c.field}: <PlainText text={c.reason} /></>,
     });
   }
   for (const h of history) {

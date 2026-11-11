@@ -2,13 +2,13 @@
 // in tabular figures. Labels and numbers only; not counted.
 import type { EpssMover } from "@/lib/schema/metrics";
 import { fmt2, fmtPct } from "@/lib/metrics/stats";
+import { cveRecordUrl } from "@/lib/record-links";
 import { ExternalLink } from "@/components/ui/ExternalLink";
 
 export interface EpssMoversProps {
   movers: EpssMover[];
 }
 
-const CVE_PAGE = "https://www.cve.org/CVERecord?id=";
 
 /** A signed two-decimal change: "+0.12", "-0.05", "+0.00". */
 const signed2 = (x: number) => (fmt2(x).startsWith("-") ? fmt2(x) : `+${fmt2(x)}`);
@@ -35,7 +35,7 @@ export function EpssMovers({ movers }: EpssMoversProps) {
           <tbody>
             {movers.map((m) => (
               <tr key={m.cve_id}>
-                <td className={TD}><ExternalLink href={`${CVE_PAGE}${m.cve_id}`}>{m.cve_id}</ExternalLink></td>
+                <td className={TD}><ExternalLink href={cveRecordUrl(m.cve_id)}>{m.cve_id}</ExternalLink></td>
                 <td className={`${TD} text-right`}>{fmt2(m.score)}</td>
                 <td className={`${TD} text-right`}>{signed2(m.delta_7d)}</td>
                 <td className={`${TD} text-right`}>{fmtPct(m.percentile)}</td>

@@ -46,13 +46,13 @@ import { TabBar } from "@/components/layout/TabBar";
 import { ItemPage, itemPageTitle } from "@/components/pages/ItemPage";
 import { FEED_SIZE, escapeXml, feedXml } from "@/components/pages/feed";
 import { STYLE_SECTIONS } from "@/components/pages/methodology-data";
-import { KEV_CATALOG_URL } from "@/components/pages/records";
 import { ABOUT_WHAT, DATA_CREDITS, howItIsMade, noEditionYet, sourcesDocUrl } from "@/components/pages/site-text";
 import { AIChip } from "@/components/ui/AIChip";
 import { SeverityPips } from "@/components/ui/SeverityPips";
 import { loadConfig } from "@/lib/config";
 import { loadContent, type Content } from "@/lib/content";
 import { longDate, rfc822, shortDate } from "@/lib/format";
+import { KEV_CATALOG_URL } from "@/lib/record-links";
 import { isWithheld } from "@/lib/items";
 import { section } from "@/lib/markdown";
 import { round4, wilson80 } from "@/lib/metrics/stats";
@@ -1234,6 +1234,12 @@ describe("Methodology", () => {
       expect(lines.map((l) => l.split(" · ")[1])).toEqual(["C-0002", "C-0001"]);
       expect(lines[1]).toContain("12 Oct 2026 · inc-health-us-2026-10 · NAME REMOVED");
       expect(hrefs(block)).toEqual(expect.arrayContaining(["/brief/2026-10-12#inc-health-us-2026-10"]));
+    });
+
+    it("defines the AI roles by their chip words, with no doubled colon after \"AI: unassessed\"", () => {
+      const t = text(html(MethodologyPage()));
+      expect(t).toContain("AI: unassessed · ");
+      expect(t).not.toContain("AI: unassessed:");
     });
   });
 });

@@ -1,7 +1,8 @@
-// The record links of an item page (SPEC §6 Route details, `/items/[id]`, "Records"). Owner: pages lane.
-// lib/rank.ts, lib/collect.ts and lib/apply.ts each hold a module-local cve.org builder, but importing them
-// would pull the feed readers and git helpers into the site bundle, so the site keeps its own here;
-// ghsaRecordUrl() comes from lib/feeds/ghsa.ts, which is light.
+// The site's record links (SPEC §6 Route details, `/items/[id]`, "Records"; §7 ItemDetails and EpssMovers):
+// one builder per record page, used by the item page and the brief's components alike. lib/rank.ts,
+// lib/collect.ts and lib/apply.ts each hold a module-local cve.org builder, but importing them would pull the
+// feed readers and git helpers into the site bundle, so the site keeps its own here; ghsaRecordUrl() comes
+// from lib/feeds/ghsa.ts, which is light.
 export { ghsaRecordUrl } from "@/lib/feeds/ghsa";
 
 /** The CVE record on cve.org. */
