@@ -77,8 +77,10 @@ faster?
   Codex rounds 1 and 2 each found one P1, fixed with rows 148 (a reopened dispute is withheld again) and
   149 (a withhold not in the tree stops the editorial pass with `E_WITHHOLD`). `package-lock.json` has
   not changed since `cbf3a9b`, so no `npm ci`. **Kobol housekeeping still due**, in the Kobol session
-  JL's next message starts: fast-forward the main checkout to `9ad5df3` (rule 4); keep the P3
-  worktree's `logs/dry-run/tree` (copy it out first) for P4's screenshots; then remove the worktree
+  JL's next message starts: fast-forward the main checkout to `9ad5df3` (rule 4); copy the P3
+  worktree's `logs/dry-run/tree` into `logs/dry-run/tree` of the checkout where P4's Kobol steps run
+  (for example `/Users/kobol/Projects/CyberTracker-worktrees/p4-site/logs/dry-run/tree`), since SPEC
+  §10 P4's loop reads `CT_CONTENT_DIR=logs/dry-run/tree`; then remove the worktree
   `/Users/kobol/Projects/CyberTracker-worktrees/p3-pipeline` and
   `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs`.
 - **P4 on `p4-site`, draft PR #6:** the static site (every route, the brief, the Gap charts,
@@ -208,7 +210,7 @@ faster?
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
 | Build the site | `npm run build:sample` and `npm run build:empty` build it from `fixtures/site-content/` and `fixtures/empty-content/` (both are steps of `check`); `npm run build` reads `content/` or `CT_CONTENT_DIR`, then `npm run start` serves it; `CT_LOOK=night` builds full dark until JL's pick (SPEC §6, §9.7; from P4) |
 | Colour check | `npm run color:check` checks every colour pair of `app/globals.css` against Appendix A.5 (`-- --css FILE` for another file); exit 0 passed, 1 a failure, 2 usage; a step of `check` (from P4) |
-| Screenshots | On Kobol, with the site served: `node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing, 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
+| Screenshots | On Kobol, with the site served (`PATH=/opt/homebrew/bin:$PATH npm run start`, rule 2): `/opt/homebrew/bin/node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing, 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
 
 ## 7. Memory
 
