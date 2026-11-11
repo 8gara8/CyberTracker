@@ -300,13 +300,13 @@ const RANGE_START = `${RATIO_START}\\d+(?:[.,]\\d+)*[xX]?[${DASHES}]`;
  * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
  * no letter, digit, "_", ".", ",", hyphen, en dash, "/", "#" or "%" before it ("DIR-823X", "370/XP/38x"),
  * unless it ends a range from a bare number or a glued ratio ("2-3x", "5x–10x"), and after it only
- * whitespace, sentence punctuation and then whitespace, the end, "+" ("10x+"), "/" and a word ("10x/year"),
- * or a hyphen and a comparative ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as
- * a name.
+ * whitespace, sentence punctuation and then whitespace, the end, "+" ("10x+"), "/" and a word ("10x/year";
+ * not a unit of time below a year, "10x/day", which counts occurrences), or a hyphen and a comparative
+ * ("10x-faster"; "3x-ui" is a name): a ratio unless gluedRatios() reads it as a name.
  */
 const GLUED_RATIO_RE = new RegExp(
   `(?:${RATIO_START}|(?<=${RANGE_START}))(\\d+(?:[.,]\\d+)*)([xX])` +
-  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|\\+(?:\\s|$|[.,;:!?)])|\\/\\p{L}|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
+  `(?=$|\\s|[.,;:!?…)\\]}"'”’»]+(?:\\s|$)|\\+(?:\\s|$|[.,;:!?)])|\\/(?!(?:day|hour|minute|second|week|month)s?(?![\\p{L}]))\\p{L}|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "gu");
 /** The range start before a token, removed before nameBefore() reads the word before the range ("Vigor 286-296x"). */
 const RANGE_START_END_RE = new RegExp(`${RANGE_START}$`, "u");
 /**
@@ -420,14 +420,25 @@ const NUMBER_WORD = (() => {
   const big = "hundred|thousand|million";
   return `(?:(?:a|${units}|${teens}|${tens})\\s+(?:${big})|(?:${big})|(?:${tens})(?:[\\s${DASHES}](?:${units}))?|${teens}|two|three|four|five|six|seven|eight|nine)`;
 })();
+/** Nouns of quantity: what "the pace", "the usual number" and the like measure. */
+const QUANTITY_NOUN = "(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline|count|share)";
+/** "as <word> as" closing a comparison: "nine times as rapidly as", "five times as numerous as" (review of the ninth pass). */
+const AS_AS = "as\\s+\\p{L}+\\s+as";
+/**
+ * "over" before the thing compared: "over the 2023–24 pace", "over their usual rate" (a number, or a noun of
+ * quantity at most two words on); not "over two weeks", "over October" or "over the Lunar New Year", which are
+ * spans of time (review of the ninth pass).
+ */
+const OVER_QUANTITY = `over\\s+(?:the|its|their)\\s+(?:\\p{N}|(?:\\S+\\s+){0,2}?${QUANTITY_NOUN})`;
 /**
  * What follows "N times" when it is a ratio: a comparative, "as" before an adjective of degree (AS_DEGREE),
  * "the" (not "the following", "the same", "the past" and other spans of time), "than", "that of", "those
- * of", "what", "its" or "their". "Three times in October", "updated three times this year", "three times
- * over two weeks" and "three times as attackers adapted" are counts of occurrences.
+ * of", "what", "its", "their", "as <word> as" (AS_AS: "as rapidly as") or "over" before a number or a noun of
+ * quantity (OVER_QUANTITY: "over the 2023–24 pace"). "Three times in October", "updated three times this
+ * year", "three times over two weeks" and "three times as attackers adapted" are counts of occurrences.
  */
 const RATIO_FOLLOWER =
-  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their|${AS_DEGREE}` +
+  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their|${AS_DEGREE}|${AS_AS}|${OVER_QUANTITY}` +
   "|the(?!\\s+(?:following|same|past|last|next|previous|first|second|third|other|whole|entire|course|day|days|week|weeks|weekend" +
   "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}])))(?![\\p{L}])";
 /**

@@ -17,7 +17,7 @@ import type { EditionName } from "@/fixtures/src/world";
 import { kevLines } from "@/lib/metrics/headline";
 import { aiRules, attributesClaim, mentionsAnthropic, anthropicReasons } from "@/lib/rules/ai";
 import { cveIdsIn, cveRules, draftVendorConfirmedBy, holdsCveId, isCveRecordPage, onKevDraft } from "@/lib/rules/cves";
-import { displaysFor, gapDayExample, groundingRules, metricTermsIn, valueAt, weekInReviewExample } from "@/lib/rules/grounding";
+import { displaysFor, gapDayExample, gapMultiple, groundingRules, metricTermsIn, valueAt, weekInReviewExample } from "@/lib/rules/grounding";
 import { derive } from "@/lib/rules/shared";
 import type { CveRecordInfo, Rule, RuleInput, ValidationIssue } from "@/lib/rules/types";
 import type { DraftBrief } from "@/lib/schema/draft-brief";
@@ -931,6 +931,42 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
       ["Ten times the old volume arrived.", "Ten times"]] as const) {
       expect(wordRatios(text), text).toEqual([ratio]);
     }
+  });
+
+  it("NUMBER_FORM: reads \"over the pace\" and \"as rapidly as\" ratios in words, and no frequency glued to x (review of the ninth pass)", () => {
+    // The ninth pass dropped "over" and narrowed "as", so these wrong ratios passed with 0 errors on the canary harness.
+    for (const [text, ratio] of [
+      ["New CVE records arrived at nearly ten times over the 2023–24 pace in 13 weeks.", "ten times"],
+      ["New CVE records rose nine times over their 2023–24 pace.", "nine times"], ["KEV additions ran at five times over the usual rate.", "five times"],
+      ["New CVE records arrived nine times as rapidly as in 2023–24.", "nine times"], ["KEV additions were five times as frequent as in 2023–24.", "five times"],
+      ["New CVE records were nine times as numerous as in 2023–24.", "nine times"],
+    ] as const) expect(wordRatios(text), text).toEqual([ratio]);
+    for (const text of ["The group struck three times over two weeks.", "patched five times over the past week",
+      "TWCERT/CC warned four times over the Lunar New Year.", "The flaw was exploited three times as CISA confirmed."]) {
+      expect(wordRatios(text), text).toEqual([]);
+    }
+    // A count per unit of time glued to x counts occurrences; "up 10x/year" is still a ratio.
+    for (const text of ["Scanners probed exposed gateways 10x/day, Shadowserver said.", "The botnet retried 3x/hour.", "It polled 2x/weeks."]) {
+      expect(gluedRatios(text), text).toEqual([]);
+    }
+    expect(gluedRatios("Exploitation went up 10x/year.")).toEqual(["10x"]);
+  });
+
+  it("NUMBER_FORM: a Lead sentence may copy the Gap's own pace multiple in words, but not another (review of the ninth pass)", () => {
+    // pacePhrase() prints "more than three times" to "ten times" once the 26-week pace triples. Digits for it would fail
+    // LEAD_GROUNDED (no quoted number), so the words the Gap prints are left to the Gap's wording.
+    const d = weekdayDraft();
+    const metrics = structuredClone(draftInputs("weekday").metrics!);
+    metrics.headline.text = metrics.headline.text.replace("more than twice", "more than three times");
+    expect(gapMultiple(metrics)).toBe("three times");
+    d.lead.push({ text: "Exploitation ran at more than three times the 2023–24 pace.", item_ids: [], gap: true });
+    const tweak = (i: DraftInputs) => { i.metrics = metrics; };
+    expect(only(check(d, "weekday", tweak), "NUMBER_FORM")).toEqual([]);
+    d.lead[d.lead.length - 1]!.text = "Exploitation ran at more than four times the 2023–24 pace.";
+    expect(only(check(d, "weekday", tweak), "NUMBER_FORM").map((e) => e.message)).toEqual([
+      `lead[${d.lead.length - 1}].text writes the ratio "four times" in words, which the validator does not read as a number, so it cannot check it.`]);
+    // With the weekday Gap's "more than twice", no multiple is the Gap's own.
+    expect(gapMultiple(draftInputs("weekday").metrics)).toBeNull();
   });
 
   it("NUMBER_FORM: a zero-item Gap sentence with a ratio in words fails, with a hint to write it in digits (review of the seventh pass)", () => {

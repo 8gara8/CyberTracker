@@ -191,8 +191,9 @@ release with no exploited fix, name its CVE ids (its pack records) in `cve_ids`.
 fixes count: for a release with no exploited fix, an id that is not one of its fixes (no CVE List record
 from the vendor's CNA published within the release's dates, which the error gives) is ignored, and the
 error names it; a release with an exploited fix is dated from its exploited CVEs. A CVE record of a
-vendor's CNA with no tagged advisory URL carries that vendor's own page instead (one per host, at most
-two; never a commit, bug tracker or mailing list link), and a release's candidate lists the exploited
+vendor's CNA with no tagged advisory URL of its own (a report only CISA's ADP tagged does not count)
+carries that vendor's own page (one per host, at most two; never a commit, bug tracker or mailing list
+link), and a release's candidate lists the exploited
 fix's first. The validator catches this before publish, so "Not composed" for a release block
 (`E_PUBLISH`) should no longer occur.
 

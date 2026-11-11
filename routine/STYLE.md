@@ -170,7 +170,8 @@ a denominator ("37% in the 26 weeks to 6 Nov", §12). A ratio is written as the 
 "1.9 times", never "1.9x" or "ten times the pace", even where a source writes it so, in every field but a
 verbatim quote, which keeps the source's words: the validator cannot read a ratio glued to x or in words,
 so it fails any it finds. The Gap's own "twice" stays in words, as the Gap prints it ("more than twice
-the 2023–24 pace"), never "2 times". A number in the prose must appear in a cited source or in the
+the 2023–24 pace"), never "2 times", and so does any pace multiple the Gap prints in words ("more than
+three times"). A number in the prose must appear in a cited source or in the
 metrics file, and the validator checks it. "About" or "nearly" allows rounding at the last non-zero
 digit, nothing more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or
 the Gap may hold only numbers from the metrics or the item's CVE record.

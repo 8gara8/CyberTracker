@@ -232,6 +232,17 @@ export function gapTwice(metrics: Pick<Metrics, "headline"> | null | undefined):
   return metrics ? (/\b(?:more than )?twice\b/u.exec(metrics.headline.text)?.[0] ?? null) : null;
 }
 
+/**
+ * The Gap's own pace multiple in words ("three times" to "ten times", pacePhrase()), when its headline prints
+ * one; else null. A Lead sentence that copies it as the Gap prints it ("more than three times the 2023–24
+ * pace") is not a ratio NUMBER_FORM fails: the digits it would ask for are no quoted number, so LEAD_GROUNDED
+ * would fail them (review of the ninth pass).
+ */
+export function gapMultiple(metrics: Pick<Metrics, "headline"> | null | undefined): string | null {
+  const m = metrics ? /\b(three|four|five|six|seven|eight|nine|ten) times\b/u.exec(metrics.headline.text) : null;
+  return m ? m[0] : null;
+}
+
 /** The hint for a ratio of two written "two times" or "2 times", when the Gap prints its own "more than twice". */
 const twiceHint = (twice: string | null): string =>
   twice ? ` If it is the Gap's own ratio, write it as the Gap does, in words: "${twice}".` : "";
@@ -491,6 +502,7 @@ const NAME_FIX = "If it is a product or version name, write it exactly as the so
  * numbersIn() does not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong
  * one through. Quoted fields and titles, the sources' own words, are not read. One error per ratio as
  * written, per field. The hint never proposes the number as written, which may be the miscopied one.
+ * The Gap's own pace multiple in words (gapMultiple(): "more than three times the 2023–24 pace") is not failed.
  */
 const numberForm = defineRule({
   code: "NUMBER_FORM",
@@ -499,7 +511,7 @@ const numberForm = defineRule({
     ...[...new Set(gluedRatios(f.text))].map((g) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
         `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way. ${NAME_FIX}`)),
-    ...[...new Set(wordRatios(f.text))].map((w) =>
+    ...[...new Set(wordRatios(f.text))].filter((w) => w.toLowerCase().replace(/\s+/gu, " ") !== gapMultiple(metrics)).map((w) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${w}" in words, which the validator does not read as a number, so it cannot check it.`,
         `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.${/^two\s+times$/iu.test(w) ? twiceHint(gapTwice(metrics)) : ""}`)),
   ]),

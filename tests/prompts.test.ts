@@ -325,7 +325,8 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
       + 'writes it so, in every field but a verbatim quote, which keeps the source\'s words: the validator cannot read a ratio glued to x or in '
       + "words, so it fails any it finds.");
     // Review of the eighth pass: "2 times" for the Gap's "more than twice" fails LEAD_GROUNDED, as "two times" fails NUMBER_FORM.
-    expect(s6).toContain('The Gap\'s own "twice" stays in words, as the Gap prints it ("more than twice the 2023–24 pace"), never "2 times".');
+    expect(s6).toContain('The Gap\'s own "twice" stays in words, as the Gap prints it ("more than twice the 2023–24 pace"), never "2 times", '
+      + 'and so does any pace multiple the Gap prints in words ("more than three times").');
     expect(flatStyle).not.toContain("so it fails one");
     expect(flatStyle).not.toContain("in every field, even where");
     expect(styleSection(2)).toContain("a day with nothing that clears a bar has no items at all, and a Lead of Gap sentences only (§6)");

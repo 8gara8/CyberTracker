@@ -115,8 +115,12 @@ faster?
   a summary's "10 times"; the hints give the Gap's own "more than twice" (STYLE §6 says it stays in
   words), the day hint for a month name before the day and the reviewed week in the week in review; and
   only a kept record of a vendor's CNA with no tagged advisory URL carries that vendor's own page (one
-  per host, at most two, never a commit, bug tracker or mailing list link). `npm run check` in the
-  container then passed 2306 tests in 70 files. After this pass Kobol reruns, in this order (SPEC §10
+  per host, at most two, never a commit, bug tracker or mailing list link). A review of the ninth pass
+  (its probes rerun) then found three more, fixed in the container: NUMBER_FORM reads "ten times over the
+  2023–24 pace" and "nine times as rapidly as" as ratios and "10x/day" as a count, a Lead may copy a pace
+  multiple the Gap prints in words (STYLE §6 now says so, so the canary runs again), and a KEV-listed
+  flaw keeps its vendor's page beside the report CISA's ADP tagged on it. `npm run check` in the
+  container then passed 2309 tests in 70 files. After this pass Kobol reruns, in this order (SPEC §10
   P3), in the P3 worktree `/Users/kobol/Projects/CyberTracker-worktrees/p3-pipeline`, where the earlier
   runs' files are (SPEC's code block starts with `cd` there and `S=$PWD/scripts/daily.sh`): first, before
   any rerun, save `logs/D.collect.log`, `logs/D.candidates.json`, `packs/D.candidates.json` and

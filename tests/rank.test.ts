@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { releaseMember } from "../lib/rules/sources";
 import { publisherFor } from "../lib/sources";
 import type { CveRecordInfo } from "../lib/rules/types";
-import { cnaVendorOf, cveIdsIn, cvePackRecords, ghsaPackRecords, kevPackRecords, notePackRecords, notVendorPage, packWindow, provisionalRecords, recordWindow, VENDOR_PAGES_MAX, vendorPageUrls } from "../lib/collect";
+import { cnaVendorOf, cveIdsIn, cvePackRecords, ghsaPackRecords, hasOwnTaggedAdvisory, kevPackRecords, notePackRecords, notVendorPage, packWindow, provisionalRecords, recordWindow, VENDOR_PAGES_MAX, vendorPageUrls } from "../lib/collect";
 import { loadConfig, matchCredit, type LoadedConfig } from "../lib/config";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { parseEpssCsv } from "../lib/feeds/epss";
@@ -569,6 +569,32 @@ describe("rankCandidates() on built cases", () => {
       references: [{ url: "https://hub.ivanti.com/s/article/ct-sample-advisory", tags: [], from: "cna" as const }],
     });
     expect(vendorPageUrls(ivanti, cfg)).toEqual(["https://hub.ivanti.com/s/article/ct-sample-advisory"]);
+  });
+
+  it("a KEV-listed flaw keeps its vendor's page beside the report CISA's ADP tagged on its record (review of the ninth pass)", () => {
+    // CISA's ADP adds a tagged third-party report to the records it lists in KEV. That URL is not the vendor's own, so before
+    // this the Fortinet, Ivanti, Citrix, Cisco and Apple flaws it listed lost their vendor page and kept only the report.
+    const REPORT = "https://example.com/ct-sample/research-writeup";
+    const forti = rec("CVE-2026-620311", {
+      assigner: "fortinet", affected: [{ vendor: "Fortinet", product: "FortiOS" }],
+      references: [
+        { url: "https://fortiguard.fortinet.com/psirt/FG-IR-26-620311", tags: [], from: "cna" as const },
+        { url: REPORT, tags: ["third-party-advisory"], from: "adp" as const },
+      ],
+    });
+    expect(hasOwnTaggedAdvisory(forti, "fortinet", cfg)).toBe(false);
+    expect(vendorPageUrls(forti, cfg)).toEqual(["https://fortiguard.fortinet.com/psirt/FG-IR-26-620311"]);
+    expect(cvePackRecords([forti], () => true, cfg)[0]!.advisory_urls).toEqual([REPORT, "https://fortiguard.fortinet.com/psirt/FG-IR-26-620311"]);
+    // A tag on the vendor's own host counts as the record's own, whichever container added it, and so does any tag its CNA added.
+    const ownHost = { ...forti, references: [forti.references[0]!, { url: "https://fortiguard.fortinet.com/psirt/FG-IR-26-620312", tags: ["vendor-advisory"], from: "adp" as const }] };
+    expect(hasOwnTaggedAdvisory(ownHost, "fortinet", cfg)).toBe(true);
+    expect(vendorPageUrls(ownHost, cfg)).toEqual([]);
+    const cnaTagged = { ...forti, references: [forti.references[0]!, { url: REPORT, tags: ["third-party-advisory"], from: "cna" as const }] };
+    expect(hasOwnTaggedAdvisory(cnaTagged, "fortinet", cfg)).toBe(true);
+    expect(vendorPageUrls(cnaTagged, cfg)).toEqual([]);
+    // An exploit tag never counts.
+    const exploitTag = { ...forti, references: [forti.references[0]!, { url: REPORT, tags: ["exploit", "third-party-advisory"], from: "cna" as const }] };
+    expect(hasOwnTaggedAdvisory(exploitTag, "fortinet", cfg)).toBe(false);
   });
 
   it("notVendorPage() leaves out commits, code review, bug trackers and mailing lists, and keeps the advisory pages of vendors that tag none (review of the eighth pass)", () => {
