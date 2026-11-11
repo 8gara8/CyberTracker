@@ -120,34 +120,18 @@ faster?
   2023–24 pace" and "nine times as rapidly as" as ratios and "10x/day" as a count, a Lead may copy a pace
   multiple the Gap prints in words (STYLE §6 now says so, so the canary runs again), and a KEV-listed
   flaw keeps its vendor's page beside the report CISA's ADP tagged on it. `npm run check` in the
-  container then passed 2309 tests in 70 files. After this pass Kobol reruns, in this order (SPEC §10
-  P3), in the P3 worktree `/Users/kobol/Projects/CyberTracker-worktrees/p3-pipeline`, where the earlier
-  runs' files are (SPEC's code block starts with `cd` there and `S=$PWD/scripts/daily.sh`): first, before
-  any rerun, save `logs/D.collect.log`, `logs/D.candidates.json`, `packs/D.candidates.json` and
-  `packs/D.md` for 2026-10-14, 2026-10-22 and 2026-11-11 outside the repo (into
-  `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs/D/logs/` and `.../D/packs/`, only for a
-  date with no saved folder yet, as SPEC's code block does, so running it again never copies a new run's
-  files over the saved ones), since collect overwrites them, then copy into the report each release's
-  `pack_ids` count from the saved `packs/D.candidates.json`, the size-cap lines from the saved collect
-  log and the `wc -c` of the saved `packs/D.md`; then `npm run check`; `agent:check -- --all`; the
-  backdated dry runs for 2026-10-14 and then 2026-10-22 into a fresh `logs/dry-run/tree`, then
-  `validate:all` on that tree (both editions), checking each pack is at most 153,600 bytes with its news
-  items kept, each release has at most 20 `pack_ids` for its fixes' records (a merged news item or note
-  adds its own id) with its counts unchanged (`pt-microsoft-2026-10`: 1,384 fixes, 61 critical, 1
-  exploited), `size_cut` lists the cuts, the TW and JP levels match the earlier runs (or differ only by a
-  region-signal record or item the new pack holds), any kept release of a vendor whose records tag no
-  reference has a page on the vendor's own host in its `advisory_urls` (on 2026-10-14 that is likely
-  Ivanti's, `pt-ivanti-2026-10`, with its exploited CVE's own candidate; SAP's release may be cut, so
-  SAP's `me.sap.com` note and `url.sap` page are checked on its member records in `packs/2026-10-14.md`),
-  and an out-of-band exploited flaw of such a vendor, if one is kept, carries its vendor page; then the
-  2026-10-21 forced failure, as in SPEC's code block; then the timed dry run, checking only the pack
-  size, news kept, at most 20 `pack_ids` per release for its fixes' records and `size_cut`; then `npm run
-  sources:check -- --id cert-fr`, which prints only a table row, and
-  `grep -o 'https://[^<" ]*/alerte/[^<" ]*' cache/check/feeds/cert-fr.xml | head`, whose output shows the
-  live alert links. Done-when bullet 1 is re-measured on the rerun backdated dry runs (repairs, agent
-  minutes, fetches, items, words). Still open: EU's CERT-FR alert pattern matches `cert.ssi.gouv.fr`, but
-  the feed's capture links `www.cert.cyber.gouv.fr`, so that read on Kobol shows whether live alert links
-  are under `cert.ssi.gouv.fr` or `www.cert.cyber.gouv.fr` before its pattern is added (row 146).
+  container then passed 2309 tests in 70 files. Kobol then reran SPEC §10 P3's list on `4d3c795` in
+  the P3 worktree on 2026-11-11, 19:10 to 19:42 Taipei (11:10 to 11:42 UTC; report `e81bc44`), with the earlier runs' pack files saved first in
+  `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs/`. Every step passed: `npm run check`
+  2309 tests; `agent:check -- --all` 13 of 13, the canary safe and valid; the 2026-10-14 and 2026-10-22
+  dry runs and `validate:all` on their tree (0 errors); the 2026-10-21 forced failure (a valid data-only
+  edition); the timed dry run (data-only 24 s, full 4 min 17 s, end 4 min 19 s, 8 items, 1,091 words).
+  The packs now keep their news (6, 17 and 81 items, at most 153,250 bytes), each release names at most
+  20 of its fixes' records, `pt-microsoft-2026-10` still counts 1,384 fixes, 61 critical and 1 exploited,
+  TW and JP stay at baseline, and the vendor pages are on their own hosts. On 2026-10-22 the first attempt
+  failed validation after both repair rounds (E_VALIDATION); the retry validated after one (row 139's
+  rounds per attempt). CERT-FR's live alerts are under `www.cert.cyber.gouv.fr`, so `regions.json` version 2 adds
+  that pattern (row 147). Next: mark PR #5 ready, which starts the Codex review.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -168,7 +152,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 (draft) | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11; after the ninth pass Kobol, in the P3 worktree, saves the earlier runs' pack files first (never over a saved copy), then reruns `npm run check`, `agent:check -- --all`, the 2026-10-14 and 2026-10-22 dry runs with `validate:all` on their tree, the 2026-10-21 forced failure and the timed dry run, and reads CERT-FR's live alert links from the feed body `sources:check` keeps |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; then Codex review |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |

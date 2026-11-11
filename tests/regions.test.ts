@@ -534,6 +534,11 @@ describe("collectSignals", () => {
     expect(alertRegions("https://www.jpcert.or.jp/at/2026/at260031.html", "bleepingcomputer", CONFIG)).toEqual([]);
     expect(alertRegions("https://www.cert.ssi.gouv.fr/alerte/CERTFR-2026-ALE-012/", "anssi", CONFIG)).toEqual(["EU"]);
     expect(alertRegions("https://www.cert.ssi.gouv.fr/avis/CERTFR-2026-AVI-0812/", "anssi", CONFIG)).toEqual([]);
+    // CERT-FR's live feed links its alerts under www.cert.cyber.gouv.fr (Kobol, 2026-11-11: CERTFR-2026-ALE-015; row 147).
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/", "anssi", CONFIG)).toEqual(["EU"]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/avis/CERTFR-2026-AVI-0901/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/actualite/CERTFR-2026-ACT-041/", "anssi", CONFIG)).toEqual([]);
+    expect(alertRegions("https://www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/", "therecord", CONFIG)).toEqual([]);
     expect(alertRegions("https://cisa.gov/news-events/directives/ed-26-03", "cisa", CONFIG)).toEqual(["US"]);
   });
 

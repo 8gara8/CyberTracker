@@ -337,6 +337,12 @@ describe("scores and keywords", () => {
     expect(news[0]!.alert).toBe(false);
     const bulletin = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE bulletin", "https://www.cert.ssi.gouv.fr/actualite/CERTFR-2026-ACT-040/")], itemCtx).drafts;
     expect(bulletin[0]!.alert).toBe(false);
+    // The live feed's host (row 147): an alert there is an alert, its bulletins are not.
+    const live = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE alerte de sécurité", "https://www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/")], itemCtx).drafts;
+    expect(live[0]!.publisher).toBe("anssi");
+    expect(live[0]!.alert).toBe(true);
+    const liveAvis = toItemDrafts(feedById("cert-fr"), [raw("SAMPLE avis", "https://www.cert.cyber.gouv.fr/avis/CERTFR-2026-AVI-0901/")], itemCtx).drafts;
+    expect(liveAvis[0]!.alert).toBe(false);
   });
 
   it("items take their publisher and tier from the link, not the feed", () => {

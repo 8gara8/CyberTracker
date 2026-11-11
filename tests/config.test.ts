@@ -72,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 1, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 2, actors: 1 });
   });
 });
 
@@ -189,7 +189,7 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), the rest at 1", () => {
+  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), regions at 2 (P3: CERT-FR's live alert host), actors at 1", () => {
     const c = prod();
     expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([4, 2, 2]);
     expect(c.sourceTiers.updated).toBe("2026-11-10");
@@ -198,7 +198,12 @@ describe("seed counts (Appendix B)", () => {
     expect(c.vendors.vendors.find((v) => v.id === "schneider-electric")?.domains).toEqual(["se.com", "schneider-electric.com"]);
     // SAP's public patch-day link is on url.sap, SAP SE's own brand top-level domain; its notes on me.sap.com need a login.
     expect(c.vendors.vendors.find((v) => v.id === "sap")?.domains).toEqual(["sap.com", "url.sap"]);
-    for (const f of [c.regions, c.actors]) expect(f.version).toBe(1);
+    // CERT-FR's live feed links its alerts under www.cert.cyber.gouv.fr (Kobol, 2026-11-11); the old host's pattern stays (row 147).
+    expect(c.regions.version).toBe(2);
+    expect(c.regions.updated).toBe("2026-11-11");
+    expect(c.regions.regions.find((r) => r.code === "EU")?.alert_patterns).toEqual([
+      "cert\\.ssi\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+", "cert\\.cyber\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+"]);
+    expect(c.actors.version).toBe(1);
   });
 });
 
