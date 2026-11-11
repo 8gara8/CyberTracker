@@ -231,6 +231,18 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
   return out;
 }
 
+/**
+ * A digit run, with any decimals or thousands separators, glued to x or X ("9.9x", "10X", "1,000x"), with
+ * no letter, digit, "." or "," before it and no letter or digit after: a ratio numbersIn() does not read,
+ * since it reads no digit run glued to a letter. "0x1F", "4x4", "x86" and "Win10x64" are not ratios.
+ */
+const GLUED_RATIO_RE = /(?<![\p{L}\p{N}_.,])\d+(?:[.,]\d+)*[xX](?![\p{L}\p{N}])/gu;
+
+/** The ratios a text writes glued to x, as written, in order (§4.12 NUMBER_FORM, §0.4 row 147). */
+export function gluedRatios(text: string): string[] {
+  return [...text.normalize("NFKC").matchAll(GLUED_RATIO_RE)].map((m) => m[0]);
+}
+
 // ── Label figures (§4.12, §0.4 row 145) ──────────────────────────────────────────────────────────
 
 /** A figure a quotable label prints with its unit word: "26 weeks", "2 to 30 days", "80% interval". */

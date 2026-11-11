@@ -1,11 +1,12 @@
-// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS. Our numbers come from
-// numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers() (the Gap
-// panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a source's
-// seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a percentage.
+// Grounding and numbers (SPEC §4.12): LEAD_GROUNDED, GAP_MATCH, METRICS_ONLY_NUMBERS, NUMBER_FORM. Our numbers
+// come from numbersIn() (lib/text.ts). Against the metrics, matching is exact equality with metricNumbers()
+// (the Gap panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a
+// source's seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a
+// percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x").
 
 import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
+import { gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -412,4 +413,19 @@ const metricsOnlyNumbers = defineRule({
   },
 });
 
-export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers];
+// ── NUMBER_FORM ──────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * NUMBER_FORM (draft, §0.4 row 147): a prose field writes a ratio glued to x ("9.9x"), which numbersIn() does
+ * not read, so LEAD_GROUNDED, METRICS_ONLY_NUMBERS and the Angle's count would let a wrong one through.
+ * Quoted fields and titles, the sources' own words, are not read. One error per ratio as written, per field.
+ */
+const numberForm = defineRule({
+  code: "NUMBER_FORM",
+  scope: "draft",
+  check: ({ draft }) => proseFields(draft).flatMap((f) => [...new Set(gluedRatios(f.text))].map((g) =>
+    error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
+      `Write a ratio as the Gap does, "${g.slice(0, -1)} times", never "${g}", even where a source writes it that way.`))),
+});
+
+export const groundingRules: Rule[] = [leadGrounded, gapMatch, metricsOnlyNumbers, numberForm];

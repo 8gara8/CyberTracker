@@ -319,7 +319,7 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(s6).toContain("A Lead sentence that cites no item is a Gap sentence: `gap: true` with `item_ids` empty, quoting only the Gap headline's numbers, or none.");
     expect(s6).toContain("On a day with no items, every Lead sentence is one.");
     expect(s6).toContain('When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours ("the 24 hours to 04:30"), which is not a Gap number.');
-    expect(s6).toContain('A ratio is written as the Gap writes it, "1.9 times", never "1.9x".');
+    expect(s6).toContain('A ratio is written as the Gap writes it, "1.9 times", never "1.9x", in every field, even where a source writes "1.9x": the validator cannot read a number glued to x, so it fails one.');
     expect(styleSection(2)).toContain("a day with nothing that clears a bar has no items at all, and a Lead of Gap sentences only (§6)");
     expect(styleSection(2)).toContain('Gap sentences only (§6); when a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.');
     // Said only of a Gap sentence that names the day, never as a rule for every Gap sentence (review of the sixth pass).

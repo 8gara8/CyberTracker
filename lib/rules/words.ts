@@ -20,7 +20,7 @@ import type { AgentContext } from "../schema/context";
 import type { DraftBrief } from "../schema/draft-brief";
 import type { CveBlock, DraftItem, ReleaseBlock } from "../schema/item";
 import type { Metrics } from "../schema/metrics";
-import { countWords } from "../text";
+import { countWords, gluedRatios } from "../text";
 import { angleFigures, angleNumbers, figureList } from "./grounding";
 import { draftFirstSeen } from "./items";
 import { entriesOf, isBrief, proseFields, quotedFields, raisesOf } from "./shared";
@@ -290,8 +290,6 @@ export function pageWords(brief: AnyBrief, metrics: Metrics | null, extra?: Scri
 const cut = (n: number) => `Cut at least ${n}.`;
 const add = (n: number) => `Add at least ${n}.`;
 
-/** A digit run glued to x or × ("1.9x", "10X"), which numbersIn() does not read as a number: how a ratio goes missing. */
-const GLUED_TIMES_RE = /(?<![\p{L}\p{N}_])\d+(?:[.,]\d+)*[x×](?![\p{L}\p{N}])/iu;
 const RATIO_HINT = ' Write a ratio as the Gap does, "1.9 times", never "1.9x": a number glued to x is not read as a number.';
 
 function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
@@ -316,7 +314,7 @@ function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
           : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written. Write each window length once: written again, it counts.`}`;
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
-        `${notCounted}${GLUED_TIMES_RE.test(angle.text.normalize("NFKC")) ? RATIO_HINT : ""}`));
+        `${notCounted}${gluedRatios(angle.text).length ? RATIO_HINT : ""}`));
     } else if (nums.length > 1) {
       out.push(error("WORDS_OVER", "angle.text",
         `angle.text holds ${nums.length} numbers (${nums.map((x) => x.raw).join(", ")}); the Angle states exactly one. Keep one and cut the other${nums.length > 2 ? "s" : ""}.`,

@@ -167,10 +167,11 @@ when the data clears its test; there is no figure from fewer than 30 cases.
 **Every number names its denominator and date.** "37% of the 157 flaws CISA listed in the 26 weeks to 6
 Nov", not "37% of flaws". The Angle holds exactly one number, so it names its window and date instead
 of a denominator ("37% in the 26 weeks to 6 Nov", §12). A ratio is written as the Gap writes it, "1.9
-times", never "1.9x". A number in the prose must appear in a cited source or in the metrics file,
-and the validator checks it. "About" or "nearly" allows rounding at the last non-zero digit, nothing
-more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or the Gap may hold
-only numbers from the metrics or the item's CVE record.
+times", never "1.9x", in every field, even where a source writes "1.9x": the validator cannot read a
+number glued to x, so it fails one. A number in the prose must appear in a cited source or in the
+metrics file, and the validator checks it. "About" or "nearly" allows rounding at the last non-zero
+digit, nothing more. A sentence about KEV additions, CVE records, AI credits, the Flood, the Window or
+the Gap may hold only numbers from the metrics or the item's CVE record.
 
 **Self-reported figures** stay claims: "the vendor says it blocked 2 million attempts".
 
