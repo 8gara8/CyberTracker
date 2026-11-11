@@ -1,10 +1,18 @@
-// STUB (SPEC §6 Route table, `/`). Owner: pages lane. The newest valid brief through BriefView (which shows
-// StaleBanner when isLatest), or the empty state. The pages lane adds generateMetadata (description,
-// openGraph, the ct-edition marker).
+// SPEC §6 Route table, `/`: the newest valid brief through BriefView (which shows StaleBanner when isLatest),
+// or the empty state. "Today" is content.briefs.at(-1): if today's brief was skipped, `/` shows yesterday's
+// and the stale banner appears after 08:00 Taipei. Static: built from the content folder, nothing per request.
+import type { Metadata } from "next";
 import { BriefView } from "@/components/brief/BriefView";
 import { briefPropsFor } from "@/components/brief/props";
 import { Empty, PageHeader } from "@/components/layout/chrome";
+import { editionMetadata } from "@/components/pages/edition-meta";
+import { noEditionYet } from "@/components/pages/site-text";
 import { loadContent } from "@/lib/content";
+
+export function generateMetadata(): Metadata {
+  const latest = loadContent().briefs.at(-1);
+  return latest ? editionMetadata(latest) : {};
+}
 
 export default function TodayPage() {
   const content = loadContent();
@@ -13,7 +21,7 @@ export default function TodayPage() {
     return (
       <>
         <PageHeader title="Today" />
-        <Empty>No edition yet. Each morning&apos;s brief is ready before 08:00 Taipei.</Empty>
+        <Empty>{noEditionYet()}</Empty>
       </>
     );
   }
