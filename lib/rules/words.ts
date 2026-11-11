@@ -10,7 +10,6 @@ import type { LoadedConfig } from "../config";
 import { matchVendor } from "../config";
 import { KEV_ABSENCE_NOTE, AI_LINKED_ROLES, BANNED_WORDS, WITHHELD_MARK } from "../vocab";
 import { isWithheld, TOP_STORY_COUNT } from "../items";
-import { windowWeeksOf } from "../metrics/headline";
 import { kevLineUnavailable, kevLines } from "../metrics/home-vendors";
 import { fmtInt } from "../metrics/stats";
 import { scriptText, type CardItem, type PageBrief, type ScriptOptions, type SummaryRow } from "../page-text";
@@ -22,7 +21,7 @@ import type { DraftBrief } from "../schema/draft-brief";
 import type { CveBlock, DraftItem, ReleaseBlock } from "../schema/item";
 import type { Metrics } from "../schema/metrics";
 import { countWords } from "../text";
-import { angleNumbers } from "./grounding";
+import { angleFigures, angleNumbers, figureList } from "./grounding";
 import { draftFirstSeen } from "./items";
 import { entriesOf, isBrief, proseFields, quotedFields, raisesOf } from "./shared";
 import { defineRule, error, plural, type AnyBrief, type AnyItem, type CveLookup, type RegionsBase, type Rule, type ValidationIssue } from "./types";
@@ -291,7 +290,7 @@ export function pageWords(brief: AnyBrief, metrics: Metrics | null, extra?: Scri
 const cut = (n: number) => `Cut at least ${n}.`;
 const add = (n: number) => `Add at least ${n}.`;
 
-function fieldIssues(b: AnyBrief): ValidationIssue[] {
+function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   for (const f of wordFields(b)) {
     if (f.text === null) continue;
@@ -305,9 +304,10 @@ function fieldIssues(b: AnyBrief): ValidationIssue[] {
   }
   const angle = b.angle;
   if (angle && !isMark(angle.text)) {
-    const nums = angleNumbers(angle);
-    const weeks = angle.metric_path ? windowWeeksOf(angle.metric_path) : null;
-    const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${weeks === null ? "" : `, nor the metric's own window written as "${weeks} weeks"`}.`;
+    const nums = angleNumbers(angle, metrics);
+    const figures = angleFigures(angle, metrics);
+    const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${
+      !figures.length ? "" : metrics ? `, nor the figures the metric's label prints: ${figureList(figures)}` : `, nor the Gap's window lengths: ${figureList(figures)}`}.`;
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
         notCounted));
@@ -320,11 +320,14 @@ function fieldIssues(b: AnyBrief): ValidationIssue[] {
   return out;
 }
 
-/** WORDS_OVER and WORDS_UNDER on each field of the word table (§4.12), and the Angle's one number. */
+/**
+ * WORDS_OVER and WORDS_UNDER on each field of the word table (§4.12), and the Angle's one number, read by
+ * angleNumbers() with the metrics when the run has them (a metric Angle's label figures are not counted).
+ */
 const wordBudgets = defineRule({
   code: ["WORDS_OVER", "WORDS_UNDER"],
   scope: "brief",
-  check: ({ draft }) => fieldIssues(draft),
+  check: ({ draft, metrics }) => fieldIssues(draft, metrics ?? null),
 });
 
 /**

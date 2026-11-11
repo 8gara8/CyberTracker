@@ -27,11 +27,11 @@
           "item_ids": {
             "type": "array",
             "items": {"type":"string"},
-            "description": "Items this sentence draws on; at least 1 unless gap is true"
+            "description": "Items this sentence draws on; at least 1 unless gap is true. With none, the sentence is a Gap sentence (gap true), as every sentence is on a day with no items"
           },
           "gap": {
             "type": "boolean",
-            "description": "true when it quotes Gap numbers; each must match the metrics' headline.quoted"
+            "description": "true when it quotes Gap numbers or cites no item; each number must match the metrics' headline.quoted"
           }
         },
         "required": ["text","item_ids","gap"],
@@ -44,7 +44,7 @@
       "properties": {
         "text": {
           "type": "string",
-          "description": "At most 30 words, holding exactly one number; with a metric_path, its own window (\"26 weeks\") is not counted"
+          "description": "At most 30 words, holding exactly one number. With a metric_path, the figures its quotable label prints (\"26 weeks\", \"within 7 days\", \"80% interval\") are not counted; name the window and date, not a denominator"
         },
         "source_id": {
           "description": "The source of the number; exactly one of source_id and metric_path is non-null",

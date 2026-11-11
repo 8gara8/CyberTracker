@@ -218,22 +218,6 @@ export function inKevLine(ai: Pick<AiCredited, "in_kev">, editionDate: string): 
   };
 }
 
-// ── Window lengths (§4.12, §0.4 row 145) ────────────────────────────────────────────────────────
-
-/**
- * The window, in weeks, that a metrics path covers, as its quotable label names it ("…, 26 weeks",
- * lib/context.ts): 26 for `window.w26.*`, `window.kev_pace_ratio`, `window.volume_ratio` and
- * `window.reference_pace_26w`; 13 for `window.w13.*`, `ai_credited.w13.*` and `flood.*` other than
- * `flood.last_week.*`; null for any other path (the 2023–24 reference, the in-KEV list, the base rate, the
- * Lens KEV lines). A metric Angle may name this window ("in 26 weeks") without it counting as its number.
- */
-export function windowWeeksOf(path: string): 26 | 13 | null {
-  if (path.startsWith("window.w26.") || ["window.kev_pace_ratio", "window.volume_ratio", "window.reference_pace_26w"].includes(path)) return 26;
-  if (path.startsWith("window.w13.") || path.startsWith("ai_credited.w13.")) return 13;
-  if (path.startsWith("flood.") && !path.startsWith("flood.last_week.")) return 13;
-  return null;
-}
-
 // ── Display strings (§4.12 metricNumbers) ────────────────────────────────────────────────────────
 
 /** One number the Gap shows: the metrics path it comes from, what it is, and the exact string shown. */
@@ -243,9 +227,12 @@ export interface GapDisplay {
   display: string;
 }
 
+/** The Gap's two window lengths as its labels write them; the headline prints them as constants (`headline.quoted` path "constant"). */
+export const WINDOW_LENGTHS = ["26 weeks", "13 weeks"] as const;
+
 const WINDOW_COLUMNS = [
-  ["w26", "26 weeks"],
-  ["w13", "13 weeks"],
+  ["w26", WINDOW_LENGTHS[0]],
+  ["w13", WINDOW_LENGTHS[1]],
   ["reference", REF_PERIOD],
 ] as const;
 
@@ -253,7 +240,10 @@ const WINDOW_COLUMNS = [
  * Every display string of the Gap data table (§5.3), column by column (26 weeks, 13 weeks, 2023–24):
  * counts with fmtInt, shares with pct() from the counts, interval bounds with fmtPct or fmtDays, the
  * 26-week KEV pace with fmt1, and the 2023–24 pace of old flaws for each window's length. Shares,
- * medians and intervals below MIN_N are not shown, so they are not listed.
+ * medians and intervals below MIN_N are not shown, so they are not listed. Each key names one row
+ * (§0.4 row 145): a row with no field of its own in the metrics file has a key of its own
+ * (`window.<col>.late_listed_n`, `window.<col>.n_day_share`, `window.reference.old_listed_pace_26w` and
+ * `_13w`), so a path never stands for another row's number. Every label names its window or 2023–24.
  */
 export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDisplay[] {
   const out: GapDisplay[] = [];
@@ -262,7 +252,7 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
     const w = win[col];
     const p = `window.${col}`;
     add(`${p}.kev_added_n`, `KEV additions, ${name}`, fmtInt(w.kev_added_n));
-    if (col === "w26") add("window.kev_pace_ratio", `KEV additions, pace vs ${REF_PERIOD}`, fmt1(win.kev_pace_ratio));
+    if (col === "w26") add("window.kev_pace_ratio", `KEV additions, pace vs ${REF_PERIOD}, ${name}`, fmt1(win.kev_pace_ratio));
     add(`${p}.unjoined_n`, `not joined to a CVE record, ${name}`, fmtInt(w.unjoined_n));
     add(`${p}.cohort_n`, `recently disclosed flaws on CISA's list, ${name}`, fmtInt(w.cohort_n));
     add(`${p}.at_disclosure_n`, `already exploited at disclosure, ${name}`, fmtInt(w.at_disclosure_n));
@@ -274,8 +264,8 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
       }
     }
     add(`${p}.n_day_n`, `n-day race (listed 2 to 30 days after), ${name}`, fmtInt(w.n_day_n));
-    if (w.cohort_n >= MIN_N) add(`${p}.n_day_n`, `n-day race share, ${name}`, `${pct(w.n_day_n, w.cohort_n)}%`);
-    add(`${p}.cohort_n`, `listed 31 to 365 days after, ${name}`, fmtInt(w.cohort_n - w.at_disclosure_n - w.n_day_n));
+    if (w.cohort_n >= MIN_N) add(`${p}.n_day_share`, `n-day race share (listed 2 to 30 days after), ${name}`, `${pct(w.n_day_n, w.cohort_n)}%`);
+    add(`${p}.late_listed_n`, `listed 31 to 365 days after, ${name}`, fmtInt(w.cohort_n - w.at_disclosure_n - w.n_day_n));
     if (w.after_disclosure_median_days !== null) {
       add(`${p}.after_disclosure_median_days`, `median days to listing for the rest, ${name}`, fmtDays(w.after_disclosure_median_days));
       if (w.after_disclosure_median_ci80) {
@@ -291,11 +281,65 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
         add(`${p}.p7_ci80.1`, `80% interval high, listed within 7 days, ${name}`, fmtPct(w.p7_ci80[1]));
       }
     }
-    add(`${p}.old_listed_n`, `old flaws newly listed (more than 365 days), ${name}`, fmtInt(w.old_listed_n));
+    add(`${p}.old_listed_n`, `old flaws newly listed (more than 365 days old), ${name}`, fmtInt(w.old_listed_n));
     if (col !== "reference") {
       const days = daysBetween(w.from, w.to) + 1;
-      add("window.reference.old_listed_n", `${REF_PERIOD} pace of old flaws newly listed, ${name}`, fmtInt(roundTo(oldListedPace(days), 0)));
+      add(`window.reference.old_listed_pace_${col === "w26" ? "26w" : "13w"}`, `${REF_PERIOD} pace of old flaws newly listed, ${name}`,
+        fmtInt(roundTo(oldListedPace(days), 0)));
     }
+  }
+  return out;
+}
+
+// ── Quotable rows (§4.15 metrics.quotable) ───────────────────────────────────────────────────────
+
+/**
+ * Labels for the paths `headline.quoted` uses (§5.8); a path not listed is its own label. Each names its
+ * window ("…, 26 weeks", "…, 13 weeks") or 2023–24, as the data table's labels do (§0.4 row 145).
+ */
+export const QUOTED_LABELS: Readonly<Record<string, string>> = {
+  constant: "weeks in the window",
+  "window.w26.at_disclosure_share": "share already exploited at disclosure, 26 weeks",
+  "window.reference.at_disclosure_share": "share already exploited at disclosure, 2023–24",
+  "window.w26.after_disclosure_median_days": "median days to listing for the rest, 26 weeks",
+  "window.reference.after_disclosure_median_days": "median days to listing for the rest, 2023–24",
+  "window.w26.after_disclosure_n": "flaws listed after disclosure, 26 weeks",
+  "window.w26.cohort_n": "recently disclosed flaws on CISA's list, 26 weeks",
+  "window.kev_pace_ratio": "KEV additions, pace vs 2023–24, 26 weeks",
+  "window.volume_ratio": "recently disclosed flaws listed, pace vs 2023–24, 26 weeks",
+  "flood.n": "new CVE records, 13 weeks",
+  "flood.vs_reference_ratio": "new CVE records, pace vs 2023–24, 13 weeks",
+  "flood.vs_reference_ex_kernel_ratio": "new CVE records excluding the Linux kernel, pace vs 2023–24, 13 weeks",
+  "ai_credited.w13.total": "AI-credited records, 13 weeks",
+  "ai_credited.w13.ex_anthropic": "AI-credited records excluding Anthropic, 13 weeks",
+};
+
+/** One row of `metrics.quotable` before its `as_of`: a metrics path (or "constant"), what it is, and the exact string shown. */
+export type QuotableRow = GapDisplay;
+
+/**
+ * The rows of `metrics.quotable` (§4.15), without `as_of`: every number the Gap headline and second line
+ * quote (`headline.quoted`, labelled by QUOTED_LABELS), then every Gap data table display
+ * (gapTableDisplays()), then the Taiwan Lens KEV counts, each with its exact display string. A key and
+ * display pair is listed once (the first label wins), and an empty display is left out. lib/context.ts
+ * and fixtures/src/inputs.ts both build the context's list from it.
+ */
+export function quotableRows(m: Pick<Metrics, "date" | "headline" | "window" | "home_vendors">): QuotableRow[] {
+  const out: QuotableRow[] = [];
+  const seen = new Set<string>();
+  const add = (key: string, label: string, display: string) => {
+    const k = `${key}\0${display}`;
+    if (seen.has(k) || display.trim() === "") return;
+    seen.add(k);
+    out.push({ key, label, display });
+  };
+  for (const q of m.headline.quoted) add(q.path, QUOTED_LABELS[q.path] ?? q.path, q.display);
+  if (m.window) for (const d of gapTableDisplays(m.window)) add(d.key, d.label, d.display);
+  const lines = kevLines(m);
+  for (const key of ["tw", "jp"] as const) {
+    const word = key === "tw" ? "Taiwanese" : "Japanese";
+    add(`home_vendors.${key}.d30_n`, `KEV additions for ${word} vendors, 30 days`, String(lines[key].d30_n));
+    add(`home_vendors.${key}.d90_n`, `KEV additions for ${word} vendors, 90 days`, String(lines[key].d90_n));
   }
   return out;
 }

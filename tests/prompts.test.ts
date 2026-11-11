@@ -268,3 +268,47 @@ describe("PR10: the incident status and vendor confirmation rules as VICTIM_STAT
     expect(b).toContain('set `"watch"`');
   });
 });
+
+describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and LEAD_GROUNDED check them (row 145)", () => {
+  const flatPrompt = PROMPT.replace(/\s+/g, " ");
+  const STYLE = read("routine/STYLE.md");
+  const flatStyle = STYLE.replace(/\s+/g, " ");
+  const styleSection = (n: number) => {
+    const from = flatStyle.indexOf(`## ${n}. `);
+    return flatStyle.slice(from, flatStyle.indexOf(" ## ", from + 4));
+  };
+  const schema = JSON.parse(read("routine/schema/draft-brief.schema.json")) as {
+    properties: { angle: { properties: { text: { description: string } } }; lead: { items: { properties: { item_ids: { description: string }; gap: { description: string } } } } };
+  };
+
+  it("PR11: PROMPT.md keeps quotable values verbatim with their denominators, but the Angle names its window and date instead", () => {
+    // Kobol canary 2026-11-11: an Angle that held its denominator ("37% of the 157 flaws") had two numbers (WORDS_OVER).
+    const b = flatPrompt.slice(flatPrompt.indexOf("- **Numbers**")).split(" - **")[0]!;
+    expect(b).toContain("`quotable` values, verbatim, with their denominators and dates");
+    expect(b).toContain("The Angle holds one number, so it names its window and date, not its denominator (`STYLE.md` §12)");
+    expect(flatPrompt).toContain('- [ ] A Lead sentence that cites no item has `"gap": true` and quotes only Gap headline numbers.');
+  });
+
+  it("PR11: STYLE.md §12 lets a metric Angle repeat its label's figures, and names the window and date, not the count", () => {
+    const s12 = styleSection(12);
+    expect(s12).toContain("With a metrics path you may repeat the figures its quotable label prints, as the label writes them");
+    expect(s12).toContain('("26 weeks", "within 7 days", "80% interval"), and they are not counted. Any other number counts');
+    expect(s12).toContain('name the window and date, not the count ("37% in the 26 weeks to 9 Nov", not "37% of the 157 flaws")');
+    expect(s12).not.toContain("no other window length may appear"); // row 145's first wording, replaced
+  });
+
+  it("PR11: STYLE.md §6 sends the Angle to §12 for its denominator, and makes every Lead sentence citing no item a Gap sentence", () => {
+    const s6 = styleSection(6);
+    expect(s6).toContain("The Angle holds exactly one number, so it names its window and date instead of a denominator");
+    expect(s6).toContain("A Lead sentence that cites no item is a Gap sentence: `gap: true` with `item_ids` empty, quoting only the Gap headline's numbers, or none.");
+    expect(s6).toContain("On a day with no items, every Lead sentence is one.");
+    expect(styleSection(2)).toContain("a day with nothing that clears a bar has no items at all, and a Lead of Gap sentences only (§6)");
+  });
+
+  it("PR11: the schema says the same to the agent", () => {
+    expect(schema.properties.angle.properties.text.description).toContain('the figures its quotable label prints ("26 weeks", "within 7 days", "80% interval") are not counted');
+    expect(schema.properties.angle.properties.text.description).toContain("name the window and date, not a denominator");
+    expect(schema.properties.lead.items.properties.gap.description).toContain("or cites no item");
+    expect(schema.properties.lead.items.properties.item_ids.description).toContain("as every sentence is on a day with no items");
+  });
+});

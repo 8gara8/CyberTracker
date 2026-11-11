@@ -245,8 +245,8 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(check(d, W)[0]!.message).toBe("angle.text has 31 words; the limit is 30. Cut at least 1.");
   });
 
-  it("a metric Angle may name its own window without it counting as a number (row 145)", () => {
-    const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days
+  it("a metric Angle may print its label's figures without them counting as numbers (row 145)", () => {
+    const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days, label "median days to listing for the rest, 26 weeks"
     d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
     expect(check(d, W, { edition: "monday" })).toEqual([]);
     d.angle.text = "In the 26-week Window, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
@@ -255,12 +255,45 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     const wrong = check(d, W, { edition: "monday" });
     expect(codesOf(wrong)).toEqual(["WORDS_OVER angle.text"]);
     expect(wrong[0]!.message).toContain("2 numbers (13, 17)");
-    expect(wrong[0]!.hint).toContain('nor the metric\'s own window written as "26 weeks"');
+    expect(wrong[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints: 26 weeks.");
     d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
-    expect(codesOf(check(d, W, { edition: "monday" }))).toEqual(["WORDS_UNDER angle.text"]);
+    const under = check(d, W, { edition: "monday" });
+    expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
+    expect(under[0]!.hint).toContain("nor the figures the metric's label prints: 26 weeks.");
+    // Every figure of the label: "share listed within 7 days, 26 weeks".
+    d.angle.metric_path = "window.w26.p7";
+    d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 7 days.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "In the 26 weeks to 6 Nov, 55% of recently disclosed flaws on CISA's list were listed within 30 days.";
+    const p7 = check(d, W, { edition: "monday" });
+    expect(p7.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (55%, 30)")]);
+    expect(p7[0]!.hint).toContain("nor the figures the metric's label prints: 7 days, 26 weeks.");
+    // A path whose labels print no figure counts the window like any number.
+    d.angle.metric_path = "window.reference.at_disclosure_share";
+    d.angle.text = "In 2023–24, 37% of recently disclosed flaws on CISA's list were exploited at disclosure, over 26 weeks.";
+    const ref = check(d, W, { edition: "monday" });
+    expect(codesOf(ref)).toEqual(["WORDS_OVER angle.text"]);
+    expect(ref[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers.");
+  });
+
+  it("a sourced Angle is read as before: every figure counts (row 145)", () => {
     const s = weekdayDraft(); // a sourced Angle: its window is the source's number
     s.angle.text = "Red Hat has credited AISLE with 24 flaws in 26 weeks.";
-    expect(codesOf(check(s, W))).toEqual(["WORDS_OVER angle.text"]);
+    const r = check(s, W);
+    expect(codesOf(r)).toEqual(["WORDS_OVER angle.text"]);
+    expect(r[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers.");
+    s.angle.text = "Red Hat has credited AISLE with 24 flaws since 1 October.";
+    expect(check(s, W)).toEqual([]);
+  });
+
+  it("without a metrics file, a metric Angle may print the Gap's window lengths only (row 145)", () => {
+    const d = mondayDraft();
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday", inputs: { metrics: null } })).toEqual([]);
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list within 7 days, a median 17 days after it.";
+    const r = check(d, W, { edition: "monday", inputs: { metrics: null } });
+    expect(r.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (7, 17)")]);
+    expect(r[0]!.hint).toContain("nor the Gap's window lengths: 26 weeks, 13 weeks.");
   });
 
   it("the page total: WORDS_OVER above budgets.words_max, with the parts in the message", () => {

@@ -3,9 +3,9 @@
 // panel's display strings, lib/metrics/headline.ts); against an item's text, its CVE block or a source's
 // seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a percentage.
 
-import { gapTableDisplays, kevLines, metricNumbers, windowWeeksOf } from "../metrics/headline";
+import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { numberMatches, numbersBesideWindow, numbersIn, splitSentences, type NumberToken } from "../text";
+import { labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -112,7 +112,7 @@ function distinctNumbers(text: string): NumberToken[] {
 }
 
 /** Tokens, one per written form. */
-function distinctTokens(tokens: readonly NumberToken[]): NumberToken[] {
+export function distinctTokens(tokens: readonly NumberToken[]): NumberToken[] {
   const seen = new Set<string>();
   return tokens.filter((n) => {
     const k = `${n.raw}|${n.approx}`;
@@ -122,15 +122,38 @@ function distinctTokens(tokens: readonly NumberToken[]): NumberToken[] {
   });
 }
 
+/** The Gap's window lengths as figures ("26 weeks", "13 weeks"): what a metric Angle may print when no metrics file is read. */
+const GAP_WINDOW_FIGURES: readonly LabelFigure[] = WINDOW_LENGTHS.flatMap((w) => labelFigures(w));
+
+/**
+ * The figures a metric Angle may print beside its number (§4.12, §0.4 row 145): those the labels of its
+ * `metric_path`'s quotable rows print (quotableRows(); "26 weeks", "7 days", "2 to 30 days", "80%
+ * interval"), each once, in label order. With no metrics file, the Gap's window lengths, 26 weeks and 13
+ * weeks. A sourced Angle, or a path with no quotable row, has none.
+ */
+export function angleFigures(angle: { metric_path?: string | null }, metrics: Metrics | null): LabelFigure[] {
+  if (!angle.metric_path) return [];
+  if (!metrics) return [...GAP_WINDOW_FIGURES];
+  const out = new Map<string, LabelFigure>();
+  for (const r of quotableRows(metrics)) {
+    if (r.key !== angle.metric_path) continue;
+    for (const f of labelFigures(r.label)) if (!out.has(f.text)) out.set(f.text, f);
+  }
+  return [...out.values()];
+}
+
+/** "26 weeks, 7 days": figures for a message. */
+export const figureList = (figures: readonly LabelFigure[]): string => figures.map((f) => f.text).join(", ");
+
 /**
  * The numbers the Angle's text holds (§4.12, §0.4 row 145): numbersIn(), except that with a
- * `metric_path` the path's own window written as a length ("26 weeks", "26-week"; windowWeeksOf()) names
- * the metric and is not a number. WORDS_OVER and WORDS_UNDER count these, and LEAD_GROUNDED checks them
- * against the path, so "37% in 26 weeks" is one number and "37% in 13 weeks" two.
+ * `metric_path` the figures its quotable label prints (angleFigures()), written as figures, label the
+ * number rather than add one (numbersBesideFigures()). WORDS_OVER and WORDS_UNDER count these,
+ * LEAD_GROUNDED checks them against the path and SNAP_NUMBER against the metrics, so with
+ * `window.w26.p7` "55% listed within 7 days in 26 weeks" is one number and "55% in 13 weeks" two.
  */
-export function angleNumbers(angle: { text: string; metric_path?: string | null }): NumberToken[] {
-  const weeks = angle.metric_path ? windowWeeksOf(angle.metric_path) : null;
-  return numbersBesideWindow(angle.text, weeks === null ? [] : [weeks]);
+export function angleNumbers(angle: { text: string; metric_path?: string | null }, metrics: Metrics | null): NumberToken[] {
+  return numbersBesideFigures(angle.text, angleFigures(angle, metrics));
 }
 
 /** The value at a dotted metrics path (`window.w26.at_disclosure_share`, `window.w26.at_disclosure_ci80.0`), or undefined. */
@@ -224,11 +247,11 @@ const leadGrounded = defineRule({
     // The Angle.
     const a = draft.angle;
     if (a && typeof a.text === "string") {
-      const nums = distinctTokens(angleNumbers(a));
+      const nums = distinctTokens(angleNumbers(a, metrics));
       if (a.metric_path) {
         const displays = displaysFor(metrics, a.metric_path);
         const raw = valueAt(metrics, a.metric_path);
-        const weeks = windowWeeksOf(a.metric_path);
+        const figures = angleFigures(a, metrics);
         if (!displays.length && typeof raw !== "number") {
           out.push(error("LEAD_GROUNDED", "angle.metric_path",
             `angle.metric_path "${a.metric_path}" names no number in metrics/${metrics.date}.json. Use a path the Gap shows (metrics.quotable lists them), or cite a source instead.`));
@@ -239,7 +262,7 @@ const leadGrounded = defineRule({
             if (!ok) {
               out.push(error("LEAD_GROUNDED", "angle.text",
                 `angle.text holds ${shown(n)}, but angle.metric_path "${a.metric_path}" is ${displays.length ? list(displays) : String(raw)} as the Gap shows it.`,
-                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${weeks === null ? "" : ` The path's own window may be named as "${weeks} weeks"; no other window length or number may appear.`}`));
+                `Write the number exactly as metrics.quotable shows it for that path, or fix metric_path.${figures.length ? ` The figures its label prints (${figureList(figures)}) may stand beside it as the label writes them; no other number may.` : ""}`));
             }
           }
         }

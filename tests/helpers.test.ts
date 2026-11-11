@@ -12,8 +12,7 @@ import { SourceTiersFile, VendorsFile } from "@/lib/schema/config";
 import { DraftBrief } from "@/lib/schema/draft-brief";
 import type { DraftItem } from "@/lib/schema/item";
 import { blockedReason, compileTier1Paths, isGithubTier1, publisherFor, urlOnAnyDomain, urlOnDomain, type PublisherConfig } from "@/lib/sources";
-import { windowWeeksOf } from "@/lib/metrics/headline";
-import { countWords, jaccard, numberMatches, numbersBesideWindow, numbersIn, splitSentences, wordSet } from "@/lib/text";
+import { countWords, jaccard, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordSet } from "@/lib/text";
 import { TAIWAN_LENS_ROWS, type KindId, type Severity } from "@/lib/vocab";
 
 // ── format ───────────────────────────────────────────────────────────────────────────────────────
@@ -99,29 +98,67 @@ describe("splitSentences", () => {
   });
 });
 
-describe("numbersBesideWindow and windowWeeksOf (row 145)", () => {
-  const raw = (t: string, w: readonly number[]) => numbersBesideWindow(t, w).map((n) => n.raw);
-  it("drops only the given window lengths written as a length", () => {
-    expect(raw("37% over the last 26 weeks.", [26])).toEqual(["37%"]);
-    expect(raw("In the 26-week Window, 37% were exploited.", [26])).toEqual(["37%"]);
-    expect(raw("37% (26 Weeks), 26\u2011week view.", [26])).toEqual(["37%"]);
-    expect(raw("37% in 13 weeks.", [26])).toEqual(["37%", "13"]);
-    expect(raw("37% of 26 flaws in 26 days.", [26])).toEqual(["37%", "26", "26"]);
-    expect(raw("37% over 126 weeks or 26.5 weeks or 1,26 weeks.", [26])).toEqual(["37%", "126", "26.5"]);
-    expect(raw("37% over 26 weekdays.", [26])).toEqual(["37%", "26"]);
-    expect(raw("37% in 26 weeks.", [])).toEqual(["37%", "26"]);
-    expect(numbersBesideWindow("37% in 26 weeks.", [])).toEqual(numbersIn("37% in 26 weeks."));
+describe("labelFigures and numbersBesideFigures (row 145)", () => {
+  const figs = (label: string) => labelFigures(label).map((f) => [f.text, f.values, f.unit]);
+  it("reads each figure a quotable label prints, with its unit word; years, 2023–24 and bare unit words are not figures", () => {
+    expect(figs("share already exploited at disclosure, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    expect(figs("AI-credited records excluding Anthropic, 13 weeks")).toEqual([["13 weeks", [13], "week"]]);
+    expect(figs("share listed within 7 days, 26 weeks")).toEqual([["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("n-day race (listed 2 to 30 days after), 26 weeks")).toEqual([["2 to 30 days", [2, 30], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("listed 31 to 365 days after, 2023–24")).toEqual([["31 to 365 days", [31, 365], "day"]]);
+    expect(figs("old flaws newly listed (more than 365 days old), 13 weeks")).toEqual([["365 days old", [365], "day"], ["13 weeks", [13], "week"]]);
+    expect(figs("80% interval low, listed within 7 days, 26 weeks")).toEqual([["80% interval", [80], "% interval"], ["7 days", [7], "day"], ["26 weeks", [26], "week"]]);
+    expect(figs("KEV additions for Taiwanese vendors, 30 days")).toEqual([["30 days", [30], "day"]]);
+    expect(figs("KEV additions for Japanese vendors, 90 days")).toEqual([["90 days", [90], "day"]]);
+    expect(figs("2023–24 pace of old flaws newly listed, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    expect(figs("KEV additions, pace vs 2023–24, 26 weeks")).toEqual([["26 weeks", [26], "week"]]);
+    for (const none of ["median days to listing for the rest, 2023–24", "weeks in the window", "share already exploited at disclosure, 2023–24",
+      "KEV additions, 2023 weeks", "2023–24 days"]) expect(figs(none), none).toEqual([]);
   });
-  it("names the window each metrics path covers, as its quotable label does", () => {
-    for (const p of ["window.w26.at_disclosure_share", "window.w26.cohort_n", "window.kev_pace_ratio", "window.volume_ratio", "window.reference_pace_26w"]) {
-      expect(windowWeeksOf(p), p).toBe(26);
-    }
-    for (const p of ["window.w13.at_disclosure_share", "flood.n", "flood.vs_reference_ratio", "flood.yoy_pct", "flood.reference.w13_mean_n", "ai_credited.w13.total", "ai_credited.w13.ex_anthropic"]) {
-      expect(windowWeeksOf(p), p).toBe(13);
-    }
-    for (const p of ["window.reference.at_disclosure_share", "flood.last_week.n", "ai_credited.in_kev.n", "base_rate.ratio", "home_vendors.tw.d30_n", "constant"]) {
-      expect(windowWeeksOf(p), p).toBeNull();
-    }
+
+  const raw = (t: string, label: string) => numbersBesideFigures(t, labelFigures(label)).map((n) => n.raw);
+  const W26 = "share already exploited at disclosure, 26 weeks";
+  it("leaves out a figure written as one: any case, singular or plural, a space or any hyphen or dash, wk and wks", () => {
+    for (const t of ["37% over the last 26 weeks.", "In the 26-week Window, 37% were exploited.", "37% (26 Weeks).", "37% IN 26 WEEKS.",
+      "37% in the 26\u2010week view.", "37% in the 26\u2011week view.", "37% in the 26–week view.", "37% over 26 week.", "37% over 26 wks.",
+      "37% over 26-wk.", "37% in 26  weeks.", "37% in 26 weeks’ data.", "37% in ２６ weeks."]) expect(raw(t, W26), t).toEqual(["37%"]);
+    // A range: "N to M", or a hyphen or en dash, with or without spaces.
+    const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
+    for (const t of ["39% were listed 2 to 30 days after, in 26 weeks.", "39% were listed 2-30 days after.", "39% were listed 2–30 days after.",
+      "39% were listed 2 – 30 days after.", "39% were listed 2 TO 30 DAYS after."]) expect(raw(t, nDay), t).toEqual(["39%"]);
+    expect(raw("The 80% interval of the 26-week share starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
+    expect(raw("The 80 per cent interval starts at 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["32%"]);
+    expect(raw("CISA listed 1 in the past 30 days.", "KEV additions for Taiwanese vendors, 30 days")).toEqual(["1"]);
+    expect(raw("55% were listed within 7 days, a 7-day window.", "share listed within 7 days, 26 weeks")).toEqual(["55%"]);
+  });
+  it("counts the figure when its unit runs on into old or long, or it is part of another number or range", () => {
+    expect(raw("37% of 26-week-old flaws.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37%, in a window 26 weeks long.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37%, in a 26-week-long window.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37% in 13 weeks.", W26)).toEqual(["37%", "13"]);
+    expect(raw("37% of 26 flaws in 26 days.", W26)).toEqual(["37%", "26", "26"]);
+    expect(raw("37% over 126 weeks or 26.5 weeks or 1,26 weeks.", W26)).toEqual(["37%", "126", "26.5"]);
+    expect(raw("37% over 26 weekdays.", W26)).toEqual(["37%", "26"]);
+    expect(raw("37% over 13-26 weeks, or 13 to 26 weeks, or 26 to 52 weeks.", W26)).toEqual(["37%", "13", "26", "13", "26", "26", "52"]);
+    // A range's ends are not figures on their own, and the label's 80% is only "80% interval".
+    const nDay = "n-day race (listed 2 to 30 days after), 26 weeks";
+    expect(raw("39% were listed 30 days after.", nDay)).toEqual(["39%", "30"]);
+    expect(raw("80% of flaws, 32%.", "80% interval low, at disclosure, 26 weeks")).toEqual(["80%", "32%"]);
+  });
+  it("lets a figure run on into old when its label writes it as an age, and only then", () => {
+    const OLD = "old flaws newly listed (more than 365 days old), 26 weeks";
+    for (const t of ["CISA newly listed 22 flaws more than 365 days old in the last 26 weeks.", "22 flaws over 365 days old, in 26 weeks.",
+      "22 365-day-old flaws in 26 weeks.", "22 flaws older than 365 days in 26 weeks."]) expect(raw(t, OLD), t).toEqual(["22"]);
+    // The label's 26 weeks is a window, not an age, and "long" never labels.
+    expect(raw("22 flaws, 26 weeks old.", OLD)).toEqual(["22", "26"]);
+    expect(raw("22 flaws, a 365 days long wait.", OLD)).toEqual(["22", "365"]);
+    // A label that prints 365 days without "old" lets no "365 days old" through.
+    expect(raw("37 flaws 365 days old.", "listed 31 to 365 days after, 26 weeks")).toEqual(["37", "365"]);
+    expect(raw("22 flaws 365 days old.", "old flaws newly listed (more than 365 days), 26 weeks")).toEqual(["22", "365"]);
+  });
+  it("with no figures, or for a label without any, is numbersIn()", () => {
+    expect(numbersBesideFigures("37% in 26 weeks.", [])).toEqual(numbersIn("37% in 26 weeks."));
+    expect(raw("37% in 26 weeks.", "share already exploited at disclosure, 2023–24")).toEqual(["37%", "26"]);
   });
 });
 

@@ -88,7 +88,8 @@ word DONE.
 - **Withheld items.** A recent item marked `withheld` is under a reader dispute. Leave it out and cite
   none of its sources: publish withholds any item that repeats it or cites them.
 - **Numbers** in prose come only from cited sources or the context's `quotable` values, verbatim, with
-  their denominators and dates. The Gap headline is never rewritten.
+  their denominators and dates. The Angle holds one number, so it names its window and date, not its
+  denominator (`STYLE.md` §12). The Gap headline is never rewritten.
 - **The Anthropic line** is set by script on every item that names Anthropic, Claude or an Anthropic
   source; treat those items with the same scepticism as any lab's claims about its own systems.
 
@@ -99,6 +100,7 @@ word DONE.
 - [ ] A tier 1 or 2 source on every item; two publishers, one of them tier 1, on every Critical item.
 - [ ] Every CVE id appears in the context or in a source you cited.
 - [ ] Every name and number in the Lead appears in the items or the metrics.
+- [ ] A Lead sentence that cites no item has `"gap": true` and quotes only Gap headline numbers.
 - [ ] The Taiwan Lens is not empty: its analysis is written and its six rows are present, in order.
 - [ ] Every attribution names its attributor in the same sentence.
 - [ ] No victim is named on a gang's claim alone.
