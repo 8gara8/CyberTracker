@@ -11,6 +11,7 @@ import { TOP_STORY_COUNT, rowsByHead } from "@/lib/items";
 import { EMPTY_LINES } from "@/lib/page-text";
 import { STALE_AFTER } from "@/lib/site";
 import { indexBy } from "@/lib/site-data";
+import { withheldOnlySources } from "@/lib/withhold-mask";
 import { fmtInt } from "@/lib/metrics/stats";
 import { BRIEF_END, EDITION_INFO, HEAD_INFO } from "@/lib/vocab";
 import { Empty, Section } from "@/components/layout/chrome";
@@ -142,7 +143,7 @@ export function BriefView({ brief, metrics, gapOk, annotations, correctionsByIte
             <summary className="kicker flex min-h-[40px] cursor-pointer items-center">
               Sources ({fmtInt(brief.sources.length)}) · {plural(brief.computed.publisher_count, "publisher", "publishers")}
             </summary>
-            <SourceList sources={brief.sources} />
+            <SourceList sources={brief.sources} withheld={new Set(withheldOnlySources(brief).keys())} />
           </details>
         </div>
       ) : (

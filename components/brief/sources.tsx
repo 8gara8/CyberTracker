@@ -4,7 +4,7 @@
 // <details id="sources"><summary>Sources (N) · M publishers</summary> is BriefView's.
 import { ID_PATTERNS, type Source } from "@/lib/schema/common";
 import { shortDate } from "@/lib/format";
-import { TIER_INFO } from "@/lib/vocab";
+import { TIER_INFO, WITHHELD_MARK } from "@/lib/vocab";
 import { ExternalLink } from "@/components/ui/ExternalLink";
 import { PlainText } from "@/components/ui/PlainText";
 
@@ -44,27 +44,42 @@ function published(at: string | null): string | null {
 
 export interface SourceListProps {
   sources: readonly Source[];
+  /**
+   * The ids of the sources only withheld items cite (withheldOnlySources(), §4.10). The rewrite masks only their
+   * titles, and the outlet or URL of a victim's own statement names the disputed party, so each shows its number
+   * and WITHHELD_MARK as plain text: no outlet, no link, no title_en, no state label.
+   */
+  withheld?: ReadonlySet<string>;
 }
 
 /** The numbered list: each <li id="src-<id>"> with [01], outlet, title (lang), title_en, tier line and state label. */
-export function SourceList({ sources }: SourceListProps) {
+export function SourceList({ sources, withheld }: SourceListProps) {
   return (
     <ol>
-      {sources.map((s, i) => (
-        <li key={s.id} id={sourceAnchor(s.id) ? `src-${s.id}` : undefined} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px]">
-          <span className="tabular shrink-0 pt-px text-[11px] text-muted">[{String(i + 1).padStart(2, "0")}]</span>
-          <span className="min-w-0 [overflow-wrap:anywhere]">
-            <span className="font-semibold text-fg"><PlainText text={s.outlet} /></span>{" "}
-            <ExternalLink href={s.url} lang={s.language} className="text-soft"><PlainText text={s.title} /></ExternalLink>
-            {s.title_en ? <span className="block text-soft"><PlainText text={s.title_en} /></span> : null}
-            <span className="kicker mt-0.5 block normal-case tracking-[0.06em]">
-              ↳ Tier {s.tier} {TIER_INFO[s.tier].label} · {s.language}
-              {published(s.published_at) ? ` · ${published(s.published_at)}` : ""}
-              {s.state_label ? <> · <PlainText text={s.state_label} /></> : null}
+      {sources.map((s, i) => {
+        const held = withheld?.has(s.id) || s.title === WITHHELD_MARK;
+        return (
+          <li key={s.id} id={sourceAnchor(s.id) ? `src-${s.id}` : undefined} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px]">
+            <span className="tabular shrink-0 pt-px text-[11px] text-muted">[{String(i + 1).padStart(2, "0")}]</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              {held ? (
+                <span className="text-soft">{WITHHELD_MARK}</span>
+              ) : (
+                <>
+                  <span className="font-semibold text-fg"><PlainText text={s.outlet} /></span>{" "}
+                  <ExternalLink href={s.url} lang={s.language} className="text-soft"><PlainText text={s.title} /></ExternalLink>
+                  {s.title_en ? <span className="block text-soft"><PlainText text={s.title_en} /></span> : null}
+                </>
+              )}
+              <span className="kicker mt-0.5 block normal-case tracking-[0.06em]">
+                ↳ Tier {s.tier} {TIER_INFO[s.tier].label} · {s.language}
+                {published(s.published_at) ? ` · ${published(s.published_at)}` : ""}
+                {s.state_label && !held ? <> · <PlainText text={s.state_label} /></> : null}
+              </span>
             </span>
-          </span>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ol>
   );
 }

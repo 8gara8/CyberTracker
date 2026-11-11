@@ -626,6 +626,25 @@ describe("Withholding", () => {
       expect(html(<ItemPage content={c} id={WITHHELD_ID} />)).toContain(NAME);
     });
 
+    it("a source only withheld items cite shows its number and [withheld] as plain text: no outlet, no link", () => {
+      const c = sampleCopy();
+      const s1 = briefOf(c, MONDAY).sources.find((s) => s.id === "s1")!;
+      Object.assign(s1, { source_type: "victim", outlet: "Acme Health", url: "https://www.acmehealth.example/notice-of-data-incident" });
+      const out = html(<BriefView {...briefPropsFor(c, MONDAY)!} />);
+      const $ = load(out);
+      expect(out).not.toContain("Acme Health");
+      expect(out).not.toContain("acmehealth");
+      expect(out).not.toContain("therecord.media/ct-sample/us-hospital-operator-breach");
+      for (const id of ["s1", "s2"]) {
+        expect($(`#src-${id}`).length, id).toBe(1);
+        expect($(`#src-${id} a`).length, id).toBe(0);
+        expect($(`#src-${id}`).text(), id).toContain("[withheld]");
+      }
+      expect($("#src-s1").text()).toMatch(/^\[01\]/);
+      // Sources other items cite keep their outlet and link.
+      expect($("#src-s3 a").length).toBe(1);
+    });
+
     it("a withheld card and row show no Impact line and no details list", () => {
       const $ = page(propsFor(MONDAY));
       const card = $(`#${WITHHELD_ID}`);
