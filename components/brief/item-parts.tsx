@@ -26,19 +26,23 @@ export function Text({ text, counted }: { text: string; counted: boolean }) {
  * The kicker row (§7 ItemCard, Appendix A.3): the level chip, the AI chip, the region codes and the vendor as
  * text ("QNAP (TW)", never a flag). Its text is cardKicker(item) exactly and carries `data-words`; the level's
  * hidden words sit just after it, outside the counted string. A withheld item never assessed (a data-only item
- * a full edition keeps) shows no AI chip, since "AI: unassessed" means a data-only edition (as the chat, §8.8).
+ * a full edition keeps) shows neither its level nor its AI chip, since "UNRATED" and "AI: unassessed" mean a
+ * data-only edition (as the chat, §8.8); its kicker is the region codes and the vendor.
  */
 export function Kicker({ item, edition, counted }: { item: Item; edition: Edition; counted: boolean }) {
   const parts = cardKickerParts(item);
-  const showAi = parts.ai.length > 0 && !(item.withheld && item.ai_role === "unassessed" && edition !== "data_only");
-  const hidden = levelWords("severity", item.severity);
+  const unread = Boolean(item.withheld) && item.ai_role === "unassessed" && edition !== "data_only";
+  const hidden = unread ? null : levelWords("severity", item.severity);
+  const chunks = [
+    unread ? null : <SeverityPips key="level" scale="severity" level={item.severity} landmark={item.landmark} kind={item.kind} words={false} />,
+    parts.ai.length > 0 && !unread ? <AIChip key="ai" role={item.ai_role} confidence={item.ai_confidence} claimant={item.ai_claimant} /> : null,
+    ...parts.regions.map((r) => <Fragment key={`region-${r}`}>{r}</Fragment>),
+    parts.vendor ? <PlainText key="vendor" text={parts.vendor} /> : null,
+  ].filter((c) => c !== null);
   return (
     <span className="block font-mono text-[13px] uppercase leading-[1.9] tracking-[0.04em] text-soft tabular-nums">
       <span {...(counted ? COUNTED : {})}>
-        <SeverityPips scale="severity" level={item.severity} landmark={item.landmark} kind={item.kind} words={false} />
-        {showAi ? <>{" · "}<AIChip role={item.ai_role} confidence={item.ai_confidence} claimant={item.ai_claimant} /></> : null}
-        {parts.regions.map((r) => <Fragment key={r}>{" · "}{r}</Fragment>)}
-        {parts.vendor ? <>{" · "}<PlainText text={parts.vendor} /></> : null}
+        {chunks.map((c, i) => <Fragment key={i}>{i ? " · " : null}{c}</Fragment>)}
       </span>
       {hidden ? <span className="sr-only"> {hidden}</span> : null}
     </span>

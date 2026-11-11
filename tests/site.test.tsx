@@ -738,6 +738,19 @@ describe("Levels", () => {
       expect(seen).toBeGreaterThan(0);
     });
 
+    it("a carried data-only item withheld the same morning shows no UNRATED and no AI chip in a full edition's kicker", () => {
+      const props = clone(propsFor(WED));
+      const carried = structuredClone(briefOf(content, "2026-10-15").items[0]!);
+      expect([carried.severity, carried.ai_role, KIND_INFO[carried.kind].severity]).toEqual([null, "unassessed", "required"]);
+      Object.assign(carried, { headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0001", since: "2026-10-14" } });
+      props.brief.items.push(carried);
+      const $ = page(props);
+      const kicker = $(`[id="${carried.id}"]`).find("span.block.font-mono").first();
+      const p = cardKickerParts(carried);
+      expect(kicker.text()).toBe([...p.regions, p.vendor].filter(Boolean).join(" · "));
+      expect($.html()).not.toContain("UNRATED");
+    });
+
     it("gives every kicker cardKicker()'s text and every region row regionSummary()'s head, with hidden words outside", () => {
       for (const b of briefs) {
         const $ = page(propsFor(b.date));
