@@ -23,6 +23,7 @@ import { normalizeUrl } from "@/lib/urls";
 import { validateAll } from "@/lib/validate";
 import { DISPUTE_FORM_OPTIONS, DISPUTE_KINDS, WITHHELD_HEADLINE, WITHHELD_MARK } from "@/lib/vocab";
 import { composeWithholds } from "@/lib/withhold";
+import { bindingWithholds } from "@/lib/withhold-mask";
 import { fixtureConfig } from "@/fixtures/src/inputs";
 import { RECHECK_DAYS } from "@/fixtures/src/site";
 import {
@@ -684,6 +685,14 @@ describe("withholds, failures, pages, closures and since (R13 to R19)", () => {
     const rejectedAgain = await intake(w, issuesApi([[{ ...closed, updated_at: "2026-10-16T09:00:00Z" }]]).impl, addDays(D, 1));
     expect(rejectedAgain.disputes.map((d) => [d.id, d.status, d.resolved_on])).toEqual([["D-0001", "rejected", "2026-10-14"], ["D-0002", "rejected", addDays(D, 1)]]);
     expect(rejectedAgain.reports).toEqual([{ item_id: ITEM, type: "victim", evidence_url: null }]);
+    // Another issue's rejected dispute on the item still gives its own report, with its own evidence link.
+    const LINK = "https://ivanti.com/ct-sample/connect-secure-security-advisory-cve-2026-104935";
+    editJson<CorrectionsFile>(path.join(w.content, "corrections.json"), (c) => {
+      c.disputes = [...rejectedAgain.disputes, { ...rejectedAgain.disputes[0]!, id: "D-0003", issue_number: 20, received: "2026-10-16T09:00:00+08:00", evidence_url: LINK, correction_id: null }];
+    });
+    expect((await intake(w, issuesApi([[]]).impl, addDays(D, 2))).reports).toEqual([
+      { item_id: ITEM, type: "victim", evidence_url: null }, { item_id: ITEM, type: "victim", evidence_url: LINK },
+    ]);
 
     // Reopened and closed as completed between two mornings: the review is upheld at once, and withheld again.
     const w2 = rejectedWorld();
@@ -704,6 +713,33 @@ describe("withholds, failures, pages, closures and since (R13 to R19)", () => {
       expect(kept.disputes.map((d) => [d.id, d.status])).toEqual([["D-0001", status]]);
       expect(kept.withhold).toEqual([]);
     }
+  });
+
+  it("R16 a review answered by another report's withhold keeps it binding when that report is rejected", async () => {
+    // D-0001 (issue 3) was rejected; D-0002 (issue 20) disputes the same name and holds C-0003. Reopened, issue 3's review
+    // takes C-0003's id; closing issue 20 as not planned (a duplicate) must not unmask the item while the review is open.
+    const ITEM = "inc-health-us-2026-10";
+    const w = world();
+    editJson<CorrectionsFile>(path.join(w.content, "corrections.json"), (c) => {
+      c.disputes = c.disputes.map((d) => (d.id === "D-0001" ? { ...d, status: "rejected", resolved_on: "2026-10-14" } : d));
+      c.disputes.push({ ...c.disputes[0]!, id: "D-0002", issue_number: 20, received: "2026-10-14T10:00:00+08:00", status: "open", resolved_on: null, correction_id: "C-0003" });
+      c.corrections.push({ ...c.corrections.find((x) => x.id === "C-0001")!, id: "C-0003", date: "2026-10-14", dispute_id: "D-0002" });
+    });
+    const body = formBody(ITEM, "2026-10-12", DISPUTE_FORM_OPTIONS.victim, null);
+    const three = issue(3, body, "2026-10-12T13:14:05Z", { state_reason: "reopened", updated_at: "2026-10-15T12:00:00Z" });
+    const r = await intake(w, issuesApi([[three]]).impl);
+    expect(r.disputes.find((d) => d.id === "D-0003")).toMatchObject({ issue_number: 3, status: "open", correction_id: "C-0003" });
+    expect(r.withhold).toEqual([]);
+    editJson<CorrectionsFile>(path.join(w.content, "corrections.json"), (c) => { c.disputes = r.disputes; });
+    const twenty = issue(20, body, "2026-10-14T02:00:00Z", { state: "closed", state_reason: "not_planned", updated_at: "2026-10-16T09:00:00Z" });
+    const later = await intake(w, issuesApi([[three, twenty]]).impl, addDays(D, 1));
+    expect(later.disputes.map((d) => [d.id, d.status, d.correction_id])).toEqual([
+      ["D-0001", "rejected", "C-0001"], ["D-0002", "rejected", "C-0003"], ["D-0003", "open", "C-0003"],
+    ]);
+    const stored = { ...CorrectionsSchema.parse(readJson(path.join(w.content, "corrections.json"))), disputes: later.disputes };
+    expect(bindingWithholds(stored, later.disputes).map((x) => [x.correction_id, x.supersedes])).toEqual([["C-0003", ["C-0001"]]]);
+    expect(later.withhold).toEqual([]);
+    expect(later.reports).toEqual([]);
   });
 });
 
@@ -869,12 +905,17 @@ describe("the §8.9 rewrite end to end (I-R20, plan A16)", () => {
     const reopened = issue(12, body, "2026-10-13T12:00:00Z", { state_reason: "reopened", updated_at: "2026-10-15T12:00:00Z" });
     const r = await intake(w, issuesApi([[reopened]]).impl);
     expect(r.withhold).toEqual([{ item_id: FLAW, edition_date: "2026-10-13", kind: "victim", dispute_id: "D-0003", since: D }]);
+    const firstSummary = copyOf("2026-10-13").summary;
     const ch = withhold(D, stored().filter((b) => b.date >= "2026-10-13" || b.items.some((x) => x.id === FLAW)), r.disputes, r.withhold);
     expect(ch.rewritten.map((b) => b.date)).toContain("2026-10-14");
     expect(validateAll(w.content, { config: cfg }).errors).toEqual([]);
     expect(copyOf("2026-10-14").withheld).toEqual({ correction_id: "C-0004", since: D });
     expect(copyOf("2026-10-14").headline).toBe(WITHHELD_HEADLINE);
     expect(copyOf("2026-10-13").withheld).toEqual({ correction_id: "C-0003", since: "2026-10-14" });
+    // Withheld since 14 October, the 13 October copy keeps that date; the newly withheld copy says 16 October.
+    expect(copyOf("2026-10-13").summary).toBe(firstSummary);
+    expect(firstSummary).toContain("14 October 2026");
+    expect(copyOf("2026-10-14").summary).toContain("16 October 2026");
     const out = CorrectionsSchema.parse(readJson(corrFile));
     expect(out.corrections.find((c) => c.id === "C-0004")).toMatchObject({ type: "name_removed", item_id: FLAW, edition_date: "2026-10-13", dispute_id: "D-0003" });
     expect(out.disputes.filter((d) => d.issue_number === 12).map((d) => [d.id, d.status, d.correction_id])).toEqual([

@@ -341,13 +341,15 @@ function newestByIssue(disputes: readonly Dispute[]): Map<number, Dispute> {
  * New issue numbers become open disputes (D-NNNN, received = created_at in Taipei); an open dispute whose
  * issue closed `not_planned` becomes rejected, `completed` upheld, resolved_on D. A rejected dispute whose
  * issue reads open again, or closed `completed`, stays as it was and gets a new review: a new dispute on the
- * same issue, item, edition, kind and link (received = updated_at in Taipei), open, or upheld with
- * resolved_on D, with no correction, so it is withheld again like any later dispute. Withhold requests: every
+ * same issue, item, edition, kind and link (received = updated_at in Taipei, else the clock), open, or upheld
+ * with resolved_on D, with no correction: a victim or attribution review is withheld again like any later
+ * dispute, a fact or link review is reported again. The issue's newest dispute is the one its state moves.
+ * Withhold requests: every
  * open or upheld victim or attribution dispute without a correction, oldest first, at most 10 (one per
  * item, edition and kind; one already answered by a stored name_removed correction that still binds gets
  * that correction's id instead). Reports: open fact and link disputes, and rejected victim or attribution disputes on items
  * still withheld with no `update` correction since and no other open or upheld victim or attribution dispute or
- * binding withhold on the item. When the read fails (`ok: false`), the stored list
+ * binding withhold on the item, one per issue (the oldest such dispute of a reopened issue). When the read fails (`ok: false`), the stored list
  * still gives withholds and reports.
  */
 export async function intakeDisputes(o: {
@@ -404,9 +406,10 @@ export async function intakeDisputes(o: {
         d.resolved_on = o.date;
         continue;
       }
-      // A rejected dispute's correction binds nothing after its edition, and later editions may have printed the
-      // name since, so flipping it back would leave those copies unmasked. The new review is a dispute of its own,
-      // which intake withholds below in every stored brief that holds the item (§4.10).
+      // A rejected dispute's correction stops binding later editions, which may have printed the name since, so
+      // flipping it back would leave those copies unmasked. The new review is a dispute of its own: a victim or
+      // attribution review is withheld below in every stored brief that holds the item (§4.10), a fact or link
+      // one goes to the agent again as a report.
       const again = reviewAgain(d, e);
       if (!again) continue;
       const review: Dispute = {
@@ -454,8 +457,8 @@ export async function intakeDisputes(o: {
     ...corrections.filter((c) => c.type === "name_removed" && binds.has(c.id)).map((c) => c.item_id),
   ]);
   const reports: AgentContext["corrections"]["reports"] = [];
-  // One restore report per item and kind: a reopened issue rejected again leaves two rejected disputes on the item.
-  const restoreReported = new Set<string>();
+  // One restore report per issue: a reopened issue rejected again leaves two rejected disputes on the item.
+  const restoreReported = new Set<number>();
   for (const d of disputes) {
     if (d.status === "open" && (d.kind === "fact" || d.kind === "link")) {
       reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
@@ -467,9 +470,8 @@ export async function intakeDisputes(o: {
     if (!item?.withheld) continue;
     const restored = corrections.some((c) => c.type === "update" && c.item_id === d.item_id && c.edition_date === edition
       && (d.resolved_on === null || c.date >= d.resolved_on));
-    const key = `${d.item_id}|${d.kind}`;
-    if (restored || restoreReported.has(key)) continue;
-    restoreReported.add(key);
+    if (restored || restoreReported.has(d.issue_number)) continue;
+    restoreReported.add(d.issue_number);
     reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
   }
 

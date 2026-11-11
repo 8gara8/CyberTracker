@@ -60,7 +60,7 @@ faster?
   the main checkout was fast-forwarded to `cbf3a9b` (rule 4; `package-lock.json` did not change, so no
   `npm ci`) and the worktree `/Users/kobol/Projects/CyberTracker-worktrees/p2-feeds-metrics` removed, its
   4.8G `cache/cvelistV5` with it (P3 clones again if it needs one).
-- **P3 on `p3-pipeline`, draft PR #5:** built and tested in the cloud container on 2026-11-10: the
+- **P3 on `p3-pipeline`, PR #5 (a draft until 2026-11-11, ready since 19:53 Taipei):** built and tested in the cloud container on 2026-11-10: the
   morning pipeline (`daily.sh`, `daily.ts`, preflight, publish, re-check, context, the prompts), its
   tests and `docs/RUNBOOK.md`, with the spec changes in §0.4 rows 67 to 94. An independent review in the
   container (two verify passes, 22 findings, one a duplicate) and the build's 11 known items were then
@@ -76,8 +76,8 @@ faster?
   132. On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
   `file -L` says arm64. JL stored the agent's token (SPEC §9.6) on 2026-11-11 at 06:47 Taipei with the
   helper `~/.cybertracker/store-token.zsh`, outside the repo, which reads a copied token from the
-  clipboard, stores it and tests it (use it for renewals too). The PR stays a draft until the Kobol
-  checks are in; marking it ready starts the Codex review. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
+  clipboard, stores it and tests it (use it for renewals too). The PR stayed a draft until the Kobol
+  checks were in. On Kobol on 2026-11-11 (08:06 to 08:31 Taipei, 00:06 to
   00:31 UTC; `docs/reports/2026-11-11-p3-dry-runs.md`) `agent:check -- --all` passed 13 of 13, the
   transcript was re-recorded and the two backdated dry runs and the forced failure passed, but the timed
   dry run fell back to data-only, so a fourth fix pass in the container fixed its causes and the dry-run
@@ -133,7 +133,8 @@ faster?
   rounds per attempt). CERT-FR's live alerts are under `www.cert.cyber.gouv.fr`, so `regions.json` version 2 adds
   that pattern (row 147). PR #5 was marked ready at 19:53 Taipei (11:53 UTC); Codex started only on
   `@codex review` (20:56). Round 1 (one P1): a rejected dispute stayed rejected when its issue was
-  reopened; a reopened (or completed) issue now gets a new dispute that is withheld again (row 148).
+  reopened; a reopened (or completed) issue now gets a new dispute, withheld again, and an internal
+  review of that fix closed two masking gaps on the same path (row 148).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -169,8 +170,8 @@ faster?
 - **How Codex reviews work** (seen on PRs 1 and 2):
   - The bot's login is `chatgpt-codex-connector[bot]`; JL made its Codex environment on 2026-11-07.
   - A review starts when a PR is opened for review, a draft is marked ready, or someone comments
-    `@codex review` (about 4 to 5 minutes). PR 2 got none on opening, so ask with `@codex review` if
-    nothing arrives within about 60 minutes.
+    `@codex review` (about 4 to 5 minutes). PR 2 got none on opening and PR 5 none on being marked
+    ready, so ask with `@codex review` if nothing arrives within about 60 minutes.
   - Signals: 👀 while it runs; a review with inline comments (P1 or P2 badges) when it has findings;
     "Codex Review: Didn't find any major issues." or 👍 when it has none. Its summary comment carries a
     `codex-review-state` JSON with `status` and `has_unresolved_findings`.

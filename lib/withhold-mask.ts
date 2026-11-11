@@ -1,5 +1,6 @@
 // The SPEC §4.10 masking, shared by a withhold and by the editions after it. A withhold binds later
-// editions while its victim or attribution dispute is open or upheld (a spec gap, decided in the P3 build):
+// editions while its victim or attribution dispute, or a later one intake answered with it, is open or
+// upheld (a spec gap, decided in the P3 build):
 // bindingWithholds() lists those withholds from corrections.json, the context marks their items in
 // recent_items, and applyDraft() and composeDataOnly() mask any item that re-reports one with
 // maskWithheld(). An item re-reports a withheld item when it has the id of a withheld reference (an item
@@ -25,8 +26,10 @@ import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "./vocab";
 export type WithholdKind = "victim" | "attribution";
 
 /**
- * A withhold that binds later editions: a name_removed correction whose dispute is open or upheld. A
- * correction whose dispute is missing binds too (the safe side); its kind then comes from the field.
+ * A withhold that binds later editions: a name_removed correction whose dispute is open or upheld, or that an
+ * open or upheld dispute names as its correction_id (intake answered a later report on the same item and
+ * edition with it). A correction whose dispute is missing binds too (the safe side); its kind then comes from
+ * the field.
  */
 export interface BindingWithhold {
   item_id: string;
@@ -36,6 +39,12 @@ export interface BindingWithhold {
   correction_id: string;
   /** The correction's date: the day the item was first withheld (WITHHELD_TEXT's date). */
   since: string;
+  /**
+   * The name_removed corrections on the same item, edition and kind that no longer bind (their disputes were
+   * rejected or withdrawn), when there are any: an item whose `withheld` names one is a reference of this
+   * withhold, so a copy the earlier withhold masked under another id stays withheld (§0.4 row 148).
+   */
+  supersedes?: string[];
 }
 
 /** An item of a new edition that a composer withheld (ContentChanges.masked). */
@@ -65,16 +74,30 @@ export interface HeldBrief {
   items: readonly Pick<Item, "id" | "withheld">[];
 }
 
-/** Each name_removed correction with its dispute (intake's list first, then corrections.json's), or null. */
+/**
+ * Each name_removed correction with whether it binds: its dispute (intake's list first, then corrections.json's)
+ * is missing, open or upheld, or an open or upheld dispute names it as its correction_id. A binding one lists
+ * the corrections it supersedes (BindingWithhold.supersedes).
+ */
 function withholdsOf(corrections: CorrectionsFile | null, disputes: readonly Dispute[] | null | undefined) {
-  const stored = corrections?.disputes ?? [];
-  return (corrections?.corrections ?? []).filter((c) => c.type === "name_removed").map((c) => {
-    const id = c.dispute_id;
-    const d = id === null ? null : disputes?.find((x) => x.id === id) ?? stored.find((x) => x.id === id) ?? null;
+  const byId = new Map((corrections?.disputes ?? []).map((d) => [d.id, d] as const));
+  for (const d of disputes ?? []) byId.set(d.id, d);
+  const live = (d: Dispute) => d.status === "open" || d.status === "upheld";
+  // A later report intake answered with a stored correction's id keeps that correction binding after its own
+  // dispute is decided: otherwise rejecting the first report would unmask an item another report still disputes.
+  const named = new Set([...byId.values()].filter((d) => d.correction_id !== null && live(d)).map((d) => d.correction_id));
+  const all = (corrections?.corrections ?? []).filter((c) => c.type === "name_removed").map((c) => {
+    const d = c.dispute_id === null ? null : byId.get(c.dispute_id) ?? null;
     const kind: WithholdKind = d && (d.kind === "victim" || d.kind === "attribution") ? d.kind : c.field === "attribution" ? "attribution" : "victim";
     const w: BindingWithhold = { item_id: c.item_id, edition_date: c.edition_date, kind, correction_id: c.id, since: c.date };
-    return { w, binds: !d || d.status === "open" || d.status === "upheld" };
+    return { w, binds: !d || live(d) || named.has(c.id) };
   });
+  for (const x of all) {
+    if (!x.binds) continue;
+    const same = all.filter((o) => !o.binds && o.w.item_id === x.w.item_id && o.w.edition_date === x.w.edition_date && o.w.kind === x.w.kind);
+    if (same.length) x.w.supersedes = same.map((o) => o.w.correction_id);
+  }
+  return all;
 }
 
 /**
@@ -111,6 +134,7 @@ export function withheldRefs(binding: readonly BindingWithhold[], briefs: readon
     out.set(ref, list);
   };
   const byCorrection = new Map(binding.map((w) => [w.correction_id, w] as const));
+  for (const w of binding) for (const old of w.supersedes ?? []) if (!byCorrection.has(old)) byCorrection.set(old, w);
   for (const w of binding) add(itemRef(w.edition_date, w.item_id), w);
   for (const b of briefs) {
     for (const it of b.items) {
@@ -130,7 +154,8 @@ export function withheldRefs(binding: readonly BindingWithhold[], briefs: readon
  */
 export function rewriteItem(b: Brief, it: Item, w: { kind: WithholdKind; since: string }, correction: string): void {
   it.headline = WITHHELD_HEADLINE;
-  it.summary = WITHHELD_TEXT.replace("{date}", longDate(w.since));
+  // An item an earlier withhold set keeps that withhold's date: it has been withheld since then.
+  it.summary = WITHHELD_TEXT.replace("{date}", longDate(it.withheld?.since ?? w.since));
   it.why_it_matters = null;
   if (w.kind === "victim") {
     if (it.incident) it.incident.victim = null;

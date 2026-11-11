@@ -803,6 +803,52 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(out.brief!.items.find((it) => it.id === CAMPAIGN)).toMatchObject({ headline: WITHHELD_HEADLINE, withheld: { correction_id: "C-0003" } });
   });
 
+  it("C30: a correction a later open or upheld dispute names keeps binding after its own dispute is rejected", () => {
+    // Intake answered a second report on the same item and edition (D-0003) with C-0003; rejecting the first report
+    // (D-0002) must not unmask the item while D-0003 is still under review (§0.4 row 148).
+    const i = withWithhold({ item: FLAW, edition: "2026-10-13", kind: "victim" });
+    const second: Dispute = { ...i.disputes!.find((d) => d.id === "D-0002")!, id: "D-0003", issue_number: 10, received: "2026-10-14T09:00:00+08:00" };
+    const ids = (ds: readonly Dispute[]) => bindingWithholds(i.corrections, ds).map((w) => w.correction_id);
+    const firstRejected = withStatus(i, "rejected").disputes!;
+    expect(ids(firstRejected)).toEqual(["C-0001"]);
+    expect(ids([...firstRejected, second])).toEqual(["C-0001", "C-0003"]);
+    expect(ids([...firstRejected, { ...second, status: "upheld", resolved_on: D }])).toEqual(["C-0001", "C-0003"]);
+    // Once the second is decided against too, nothing keeps it binding; one with no correction_id never did.
+    expect(ids([...firstRejected, { ...second, status: "rejected", resolved_on: D }])).toEqual(["C-0001"]);
+    expect(ids([...firstRejected, { ...second, correction_id: null }])).toEqual(["C-0001"]);
+    // corrections.json's own list decides without intake's.
+    expect(bindingWithholds({ ...i.corrections!, disputes: [...firstRejected, second] }, null).map((w) => w.correction_id)).toEqual(["C-0001", "C-0003"]);
+  });
+
+  it("C31: a reopened issue's new withhold keeps the copies the rejected one masked under another id as withheld references", () => {
+    // C29's world, then D-0002 was rejected and its issue reopened: the review D-0003 got its own withhold, C-0004, on the
+    // same item and edition. The 30 August copy still names C-0003, which no longer binds; it is C-0004's reference.
+    const OLD = "camp-tw-old-2026-08";
+    const COPY = "camp-tw-copy-2026-08";
+    const COPY_DATE = addDays(D, -45);
+    const i = withWithhold({ item: OLD, edition: "2026-08-15", kind: "attribution", date: "2026-08-25" });
+    const url = normalizeUrl(i.draft.sources.find((s) => s.id === "s7")!.url);
+    i.archiveIndex!.urls[url] = {
+      first_cited: "2026-08-15", item_ids: [`2026-08-15/${OLD}`, `${COPY_DATE}/${COPY}`], sha256: null, hashed_at: null, last_check: null,
+    };
+    const rejected = i.disputes!.map((d) => (d.id === "D-0002" ? { ...d, status: "rejected" as const, resolved_on: "2026-09-01" } : d));
+    const review: Dispute = { ...rejected.find((d) => d.id === "D-0002")!, id: "D-0003", received: "2026-10-14T09:00:00+08:00", status: "open", resolved_on: null, correction_id: "C-0004" };
+    const c3 = i.corrections!.corrections.find((c) => c.id === "C-0003")!;
+    const corrections = { ...i.corrections!, corrections: [...i.corrections!.corrections, { ...c3, id: "C-0004", date: "2026-10-14", dispute_id: "D-0003" }], disputes: [...rejected, review] };
+    const held = [{ date: COPY_DATE, items: [{ id: COPY, withheld: { correction_id: "C-0003", since: "2026-08-25" } }] }];
+    const binding = bindingWithholds(corrections, [...rejected, review]);
+    expect(binding.find((w) => w.correction_id === "C-0004")).toEqual({
+      item_id: OLD, edition_date: "2026-08-15", kind: "attribution", correction_id: "C-0004", since: "2026-10-14", supersedes: ["C-0003"],
+    });
+    expect(binding.some((w) => w.correction_id === "C-0003")).toBe(false);
+    expect(withheldRefs(binding, held).get(`${COPY_DATE}/${COPY}`)?.map((w) => w.correction_id)).toEqual(["C-0004"]);
+    const out = applyDraft({ ...i, corrections, disputes: [...rejected, review], withheldBriefs: held });
+    expect(out.masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0004", kind: "attribution", match: "url" }]);
+    // While only the rejected withhold names the item, the page is free again: the copy is no reference.
+    const before = { ...i.corrections!, disputes: rejected };
+    expect(applyDraft({ ...i, corrections: before, disputes: rejected, withheldBriefs: held }).masked).toEqual([]);
+  });
+
   it("C19: intake's list read before this morning's withhold: the dispute keeps the withhold's correction, and a draft correction does not answer it", () => {
     const i = world("weekday");
     // As intake read it: D-0001's withhold commit came after, so its correction_id is still null there.
