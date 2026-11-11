@@ -40,9 +40,10 @@ export interface BindingWithhold {
   /** The correction's date: the day the item was first withheld (WITHHELD_TEXT's date). */
   since: string;
   /**
-   * The name_removed corrections on the same item, edition and kind that no longer bind (their disputes were
-   * rejected or withdrawn), when there are any: an item whose `withheld` names one is a reference of this
-   * withhold, so a copy the earlier withhold masked under another id stays withheld (§0.4 row 148).
+   * The name_removed corrections on the same item and kind, in any edition (an item keeps its id in every
+   * edition), that no longer bind (their disputes were rejected or withdrawn), when there are any: an item whose
+   * `withheld` names one is a reference of this withhold, so a copy the earlier withhold masked under another id
+   * stays withheld (§0.4 row 148).
    */
   supersedes?: string[];
 }
@@ -94,7 +95,7 @@ function withholdsOf(corrections: CorrectionsFile | null, disputes: readonly Dis
   });
   for (const x of all) {
     if (!x.binds) continue;
-    const same = all.filter((o) => !o.binds && o.w.item_id === x.w.item_id && o.w.edition_date === x.w.edition_date && o.w.kind === x.w.kind);
+    const same = all.filter((o) => !o.binds && o.w.item_id === x.w.item_id && o.w.kind === x.w.kind);
     if (same.length) x.w.supersedes = same.map((o) => o.w.correction_id);
   }
   return all;

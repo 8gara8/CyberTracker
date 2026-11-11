@@ -844,6 +844,15 @@ describe("a withhold binds the editions after it (§4.10)", { timeout: 120_000 }
     expect(withheldRefs(binding, held).get(`${COPY_DATE}/${COPY}`)?.map((w) => w.correction_id)).toEqual(["C-0004"]);
     const out = applyDraft({ ...i, corrections, disputes: [...rejected, review], withheldBriefs: held });
     expect(out.masked).toEqual([{ item_id: CAMPAIGN, correction_id: "C-0004", kind: "attribution", match: "url" }]);
+    // A new issue that left the edition blank disputes the item's newest edition: its withhold supersedes C-0003 all the same.
+    const later = { ...corrections, corrections: corrections.corrections.map((c) => (c.id === "C-0004" ? { ...c, edition_date: "2026-08-20" } : c)) };
+    expect(bindingWithholds(later, [...rejected, review]).find((w) => w.correction_id === "C-0004")?.supersedes).toEqual(["C-0003"]);
+    expect(applyDraft({ ...i, corrections: later, disputes: [...rejected, review], withheldBriefs: held }).masked)
+      .toEqual([{ item_id: CAMPAIGN, correction_id: "C-0004", kind: "attribution", match: "url" }]);
+    // Another kind's withhold does not: an attribution withdrawn says nothing of the victim.
+    const victim = { ...corrections, corrections: corrections.corrections.map((c) => (c.id === "C-0004" ? { ...c, field: "incident.victim" } : c)) };
+    const victimReview = { ...review, kind: "victim" as const };
+    expect(bindingWithholds(victim, [...rejected, victimReview]).find((w) => w.correction_id === "C-0004")?.supersedes).toBeUndefined();
     // While only the rejected withhold names the item, the page is free again: the copy is no reference.
     const before = { ...i.corrections!, disputes: rejected };
     expect(applyDraft({ ...i, corrections: before, disputes: rejected, withheldBriefs: held }).masked).toEqual([]);
