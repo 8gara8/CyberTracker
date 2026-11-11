@@ -4,7 +4,7 @@
 
 import type { PublisherKind, SourceType, Tier } from "./schema/common";
 import type { SourceTiersFile, VendorsFile } from "./schema/config";
-import { blockedEntry, matchPath, normalizeUrl } from "./urls";
+import { blockedEntry, githubPathTier1, matchPath, normalizeUrl, TIER1_PATH_FLAGS } from "./urls";
 import type { BlockReason } from "./vocab";
 
 /**
@@ -57,13 +57,12 @@ function splitDomain(domain: string): { host: string; path: string } {
   return { host: d.slice(0, slash), path: matchPath(d.slice(slash)).replace(/\/+$/, "") };
 }
 
-/**
- * Compiles the `github.tier1_paths` regexes. They compare matchPath() forms, which are lower-cased
- * (§4.2), while the seed patterns are written with capitals (`^/CVEProject/`, `GHSA-`), so they compile
- * with flags "iu", not §4.11's default "u". lib/config.ts's CONFIG_REGEX check compiles with the same flags.
- */
-export const TIER1_PATH_FLAGS = "iu";
+export { TIER1_PATH_FLAGS };
 
+/**
+ * Compiles the `github.tier1_paths` regexes with TIER1_PATH_FLAGS ("iu", lib/urls.ts): they compare
+ * matchPath() forms, which are lower-cased (§4.2), while the seed patterns are written with capitals.
+ */
 export function compileTier1Paths(sourceTiers: Pick<SourceTiersFile, "github">): RegExp[] {
   return sourceTiers.github.tier1_paths.map((p) => new RegExp(p, TIER1_PATH_FLAGS));
 }
@@ -145,8 +144,7 @@ function pathUnder(path: string, prefix: string): boolean {
 
 /** True when a github.com URL's path matches a `github.tier1_paths` regex (on its matchPath() form). */
 export function isGithubTier1(url: string, sourceTiers: Pick<SourceTiersFile, "github">): boolean {
-  const p = parts(url);
-  return p !== null && p.host === GITHUB_HOST && tier1For(sourceTiers).some((re) => re.test(p.path || "/"));
+  return githubPathTier1(url, tier1For(sourceTiers)) === true;
 }
 
 /**
@@ -157,8 +155,7 @@ export function isGithubTier1(url: string, sourceTiers: Pick<SourceTiersFile, "g
 export function blockedReason(url: string, sourceTiers: Pick<SourceTiersFile, "github">): BlockReason | null {
   const entry = blockedEntry(url);
   if (entry) return entry.reason;
-  const p = parts(url);
-  if (p && p.host === GITHUB_HOST && !isGithubTier1(url, sourceTiers)) return "exploit_code";
+  if (githubPathTier1(url, tier1For(sourceTiers)) === false) return "exploit_code";
   return null;
 }
 

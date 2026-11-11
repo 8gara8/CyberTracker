@@ -249,7 +249,8 @@ function labelsOf(paths: Record<ConfigKey, string>): Record<ConfigKey, string> {
  * root and claims file unless `overrides` or `fresh` is given; treat it as read-only.
  */
 export function loadConfig(opts: LoadConfigOptions = {}): LoadedConfig {
-  const root = path.resolve(opts.root ?? process.cwd());
+  // turbopackIgnore: the site build reads config/ at build time; nothing here is a file to bundle (SPEC §6).
+  const root = path.resolve(/*turbopackIgnore: true*/ opts.root ?? process.cwd());
   const sampleClaims = isSampleData(contentDir(), root);
   const paths = defaultPaths();
   if (sampleClaims) paths.claims = SAMPLE_CLAIMS_FILE;
@@ -275,7 +276,7 @@ export function loadConfig(opts: LoadConfigOptions = {}): LoadedConfig {
       raw = overrides[k];
       hashes[k] = sha256(`${JSON.stringify(raw, null, 2)}\n`);
     } else {
-      const file = path.join(root, rel);
+      const file = path.join(/*turbopackIgnore: true*/ root, rel);
       if (!fs.existsSync(file)) {
         issues.push(issue("CONFIG_SCHEMA", rel, "File is missing.", `Every config file is required; see SPEC §4.11 for ${CONFIG_FILES[k]}.`));
         continue;
