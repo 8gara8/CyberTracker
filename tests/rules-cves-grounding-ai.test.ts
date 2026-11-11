@@ -577,6 +577,9 @@ describe("LEAD_GROUNDED", () => {
     expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 39%")]);
     d.angle.metric_path = "window.w26.n_day_share";
     expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    // The share's label prints the race's range too, so the share's Angle may say what the race is.
+    d.angle.text = "In 26 weeks, 39% of recently disclosed flaws on CISA's list were listed 2 to 30 days after disclosure.";
+    expect([...only(check(d, "monday"), "LEAD_GROUNDED"), ...only(check(d, "monday"), "WORDS_OVER")]).toEqual([]);
     // The 2023–24 pace per 13 weeks (11) is not the reference's own count (91) nor the 26-week pace (23).
     d.angle.text = "At the 2023–24 pace, 11 old flaws would be newly listed in 13 weeks.";
     for (const p of ["window.reference.old_listed_n", "window.reference.old_listed_pace_26w"]) {

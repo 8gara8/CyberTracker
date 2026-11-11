@@ -172,7 +172,7 @@
       },
       {
         "key": "window.w26.n_day_share",
-        "label": "n-day race share, 26 weeks",
+        "label": "n-day race share (listed 2 to 30 days after), 26 weeks",
         "display": "39%",
         "as_of": "2026-10-12"
       },
@@ -280,7 +280,7 @@
       },
       {
         "key": "window.w13.n_day_share",
-        "label": "n-day race share, 13 weeks",
+        "label": "n-day race share (listed 2 to 30 days after), 13 weeks",
         "display": "37%",
         "as_of": "2026-10-12"
       },
@@ -388,7 +388,7 @@
       },
       {
         "key": "window.reference.n_day_share",
-        "label": "n-day race share, 2023–24",
+        "label": "n-day race share (listed 2 to 30 days after), 2023–24",
         "display": "33%",
         "as_of": "2026-10-12"
       },

@@ -104,7 +104,7 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     expect(texts("window.w26.p7")).toEqual(["7 days", "26 weeks"]);
     expect(texts("window.w26.p7_ci80.0")).toEqual(["80% interval", "7 days", "26 weeks"]);
     expect(texts("window.w26.n_day_n")).toEqual(["2 to 30 days", "26 weeks"]);
-    expect(texts("window.w26.n_day_share")).toEqual(["26 weeks"]);
+    expect(texts("window.w26.n_day_share")).toEqual(["2 to 30 days", "26 weeks"]);
     expect(texts("window.w13.late_listed_n")).toEqual(["31 to 365 days", "13 weeks"]);
     expect(texts("window.reference.old_listed_n")).toEqual(["365 days"]);
     expect(texts("window.reference.old_listed_pace_13w")).toEqual(["13 weeks"]);

@@ -264,7 +264,7 @@ export function gapTableDisplays(win: NonNullable<Metrics["window"]>): GapDispla
       }
     }
     add(`${p}.n_day_n`, `n-day race (listed 2 to 30 days after), ${name}`, fmtInt(w.n_day_n));
-    if (w.cohort_n >= MIN_N) add(`${p}.n_day_share`, `n-day race share, ${name}`, `${pct(w.n_day_n, w.cohort_n)}%`);
+    if (w.cohort_n >= MIN_N) add(`${p}.n_day_share`, `n-day race share (listed 2 to 30 days after), ${name}`, `${pct(w.n_day_n, w.cohort_n)}%`);
     add(`${p}.late_listed_n`, `listed 31 to 365 days after, ${name}`, fmtInt(w.cohort_n - w.at_disclosure_n - w.n_day_n));
     if (w.after_disclosure_median_days !== null) {
       add(`${p}.after_disclosure_median_days`, `median days to listing for the rest, ${name}`, fmtDays(w.after_disclosure_median_days));
