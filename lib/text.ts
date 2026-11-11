@@ -189,6 +189,23 @@ const NOT_NUMBERS: readonly (RegExp | ((s: string) => string))[] = [
   /§\s*\d+(?:\.\d+)*/gu, // section marks
 ];
 
+/** After a day number: at most three words, then a month or weekday name ("12 Nov", "8, 9 or 10 Oct", "12 this Tuesday"). */
+const DATE_NAME_AFTER = new RegExp(`^${ORDINAL}[,;]?(?:\\s+\\S+){0,3}?\\s+(?:of\\s+)?(?:${MONTH}|${WEEKDAY})(?![\\p{L}])`, "u");
+
+/**
+ * The number reads as a day of a date the text writes in another form: a whole number from 1 to 31,
+ * not a percentage, with a month or weekday name after it and at most three words between ("on 8, 9 or
+ * 10 Oct", whose last two days are a range but whose first is a number).
+ * LEAD_GROUNDED and METRICS_ONLY_NUMBERS then add a hint on how a day range is written (§4.12).
+ */
+export function dayBeforeDateName(text: string, n: NumberToken): boolean {
+  if (n.percent || n.decimals || !Number.isInteger(n.value) || n.value < 1 || n.value > 31 || !/^\d{1,2}$/u.test(n.raw)) return false;
+  const s = text.normalize("NFKC");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}.,])${n.raw}(?![\\p{N}])`, "gu");
+  for (const m of s.matchAll(re)) if (DATE_NAME_AFTER.test(s.slice(m.index + m[0].length))) return true;
+  return false;
+}
+
 const SMALL_WORDS: Record<string, number> = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
   fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,

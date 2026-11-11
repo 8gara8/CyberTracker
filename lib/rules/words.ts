@@ -313,7 +313,9 @@ function fieldIssues(b: AnyBrief, metrics: Metrics | null): ValidationIssue[] {
         : metrics ? `, nor the figures the metric's label prints (${figureList(figures)}) the first time each is written.`
           : `, nor the Gap's window lengths (${figureList(figures)}) the first time each is written.`}`;
     // Only WORDS_OVER says a figure written again counts: WORDS_UNDER's Angle holds no number at all.
-    const once = !figures.length ? "" : metrics ? " Write each label figure once: written again, it counts." : " Write each window length once: written again, it counts.";
+    const once = !figures.length ? ""
+      : metrics ? " Write each label figure at most once, as the label writes it: written again, it counts."
+        : " Write each window length at most once: written again, it counts.";
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
         `${notCounted}${gluedRatios(angle.text).length ? RATIO_HINT : ""}`));

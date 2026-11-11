@@ -269,7 +269,7 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(codesOf(wrong)).toEqual(["WORDS_OVER angle.text"]);
     expect(wrong[0]!.message).toContain("2 numbers (13, 17)");
     expect(wrong[0]!.hint).toBe("Dates, years, CVE ids and version strings are not counted as numbers, nor the figures the metric's label prints "
-      + "(26 weeks) the first time each is written. Write each label figure once: written again, it counts.");
+      + "(26 weeks) the first time each is written. Write each label figure at most once, as the label writes it: written again, it counts.");
     d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
     const under = check(d, W, { edition: "monday" });
     expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);
@@ -309,7 +309,7 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list within 7 days, a median 17 days after it.";
     const r = check(d, W, { edition: "monday", inputs: { metrics: null } });
     expect(r.map((x) => x.message)).toEqual([expect.stringContaining("2 numbers (7, 17)")]);
-    expect(r[0]!.hint).toContain("nor the Gap's window lengths (26 weeks, 13 weeks) the first time each is written. Write each window length once");
+    expect(r[0]!.hint).toContain("nor the Gap's window lengths (26 weeks, 13 weeks) the first time each is written. Write each window length at most once: written again, it counts.");
     d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a while after it.";
     const under = check(d, W, { edition: "monday", inputs: { metrics: null } });
     expect(codesOf(under)).toEqual(["WORDS_UNDER angle.text"]);

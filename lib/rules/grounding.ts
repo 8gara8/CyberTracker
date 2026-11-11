@@ -4,9 +4,10 @@
 // source's seen text, it is numberMatches()'s rounding rule. Units count: a percentage matches only a
 // percentage. NUMBER_FORM fails a ratio written in a form numbersIn() cannot read ("9.9x", "ten times the pace").
 
+import { addDays, isValidDate } from "../dates";
 import { gapTableDisplays, kevLines, metricNumbers, quotableRows, WINDOW_LENGTHS } from "../metrics/headline";
 import type { Metrics } from "../schema/metrics";
-import { gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordRatios, type LabelFigure, type NumberToken } from "../text";
+import { dayBeforeDateName, gluedRatios, labelFigures, numberMatches, numbersBesideFigures, numbersIn, splitSentences, wordRatios, type LabelFigure, type NumberToken } from "../text";
 import { METRIC_TERMS } from "../vocab";
 import { citedItemsByPath } from "./cves";
 import { isBrief, knownNamesFor, nameMatches, namesIn, proseFields, seenTextOfSource, type FieldText, type KnownName } from "./shared";
@@ -189,7 +190,29 @@ export function displaysFor(metrics: Metrics, path: string): string[] {
 
 // ── LEAD_GROUNDED ────────────────────────────────────────────────────────────────────────────────
 
-const GAP_DAY_HINT = ' When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.';
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * The edition's day as a Gap sentence names it, by its dates: the day before and the edition day ("11 to
+ * 12 Nov"; "31 Oct to 1 Nov" across months), both read as dates by numbersIn(). Null for no valid date.
+ */
+export function gapDayExample(date: string): string | null {
+  if (!isValidDate(date)) return null;
+  const [from, to] = [addDays(date, -1), date].map((d) => ({ day: Number(d.slice(8, 10)), month: MONTHS[Number(d.slice(5, 7)) - 1]! }));
+  return from!.month === to!.month ? `${from!.day} to ${to!.day} ${to!.month}` : `${from!.day} ${from!.month} to ${to!.day} ${to!.month}`;
+}
+
+/** LEAD_GROUNDED's hint for a Gap sentence that names the day as a length of hours. */
+const gapDayHint = (date: string): string => {
+  const ex = gapDayExample(date);
+  return ` When a Gap sentence names the day, it names it by its dates${ex ? ` ("${ex}")` : ""}, never as a length of hours.`;
+};
+
+/** LEAD_GROUNDED's and METRICS_ONLY_NUMBERS' hint for a stray day number before a month or weekday name (dayBeforeDateName()). */
+const dayNumberHint = (date: string): string => {
+  const ex = gapDayExample(date);
+  return ` A day number is read as a number unless written as a date or a date range${ex ? ` like "${ex}"` : ""}.`;
+};
 
 /** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
 function hoursLength(text: string, n: NumberToken): boolean {
@@ -217,6 +240,7 @@ const leadGrounded = defineRule({
     const known = knownNamesFor(input);
     const gapText = `${metrics.headline.text}\n${metrics.headline.second_line}`;
     const grounded = (k: KnownName) => nameMatches(gapText, k);
+    const noItems = (draft.items ?? []).length === 0;
 
     (draft.lead ?? []).forEach((s, i) => {
       if (!s || typeof s.text !== "string") return;
@@ -236,11 +260,13 @@ const leadGrounded = defineRule({
       // Numbers.
       const itemNums = [...textPool(cited.flatMap(itemTexts)), ...cited.flatMap((it) => blockNumbers(input, it))];
       for (const n of distinctNumbers(s.text)) {
+        const day = dayBeforeDateName(s.text, n) ? dayNumberHint(input.date) : "";
         if (s.gap) {
           if (!exactIn(n, quoted)) {
+            // With no items there is none to cite, so the hint does not offer gap: false (review of the seventh pass).
             out.push(error("LEAD_GROUNDED", `${p}.text`,
               `${p} is a Gap sentence (gap: true) but holds ${shown(n)}, which is not one of the Gap's quoted numbers (${list(metrics.headline.quoted.map((q) => q.display))}).`,
-              `Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.${hoursLength(s.text, n) ? GAP_DAY_HINT : ""}`));
+              `${noItems ? "Copy the number exactly as metrics.quotable shows it, or remove it." : "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from."}${hoursLength(s.text, n) ? gapDayHint(input.date) : ""}${day}`));
           }
           continue;
         }
@@ -249,7 +275,7 @@ const leadGrounded = defineRule({
           ids.length
             ? `${p} holds ${shown(n)}, which matches no number in the text or CVE blocks of the items it cites (${list(ids)}) and no metric number exactly.`
             : `${p} holds ${shown(n)}, which is not a metric number, and the sentence cites no item.`,
-          "Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it."));
+          `Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it.${day}`));
       }
 
       // Names.
@@ -414,7 +440,8 @@ const metricsOnlyNumbers = defineRule({
           if (exactIn(n, metricNums) || roundIn(n, blocks)) continue;
           out.push(error("METRICS_ONLY_NUMBERS", field.path,
             `${field.path}: the sentence "${sentence}" uses "${terms[0]}" and holds ${shown(n)}, which is not a metric number${items.length ? " or a number in the CVE block of the item it is about" : ""}.`,
-            "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."));
+            "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."
+              + (dayBeforeDateName(sentence, n) ? dayNumberHint(input.date) : "")));
         }
       }
     }

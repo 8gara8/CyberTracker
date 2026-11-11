@@ -17,7 +17,7 @@ import type { EditionName } from "@/fixtures/src/world";
 import { kevLines } from "@/lib/metrics/headline";
 import { aiRules, attributesClaim, mentionsAnthropic, anthropicReasons } from "@/lib/rules/ai";
 import { cveIdsIn, cveRules, draftVendorConfirmedBy, holdsCveId, isCveRecordPage, onKevDraft } from "@/lib/rules/cves";
-import { displaysFor, groundingRules, metricTermsIn, valueAt } from "@/lib/rules/grounding";
+import { displaysFor, gapDayExample, groundingRules, metricTermsIn, valueAt } from "@/lib/rules/grounding";
 import { derive } from "@/lib/rules/shared";
 import type { CveRecordInfo, Rule, RuleInput, ValidationIssue } from "@/lib/rules/types";
 import type { DraftBrief } from "@/lib/schema/draft-brief";
@@ -512,6 +512,34 @@ describe("LEAD_GROUNDED", () => {
       "Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.", expect.stringContaining(DAY)]);
   });
 
+  it("names the edition's own day in the hints, and offers gap: false only when there is an item to cite (review of the seventh pass)", () => {
+    expect(gapDayExample("2026-11-12")).toBe("11 to 12 Nov");
+    expect(gapDayExample("2026-10-11")).toBe("10 to 11 Oct");
+    expect(gapDayExample("2026-11-01")).toBe("31 Oct to 1 Nov");
+    expect(gapDayExample("2027-01-01")).toBe("31 Dec to 1 Jan");
+    expect(gapDayExample("")).toBeNull();
+    // The quiet edition (2026-10-11) has no items, so there is none to cite.
+    const quiet = (text: string) => {
+      const d = quietDraft();
+      d.lead[0] = { text, item_ids: [], gap: true };
+      return only(check(d, "quiet"), "LEAD_GROUNDED");
+    };
+    expect(quiet("Nothing in the 24 hours to 04:30 Taipei cleared the bar for an item.").map((e) => e.hint)).toEqual([
+      'Copy the number exactly as metrics.quotable shows it, or remove it. When a Gap sentence names the day, it names it by its dates ("10 to 11 Oct"), never as a length of hours.']);
+    // A stray day before a month or weekday name: the third day of a list is no range.
+    expect(quiet("Nothing published on 8, 9 or 10 Oct cleared the bar for an item.").map((e) => [e.message, e.hint])).toEqual([[
+      expect.stringContaining("holds 8, which is not one of the Gap's quoted numbers"),
+      'Copy the number exactly as metrics.quotable shows it, or remove it. A day number is read as a number unless written as a date or a date range like "10 to 11 Oct".']]);
+    expect(quiet("Nothing published from Friday 9 to Saturday 10 Oct cleared the bar for an item.")).toEqual([]);
+    // No month or weekday name after it: no day hint.
+    expect(quiet("Nothing cleared the bar, 3 days running.").map((e) => e.hint)).toEqual(["Copy the number exactly as metrics.quotable shows it, or remove it."]);
+    // The weekday edition (2026-10-14) has items, so gap: false and an item stay on offer; a non-Gap sentence gets the day hint too.
+    expect(lead("Nothing published on 8, 9 or 10 Oct cleared the bar.", [], true).map((e) => e.hint)).toEqual([
+      'Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from. A day number is read as a number unless written as a date or a date range like "13 to 14 Oct".']);
+    expect(lead("Ivanti's fix shipped on 8, 9 or 10 Oct.", [I.criticalExploited]).map((e) => e.hint)).toEqual([
+      'Use the number as the item states it, cite the item that gives it, or copy a metric exactly as metrics.quotable shows it. A day number is read as a number unless written as a date or a date range like "13 to 14 Oct".']);
+  });
+
   it("matches other numbers against the cited items' text and CVE blocks, rounding as written", () => {
     expect(lead("Shadowserver counts about 9,000 unpatched Ivanti gateways.", [I.criticalExploited])).toEqual([]);
     expect(lead("Microsoft fixed about 1,400 flaws.", [I.patchBatch])).toEqual([]);
@@ -744,6 +772,17 @@ describe("METRICS_ONLY_NUMBERS", () => {
       d.week_in_review!.text = text;
       expect(only(check(d, "monday"), "METRICS_ONLY_NUMBERS"), text).toEqual([]);
     }
+  });
+
+  it("adds a day hint, with the edition's dates, when the stray number is a day before a month or weekday name (review of the seventh pass)", () => {
+    const d = mondayDraft();
+    d.week_in_review!.text = "SAMPLE. On 8, 9 or 10 Oct, CISA's KEV catalog grew while the Flood held.";
+    const r = only(check(d, "monday"), "METRICS_ONLY_NUMBERS");
+    expect(r.map((e) => e.message)).toEqual([expect.stringContaining("holds 8,")]);
+    expect(r[0]!.hint).toBe("A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, "
+      + 'or rewrite the sentence without the metric term. A day number is read as a number unless written as a date or a date range like "11 to 12 Oct".');
+    d.week_in_review!.text = "SAMPLE. The Window held: 157 such flaws in 26 weeks. The Flood brought 6 surprises.";
+    expect(only(check(d, "monday"), "METRICS_ONLY_NUMBERS")[0]!.hint).not.toContain("day number");
   });
 
   it("leaves the Lead and the Angle to LEAD_GROUNDED", () => {

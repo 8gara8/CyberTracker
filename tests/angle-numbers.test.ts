@@ -141,7 +141,7 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
     for (const [p, twice, once] of cases) {
       const got = angleIssues(m, p, twice);
       expect(codes(got), `${p} | ${twice}`).toContain("WORDS_OVER angle.text");
-      expect(got.find((e) => e.code === "WORDS_OVER")!.hint, p).toContain("Write each label figure once: written again, it counts.");
+      expect(got.find((e) => e.code === "WORDS_OVER")!.hint, p).toContain("Write each label figure at most once, as the label writes it: written again, it counts.");
       expect(got.find((e) => e.code === "LEAD_GROUNDED")?.hint ?? "", p).toContain("may stand beside it as the label writes them, each at most once; no other number may.");
       expect(angleIssues(m, p, once), `${p} | ${once}`).toEqual([]);
     }
