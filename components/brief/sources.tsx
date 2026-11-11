@@ -2,11 +2,16 @@
 // refs, ExternalLink titles with lang, tier line, state label). Owner: brief lane (S0 wrote a working port;
 // the brief lane may restyle it but keeps these exports and props). The foot's closed
 // <details id="sources"><summary>Sources (N) · M publishers</summary> is BriefView's.
-import type { Source } from "@/lib/schema/common";
+import { ID_PATTERNS, type Source } from "@/lib/schema/common";
 import { shortDate } from "@/lib/format";
 import { TIER_INFO } from "@/lib/vocab";
 import { ExternalLink } from "@/components/ui/ExternalLink";
 import { PlainText } from "@/components/ui/PlainText";
+
+/** The source id when it matches its §4.3 pattern ("s1", "s12"), for `id` and `#` hrefs; else undefined. */
+export function sourceAnchor(id: string): string | undefined {
+  return ID_PATTERNS.source.test(id) ? id : undefined;
+}
 
 /** Source id → its number in the brief's source list (1-based, the brief's `sources` order). */
 export type SourceIndex = Record<string, number>;
@@ -22,7 +27,7 @@ export interface SourceRefsProps {
 
 /** Bracketed links to the numbered source list: [1][4], each `#src-<id>` with aria-label "Source n". */
 export function SourceRefs({ ids, index }: SourceRefsProps) {
-  const nums = [...new Set(ids)].filter((id) => index[id]).map((id) => ({ id, n: index[id]! }));
+  const nums = [...new Set(ids)].filter((id) => index[id] && sourceAnchor(id)).map((id) => ({ id, n: index[id]! }));
   if (!nums.length) return null;
   return (
     <span className="whitespace-nowrap font-mono text-[10px]">
@@ -46,7 +51,7 @@ export function SourceList({ sources }: SourceListProps) {
   return (
     <ol>
       {sources.map((s, i) => (
-        <li key={s.id} id={`src-${s.id}`} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px]">
+        <li key={s.id} id={sourceAnchor(s.id) ? `src-${s.id}` : undefined} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px]">
           <span className="tabular shrink-0 pt-px text-[11px] text-muted">[{String(i + 1).padStart(2, "0")}]</span>
           <span className="min-w-0 [overflow-wrap:anywhere]">
             <span className="font-semibold text-fg"><PlainText text={s.outlet} /></span>{" "}
