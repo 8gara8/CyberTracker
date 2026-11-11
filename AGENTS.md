@@ -131,7 +131,9 @@ faster?
   TW and JP stay at baseline, and the vendor pages are on their own hosts. On 2026-10-22 the first attempt
   failed validation after both repair rounds (E_VALIDATION); the retry validated after one (row 139's
   rounds per attempt). CERT-FR's live alerts are under `www.cert.cyber.gouv.fr`, so `regions.json` version 2 adds
-  that pattern (row 147). Next: mark PR #5 ready, which starts the Codex review.
+  that pattern (row 147). PR #5 was marked ready at 19:53 Taipei (11:53 UTC); Codex started only on
+  `@codex review` (20:56). Round 1 (one P1): a rejected dispute stayed rejected when its issue was
+  reopened; a reopened (or completed) issue now gets a new dispute that is withheld again (row 148).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -152,7 +154,7 @@ faster?
 | Foundation: spec v2.0, scaffolding, cloud code removed | `p0-setup` | #2 | Merged 2026-11-09, 07:37 Taipei (23:37 UTC on 2026-11-08) |
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
-| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; then Codex review |
+| P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | In progress: built in the cloud container 2026-11-10; Kobol checks 2026-11-11, the last rerun (on `4d3c795`, 19:10 to 19:42 Taipei) passed every step; ready 2026-11-11 19:53 Taipei, Codex round 1 fixed (row 148) |
 | P4 Site | `p4-site` | | Not started |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |

@@ -193,6 +193,8 @@ interface IssueEntry {
   closed: boolean;
   stateReason: string | null;
   createdAt: string;
+  /** `updated_at` when it parses, else null: when a reopened issue's new review is received. */
+  updatedAt: string | null;
   pullRequest: boolean;
 }
 
@@ -201,6 +203,7 @@ function issueEntry(v: unknown): IssueEntry | null {
   const o = v as Record<string, unknown>;
   const n = o.number;
   const created = o.created_at;
+  const updated = o.updated_at;
   if (typeof n !== "number" || !Number.isInteger(n) || n < 1) return null;
   if (typeof created !== "string" || !Number.isFinite(Date.parse(created))) return null;
   return {
@@ -209,6 +212,7 @@ function issueEntry(v: unknown): IssueEntry | null {
     closed: o.state === "closed",
     stateReason: typeof o.state_reason === "string" ? o.state_reason : null,
     createdAt: created,
+    updatedAt: typeof updated === "string" && Number.isFinite(Date.parse(updated)) ? updated : null,
     pullRequest: o.pull_request !== undefined && o.pull_request !== null,
   };
 }
@@ -309,12 +313,36 @@ function closeStatus(e: IssueEntry): Dispute["status"] | null {
 }
 
 /**
+ * The status a new review of a rejected dispute takes when its issue reads open again (reopened) or closed
+ * as completed (reopened and closed again), else null. Only a rejected dispute is reviewed again: open and
+ * upheld ones already keep the name out, and publish makes a dispute upheld while its issue is still open.
+ */
+function reviewAgain(d: Dispute, e: IssueEntry): "open" | "upheld" | null {
+  if (d.status !== "rejected") return null;
+  if (!e.closed) return "open";
+  return closeStatus(e) === "upheld" ? "upheld" : null;
+}
+
+/** Each issue number's newest dispute (the highest D-NNNN): a reopened issue's later review supersedes the rejected one. */
+function newestByIssue(disputes: readonly Dispute[]): Map<number, Dispute> {
+  const out = new Map<number, Dispute>();
+  for (const d of disputes) {
+    const had = out.get(d.issue_number);
+    if (!had || d.id > had.id) out.set(d.issue_number, d);
+  }
+  return out;
+}
+
+/**
  * GET https://api.github.com/repos/<repos.repo>/issues?state=all&labels=correction&since=<S>&per_page=100[&page=N]
  * through fetchImpl (10 s each, ≤ 3 pages, run.json user_agent, no token). S = the newest dispute's
  * received as UTC "YYYY-MM-DDTHH:MM:SSZ", else `${addDays(D, −30)}T00:00:00Z`. Never writes to GitHub.
  *
  * New issue numbers become open disputes (D-NNNN, received = created_at in Taipei); an open dispute whose
- * issue closed `not_planned` becomes rejected, `completed` upheld, resolved_on D. Withhold requests: every
+ * issue closed `not_planned` becomes rejected, `completed` upheld, resolved_on D. A rejected dispute whose
+ * issue reads open again, or closed `completed`, stays as it was and gets a new review: a new dispute on the
+ * same issue, item, edition, kind and link (received = updated_at in Taipei), open, or upheld with
+ * resolved_on D, with no correction, so it is withheld again like any later dispute. Withhold requests: every
  * open or upheld victim or attribution dispute without a correction, oldest first, at most 10 (one per
  * item, edition and kind; one already answered by a stored name_removed correction that still binds gets
  * that correction's id instead). Reports: open fact and link disputes, and rejected victim or attribution disputes on items
@@ -344,7 +372,7 @@ export async function intakeDisputes(o: {
       const e = issueEntry(v);
       if (e && !e.pullRequest) entries.push(e);
     }
-    const byNumber = new Map(disputes.map((d) => [d.issue_number, d]));
+    const byNumber = newestByIssue(disputes);
     const nextId = nextDisputeId(disputes);
     const fresh = entries
       .filter((e) => !byNumber.has(e.number))
@@ -369,11 +397,25 @@ export async function intakeDisputes(o: {
     }
     for (const e of entries) {
       const d = byNumber.get(e.number);
+      if (!d) continue;
       const status = closeStatus(e);
-      if (d && d.status === "open" && status) {
+      if (d.status === "open" && status) {
         d.status = status;
         d.resolved_on = o.date;
+        continue;
       }
+      // A rejected dispute's correction binds nothing after its edition, and later editions may have printed the
+      // name since, so flipping it back would leave those copies unmasked. The new review is a dispute of its own,
+      // which intake withholds below in every stored brief that holds the item (§4.10).
+      const again = reviewAgain(d, e);
+      if (!again) continue;
+      const review: Dispute = {
+        ...d, id: nextId(), received: taipeiTimestamp(new Date(e.updatedAt ?? o.now())), status: again,
+        resolved_on: again === "upheld" ? o.date : null, correction_id: null,
+      };
+      disputes.push(review);
+      byNumber.set(e.number, review);
+      log(`issue #${e.number}: reviewed again as ${review.id} (${d.id} was rejected).`);
     }
   }
 
@@ -412,6 +454,8 @@ export async function intakeDisputes(o: {
     ...corrections.filter((c) => c.type === "name_removed" && binds.has(c.id)).map((c) => c.item_id),
   ]);
   const reports: AgentContext["corrections"]["reports"] = [];
+  // One restore report per item and kind: a reopened issue rejected again leaves two rejected disputes on the item.
+  const restoreReported = new Set<string>();
   for (const d of disputes) {
     if (d.status === "open" && (d.kind === "fact" || d.kind === "link")) {
       reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
@@ -423,7 +467,10 @@ export async function intakeDisputes(o: {
     if (!item?.withheld) continue;
     const restored = corrections.some((c) => c.type === "update" && c.item_id === d.item_id && c.edition_date === edition
       && (d.resolved_on === null || c.date >= d.resolved_on));
-    if (!restored) reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
+    const key = `${d.item_id}|${d.kind}`;
+    if (restored || restoreReported.has(key)) continue;
+    restoreReported.add(key);
+    reports.push({ item_id: d.item_id, type: d.kind, evidence_url: d.evidence_url });
   }
 
   const added = disputes.length - (stored?.disputes.length ?? 0);
