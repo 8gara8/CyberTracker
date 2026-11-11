@@ -109,6 +109,21 @@ describe("a metric Angle that copies its quotable row (row 145)", () => {
       .toContain("WORDS_OVER angle.text");
   });
 
+  it("a label's range may be written \"between 2 and 30 days\", and its interval an \"80% confidence interval\"", () => {
+    // The review's natural forms, which counted on the one-shot canary (fifth P3 fix pass).
+    const m = canaryMetrics();
+    for (const [p, text] of [
+      ["window.w26.n_day_share", "In the 26 weeks to 12 Oct, 39% of recently disclosed flaws were listed between 2 and 30 days after disclosure."],
+      ["window.w26.late_listed_n", "In the 26 weeks to 12 Oct, 37 recently disclosed flaws were listed between 31 and 365 days after disclosure."],
+      ["window.w26.at_disclosure_ci80.0", "The 80% confidence interval for the 26-week share exploited at disclosure, to 12 Oct, starts at 32%."],
+      ["window.w26.at_disclosure_ci80.1", "The 80% credible interval for the 26-week share exploited at disclosure, to 12 Oct, reaches 42%."],
+    ] as const) expect(angleIssues(m, p, text), `${p} | ${text}`).toEqual([]);
+    // Without "between", "2 and 30 days" is two more numbers.
+    const got = angleIssues(m, "window.w26.n_day_share", "In the 26 weeks to 12 Oct, 39% of recently disclosed flaws were listed 2 and 30 days after disclosure.");
+    expect(codes(got)).toEqual(["LEAD_GROUNDED angle.text", "WORDS_OVER angle.text"]);
+    expect(got.find((e) => e.code === "WORDS_OVER")!.message).toContain("3 numbers (39%, 2, 30)");
+  });
+
   it("a path whose labels print no figure counts a window like any number", () => {
     const m = canaryMetrics();
     expect(angleFigures({ metric_path: "window.reference.at_disclosure_share" }, m)).toEqual([]);

@@ -240,20 +240,27 @@ export function labelFigures(label: string): LabelFigure[] {
   return out;
 }
 
-const UNIT_RES: Readonly<Record<LabelFigure["unit"], string>> = { week: "(?:weeks?|wks?)", day: "days?", "% interval": "intervals?" };
+/** The unit words in prose: "wk" and "wks" for weeks; "confidence" or "credible" may come before "interval". */
+const UNIT_RES: Readonly<Record<LabelFigure["unit"], string>> = {
+  week: "(?:weeks?|wks?)", day: "days?", "% interval": `(?:(?:confidence|credible)(?:\\s+|[${DASHES}]))?intervals?`,
+};
 /**
  * The unit word ends there, and is not followed by "long" ("26 weeks long") or, unless the label writes the
  * figure as an age, by "old" ("26-week-old"; "365 days old" when the label says "more than 365 days old").
  */
 const unitEnd = (f: LabelFigure): string =>
   `(?![\\p{L}\\p{N}])(?!(?:\\s+|[${DASHES}])(?:${f.old ? "long" : "old|long"})(?![\\p{L}\\p{N}]))`;
-/** Not glued to a word or a number, and not the end of a range ("13-26 weeks", "13 to 26 weeks"). */
-const FIGURE_START = `(?<![\\p{L}\\p{N}.,]|\\p{N}\\s?[${DASHES}]\\s?|\\p{N}\\s+to\\s+)`;
+/** Not glued to a word or a number, and not the end of a range ("13-26 weeks", "13 to 26 weeks", "between 13 and 26 weeks"). */
+const FIGURE_START = `(?<![\\p{L}\\p{N}.,]|\\p{N}\\s?[${DASHES}]\\s?|\\p{N}\\s+to\\s+|between\\s+\\p{N}+(?:[.,]\\p{N}+)?\\s+and\\s+)`;
 
-/** A figure written as one in prose: any case, a space or a hyphen or dash before its unit, singular or plural. */
+/**
+ * A figure written as one in prose: any case, a space or a hyphen or dash before its unit, singular or plural.
+ * A range is joined as the label joins it, or written "between 2 and 30 days"; "2 and 30 days" without the
+ * "between" is two numbers.
+ */
 function figureRe(f: LabelFigure): RegExp {
   const [a, b] = f.values.map((v) => String(v));
-  const num = b === undefined ? a : `${a}${RANGE_JOIN}${b}`;
+  const num = b === undefined ? a : `(?:between\\s+${a}\\s+and\\s+${b}|${a}${RANGE_JOIN}${b})`;
   const pct = f.unit === "% interval" ? "(?:\\s?%|\\s?per\\s?cent|\\s?percent)" : "";
   return new RegExp(`${FIGURE_START}${num}${pct}(?=(?:\\s+|[${DASHES}])${UNIT_RES[f.unit]}${unitEnd(f)})`, "giu");
 }
@@ -261,7 +268,8 @@ function figureRe(f: LabelFigure): RegExp {
 /**
  * numbersIn() of `text` without the given label figures where they are written as figures (§4.12, §0.4
  * row 145): "26 weeks", "26-week", "26–week", "26 wks", "26 Weeks"; "2 to 30 days", "2-30 days",
- * "2–30 days"; "80% interval". Each entry of `figures` leaves out one written occurrence, the first in
+ * "2–30 days", "between 2 and 30 days"; "80% interval", "80% confidence interval", "80% credible
+ * interval". Each entry of `figures` leaves out one written occurrence, the first in
  * text order, so a figure given once and written twice counts the second time ("within 7 days, 7 days
  * sooner"). A figure followed by "long" ("26 weeks long"), or by "old" ("26-week-old flaws") unless its
  * label writes it as an age ("more than 365 days old"), still counts, as does any other number, and any

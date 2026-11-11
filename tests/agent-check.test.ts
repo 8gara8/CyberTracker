@@ -521,7 +521,7 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
     expect(evidence).toContain("WORDS_OVER");
     expect(evidence).toContain("LEAD_GROUNDED");
   }, 60_000);
-  it("AC7: a quiet draft whose metric Angle copies its label's other figures, or STYLE §12's form, passes (row 145)", async () => {
+  it("AC7: a quiet draft whose metric Angle copies its label's other figures, in their natural forms too, or STYLE §12's form, passes (row 145)", async () => {
     const now = Date.now();
     const d = quietDraft(now);
     for (const angle of [
@@ -531,6 +531,12 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
       { metric_path: "window.w26.n_day_n", text: "In the 26 weeks to 12 Oct, CISA listed 62 recently disclosed flaws 2 to 30 days after disclosure." },
       // STYLE §12: the window and date, not the count
       { metric_path: "window.w26.at_disclosure_share", text: "37% of recently disclosed flaws on CISA's list in the 26 weeks to 12 Oct were already exploited at disclosure." },
+      // The natural forms of a range and an interval (review of row 145): "n-day race share (listed 2 to 30 days after), 26 weeks": 39%
+      { metric_path: "window.w26.n_day_share", text: "In the 26 weeks to 12 Oct, 39% of recently disclosed flaws were listed between 2 and 30 days after disclosure." },
+      // "listed 31 to 365 days after, 26 weeks": 37
+      { metric_path: "window.w26.late_listed_n", text: "In the 26 weeks to 12 Oct, 37 recently disclosed flaws were listed between 31 and 365 days after disclosure." },
+      // "80% interval low, at disclosure, 26 weeks": 32%
+      { metric_path: "window.w26.at_disclosure_ci80.0", text: "The 80% confidence interval for the 26-week share exploited at disclosure, to 12 Oct, starts at 32%." },
     ]) {
       out.length = 0;
       const w = world();
