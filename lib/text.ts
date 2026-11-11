@@ -280,6 +280,8 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
 
 /** Words that make a ratio of the number before them: "10x faster", "five times more". */
 const COMPARATIVES = "more|less|fewer|higher|lower|faster|slower|larger|bigger|greater|smaller|quicker|longer|shorter|wider";
+/** "as" before an adjective of degree: "three times as many", "2x as fast"; not "three times as CISA confirmed". */
+const AS_DEGREE = "as\\s+(?:many|much|often|fast|high|large|likely|common|quickly)";
 
 /** Not glued to a letter, digit, "_", ".", ",", "/", "#", "%", hyphen or en dash. */
 const RATIO_START = `(?<![\\p{L}\\p{N}_.,/#%${DASHES}])`;
@@ -304,7 +306,7 @@ const RANGE_START_END_RE = new RegExp(`${RANGE_START}$`, "u");
  * adjective of degree, or a noun of change.
  */
 const RATIO_AFTER_RE = new RegExp(
-  `^(?:\\s+(?:${COMPARATIVES}|the|than|as\\s+(?:many|much|often|fast|high|large|likely|common|quickly)|increase|jump|rise|growth|pace|rate` +
+  `^(?:\\s+(?:${COMPARATIVES}|the|than|${AS_DEGREE}|increase|jump|rise|growth|pace|rate` +
   `|a\\s+year)(?![\\p{L}])|\\/year(?![\\p{L}])|[${DASHES}](?:${COMPARATIVES})(?![\\p{L}]))`, "u");
 /** After a glued token, a release word: "the 3x series", "the 2x branch". */
 const RELEASE_AFTER_RE = /^\s+(?:series|branch|branches)(?![\p{L}])/u;
@@ -405,18 +407,22 @@ const NUMBER_WORD = (() => {
   return `(?:(?:a|${units}|${teens}|${tens})\\s+(?:${big})|(?:${big})|(?:${tens})(?:[\\s${DASHES}](?:${units}))?|${teens}|two|three|four|five|six|seven|eight|nine)`;
 })();
 /**
- * What follows "N times" when it is a ratio: a comparative, "as" (not "as of", "as well", "as part"),
- * "the" (not "the following", "the same", "the past" and other spans of time), "over" (not a span of time
- * or a number), "than", "that of", "those of", "what", "its" or "their". "Three times in October" and
- * "updated three times this year" are counts of occurrences.
+ * What follows "N times" when it is a ratio: a comparative, "as" before an adjective of degree (AS_DEGREE),
+ * "the" (not "the following", "the same", "the past" and other spans of time), "than", "that of", "those
+ * of", "what", "its" or "their". "Three times in October", "updated three times this year", "three times
+ * over two weeks" and "three times as attackers adapted" are counts of occurrences.
  */
 const RATIO_FOLLOWER =
-  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their` +
-  "|as(?!\\s+(?:of|well|part|a|an|in|on|at|for)(?![\\p{L}]))" +
+  `(?:${COMPARATIVES}|than|that\\s+of|those\\s+of|what|its|their|${AS_DEGREE}` +
   "|the(?!\\s+(?:following|same|past|last|next|previous|first|second|third|other|whole|entire|course|day|days|week|weeks|weekend" +
-  "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}]))" +
-  "|over(?!\\s+(?:the\\s+|a\\s+|an\\s+)?(?:past|last|next|previous|first|same|whole|entire|course|weekend|period|days?|weeks?" +
-  "|months?|years?|quarters?|nights?|summer|winter|spring|autumn|holidays?)(?![\\p{L}]))(?!\\s+\\d))(?![\\p{L}])";
+  "|month|months|year|years|quarter|night|morning|evening|afternoon|period)(?![\\p{L}])))(?![\\p{L}])";
+/**
+ * After a sentence-opening "N times the", what makes it a ratio: a number ("Ten times the 2023–24 pace") or
+ * a noun of quantity ("Ten times the pace"); otherwise it counts occurrences ("Three times the vendor said
+ * no fix was coming").
+ */
+const OPENING_RATIO_AFTER_RE =
+  /^\s+the\s+(?:\p{N}|(?:pace|rate|number|volume|amount|size|level|average|total|reference|baseline)(?![\p{L}]))/u;
 /** "ten times the 2023–24 pace", "twenty-one times more": a ratio in words. */
 const WORD_TIMES_RE = new RegExp(`(?<![\\p{L}\\p{N}${DASHES}])${NUMBER_WORD}\\s+times(?=\\s+${RATIO_FOLLOWER})`, "giu");
 /** "tenfold", "ten-fold", "a hundredfold", but not "twofold: ..." or "a threefold approach", which name parts, not a ratio. */
@@ -432,12 +438,18 @@ const PARTS_FOLD_RE = /(?:^|[^\p{L}])(?:is|are|was|were|be|been)\s+$/iu;
  * from two up, or a compound ("twenty-one", "a hundred"), then "times" and a comparison (RATIO_FOLLOWER:
  * "nearly ten times the 2023–24 pace", "five times more"), or "-fold" in one word or hyphenated ("tenfold",
  * "ten-fold"). Not "once", "twice" (the Gap headline prints "more than twice"), a count of occurrences
- * ("three times in October"), or "twofold" or "threefold" for a thing of two or three parts.
+ * ("three times in October", "three times over two weeks", "three times as CISA confirmed", and at a
+ * sentence's start "Three times the vendor said", OPENING_RATIO_AFTER_RE), or "twofold" or "threefold"
+ * for a thing of two or three parts.
  */
 export function wordRatios(text: string): string[] {
   const s = text.normalize("NFKC");
   const out: { at: number; raw: string }[] = [];
-  for (const m of s.matchAll(WORD_TIMES_RE)) out.push({ at: m.index, raw: m[0] });
+  for (const m of s.matchAll(WORD_TIMES_RE)) {
+    const opens = /(?:^|[.!?:;]["'”’)\]]*\s)[\s("'“‘\[]*$/u.test(s.slice(0, m.index));
+    if (opens && !OPENING_RATIO_AFTER_RE.test(s.slice(m.index + m[0].length)) && /^\s+the(?![\p{L}])/u.test(s.slice(m.index + m[0].length))) continue;
+    out.push({ at: m.index, raw: m[0] });
+  }
   for (const m of s.matchAll(WORD_FOLD_RE)) {
     if (/^(?:two|three)/iu.test(m[0]) && PARTS_FOLD_RE.test(s.slice(0, m.index))) continue;
     out.push({ at: m.index, raw: m[0] });

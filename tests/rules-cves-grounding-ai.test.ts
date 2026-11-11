@@ -879,7 +879,7 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
       ["nearly ten times the 2023–24 pace", "ten times"], ["more than five times the reference", "five times"],
       ["twenty-one times more", "twenty-one times"], ["a hundred times faster", "a hundred times"], ["Ten times the pace", "Ten times"],
       ["ten times that of 2023–24", "ten times"], ["three times as many flaws", "three times"], ["seven times higher", "seven times"],
-      ["five times over the 2023–24 pace", "five times"], ["two times greater", "two times"], ["rose tenfold.", "tenfold"],
+      ["two times greater", "two times"], ["rose tenfold.", "tenfold"],
       ["a ten-fold rise", "ten-fold"], ["a hundredfold increase", "a hundredfold"], ["a twofold rise", "twofold"],
     ] as const) expect(wordRatios(text), text).toEqual([ratio]);
     for (const text of ["updated three times this year", "three times in October", "patched three times the following week",
@@ -887,6 +887,21 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
       "The problem is twofold: speed and scale.", "a threefold approach", "The risk is twofold.", "more than five times.",
       "3 times the pace", "5.2 times the 2023–24 pace"]) {
       expect(wordRatios(text), text).toEqual([]);
+    }
+  });
+
+  it("NUMBER_FORM: reads no count of occurrences after \"over\", \"as\" or at a sentence's start (review of the eighth pass)", () => {
+    for (const text of ["The group struck three times over two weeks.", "The gang posted three times over October.",
+      "Ivanti updated its advisory three times over Friday and Saturday.", "Attackers retried a hundred times over an hour.",
+      "The flaw was exploited three times as CISA confirmed.", "Microsoft revised the advisory three times as attackers adapted.",
+      "Three times the vendor said no fix was coming.", "It failed twice. Three times the gang posted and deleted the claim."]) {
+      expect(wordRatios(text), text).toEqual([]);
+    }
+    for (const [text, ratio] of [["KEV ran at ten times the pace.", "ten times"], ["five times as many flaws", "five times"],
+      ["more than five times the reference", "five times"], ["Ten times the pace", "Ten times"], ["Ten times the 2023–24 pace.", "Ten times"],
+      ["Three times as many flaws were listed.", "Three times"], ["It rose. Five times more flaws were listed.", "Five times"],
+      ["three times as often in Taiwan", "three times"]] as const) {
+      expect(wordRatios(text), text).toEqual([ratio]);
     }
   });
 
@@ -903,6 +918,29 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
     // The Gap headline's own "more than twice" is no ratio in words.
     d.lead[3]!.text = "Exploitation ran at more than twice the 2023–24 pace, and CISA updated its list three times in October.";
     expect(only(check(d), "NUMBER_FORM")).toEqual([]);
+  });
+
+  it("NUMBER_FORM and LEAD_GROUNDED: \"two times\" or \"2 times\" is told to write the Gap's own \"more than twice\" (review of the eighth pass)", () => {
+    const TWICE = ' If it is the Gap\'s own ratio, write it as the Gap does, in words: "more than twice".';
+    const d = weekdayDraft();
+    expect(draftInputs("weekday").metrics!.headline.text).toContain("more than twice the 2023–24 pace");
+    d.lead.push({ text: "157 such flaws were listed in 26 weeks, more than two times the 2023–24 pace.", item_ids: [], gap: true });
+    expect(check(d).errors.map((e) => [e.code, e.hint])).toEqual([["NUMBER_FORM",
+      `Write it in digits as the Gap does, "N times", with N exactly as metrics.quotable or the cited source gives it.${TWICE}`]]);
+    d.lead[3]!.text = "157 such flaws were listed in 26 weeks, more than 2 times the 2023–24 pace.";
+    expect(check(d).errors.map((e) => [e.code, e.hint])).toEqual([["LEAD_GROUNDED",
+      `Copy the number exactly as metrics.quotable shows it, or set gap: false and cite the item it comes from.${TWICE}`]]);
+    d.lead[3]!.text = "157 such flaws were listed in 26 weeks, more than twice the 2023–24 pace.";
+    expect(check(d).errors).toEqual([]);
+    // A KEV sentence in an item that writes "2 times" gets it too; another ratio, or a Gap that prints no "twice", does not.
+    const k = weekdayDraft();
+    k.items[3]!.why_it_matters = "KEV additions ran at 2 times the 2023–24 pace.";
+    expect(only(check(k), "METRICS_ONLY_NUMBERS").map((e) => e.hint?.endsWith(TWICE))).toEqual([true]);
+    d.lead[3]!.text = "157 such flaws were listed in 26 weeks, more than three times the 2023–24 pace.";
+    expect(check(d).errors.map((e) => e.hint?.includes("twice"))).toEqual([false]);
+    d.lead[3]!.text = "157 such flaws were listed in 26 weeks, more than two times the 2023–24 pace.";
+    const noTwice = check(d, "weekday", (i) => { i.metrics = { ...i.metrics!, headline: { ...i.metrics!.headline, text: "The Window is in line with the 2023–24 pace." } }; });
+    expect(noTwice.errors.filter((e) => e.code === "NUMBER_FORM").map((e) => e.hint?.includes("twice"))).toEqual([false]);
   });
 
   it("NUMBER_FORM: a zero-item Gap sentence with a wrong ratio glued to x fails, though LEAD_GROUNDED reads no number in it", () => {

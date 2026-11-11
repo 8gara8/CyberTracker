@@ -214,6 +214,19 @@ const dayNumberHint = (date: string): string => {
   return ` A day number is read as a number unless written as a date or a date range${ex ? ` like "${ex}"` : ""}.`;
 };
 
+/** The Gap's own words for a ratio of two ("more than twice", "twice"), when its headline prints them; else null. */
+export function gapTwice(metrics: Pick<Metrics, "headline"> | null | undefined): string | null {
+  return metrics ? (/\b(?:more than )?twice\b/u.exec(metrics.headline.text)?.[0] ?? null) : null;
+}
+
+/** The hint for a ratio of two written "two times" or "2 times", when the Gap prints its own "more than twice". */
+const twiceHint = (twice: string | null): string =>
+  twice ? ` If it is the Gap's own ratio, write it as the Gap does, in words: "${twice}".` : "";
+
+/** The number is written "2 times", a ratio of two. */
+const twoTimes = (text: string, n: NumberToken): boolean =>
+  n.value === 2 && !n.percent && /(?<![\p{L}\p{N}.,])2\s+times(?![\p{L}])/u.test(text.normalize("NFKC"));
+
 /** The number is written as a length of hours ("24 hours", "the 24-hour window", "12 hrs"). */
 function hoursLength(text: string, n: NumberToken): boolean {
   const raw = n.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -241,6 +254,7 @@ const leadGrounded = defineRule({
     const gapText = `${metrics.headline.text}\n${metrics.headline.second_line}`;
     const grounded = (k: KnownName) => nameMatches(gapText, k);
     const noItems = (draft.items ?? []).length === 0;
+    const twice = gapTwice(metrics);
 
     (draft.lead ?? []).forEach((s, i) => {
       if (!s || typeof s.text !== "string") return;
@@ -260,7 +274,7 @@ const leadGrounded = defineRule({
       // Numbers.
       const itemNums = [...textPool(cited.flatMap(itemTexts)), ...cited.flatMap((it) => blockNumbers(input, it))];
       for (const n of distinctNumbers(s.text)) {
-        const day = dayBeforeDateName(s.text, n) ? dayNumberHint(input.date) : "";
+        const day = (dayBeforeDateName(s.text, n) ? dayNumberHint(input.date) : "") + (twoTimes(s.text, n) ? twiceHint(twice) : "");
         if (s.gap) {
           if (!exactIn(n, quoted)) {
             // With no items there is none to cite, so the hint does not offer gap: false (review of the seventh pass).
@@ -441,7 +455,7 @@ const metricsOnlyNumbers = defineRule({
           out.push(error("METRICS_ONLY_NUMBERS", field.path,
             `${field.path}: the sentence "${sentence}" uses "${terms[0]}" and holds ${shown(n)}, which is not a metric number${items.length ? " or a number in the CVE block of the item it is about" : ""}.`,
             "A sentence about KEV, the Flood, the Window or AI credits may quote only metrics.quotable, exactly. Copy the metric, or rewrite the sentence without the metric term."
-              + (dayBeforeDateName(sentence, n) ? dayNumberHint(input.date) : "")));
+              + (dayBeforeDateName(sentence, n) ? dayNumberHint(input.date) : "") + (twoTimes(sentence, n) ? twiceHint(gapTwice(input.metrics)) : "")));
         }
       }
     }
@@ -464,13 +478,13 @@ const RATIO_FIX = 'with N exactly as metrics.quotable or the cited source gives 
 const numberForm = defineRule({
   code: "NUMBER_FORM",
   scope: "draft",
-  check: ({ draft }) => proseFields(draft).flatMap((f) => [
+  check: ({ draft, metrics }) => proseFields(draft).flatMap((f) => [
     ...[...new Set(gluedRatios(f.text))].map((g) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${g}", glued to x, which the validator does not read as a number, so it cannot check it.`,
         `Write it as "N times", ${RATIO_FIX}, never "${g}", even where a source writes it that way.`)),
     ...[...new Set(wordRatios(f.text))].map((w) =>
       error("NUMBER_FORM", f.path, `${f.path} writes the ratio "${w}" in words, which the validator does not read as a number, so it cannot check it.`,
-        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.`)),
+        `Write it in digits as the Gap does, "N times", ${RATIO_FIX}.${/^two\s+times$/iu.test(w) ? twiceHint(gapTwice(metrics)) : ""}`)),
   ]),
 });
 
