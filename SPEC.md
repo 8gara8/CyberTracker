@@ -49,8 +49,8 @@ holds code and `content/`, and Vercel deploys every push to `main`. v1.0's cloud
    | Foundation: SPEC v2.0, scaffolding, cloud-only scripts removed | `p0-setup` (PR #2, merged 2026-11-09 Taipei) |
    | P1 Data contract, seed configs, validator, chat renderer | `p1-contract` (PR #3, merged 2026-11-09 Taipei) |
    | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` (PR #4, merged 2026-11-10, 17:08 Taipei, 09:08 UTC) |
-   | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` (in progress; draft PR #5) |
-   | P4 Site | `p4-site` |
+   | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` (PR #5, merged 2026-11-11, 23:48 Taipei, 15:48 UTC) |
+   | P4 Site | `p4-site` (in progress; draft PR #6 until its Kobol steps, §10 P4) |
    | P5 Supervised go-live | `p5-golive`; `p5-fix-<topic>` for a fix that must reach the next morning; `p5-report` at the end |
    | Calibration, one PR about four weeks after go-live | `calibration` |
 
@@ -338,6 +338,25 @@ rows are what review and building found.
 | 147 | P3 | §5.11, §10 P3, App. B.4 | `config/regions.json` version 2, `updated` 2026-11-11: EU's `alert_patterns` add `cert\.cyber\.gouv\.fr/alerte/CERTFR-\d{4}-ALE-\d+` beside the seed's `cert.ssi.gouv.fr` pattern, which stays for older links. So a CERT-FR alert in the live feed (an `anssi` item: `cyber.gouv.fr` is already one of its domains in `source-tiers.json`) gives EU an `agency_alert`, and the item and size caps never cut it (row 146). Metrics files record `config_versions.regions` 2 from the next run, so `metrics --recompute` of `content/metrics/2026-11-10.json` differs there as it does at `vendors`; `fixtures:gen` rewrote the sample's 13 metrics files (`config_versions.regions` 2) and the 10 files that record their hashes | Kobol on 2026-11-11 (19:10 to 19:42 Taipei, 11:10 to 11:42 UTC): `sources:check -- --id cert-fr` read 40 items, and the one alert among them, listed twice, is `www.cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/`, which the seed pattern does not match, so a live alert gave no EU signal (row 146's open gap). Tests: `tests/regions.test.ts` (`alertRegions()` on the live host's alert, `avis` and `actualite` pages and from a newsroom publisher), `tests/collect.test.ts` (a live-host alert item is `anssi` and an alert; its `avis` is not), `tests/config.test.ts` (regions version 2 and EU's two patterns) |
 | 148 | P3 | §0.3, §4.10, §4.12, §8.9 | Dispute intake follows a reopened issue (`intakeDisputes()`, `scripts/recheck.ts`). A `rejected` dispute whose issue reads open again, or closed `completed`, is not flipped back: it keeps its status, `resolved_on` and `correction_id`, and the issue gets a new dispute (the next `D-NNNN`, the same `issue_number`, `item_id`, `edition_date`, `kind` and `evidence_url`, `received` the issue's `updated_at` in Taipei, else the run's clock), `open`, or `upheld` with `resolved_on` D, with `correction_id` null. A victim or attribution review is withheld at step 4 in every stored brief that holds the item (or takes the id of a withhold that still binds the item and edition); a fact or link review goes to the agent as a report and raises the `reader_report` flag again. The run logs "issue #N: reviewed again as D-NNNN (D-MMMM was rejected).". The issue's newest dispute (highest id) is the one its state moves from then on. Open and upheld disputes are not reviewed again when their issue reads open: they already keep the name out, and publish makes a dispute upheld while its issue is still open (step 5); so an upheld ruling reopened and closed as not planned leaves the name withheld (the safe side). A rejected restore report goes to the agent once per issue, the oldest dispute not yet restored. Three changes in `lib/withhold-mask.ts` make the review hold: a `name_removed` correction also binds while a dispute that names it as its `correction_id` is `open` or `upheld` (`withholdsOf()`), so rejecting the report a withhold answered no longer unmasks an item a later report intake answered with the same id still disputes (this predates row 148: rejecting the first of two reports on one item and edition left the second unprotected); a binding withhold lists the `name_removed` corrections on the same item and kind, in any edition (a reader who leaves the edition blank disputes the newest one), that no longer bind (`BindingWithhold.supersedes`), and `withheldRefs()` counts the stored items whose `withheld` names one, so a copy the rejected withhold masked by URL under another id stays a withheld reference of the new one (row 87's open item); and `rewriteItem()` writes `WITHHELD_TEXT` with the date of the `withheld` an item keeps, so the item a second withhold rewrites again still says when it was first withheld | Codex review of PR #5, round 1: a rejected dispute stayed rejected when JL reopened its issue, so its name was never withheld again. Setting the stored dispute back to `open` would make its correction bind every later edition again without rewriting the copies printed after the rejection, which fails XREF_CORRECTION on the next publish (`tests/recheck.test.ts`, I-R20). An internal review of the fix then found the two masking gaps and the date (`tests/apply.test.ts` C30 and C31, `tests/recheck.test.ts` R16 and I-R20) |
 | 149 | P3 | §4.8, §8.2, §8.7, §8.8, §8.9 | A withhold that is not made stops the editorial pass. After `publishWithholds()`, whether it returned or threw, the run reads `content/corrections.json` and checks each of intake's requests against `bindingWithholds()` over it and intake's disputes: a withhold is made when a binding correction for the request's item, edition and kind is in the tree, pushed or not (a commit whose push failed stays local, and the next push carries it), and the item is guarded when one binds for the same item and kind on any edition (the mask covers every edition on or after it, §4.10). When a request is not guarded (the tree could not be synced, `composeWithholds()` threw, the tree failed validation, or the commit failed, each leaving the tree as it was), the recheck stage is `failed` with "Could not withhold N item(s) on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).", the run logs "Not withheld: <item ids>; no editorial pass today.", draft, validate and publish are `skipped` with "Not run: a reader dispute's withhold was not made.", and the run records the new code `E_WITHHOLD` (stage `recheck`, not retried, after `E_DATA_ONLY` in `ERROR_CODES`, also on a `published_data_only` record) unless an earlier code is set. Intake's disputes then go into `corrections.json` with the end record's status commit (`publishStatus()`'s new `disputes` option; if they fail validation the record is committed without them), so a rerun whose intake cannot read GitHub still finds them. The data-only edition stands (exit 3); after a `--force` start the earlier full edition stands, and when the data-only edition failed no edition does (exit 1). What happened: "A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.", after the `--data-only` or late-start reason when there is one; next step: "read logs/D.daily.log, then <rerun>; if the withhold fails again, its fix goes through a PR", whose rerun takes `--force` when brief D as committed is a full or partial edition (`withForce()`, as for `E_PUBLISH`, row 132; a dry run's is its files, as for the other codes; dry runs skip intake). The dispute keeps no `correction_id`, so the rerun's intake asks for the withhold again. "Withheld N item(s) on reader disputes." now counts only the items made, and is added after the call | Codex review of PR #5, round 2: a withhold that failed validation or could not be composed was only logged, and the run drafted and published a full edition with no correction to mask the item, so the disputed name could be printed again, while the recheck note said the item was withheld. An internal review of the fix then found that an item already withheld on another edition stopped the pass for nothing, that a rerun with intake down lost the disputes, that the rerun after a failed `--force` run lacked `--force`, and that the chat dropped a `--data-only` reason. `tests/daily.test.ts` D48 (without the check the run published the full edition and exited 0), D49, D50 and D51, and a `tests/chat.test.ts` case |
+| 150 | P4 | §3, §6 (Content loading, items 2, 3 and 5) | The loader's API and its skip rules. `lib/content.ts` adds `FileCodes { file; codes }`, `Content.warnings` (files loaded although `validateAll()` found errors in them: their distinct error codes, in the validator's order; validator warnings such as an archived brief's `SOURCE_URL` are not logged) and `Content.gapFailed` (the dates of loaded briefs whose per-file result has `GAP_MATCH`, which includes having no valid same-date metrics file; `briefPropsFor()` sets `gapOk` from it). `loadContent(dir, opts)` takes `LoadContentOptions { fresh?; config?; log? }`: `config` lets a test check a sample copy outside `fixtures/` with the sample claims, and `log` collects the lines, by default `console.warn` once per folder per process (so `next build`'s workers may each print them). A brief is skipped for a `SITE_BLOCKING_CODES` code of either severity, and the skip line lists only those codes; one the validator passes but `Brief.safeParse` refuses is skipped with `SCHEMA`. A metrics, status, scoreboard or corrections file is skipped for `SCHEMA`, `FILE_NAME` or `DATE_MISMATCH` (the internal `FILE_BLOCKING_CODES`), and every listed status file and a present `scoreboard.json` or `corrections.json` goes through the same load, so one that does not parse is skipped with `SCHEMA`. Each correction's `field`, `after` and `reason` go through `correctionSafetyCodes(c, hosts)` (`CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` for a payload or a scanner query, `SECRET_LIKE`; the brief rules' matchers, the hosts of `listedHosts()`), and a hit is left out of `corrections` and logged by id and code only, "content: skipped corrections.json C-0002 (NO_LIVE_IOC)". Metrics files are checked at load and parsed only by `loadMetrics()`, cached per `Content`. The log is `contentLogLines()`: "content: skipped <file> (<codes>)", then "content: warning <file> (<codes>)" | §6's interface had no way to know `gapOk` or to test the warning case (foundation notes, items 1 to 5). Review finding O: an unparsable status, scoreboard or corrections file never reached the load, so the build log called it a warning while the site used the empty default. Finding L: `validateAll()` checks a correction's texts only inside the brief that lists it, so a brief skipped for `NO_LIVE_IOC` under a changed list still printed the same text from `corrections.json`. Tests (`tests/content.test.ts`): the Skipping cases, "an unparsable corrections.json, scoreboard.json or status file is skipped with SCHEMA, never a warning" and "a correction whose text fails a safety code is dropped from corrections.json too, not only from the brief listing it" |
+| 151 | P4 | §3, §6 (Content loading), §7 (Script-written page text) | Site helpers. `lib/site.ts` adds `SITE_REPO`, `SIBLINGS { me, europe }` and `STALE_AFTER` (`run.json` `repos.repo`, `siblings`, `schedule.stale_after`) and `themeColor()` (`#f3eee3` paper, `#121821` night), which lives there because Next.js refuses other named exports from `app/layout.tsx`; `isSampleData(dir = contentDir(), root = process.cwd())` is true only for a folder under `<root>/fixtures/`. `lib/site-data.ts`'s helpers take `Pick<Content, ...>` slices, `itemHistory()` returns `ItemEdition { date, edition, item, sources }`, `itemPageIds()` is cached per `Content`, and it adds `heldItemIds()` and `heldCorrection()` (row 156). Appended without changing an existing export: `rfc822()` to `lib/format.ts` (the siblings' helper, for the feed); `chartName()`, `kickerLevel()`, `kickerAi()`, `KickerParts` and `cardKickerParts()` to `lib/page-text.ts`, which now also exports `plural()`. `lib/config.ts` (two calls) and `lib/validate.ts` (one) mark their `path.resolve` and `path.join` with `/*turbopackIgnore: true*/`, as `app/methodology/page.tsx` does when it reads `STYLE.md`; no behaviour change | Foundation notes, items 8 and 9; the lanes' contract that shared files only gain helpers at their end. Without the comments Turbopack warned "Dynamic filesystem access causes tracing of the whole project" and scanned the repo, `cache/` included. Tests: Sample and Routes in `tests/site.test.tsx`; `tests/helpers.test.ts` and `tests/config.test.ts` unchanged |
+| 152 | P4 | §6 (`/items/[id]` Records), §7 (Untrusted text, items 1 to 3) | Safe links and record links. `safeHref()` is in `lib/urls.ts` with `SAFE_HREF_MAX` (2,000) and reads the committed `config/source-tiers.json` `github.tier1_paths` as a JSON import (so it bundles), compiled once; to avoid an import cycle `githubPathTier1(url, tier1Paths)` and `TIER1_PATH_FLAGS` moved there from `lib/sources.ts`, whose `isGithubTier1()` and `blockedReason()` call it and which re-exports the flags (behaviour unchanged). The site's own links built from `run.json` are plain `<a rel="noopener noreferrer">`, not passed through `safeHref()`: "Report an error" (`issueFormUrl()`, a `github.com` path `safeHref()` blocks), the sibling links (TabBar, About, and ActorChips' "Europe ↗" or "ME ↗" to `SIBLINGS[tracker]` with `aria-label` "<Europe or ME> tracker: <actor name>", since `ExternalLink` takes no label), and the repo, audit-trail and `docs/SOURCES.md` links. `components/Markdown.tsx` keeps a STYLE.md link's `href` only for a site path (`/...` but not `//...`, or `#...`) or a URL `safeHref()` passes. Item, source and rule ids are checked against their patterns before any `id` or `#` href. The record links are one light module, `lib/record-links.ts` (`cveRecordUrl()`, `kevRecordUrl()`, `KEV_CATALOG_URL`, `nvdRecordUrl()`, and `ghsaRecordUrl()` re-exported from `lib/feeds/ghsa.ts`), used by the item page, `ItemDetails` and `EpssMovers`. The KEV link keeps `?search_api_fulltext=<CVE>`, unverified: a Kobol check, and if it does not filter `kevRecordUrl()` returns `KEV_CATALOG_URL` | Foundation notes, items 7 and 11; brief lane, items 3, 4 and 14; pages lane (Records); integration item 5 (no duplicated builders). The cve.org builders in `lib/rank.ts`, `lib/collect.ts` and `lib/apply.ts` would pull the feed readers and git helpers into the site bundle (checked with an import-graph script). The container's proxy refused `www.cisa.gov`, so the KEV filter could not be checked. Tests: Plain text, and Accessibility (no `target`, `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling links) |
+| 153 | P4 | §7 (Page frame, Site tests) | The page frame. The layout sets `viewport.themeColor` from `themeColor()`, puts the skip link "Skip to the brief" first in `<body>`, and sets `robots` noindex exactly when it shows `SampleBanner`. The Masthead splits `SITE_NAME` before "Tracker" ("Cyber" in italic) and takes "Daily before 08:00 Taipei · @8gara8" from `dailyLine()` (`run.json`). `TabBar` gains an optional `pathname` prop for tests (default `usePathname()`, then "/"); a trailing slash is ignored; item pages and the 404 mark no tab; hover is an ink underline, not the siblings' `hover:bg-deep` fill. The Footer's link row is a `<div>`, not a third `<nav>`. `chrome.tsx`'s `Section` takes an optional `className`. `StaleBanner` rechecks every 60 s (`RECHECK_MS`) and on `visibilitychange`, as specified. `tests/stale.test.ts` runs the cases of `tests/helpers/stale-cases.ts` (15, among them a newest brief dated yesterday viewed at 08:01 Taipei; `--print` writes them as JSON) in the test process and again in child processes started with `TZ=America/New_York` and `TZ=UTC`, each reporting its zone and `getTimezoneOffset()` (300 and 0). The tab focus ring is row 162 | Pages lane (TabBar, Footer, Masthead); foundation notes, items 14 and 17. Link hover is ink, never a colour (A.1). The accessibility test counts the landmarks, so the footer adds none. The child processes prove each case ran in that zone, which a mocked clock in the test process cannot. Tests: Routes (the page frame), Accessibility and Stale |
+| 154 | P4 | §7 (BriefView and section order, Brief components, Script-written page text) | The brief page and its counting rules. `BriefViewProps` gains `heldItems`, `editionDates` and `earlierItems` (rows 155 and 156), and `briefPropsFor()` sets `gapOk` from `content.gapFailed`. Marking: `<Counted text>` and `COUNTED` (`components/ui/Counted.tsx`) mark a `<span>`, `<p>` or `<li>` whose own text is the counted string, never nested; a kicker and a region head are counted as the exact page-text string (`cardKicker()`, `regionSummary().head`), the pips and change glyph `aria-hidden` inside it (0 words to `countWords()`) and their hidden words ("High, 3 of 4", "level 2 of 4, up from BASELINE") just after it, outside; a withheld card or row marks nothing (row 126). No `<header>` or `<footer>` sits inside the brief, and labels shown in capitals are written in sentence case under CSS `uppercase`. Wording §7 left open: the sources foot "Sources (N) · M publishers" (N `sources.length`, M `computed.publisher_count`, each pluralised), else a foot block reading "No sources."; "GLOBAL · N items" pluralised; the Lead's "↓" to `#gap` with `aria-label` "Read: The Gap"; a metric Angle's basis "Gap metrics, data to <shortDate(as_of)> UTC" linking `#gap`, without a second date; `SCOREBOARD_NO_ENTRY` filled with `{date}` `shortDate(last.date)` and `{claim}` "<claim_id> <claim_text>", a metric entry's "From <file>, <path>" in place of a link, a missing reading "none", and "No Scoreboard entries yet."; the Taiwan Lens shows watch windows with start <= edition date <= end. A Scoreboard entry prints only a report entry's `reported_value`, never a metric entry's raw `value` | Brief lane, items 1, 7, 9, 10, 11 and 13; charts lane (the word-count test reads `<p>` and `<li>` marks and decodes entities). Review finding G: a metric entry's summary already gives its reading formatted ("37% (80% range 32% to 42%)"), and the entry then printed `String(value)`, "0.3712", after it. Tests: Word count (every sample edition, data-only included: the marked words sum to `computed.word_count`), Sample, and "a metric Scoreboard entry never prints its raw stored value after the formatted summary" |
+| 155 | P4 | §7 (Brief components) | Item cards, rows and corrections. Every card and row prints "id <item id>" in lower case at its foot (`CardLinks`, `normal-case` inside the uppercased `FOOTER_ROW`), before "Timeline →" and "Report an error"; the "details" summary has `aria-label` "Details: <headline>". `ItemDetails` dates go through `shortDate()`, KEV dates read "(US date)", CVE and GHSA ids link their records (row 152), and the exposure text is counted there, its only place on the page. `SeverityPips` takes `words` (false leaves the hidden words to the caller); the region change words are "up from X", "down from X", "same as yesterday" and none for new. `CorrectionBanner { corrections, held }` exports `CORRECTION_WORD` (the item page and Methodology use it too), prints NAME REMOVED's fixed line with no reason and other types' "<field>: now '<after>'. <reason>" as written, then a " Source" `ExternalLink`. `CorrectionsList { corrections, held, editionDates }` links an item id only when the site loaded that edition. `RegionRow { row, itemsById, earlierItems }`: "Yesterday: no edition" when `previous_level` is null; the reason renders once (truncated closed, wrapped open); `EDITOR_RAISED` is split around `{reason}`, so only the stored reason is counted; a fired rule's items go through `ItemRef`: an item of this brief by headline, one of an earlier edition by that copy's stored headline to `/brief/<date>#<id>` (`earlierItems`, the newest earlier loaded copy of each fired or raised item the brief lacks), only an item no loaded brief holds as its id in mono. ActorChips' attribution is the first qualifying one with the actor's nexus, the actor's own name first | Brief lane, items 2, 6, 8 and 12. Review finding C: About and the error form say the item id is at the foot of each item, but no page printed it, so a report filed from About or the footer could not name the item and intake would not withhold it (intake reads only lower-case ids). Finding N: `CorrectionsList` linked `/brief/<edition_date>` even when that brief was skipped, landing on not-found. Finding I: region rules look back several days, so a row often fires on an earlier edition's item, which showed as a bare id. Tests: "prints each card's and row's lower-case item id at its foot, outside the uppercased footer text", "the corrections list never links an edition the site skipped" and "links the kicker, region and fired-rule parts to this page and the methodology" |
+| 156 | P4 | §4.10, §6 (Content loading item 7, `/items/[id]`, `/methodology`), §7 (Brief components, Site tests) | Withholding on the site. `heldItemIds(content)` holds the item ids of `withheldRefs(bindingWithholds(corrections), briefs)` (each ref's id after its date) and every loaded copy whose `withheld.correction_id` names no `name_removed` correction the site loaded (`corrections.json` skipped, or that correction left out or missing), so it fails closed. `heldCorrection(c, held)` is `c.type !== "name_removed" && held.has(c.item_id)`: such a correction shows only "<TYPE> <date> · [withheld]" in the `CorrectionBanner`, and `[withheld]` for its reason in `CorrectionsList`, the item page's timeline and Methodology's log; once the dispute is rejected or withdrawn and nothing binds, it prints in full again, so a restoring `update` shows. `correctionsFor()` also returns the correction a withheld copy's `withheld.correction_id` names, whatever its `item_id` (a copy masked by URL keeps its own id). A source only withheld items cite (`withheldOnlySources(brief)`) or one titled `WITHHELD_MARK` shows only "[NN]" and "[withheld]" as plain text, with its tier line. A withheld card or row shows no Impact line, no "· details" and no `ItemDetails`. A withheld item never assessed shows neither its level nor its AI chip in a full or partial edition's kicker. The item page's withheld form: the header and title `WITHHELD_HEADLINE`, `WITHHELD_TEXT` with the earliest `since` through `longDate()`, the `CorrectionBanner` and a Section "Editions" of "<shortDate> · <word> edition" links; no headline, summary, source or record of any copy. §4.10's correction bullet says how the site shows corrections | Review findings A (while withheld, the item's other corrections printed their new text, reason and source on the card, the foot, the item page and Methodology; also found as routes 1, brief 6 and security 12), E (a withheld-only source printed its outlet and link; brief 5, security 14), F (`correctionsFor()` dropped the withhold's correction for a copy masked by URL), K (the rewrite keeps the impact, quotes and `claimed_by`, which the Impact line and `ItemDetails` printed) and H (a carried data-only item withheld the same morning showed UNRATED in a full edition's kicker; brief lane item 5, §0.4 row 132). `c8f294b`, from the check of those fixes: with `corrections.json` skipped or the withhold's correction left out, a brief's own corrections list printed a correction to the withheld item in full; a rejected dispute's correction is still loaded, so its restore prints as before. Tests: the Withholding cases, among them "a restore after a rejected dispute stays hidden when a new dispute withholds again, and shows once nothing binds" |
+| 157 | P4 | §3, §7 (GapPanel and charts, Site tests) | The Gap panel and charts. `GapPanel` gains `editionDate` (for `gapNotices()` and `fixSideLines()`) and renders its own `<section id="gap" class="night mt-9 -mx-4 px-4 pt-4 pb-6 sm:mx-0 sm:px-6">` with the siblings' `Section` `h2` markup; it and `FixSideStrip` are in `components/brief/`, the charts in `components/charts/` (§3 named a `components/gap/` folder). The three charts gain `caption?: ReactNode`: GapPanel builds and marks the counted caption lines and passes them in, so nothing in `components/charts/` marks anything. "DATA TO <date> UTC" shows only when the Gap is shown. Chart B row 3's and chart C's direct labels are HTML text; second labels sit at the end inside the plot, away from the main line, with a halo. Chart B is three svgs, only row 1 `role="img"`; its row 2 y top includes the 2023–24 median. Chart C draws OpenAI, Google and other as one solid violet rect per week, Anthropic on top at 0.4, and a hatch rect over the provisional weeks. A null latest value reads "n too small" at the svg edge with no dot; a year-ago null reads "not available". A weekly share uses `k = round(share × n)` (`shareShown()`). Year labels sit at the week holding 1 January; the `live_from` tick shows only when that week is on the axis and not the first. A marker span is a shaded rect (`fill-opacity 0.16`), letters by date then id; chart dates use `shortDate()`; `fmtTick()` prints "0.5" and "2.5k". §5.3's Gap data table renders under chart B as "Data table: The Window by period" (`WindowPeriods`), with §5.3's change-call line. FixSideStrip has an uncounted "Fix-side" kicker, and the dashboard line's text before its first " (" is its link. Chart-only strings live in `components/charts/labels.ts`. §7's parts list is the code's. Chart B's and chart C's labels take the singular for a count of 1 through `plural()` | Charts lane, items 1 to 17 and the `caption` prop: the long labels do not fit the 56-unit margin; the series store only the share and `cohort_n`; with an all-null series a band-top axis would read 0 to 1; a cutoff for a Gap not shown would mislead. Foundation notes, item 6. Review finding J: on the repo's own metrics chart C's `aria-label` read "1 AI-credited flaws". The drawn Gap is about 200 KB of markup. Tests: Charts, among them "a count of 1 takes the singular in chart B's and chart C's labels", and the panel marking exactly the Gap slice of `scriptParts()` |
+| 158 | P4 | §6 (Route details: `/`, `/brief/[date]`, `/archive`, `/feed.xml`), §7 (Script-written page text) | The edition routes, the archive and the feed. `/` and `/brief/[date]` set their metadata through `editionMetadata(brief, gapOk)` (`components/pages/edition-meta.ts`, with `editionMarker()`); `briefDescription(brief, gapOk)` uses `gapHeadlineLine(brief, gapOk)`, and `feedXml(briefs, base, gapFailed)` passes `gapOk` per brief, so a brief in `gapFailed` falls back to `EDITION_INFO` in its meta description, Open Graph text and RSS entry. `/archive` shows its count line only with at least one edition ("1 edition, newest first."), and its top story is `items[0]` as stored, so a withheld item there shows its pips and `WITHHELD_HEADLINE` (helpers in `components/pages/archive-text.ts`). `/feed.xml`'s body is `components/pages/feed.ts` (`feedXml()`, `escapeXml()`, `feedItemTitle()`, `FEED_SIZE` 30), the route exporting only `dynamic` and `GET`; `escapeXml()` also drops the characters XML 1.0 forbids. The 404 page reads "Not found" and "There is no page here. The archive lists every edition." | Pages lane: a route file may export only what Next.js allows, and the tests need the escaping on its own; §6 says `items[0]`, and a withheld item keeps its slot. Review finding M: `briefDescription()` fell back to `gap.headline` whatever `gapOk` said, so the meta description, Open Graph and RSS printed the Gap figures the page hides. Tests: "a brief that failed GAP_MATCH gets the EDITION_INFO description, never the Gap headline the page hides", Empty and Routes |
+| 159 | P4 | §6 (`/items/[id]`) | The item page, `components/pages/ItemPage.tsx` with `itemPageTitle()`; static params sorted. The timeline's wording and same-date order: edition 0, "<CVE> published" 1, vendor advisory 2, fix available 3, added to CISA's list 4, US deadline 5 (both "(US date)"), each exploitation "<CVE> exploited (<basis word>)" 6, "Release: N fixes, n exploited" 7, a correction "<C-id> · <TYPE> · <field>: <reason>" 8, a Scoreboard entry 9, then input order; each row "<shortDate> · <body>"; the edition link text "<word> edition" with `aria-label` "<longDate>, <word> edition", so the date is not read twice; CVE steps from the newest copy's `cves` only. A Scoreboard event is a report entry of brief D whose normalised `source_url` matches a source the item cites in D, "<SE-id> on <SB-id>" linking `/brief/D#scoreboard`. The item's corrections are every correction with its `item_id` plus `correctionsFor()` of each edition, once each, oldest first. Records are labelled "CVE record", "CISA KEV catalog", "NVD" and "GitHub advisory", or "No CVE or GitHub advisory records."; Sources read "No sources." with none. The withheld form is row 156's | §6 listed the events and their order but not their wording; the Scoreboard rule is the one `itemPageIds()` uses; `correctionsFor()` alone is per edition, and the page spans every edition (pages lane). Tests: Routes, on `/items/cve-2026-108917`, and cases on an in-memory copy of the sample with an added GHSA id and an unwithheld earlier edition, since the sample's withheld item has no page and the sample no GHSA id (fixtures are never edited by hand) |
+| 160 | P4 | §6 (`/methodology`), §7 (Site tests) | Methodology. `STYLE_SECTIONS` is `{ gap: 6, sources: 7, naming: 8, corrections: 14 }` in `components/pages/methodology-data.ts`; the sections come in the anchor table's order, titled "Severity and kinds", "AI roles", "Regions", "AI finders", "Feed status" and the four STYLE titles. The severity list carries hidden words ", N of 4" (the region list's ", level N of 4"), and a defined term that holds a colon ("AI: unassessed") takes " ·", not a second colon. Landmark is described from `KIND_INFO`, the kinds listed by rank, each rule row has label, id, level word, regions and type, agencies and CERTs show by publisher name, with version, updated and `review_due`. The Gap's live parameters come from `newestMetrics()` under "Live parameters, from the newest metrics file", or "No metrics file yet.". Feeds: `lastStatusDays()` takes each day's last run record that lists feeds (as `feedIn()` and publish do); the intro reads "Each feed in the registry, from the last feed check of each of the last N days with a status file (<from> to <to>)."; each row its latest status ("not run" when that record lacks the feed) and "N of M days ok", M the days read; "Fewer than 14 days of status so far."; "No status files yet.". The corrections log adds the correction id ("<date> · <C-id> · <edition date> · <item id>", the last two linked when that edition is loaded), newest first by date, then id. `EDITION_WORD`, `BLOCK_REASON_LABEL`, `FINDER_FAMILY_LABEL` and `FINDER_KIND_LABEL` are in `components/pages/labels.ts`. STYLE.md's own "§12" and "§14" render as written | Pages lane: §6's "N of 14 days ok" undercounts the sample's 11 status files. Integration items 3 and 4 (the hidden words, from the accessibility test; the doubled colon). Review finding B: the feeds table read the very last run record, which after a hand publish, a skipped rerun or a start record lists no feeds, so every feed read "not run" (also routes 2, data 16). Finding T: the Methodology test measured STYLE.md and only looked for the title in some `h2`, so empty sections passed. Tests: "the feeds table reads each day's last record that lists feeds: a later skipped or start-only record changes nothing" and "each STYLE_SECTIONS number resolves to its title, and its section prints that title and STYLE.md's prose" |
+| 161 | P4 | §6 (`/about`) | About, with its text in `components/pages/site-text.ts` (`ownerHandle()`, `repoUrl()`, `auditTrailUrl()`, `sourcesDocUrl()`, `dailyLine()`, `noEditionYet()`, `howItIsMade()`, `ABOUT_WHAT`, `DATA_CREDITS`). `ABOUT_WHAT` keeps §1's first four sentences and its last, with the metrics sentence folded into one clause: 79 words. "How it is made" takes its times and counts from `run.json`, and its Validate step names the retry: "a failing draft gets at most 2 repair rounds, and if it still fails, Claude writes one fresh draft with its own 2 rounds when there is time before 05:00 Taipei; if no draft passes, the data-only edition stands." (`repair_rounds`, `attempts_max`, `retry_cutoff`). The siblings read "ME Tracker" and "the Europe tracker". "Reporting an error" names the four fields the form reads (item id, edition date, what is wrong, one evidence link), says the run never reads free text and that a victim or attribution report withholds the item at once, and that the id is at the foot of each item (row 155) | §1's paragraph is about 150 words, §6 allows 80 (tested). `tests/no-europe-strings.test.ts` keeps the sibling's one-word name out of `app/`. `.github/ISSUE_TEMPLATE/correction.yml` reads four fields, where §6 said "item id, type and evidence link only". Review finding D: the Validate step said a draft still failing after its rounds leaves the data-only edition, but §8.2 opens a fresh attempt, with its own rounds, when there is time before the retry cutoff. Test: "/about: ABOUT_LINE verbatim with its link, the lines, the credits and the siblings", extended |
+| 162 | P4 | §7 (Accessibility, Page frame, Site tests) | Accessibility. Body text is 15px at line-height 1.6 (24px) and `.prose-serif` 17px, 18px from 48rem. Every block that holds a link sets `leading-[24px]` (ItemDetails rows, the sources list, region details, the Angle counter-point, the Taiwan Lens, Elsewhere, the Scoreboard source, the correction banner and list, the Fix-side strip, the card footer row), and the region rule list is spaced with `gap-1`; nothing is under 10px outside the chart svgs and `sr-only` text. The masthead tabs draw the 2px focus ring inset (`focus-visible:-outline-offset-4`), since the sideways-scrolling nav clips anything outside a tab, and the ink-filled active tab's ring is `var(--bg)` (`focus-visible:outline-bg`). The Accessibility tests (121 cases) render every sample page inside the real `app/layout.tsx`, with `usePathname()` set to its route and `next/font/google` mocked, and check §7's rules, no `target` attribute and `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling links; one case adds a `cross_link` to a copy of 14 Oct for the ↗ label | Review findings Q (lines that hold links were under 24px; without the fix 106 link lines fail the new test; the footer refs keep their row's 24px line) and P (the scrolling tab bar clipped the ring drawn outside each tab); integration item 2; foundation notes, item 16 (A.4 reads 17 to 18px). Tests: "every line that holds a link is at least 24px tall at 375px: the block's own size and leading, body text at 15px x 1.6" and "every tab draws its focus ring inset, so the scrolling nav cannot clip it; the ink-filled active tab's ring is the page colour" |
+| 163 | P4 | App. A.5, A.6, §7 (Accessibility) | The CSS and the colour check. `app/globals.css` copies the siblings' paper tokens exactly, in A.6's order. `scripts/color-check.ts` names its blocks on one line, `BLOCKS = [":root", 'html[data-look="night"]', ".night"]`: four scopes (each page look, and `.night` inside each), two after the pick, which deletes the middle entry (a test runs that case on today's file); `var()` resolves per level as the cascade does. `PAIRS` add `--ink` on `--bg-deep`, `--bg` on `--ink`, `--fg` on `--panel`, `--ink` on `--badge-mix` (14.33 paper, 11.25 dark), `--rule`, the chip borders and the Critical fill as non-text, and `--focus` on every surface; `EXEMPT` (7 entries) prints each with its ratio and reason; every custom property must be named by a pair, an exemption or `UNPAIRED` (the five parity tokens), else it fails. Output: 209 lines, 0 failed, 41 exempt; exit 0, 1 or 2; `--css FILE`. A.5 now says: the full-dark focus ring on the amber `#3A2E12` notice and sample-banner surface is 11.25:1, the 13.39 minimum holding on the dark neutral surfaces; the 12.5 colour-vision minimum is with the simulated colour rounded to 8-bit sRGB before CIEDE2000 (12.32 unrounded; paper's smallest 17.2); the no-blue rule exempts exactly full dark's near-neutrals `#E6EDF3` (hsl(208°, 35%, 93%)) and `#0B0F14` (hsl(213°, 29%, 6%)) by value (`NO_BLUE_NEUTRALS`), since HSL saturation runs high near white and black (chroma about 5% and 4%); and chart marks drawn by opacity (chart C's Anthropic layer, 2.09:1 on the night card) are not token pairs. No token changed | Tools lane: A.5's no-blue rule as written failed the spec's own full-dark tokens, "any dark surface at least 13.39" missed the amber surface, and 12.5 reproduces only when rounded (unrounded linear values give 12.32, the matrices on gamma-encoded RGB 15.17). The review judged chart C's 2.09:1 not a defect: WCAG 1.4.11's 3:1 covers only graphics required for understanding, and the data table, hover titles and direct label carry every value. Tests: `tests/color-check.test.ts` (every A.5 and A.3 ratio pinned to 2 decimals; `#9EC5F0` and `#E6EDF4` fail no-blue; the post-pick case) |
+| 164 | P4 | §3, §9.9 item 6, §10 P4 (item 3) | The screenshot script, `scripts/screenshots.mjs`: pages `index`, `brief-2026-10-14`, `archive` and `methodology` at 375 and 1280 px (viewport heights 812 and 800), into `<out>/<page>-<width>.png`, full page at device scale 2. At 375 it sets `isMobile` and `hasTouch`; every context has reduced motion, service workers blocked, locale en-US and time zone Asia/Taipei, and each shot waits for `networkidle` and `document.fonts.ready`, with the caret hidden and animations off. It polls `--base` every 0.5 s for `--wait` seconds (default 60) until it answers 200; every request to another origin is aborted and named in one line at the end; a page answering anything but 200 fails the run. Exit 0 written, 1 setup missing, the site not answering or a page failing, 2 usage. `--playwright FILE` and `--channel NAME` (`none`: the browser `playwright-core` installed) serve the container; the setup messages name "SPEC §9.9 item 6" and the install line. The browser clock is not frozen, so the stale banner shows when the tree's newest edition is not today. The install and Appendix C's version stay Kobol steps | Tools lane: in the container both channels wrote all eight images of a test site and of the sample, and blocked an outside image; freezing the clock (`context.clock`, Playwright 1.45 or later) waits for Appendix C's version. Review finding R: the "no tools folder" case ran the CLI on the default `/Users/kobol/.cybertracker/tools`, so it would fail on Kobol once item 6 installs `playwright-core` there; it now passes `--playwright` to a folder that never exists and checks the default path's wording through `setupHint()`. Tests: `tests/screenshots.test.ts` (the script as a child process against fake `playwright-core` packages, no browser) |
+| 165 | P4 | §3, §7 (Untrusted text item 1, Security headers, Site tests), §8.1 | Package scripts, headers and tests. §8.1's phase sentence names P4's scripts (`dev`, `dev:sample`, `build`, `build:sample`, `build:empty`, `start`, `color:check`, and `check`'s last three steps); `calibrate` arrives with calibration, and the screenshot script has no package script. §3's tree lists `components/{layout,brief,charts,pages,ui}/`, `lib/record-links.ts`, `safeHref()` in `lib/urls.ts`, `tests/helpers/stale-cases.ts`, the five P4 test files and `next.config.ts`'s headers. `next.config.ts` exports `contentSecurityPolicy(env)` and `securityHeaders(env)`, so the Headers test checks production and development without changing `NODE_ENV`. The three lane test files are one `tests/site.test.tsx`, one `describe` per §7 bullet plus Routes, every lane case kept; Skipping stays in `tests/content.test.ts`, which reads §4.12's † rows from this file and checks each rule code against `RULES`' `dataOnly` flag, and Stale in `tests/stale.test.ts`. The Markdown importer check resolves every `import`, `export ... from` and `import()` specifier, relative or aliased, in either quote style, to a repo path. With `c8f294b` and these docs `npm run check` passes: 2,663 tests in 75 files, `color:check` 0 failed, `build:sample` 18 pages and `build:empty` 7, every route static | Integration items 1 and 6; foundation notes, items 13 and 18. Review finding S: the grep matched only double-quoted specifiers and a relative path from a `components/` subfolder, so a planted `"../../components/Markdown"` import and a single-quoted `'@/lib/markdown'` import passed it. Tests: "reads relative, aliased, single-quoted and dynamic specifiers as the same module" and "lib/markdown and components/Markdown are imported only by app/methodology/page.tsx" |
+| 166 | P4 | §0.1, §6 (Where content comes from), §7 (Security headers, Sources, chart conventions), §9.9, §10 P3, §10 P4 | The Verify results and the draft PR. §0.1's table and §10 P3 record PR #5's merge (2026-11-11, 23:48 Taipei, 15:48 UTC; `main` at `9ad5df3`; Codex round 3 at 23:17 Taipei on `f990fc2` found nothing). P4's PR #6 opens as a draft and stays one until the Kobol steps of §10 P4's status are done (`playwright-core` and its Appendix C version, both looks' screenshots from the dry-run tree, the KEV search link, a `[n]` link in iOS Safari and the Claude app's browser, the route summary on the dry-run tree), then is marked ready with an `@codex review` comment. Each Verify in P4 item the container checked says so and how: the route summary (sample in both looks, empty folder, `content/`: no `ƒ`; an empty `generateStaticParams()` builds under `dynamicParams = false`), the headers and CSP (a local `next start` in both looks: no violation or console error in Chrome, `curl -sI` shows the five headers, no `'unsafe-eval'`, no `X-Powered-By`), the axis text (9.43px in paper, 9.38px in night at 375px) and a `[n]` link (Chrome's mobile emulation: it opens `details#sources` and scrolls to `#src-s1`; a fragment link to an Also-today row scrolls to it and leaves it closed). Still open: the dry-run tree, Vercel production and preview and the Toolbar, the KEV link, iOS Safari and the Claude app, B.9's `siblings.me` and `site.url`, the screenshots and Appendix C | §0.1 item 4 opens a PR ready once the milestone passes, and P4's milestone needs Kobol, as P3's draft PR #5 did. The container's visual check (both looks of the sample, screenshots not committed) found one reading column (343px at 375, 720px at 1280), no horizontal page scroll, the fonts self-hosted and no layout defect; the cosmetic notes (the masthead's second line at 1280, the Aside beside a narrow column at 375, chart B's letters near "n too small") are for JL's look review |
+| 167 | P4 | `routine/STYLE.md` §14, §4.10 | STYLE §14's "How they appear." now matches §6 and §7: "Its item shows a banner with the correction's type and date, the field, what it now says, why, and a link to the source that shows it. The foot of the next brief and the Methodology page list the correction with its type and reason, linked to the item, and the chat edition names it." The archived-text sentence and the drafting rule are unchanged, so the Kobol canary rerun (`agent:check -- --canary`) is optional. §4.10's correction bullet says the same | Review (routes lens): Methodology prints STYLE §14 right above a log that contradicts it ("the field, what it now says, why, and the source"), and the brief's foot list is the same; only the item's banner shows those. The code follows §6 and §7, and printing `after` in more places would widen the path the withheld-name concerns cover. Tests: `tests/style.test.ts`, `tests/prompts.test.ts`, `tests/site.test.tsx` |
+| 168 | P4 | §5.8 | §5.8's year-ago sentence says what the pages show: chart A's dashed year-ago line, its "a year earlier" direct label, its hover titles and its data table's "A year earlier" column, all 13-week totals. `yoy_pct` and `yoy_ex_kernel_pct` stay in the metrics file, and a metric Angle may quote them (`CLAIM_METRIC_PATHS`), but no page or chart prints them, and chart A has no year-ago kernel count. No code change | Review (gap lens): no component prints either field (272.4 and 282.2 in `content/metrics/2026-11-10.json`); §7's chart A row never asked for them and §5.2 has no display helper for a one-decimal `_pct`, so printing them would need a display rule and JL's decision. The old sentence also implied an ex-kernel comparison chart A cannot show |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -482,9 +501,15 @@ CyberTracker/
 ├── app/                           # Next.js App Router, all static (§6): layout.tsx, globals.css (Appendix A),
 │                                  # not-found, page (Today), brief/[date], archive, items/[id], methodology,
 │                                  # about, feed.xml (RSS of the last 30 valid briefs)
-├── components/                    # (§7) Markdown.tsx; layout/ (Masthead, TabBar, Footer, StaleBanner,
-│                                  # SampleBanner); brief/ (BriefView and its sections); gap/ (GapPanel,
-│                                  # the three charts, FixSideStrip); charts/ (server SVG parts); ui/
+├── components/                    # (§7) Markdown.tsx: STYLE.md for Methodology only
+│   ├── layout/                    # Masthead, TabBar, Footer, StaleBanner, SampleBanner; chrome.tsx (Section, ...)
+│   ├── brief/                     # BriefView and props.ts (briefPropsFor()), its sections, GapPanel and
+│   │                              # FixSideStrip; brief-parts.tsx, item-parts.tsx and sources.tsx (shared parts)
+│   ├── charts/                    # The three charts and WindowPeriods (server SVG); parts.tsx, scale.ts,
+│   │                              # labels.ts (the charts' own strings, never counted)
+│   ├── pages/                     # ItemPage; archive-text, edition-meta, feed, labels, methodology-data and
+│   │                              # site-text: the routes' text and data helpers (§6)
+│   └── ui/                        # PlainText, ExternalLink, Counted, SeverityPips, AIChip, Tag
 ├── lib/
 │   ├── vocab.ts                   # Every vocabulary, label, fixed string and safety list (§4.2)
 │   ├── schema/                    # Zod schemas (§4.3 to §4.15), registry.ts for sources.yaml; index.ts
@@ -502,11 +527,14 @@ CyberTracker/
 │   │                              # and the masking of later editions (bindingWithholds(), maskWithheld())
 │   ├── run-inputs.ts              # The reads the P3 stages share (metricsFor(), firstSeenBefore())
 │   ├── html-text.ts               # htmlText(): a page's readable text, for snapshots and the link check (§4.12)
-│   ├── config.ts, content.ts      # Loads and checks config/; content loaders (CT_CONTENT_DIR, default content)
-│   ├── site.ts, site-data.ts      # siteUrl(), contentDir(), isSampleData(); item pages, neighbours (§6)
+│   ├── config.ts, content.ts      # Loads and checks config/; loadContent(): the content folder re-checked (§6)
+│   ├── site.ts, site-data.ts      # siteUrl(), contentDir(), isSampleData(), siteLook(); item pages, neighbours,
+│   │                              # corrections and the withheld set (§6)
+│   ├── record-links.ts            # P4: the item page's CVE, KEV, NVD and GitHub advisory links (§6)
 │   ├── page-text.ts, stale.ts, json-schema.ts  # Page strings (§7); stale-banner rule; agent JSON Schema from DraftBrief
 │   └── dates.ts, text.ts, urls.ts, format.ts, markdown.ts  # Taipei dates and cutoff (§5.1); countWords();
-│                                  # normalizeUrl() (§4.1), defang(), blockedEntry(); formatting; STYLE.md parser
+│                                  # normalizeUrl() (§4.1), defang(), blockedEntry(), safeHref() (§7); formatting;
+│                                  # STYLE.md parser
 ├── config/                        # Changed only by PR; schemas in §4.11; P1 writes the seeds (Appendix B)
 │   ├── run.json                   # Site, repo, siblings, schedule, budgets, pack, releases, paths, user agent, task name
 │   ├── sources.yaml               # Source registry (§4.13): drafted in Foundation, finalised in P2 (sources:check)
@@ -537,7 +565,8 @@ CyberTracker/
 │   ├── publish.ts                 # The only writer of content/ on main (§8.7)
 │   ├── recheck.ts, chat.ts        # Re-check, dispute intake, link check (§8.9, §8.11); chat edition (§8.8)
 │   ├── gen-json-schema.ts, agent-check.ts  # Zod to the schema file, --check; CLI, sandbox, canary tests (§8.12)
-│   ├── color-check.ts, screenshots.mjs, calibrate.ts  # CI contrast check; screenshots; calibration
+│   ├── color-check.ts, screenshots.mjs, calibrate.ts  # CI token check (Appendix A.5); P4's screenshots
+│   │                              # (§9.9 item 6, §10 P4); calibration
 │   └── lib/                       # log, run, git, lock, keychain, transcript, agent, status, snapshot,
 │                                  # deploy (waits for the site to show the edition); P2: git-source (ls-remote,
 │                                  # the GHSA sparse checkout), feeds (one reader per kind), feed-cache (collect's
@@ -573,7 +602,10 @@ CyberTracker/
 │   ├── helpers/                   # P2: d6.ts, fixture-clone.ts, zip.ts; P3: harness.ts (a clone with a bare
 │   │                              # remote for GitHub, the fake CLI, a test clock), pipeline-world.ts and
 │   │                              # publish-world.ts (the 2026-10-14 morning before the agent, and before
-│   │                              # D), model-names.ts (the model-identifier patterns every scan shares)
+│   │                              # D), model-names.ts (the model-identifier patterns every scan shares);
+│   │                              # P4: stale-cases.ts (the stale cases, rerun in a child process per TZ)
+│   ├── site.test.tsx              # P4 (§7 Site tests), with content.test.ts, stale.test.ts,
+│   │                              # color-check.test.ts and screenshots.test.ts
 │   └── setup/offline.ts           # Loaded before every test file: fetch to localhost only, git to file:// only (§8.1)
 ├── .github/
 │   ├── workflows/ci.yml           # npm run check on PRs and pushes to main; content-only pushes skip it (§9.2)
@@ -583,8 +615,9 @@ CyberTracker/
 └── package.json, package-lock.json, tsconfig.json, next.config.ts, postcss.config.mjs, vitest.config.ts
 ```
 
-`tsconfig.json`, `vitest.config.ts` and `postcss.config.mjs` are Europe's; `next.config.ts` sets only
-`poweredByHeader: false` until P4 adds the content security policy and headers (§7).
+`tsconfig.json`, `vitest.config.ts` and `postcss.config.mjs` are Europe's; `next.config.ts` sets
+`poweredByHeader: false` and, from P4, the content security policy and headers (`contentSecurityPolicy()`,
+`securityHeaders()`, §7).
 
 **`AGENTS.md`** is the guide every session reads first (who and what, session start, status and ids, a
 map, the rules, the workflows). It points into this spec except for the reading list and the rules;
@@ -1697,8 +1730,11 @@ interface ArchiveIndex {
 ```
 
 - **A correction never silently edits an archived brief.** The item keeps its text. The site joins
-  `corrections.json` by `item_id` and `edition_date` to show a "Corrected" banner with the date, and the
-  next brief lists the correction at its foot (`Brief.corrections`) and in the chat edition.
+  `corrections.json` by `item_id` and `edition_date` (`correctionsFor()`, §6) to show a banner with the
+  correction's type and date, the field, what it now says, why, and the source, and the next brief lists
+  the correction at its foot (`Brief.corrections`, type and reason, linked to the item) and in the chat
+  edition. While a withhold binds the item (§6 item 7), the site shows its other corrections by type word
+  and date only, until nothing binds.
 - **The one exception: withholding.** A dispute of kind `victim` or `attribution` withholds the item at
   once, before review. Publish writes a `name_removed` correction and rewrites the archived brief:
   `headline` becomes `WITHHELD_HEADLINE`, `summary` `WITHHELD_TEXT`, `why_it_matters` `null`, and
@@ -3386,7 +3422,10 @@ opening line and chat line 3 `headline.second_line` (§7, §8.8).
 | AI | `stale` | the same, starting `AI-credited, as of {fmtDate(as_of)}:` |
 | AI | `failed`, no earlier value | `AI-credited: not available today.` |
 
-The year-ago comparison stays in chart A and the data table (`yoy_pct`, `yoy_ex_kernel_pct`).
+The year-ago comparison is chart A's dashed year-ago line, its "a year earlier" direct label, its hover
+titles and its data table's "A year earlier" column, all 13-week totals (§7). `yoy_pct` and
+`yoy_ex_kernel_pct` are stored in the metrics file. A metric Angle may quote them (`CLAIM_METRIC_PATHS`),
+but no page or chart prints them, and chart A has no year-ago kernel count.
 
 **Footer** (`footerLine()`, rendered through `gapFooter()` in `lib/page-text.ts`, §7; not stored):
 "data to {fmtDate(data_cutoff_utc), with the year} UTC · KEV catalog {provenance.kev_catalog_version} ·
@@ -3833,21 +3872,31 @@ runtime data fetching, no ISR, no `revalidate`, no middleware. Dynamic segments 
   and Vercel keeps the previous deployment; one invalid file never fails the build. So the stale check
   runs in the browser (`StaleBanner`, §7).
 - **Verify in P4:** the route summary marks every route static (`○` or `●`), none `ƒ`, with the sample,
-  the empty folder, the dry-run tree and the repo's `content/` (no briefs before P5).
+  the empty folder, the dry-run tree and the repo's `content/` (no briefs before P5). **Checked in the
+  container (2026-11-12)** for the sample (`build:sample`, paper and night: `/brief/[date]` with its ten
+  paths and `/items/cve-2026-108917` as `●`, every other route `○`), the empty folder (`build:empty`) and
+  the repo's `content/` (identical: `/brief/[date]` and `/items/[id]` `●` with no paths, since an empty
+  `generateStaticParams()` builds under `dynamicParams = false`); no `ƒ` in any. The dry-run tree is a
+  Kobol step (§10 P4).
 
 ### Content loading
 
 ```ts
-// lib/site.ts (Europe's, adapted). SITE_NAME, SITE_TAGLINE: run.json site.name, site.tagline
+// lib/site.ts (Europe's, adapted). SITE_NAME, SITE_TAGLINE, SITE_REPO, SIBLINGS { me, europe }, STALE_AFTER:
+// run.json site.name, site.tagline, repos.repo, siblings, schedule.stale_after
 export function siteUrl(): string;             // run.json site.url, trailing slashes removed; no env override
 export function contentDir(): string;          // CT_CONTENT_DIR || run.json paths.content_dir ("content")
-export function isSampleData(): boolean;       // true only when contentDir() is a folder under fixtures/
+export function isSampleData(dir = contentDir(), root = process.cwd()): boolean; // true only for a folder
+// under <root>/fixtures/ (never fixtures/ itself, content/, logs/dry-run/tree or a temporary copy)
 export function siteLook(): "paper" | "night"; // CT_LOOK === "night" ? "night" : "paper" (P4 only, Appendix A)
+export function themeColor(): string;          // "#f3eee3" paper, "#121821" night; here because Next.js refuses
+// other named exports from app/layout.tsx
 export function issueFormUrl(item?: { id: string; date: IsoDate }): string; // https://github.com/<run.json
 // repos.repo>/issues/new?template=correction.yml, + &item_id=<id>&edition_date=<date> (pre-fills the form)
 
 // lib/content.ts: Europe's readJson/readFolder (never throw; folders sorted by name; a missing folder
 // is []; a cache per directory; { fresh: true } for tests) with this file set
+export interface FileCodes { file: string; codes: string[] } // "briefs/2026-11-08.json"; "corrections.json C-0002"
 export interface Content {
   dir: string;
   briefs: Brief[];                    // valid briefs, oldest first
@@ -3855,17 +3904,34 @@ export interface Content {
   status: StatusFile[];               // valid status files, oldest first
   scoreboard: ScoreboardFile | null;  // null when missing or invalid
   corrections: CorrectionsFile;       // { schema_version: 1, corrections: [], disputes: [] } when missing or invalid
-  skipped: { file: string; codes: string[] }[]; // printed once at the start of the build
+  skipped: FileCodes[];               // files (and single corrections) left out, with the codes that left them out
+  warnings: FileCodes[];              // files loaded although validateAll() found errors in them (item 2)
+  gapFailed: Set<string>;             // dates of loaded briefs that failed GAP_MATCH (item 3): gapOk false
 }
 export class ContentError extends Error {}
-export function loadContent(dir = contentDir(), opts?: { fresh?: boolean }): Content;
-export function loadMetrics(content: Content, file: string | null): Metrics | null; // lazy, cached; null unless in metricsFiles
+export interface LoadContentOptions {
+  fresh?: boolean;                    // skip the cache (tests)
+  config?: LoadedConfig;              // what validateAll() checks against (tests: a sample copy outside fixtures/)
+  log?: (line: string) => void;       // where the item 5 lines go; default console.warn, once per folder per process
+}
+export function loadContent(dir = contentDir(), opts: LoadContentOptions = {}): Content;
+export function loadMetrics(content: Content, file: string | null): Metrics | null; // parsed on first use and
+// cached per Content; null unless in metricsFiles
+export function correctionSafetyCodes(c: Pick<Correction, "field" | "after" | "reason">, hosts: readonly string[]): SiteBlockingCode[];
+export function contentLogLines(content: Pick<Content, "skipped" | "warnings">): string[]; // item 5
 
 // lib/site-data.ts: Europe's indexBy and neighbours(content, date), plus
 export function itemPageIds(content: Content): Set<string>; // an id in two or more briefs, or one citing a
 // source whose normalised URL (normalizeUrl, §4.1) is a report entry's source_url in that brief's scoreboard.entries
-export function itemHistory(content: Content, id: string): { date: IsoDate; edition: Edition; item: Item; sources: Source[] }[];
-export function correctionsFor(content: Content, itemId: string, editionDate: IsoDate): Correction[]; // both oldest first
+export function itemHistory(content: Pick<Content, "briefs">, id: string): ItemEdition[]; // { date, edition, item,
+// sources }, oldest first
+export function correctionsFor(content: Pick<Content, "briefs" | "corrections">, itemId: string, editionDate: IsoDate): Correction[];
+// oldest first (date, then id): those targeting the item in that edition, plus, when that edition's copy is
+// withheld, the correction its withheld.correction_id names, whatever its item_id (a copy masked by URL
+// keeps its own id, §4.10)
+export function heldItemIds(content: Pick<Content, "briefs" | "corrections">): Set<string>; // item 7
+export function heldCorrection(c: Pick<Correction, "type" | "item_id">, held: ReadonlySet<string>): boolean;
+// c.type !== "name_removed" && held.has(c.item_id)
 ```
 
 1. `dir` must be a directory, else `ContentError("Content folder <dir> is missing")`. No briefs is valid
@@ -3873,11 +3939,26 @@ export function correctionsFor(content: Content, itemId: string, editionDate: Is
 2. `loadContent()` calls `validateAll(dir, { perFile: true })` (§4.12). A brief is **skipped** only for a
    code (an error, or a list-based safety warning, §4.12) in `SITE_BLOCKING_CODES = ["SCHEMA", "FILE_NAME", "DATE_MISMATCH", "CANARY", "NO_LIVE_IOC",
    "NO_EXPLOIT_LINK", "SECRET_LIKE"]`: schema and file codes, `CANARY`, and every code `lib/rules/safety.ts`
-   exports as `SAFETY_CODES` (a new safety rule joins in the same PR). Any other error is a build warning
-   and the brief is shown, so a later rule never silently removes an archived edition. `SOURCE_URL` is not
-   blocking: `safeHref()` renders those URLs unlinked.
-3. A metrics, status, scoreboard or corrections file failing its schema is skipped. A brief failing
-   `GAP_MATCH` keeps its page with its Gap treated as missing (`gapOk: false`).
+   exports as `SAFETY_CODES` (a new safety rule joins in the same PR). An issue of either severity with
+   one of these codes skips the brief, and the skip line lists only those codes. A brief the validator
+   passes but `Brief.safeParse` refuses is skipped with `SCHEMA`. Any other error is a build warning
+   (`warnings`: the file and its distinct error codes, in the validator's order) and the brief is shown,
+   so a later rule never silently removes an archived edition. Validator warnings, such as an archived
+   brief's `SOURCE_URL`, are not logged. `SOURCE_URL` is not blocking: `safeHref()` renders those URLs
+   unlinked.
+3. A metrics, status, scoreboard or corrections file is skipped for `SCHEMA`, `FILE_NAME` or
+   `DATE_MISMATCH`, and so is a file that does not parse (every listed status file and a present
+   `scoreboard.json` or `corrections.json` goes through the same load, so one that does not parse is
+   skipped with `SCHEMA`, never only a warning while the site uses the default). Metrics files are checked
+   at load but parsed only by `loadMetrics()`. A correction whose `field`, `after` or `reason` fails
+   `correctionSafetyCodes()` under the current lists (`CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` for a
+   payload or a scanner query, `SECRET_LIKE`, with the brief rules' matchers and the hosts of
+   `listedHosts()`) is left out of `corrections` and logged by id and code only
+   (`corrections.json C-0002 (NO_LIVE_IOC)`), as its brief would be: `validateAll()` checks those texts
+   only inside the brief that lists them. A brief failing `GAP_MATCH` (which includes having no valid
+   same-date metrics file) keeps its page with its Gap treated as missing (`gapFailed`, so `gapOk: false`),
+   and its description, Open Graph text and feed entry leave the Gap headline out too (`/` and
+   `/brief/[date]`, `/feed.xml`).
 4. Cross-file codes (`XREF_*`, `MANIFEST_MISMATCH`, `FILE_ORDER`, `FILE_UNEXPECTED`) never hide anything.
    Publish runs `validateAll` before every commit (§8.7); content-only pushes skip CI, and every PR's
    `npm run check` runs `validate:all` on `content/` with the PR's code (§9.2), so a rule change that
@@ -3886,12 +3967,23 @@ export function correctionsFor(content: Content, itemId: string, editionDate: Is
    (`SAFETY_CODES`, item 2) are the exception and keep reading the current lists (§4.12): a new blocked
    host that an archived brief cites makes that brief a warning in `validate:all` and a skipped brief here,
    never a red PR or a refused publish.
-5. The log names each skipped file and code (`content: skipped briefs/2026-11-08.json (SCHEMA)`), never
-   the matched text. "Today" is the newest valid brief: if today's is skipped, `/` shows yesterday's and
-   the stale banner appears after 08:00 Taipei.
+5. The log names each skipped file and code (`content: skipped briefs/2026-11-08.json (SCHEMA)`), then
+   each warning (`content: warning <file> (<codes>)`), never the matched text, once per folder per process
+   (`next build` runs several workers, so its output can show the lines once per worker). "Today" is the
+   newest valid brief: if today's is skipped, `/` shows yesterday's and the stale banner appears after
+   08:00 Taipei.
 6. Config comes from `loadConfig()` (§4.11): `run.json` (names, URLs), `annotations.json` (chart markers),
    and `regions.json`, `ai-finders.json`, `source-tiers.json`, `standing-stories.json`, `sources.yaml`
    (Methodology). Every changeable label a brief shows is frozen in it (§4.1).
+7. **The held set** (`heldItemIds()`): the item ids of `withheldRefs(bindingWithholds(corrections),
+   briefs)` (§4.10), each binding withhold's item and every loaded copy masked under another id, plus
+   every loaded copy whose `withheld.correction_id` names no `name_removed` correction the site loaded (a
+   skipped `corrections.json`, or that correction left out): it fails closed. While an item is held, its
+   corrections other than `name_removed` (`heldCorrection()`) show only their type word and date: the
+   `CorrectionBanner` reads "<TYPE> <date> · [withheld]" with no field, new text, reason or link, and
+   `CorrectionsList`, the item page's timeline and Methodology's log print `[withheld]` in place of the
+   reason. Once the dispute is rejected or withdrawn and nothing binds, they print in full again, so a
+   restoring `update` shows.
 
 ### Route table
 
@@ -3915,61 +4007,95 @@ ids (§7). Item ids always hold a hyphen and section ids never do.
 ### Route details
 
 **`/` and `/brief/[date]`** render `<BriefView {...briefPropsFor(content, date)!} />` (`notFound()` on
-null). `/brief/[date]` sets `title: longDate(date)` ("Sunday 8 November 2026 · CyberTracker"). Both set
-`description: briefDescription(brief)` and a text-only `openGraph` (`"CyberTracker, " + longDate(date)`,
-`type: "article"`), and the **edition marker** `other: { "ct-edition": "<date> <edition> <published_at>" }`
+null). `/brief/[date]` sets `title: longDate(date)` ("Sunday 8 November 2026 · CyberTracker"). Both set,
+through `editionMetadata(brief, gapOk)` (`components/pages/edition-meta.ts`, `gapOk` false for a date in
+`gapFailed`), `description: briefDescription(brief, gapOk)` and a text-only `openGraph` (`"CyberTracker, " +
+longDate(date)`, `type: "article"`), and the **edition marker** `other: { "ct-edition": "<date> <edition> <published_at>" }`
 (`<meta name="ct-edition" content="2026-11-08 full 2026-11-08T05:12:40+08:00">`), which the deploy check
 (§8.2) polls on `${siteUrl()}/` to fill the status file's `deploy.shows_date` and `shows_edition` (§4.8).
 
-**`/archive`.** "N editions, newest first.", then an `<ol>`: `longDate(date)` linking `/brief/DATE`; a
+**`/archive`.** "N editions, newest first." ("1 edition, newest first."; no line with none), then an `<ol>`: `longDate(date)` linking `/brief/DATE`; a
 `.kicker` (`DATA-ONLY` or `PARTIAL` when not full, `N ITEMS`, `AI-LINKED X OF Y` except data-only,
 `CORRECTED` when `correctionsFor` finds any); the top story (`SeverityPips`, `items[0].headline`), or "No
 item cleared the bar.", or "Data-only edition" with no items. It lists what the site loaded, never
 `archive-index.json`, so it never links a skipped brief.
 
-**`/items/[id]`.** Title: the newest headline. `PageHeader` kicker `ITEM · <kind label>`; "First seen
-<shortDate(first_seen)> · in N editions". **If any edition holds the item `withheld`,** show only
-`WITHHELD_HEADLINE`, `WITHHELD_TEXT`, the `CorrectionBanner` and edition links. Otherwise:
-- **Timeline** (`<ol>`, oldest first; same-date events in this order): each edition ("<date> · <edition
-  word> edition: <pips> <headline>", linking `/brief/DATE#<id>`); from the newest CVE blocks: CVE
-  published, vendor advisory, fix available, added to CISA's list and US deadline (both "(US date)"),
-  each `exploitation_evidence` with its basis word; a release's date with "N fixes, n exploited"; every
-  correction; each qualifying Scoreboard report entry ("SE-NNNN on SB-NN"). Dates are UTC except KEV's.
-- **Records** per CVE: `https://www.cve.org/CVERecord?id=<CVE>`; on KEV
-  `https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=<CVE>` (verify in P4
-  that it filters, else link the catalog root); `https://nvd.nist.gov/vuln/detail/<CVE>` (the one
-  aggregator: keyless, shows CISA's ADP scores). Per GHSA id `https://github.com/advisories/<id>`.
-- **Sources** of the newest edition holding the item, as `SourceList`.
+**`/items/[id]`** (`components/pages/ItemPage.tsx`; static params sorted). Title (`itemPageTitle()`): the
+newest headline. `PageHeader` kicker `ITEM · <kind label>`; "First seen <shortDate(first_seen)> · in N
+editions" (the earliest `first_seen` of any copy). The item's corrections are every correction with its
+`item_id` plus `correctionsFor()` of each edition, once each, oldest first. **If any edition holds the item
+`withheld`,** show only the header with `WITHHELD_HEADLINE` (also the title), `WITHHELD_TEXT` filled with
+the earliest `withheld.since` through `longDate()`, the `CorrectionBanner` (held corrections by type word
+and date, §6 item 7) and a Section "Editions" with "<shortDate> · <edition word> edition" links to
+`/brief/DATE#<id>`: no headline, summary, source or record of any copy. Otherwise:
+- **Timeline** (`<ol>`, oldest first; each row "<shortDate> · <body>"; same-date events in this order, then
+  input order): each edition 0 ("<edition word> edition: <pips> <headline>", the link text "<word>
+  edition" to `/brief/DATE#<id>` with `aria-label` "<longDate>, <word> edition"); from the newest copy's
+  CVE blocks: "<CVE> published" 1, "<CVE>: vendor advisory" 2, "<CVE>: fix available" 3, "<CVE> added
+  to CISA's list (US date)" 4 and "<CVE>: US deadline (US date)" 5, each `exploitation_evidence` "<CVE>
+  exploited (<basis word, lower case>)" 6; "Release: N fixes, n exploited" 7; each correction "<C-id> · <TYPE> · <field>:
+  <reason>" ("<C-id> · <TYPE> · [withheld]" while held) 8; each Scoreboard report entry of an edition
+  whose normalised `source_url` matches a source the item cites there, "<SE-id> on <SB-id>" linking
+  `/brief/DATE#scoreboard` 9 (the rule `itemPageIds()` uses). Dates are UTC except KEV's.
+- **Records** (`lib/record-links.ts`), per CVE: "CVE record" `https://www.cve.org/CVERecord?id=<CVE>`
+  (`cveRecordUrl()`); on KEV, "CISA KEV catalog"
+  `https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=<CVE>`
+  (`kevRecordUrl()`; verify on Kobol that it filters, else make `kevRecordUrl()` return `KEV_CATALOG_URL`,
+  the catalog root: the container's proxy refused `www.cisa.gov`); "NVD"
+  `https://nvd.nist.gov/vuln/detail/<CVE>` (`nvdRecordUrl()`, the one aggregator: keyless, shows CISA's
+  ADP scores). Per GHSA id, "GitHub advisory" `https://github.com/advisories/<id>` (`ghsaRecordUrl()`,
+  from `lib/feeds/ghsa.ts`). With neither: "No CVE or GitHub advisory records.".
+- **Sources** of the newest edition holding the item, as `SourceList` ("No sources." with none).
 
 **`/methodology`** renders from `lib/vocab.ts`, `config/` and the content folder (current, not frozen),
 with prose from `routine/STYLE.md` through Europe's `section(md, n)` and `components/Markdown.tsx`.
-`STYLE_SECTIONS: Record<"gap" | "sources" | "naming" | "corrections", number>` holds the §11 outline
-numbers of "Numbers and the Gap", "Sources and tiers", "Naming victims and attackers", "Corrections".
+`STYLE_SECTIONS: Record<"gap" | "sources" | "naming" | "corrections", number>`
+(`components/pages/methodology-data.ts`, `{ gap: 6, sources: 7, naming: 8, corrections: 14 }`) holds the
+§11 outline numbers of "Numbers and the Gap", "Sources and tiers", "Naming victims and attackers",
+"Corrections". The sections come in the table's order, each a `Section` `h2` with `h3` sub-heads, titled
+"Severity and kinds", "AI roles", "Regions", the STYLE title, "AI finders", the STYLE title, the STYLE
+title, "Feed status" and the STYLE title. Its lists use pips with hidden words (", N of 4" on severity,
+", level N of 4" on regions), and a defined term that holds a colon itself ("AI: unassessed") takes " ·"
+in place of a second colon. STYLE.md's text renders as written, its own "§12" and "§14" included.
 
 | Anchor | Renders |
 |---|---|
-| `severity` | `SEVERITY_INFO` (pips, word, meaning), the Landmark flag, `KIND_INFO` bars |
+| `severity` | `SEVERITY_INFO` (pips, word, meaning), the Landmark flag (the kinds with no severity, sorted as `LANDMARK_RANK`'s level), `KIND_INFO` by rank (label, head, bar) |
 | `ai-roles` | `AI_ROLE_INFO`, `AI_CONFIDENCE_INFO`, `CLAIM_TYPE_INFO`, `ANTHROPIC_LINE` |
-| `regions` | `REGION_LEVEL_INFO`, `BASELINE_TOOLTIP`; each `regions.json` rule as a row `id="rule-<id>"` (label, level, regions, type); each region's agencies by publisher name; `review_due` |
-| `gap` | STYLE.md; live parameters from the newest valid metrics file (window edges, the 2023 to 2024 reference, `MIN_N`, data cutoff, KEV catalog version, CVE List release, AI-finder list version); `WINDOW_LABEL`, `AI_CREDIT_CAPTION`, `FIX_SIDE_CAPTION` |
+| `regions` | `REGION_LEVEL_INFO`, `BASELINE_TOOLTIP`; each `regions.json` rule as a row `id="rule-<id>"` (label, id, level word, regions, type); each region's agencies and CERTs by publisher name (else id); version, updated, `review_due` |
+| `gap` | STYLE.md; "Live parameters, from the newest metrics file" (`newestMetrics()`: the 26- and 13-week window edges, the 2023 to 2024 reference with its share and median, `MIN_N`, the data cutoff (UTC) and its edition, KEV catalog version, CVE List release, AI-finder list version), or "No metrics file yet."; `WINDOW_LABEL`, `AI_CREDIT_CAPTION`, `FIX_SIDE_CAPTION` |
 | `ai-finders` | Version, updated, each finder's name, family, kind, note; "Bare lab names count only beside a tool name; only credit fields are read." |
 | `sources` | `TIER_INFO`; publishers by tier (name, kind, country, state label); blocked hosts by `BlockReason`, as plain text; STYLE.md |
 | `naming` | STYLE.md, `INCIDENT_STATUS_INFO`, `ATTRIBUTION_BASIS_INFO` |
-| `feeds` | The last 14 valid status files (each day's final run): a row per `sources.yaml` feed with today's status word, "N of 14 days ok", `stale_since` |
-| `corrections` | STYLE.md; every correction newest first (date, "<edition date> · <item id>", type word, reason). Empty: "No corrections so far. Corrections are listed here openly, never made silently." |
+| `feeds` | The last `FEED_DAYS` (14) valid status files (`lastStatusDays()`: each day's last run record that lists feeds, so a later hand publish, skipped rerun or start-only record changes nothing): "Each feed in the registry, from the last feed check of each of the last N days with a status file (<from> to <to>)."; a row per `sources.yaml` feed with the newest day's status word ("not run" when unlisted), "N of M days ok" (M the days read), `stale_since`; "Fewer than 14 days of status so far." under 14. Empty: "No status files yet." |
+| `corrections` | STYLE.md; every correction newest first by date, then id: "<date> · <C-id> · <edition date> · <item id>" (the last two linking `/brief/<edition date>#<item id>` when that edition is loaded), type word, reason (`[withheld]` while held, §6 item 7). Empty: "No corrections so far. Corrections are listed here openly, never made silently." |
 
-**`/about`:** `ABOUT_LINE` verbatim ("here" links `issueFormUrl()`); `ANTHROPIC_LINE`; what CyberTracker is
-(§1's first paragraph, at most 80 words); "How it is made", a sentence each for collect, draft, validate,
-publish; credits "CISA Known Exploited Vulnerabilities catalog · CVE List (CVE.org) · FIRST EPSS · GitHub
-Advisory Database" linking `docs/SOURCES.md`; the repo, with `content/` as "the audit trail"; the two
-siblings; "Reporting an error": item id, type and evidence link only; the run never reads free text (§4.10).
+**`/about`** (text in `components/pages/site-text.ts`): `ABOUT_LINE` verbatim ("here" links
+`issueFormUrl()`); `ANTHROPIC_LINE`; what CyberTracker is (`ABOUT_WHAT`: §1's first paragraph cut to its
+first four sentences and its last, with the metrics sentence folded into one clause, 79 words, tested at
+most 80); "How it is made", a sentence each for collect, draft, validate, publish, with their times and
+counts from `run.json` (validate: "a failing draft gets at most 2 repair rounds, and if it still fails,
+Claude writes one fresh draft with its own 2 rounds when there is time before 05:00 Taipei; if no draft
+passes, the data-only edition stands.", from `repair_rounds`, `attempts_max` and `retry_cutoff`, §8.2);
+credits "CISA Known Exploited Vulnerabilities catalog · CVE List (CVE.org) · FIRST EPSS · GitHub Advisory
+Database" linking `docs/SOURCES.md`; the repo, with `content/` as "the audit trail"; the two siblings,
+"ME Tracker" and "the Europe tracker" (plain links to `SIBLINGS`; `tests/no-europe-strings.test.ts` keeps
+the sibling's one-word name out of `app/`); "Reporting an error": the form reads the item id, the edition
+date, what is wrong and one evidence link, nothing else; the run never reads free text (§4.10); a victim
+or attribution report withholds the item at once while it is reviewed; the item id is at the foot of each
+item (§7 ItemCard).
 
-**`/feed.xml`:** Europe's route (`escape()` on every value, `application/rss+xml; charset=utf-8`; channel
-`SITE_NAME`, `siteUrl()`, `SITE_TAGLINE`, `en`). The last 30 valid briefs, newest first, data-only
-included: `<title>` "<longDate>: <items[0].headline or 'No item cleared the bar'>" + " (data-only
-edition)" when data-only; `<link>` and `<guid isPermaLink="true">` `/brief/DATE` (the full edition keeps
-the guid); `<pubDate>` `rfc822(published_at)`; `<description>` `briefDescription(brief)`: the Lead
-sentences joined, or `gap.headline` when the Lead is empty, cut to 300 characters at a word boundary.
+**`/feed.xml`:** Europe's route, with the body in `components/pages/feed.ts` (`feedXml(briefs, base,
+gapFailed)`, `escapeXml()`, `feedItemTitle()`, `FEED_SIZE` 30; a route file may export only what Next.js
+allows), the route exporting only `dynamic` and `GET`. `escapeXml()` on every value, also dropping the
+characters XML 1.0 forbids; `application/rss+xml; charset=utf-8`; channel `SITE_NAME`, `siteUrl()`,
+`SITE_TAGLINE`, `en`. The last 30 valid briefs, newest first, data-only included: `<title>` "<longDate>:
+<items[0].headline or 'No item cleared the bar'>" + " (data-only edition)" when data-only; `<link>` and
+`<guid isPermaLink="true">` `/brief/DATE` (the full edition keeps the guid); `<pubDate>`
+`rfc822(published_at)` (`lib/format.ts`, the siblings' helper); `<description>` `briefDescription(brief,
+gapOk)`: the Lead sentences joined, or `gapHeadlineLine(brief, gapOk)` when the Lead is empty, else
+`EDITION_INFO[edition]`, so a brief in `gapFailed` never shows the Gap headline its page hides; cut to 300
+characters at a word boundary.
 
 **Sample mode** is a build from a folder under `fixtures/` (`isSampleData()`): the layout shows
 `SampleBanner` and sets `robots: { index: false, follow: false }`, always together. The sample,
@@ -4002,22 +4128,33 @@ Tailwind 4 over the tokens in Appendix A. All server components except `TabBar` 
 Every content string is untrusted, whoever wrote it.
 1. **React text only.** No `dangerouslySetInnerHTML`, `innerHTML` or `ref` DOM writes in `app/`,
    `components/` or `lib/` (a test greps). `components/Markdown.tsx` and `lib/markdown.ts` render only
-   `routine/STYLE.md` and are imported only by `app/methodology/page.tsx` (tested).
+   `routine/STYLE.md` and are imported only by `app/methodology/page.tsx` (tested: the test resolves every
+   `import`, `export ... from` and `import()` specifier, relative or aliased, in either quote style, to a
+   repo path). A STYLE.md link keeps its `href` only when it is a site path (`/...` but not `//...`, or
+   `#...`) or passes `safeHref()`; anything else renders as text.
 2. **No content in `className`, `style`, event handlers, `src`, `srcSet` or `<script>`.** Allowed: `href`
-   via `safeHref()`; `id` only as an item or source id (`^[a-z0-9-]+$`); `lang` only as a source's
+   via `safeHref()`; `id` only as an item or source id (`^[a-z0-9-]+$`) or a config id in `rule-<id>`,
+   each checked against its pattern (`ID_PATTERNS`, `ITEM_ID_MAX`) before any `id` or `#` href; `lang` only as a source's
    `language` (a BCP 47 subset); `title` and `aria-label` as text.
 3. **`safeHref(url): string | null`** (`lib/urls.ts`) returns the URL only when `new URL()` parses it,
-   the protocol is `https:`, there is no username or password, it is at most 2,000 characters, and it is
-   not on `BLOCKED_HOSTS` (§4.2) or a blocked `github.com` path (§4.11); else null and plain text.
-   `ExternalLink` (`components/ui/`) is the only renderer of a content URL: `<a href={safe}
-   rel="noopener noreferrer">`, never `target="_blank"`.
+   the protocol is `https:`, there is no username or password, it is at most `SAFE_HREF_MAX` (2,000)
+   characters, and it is not on `BLOCKED_HOSTS` (§4.2) or a blocked `github.com` path (§4.11); else null
+   and plain text. The `github.com` check reads the committed `config/source-tiers.json`
+   `github.tier1_paths` as a JSON import (so it bundles), compiled once with `TIER1_PATH_FLAGS`; to avoid
+   an import cycle, `githubPathTier1(url, tier1Paths)` and `TIER1_PATH_FLAGS` live in `lib/urls.ts`, and
+   `lib/sources.ts` (`isGithubTier1()`, `blockedReason()`) calls and re-exports them. `ExternalLink`
+   (`components/ui/`) is the only renderer of a content URL: `<a href={safe} rel="noopener noreferrer">`,
+   never `target="_blank"`. The site's own links built from `run.json` (`issueFormUrl()`, `SIBLINGS`, the
+   repo, audit trail and `docs/SOURCES.md` links), which are not content, are plain `<a>`; the issue form
+   must be, since `safeHref()` blocks that `github.com` path.
 4. **Defanged indicators** (`hxxp://`, `hxxps://`, `[.]`, `(.)`, `[@]`, `[:]`) are never linked.
    `PlainText({ text, lang? })` splits on `/\S*(?:hxxps?:\/\/|\[\.\]|\(\.\)|\[@\]|\[:\])\S*/g`, renders
    matches in `<code>` and the rest as text; every prose field goes through it.
 5. **Metadata** goes through Next.js metadata, which escapes it; RSS escapes every value; no JSON-LD.
 
 **Security headers.** `next.config.ts` is Europe's with `poweredByHeader: false` and `headers()` on
-`/:path*`. Inline script and style are allowed (nonces need per-request rendering); the plain-text rules
+`/:path*`, built by the named exports `contentSecurityPolicy(env)` and `securityHeaders(env)` (so a test
+checks production and development without changing `NODE_ENV`). Inline script and style are allowed (nonces need per-request rendering); the plain-text rules
 are the defence. No `vercel.json`; `next/font` self-hosts fonts.
 - `Content-Security-Policy`: `default-src 'self'; script-src 'self' 'unsafe-inline'` (+ `'unsafe-eval'`
   only when `NODE_ENV !== "production"`) `; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
@@ -4027,26 +4164,38 @@ are the defence. No `vercel.json`; `next/font` self-hosts fonts.
   `X-Frame-Options: DENY`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`.
 - Verify in P4: `/`, a brief, `/archive` and `/methodology` load with no CSP violation in Chrome on
   production and a preview, `TabBar` and `StaleBanner` work, `curl -sI` shows all five headers. If the CSP
-  blocks the Vercel Toolbar on previews, turn the toolbar off (§9.1), never widen the policy.
+  blocks the Vercel Toolbar on previews, turn the toolbar off (§9.1), never widen the policy. **Checked in
+  the container (2026-11-12)** on a local `next start` of the sample in both looks: no CSP violation or
+  console error in Chrome on `/`, the briefs, `/archive`, `/methodology`, `/about` and the item page, and
+  `curl -sI /brief/2026-10-14` shows all five headers, the CSP without `'unsafe-eval'` and no
+  `X-Powered-By`. Still open: Vercel production and a preview, and the Toolbar.
 
 ### Page frame
 
 `app/layout.tsx` (Europe's): Newsreader (normal, italic, `opsz`), IBM Plex Sans and Plex Mono (400 to
 700) via `next/font/google`, Latin subsets, `display: "swap"`; CJK through `:lang()` system stacks.
 `metadataBase: new URL(siteUrl())`; title default "CyberTracker: <tagline>", template "%s · CyberTracker";
-`description: SITE_TAGLINE`; RSS alternate "CyberTracker daily brief"; `themeColor` `#f3eee3` (paper) or
-`#121821` (night). `<html lang="en" data-look={siteLook()}>`; a skip link "Skip to the brief" to `#main`;
-`SampleBanner` in sample mode; then the column with `Masthead`, `<main id="main">`, `Footer`.
+`description: SITE_TAGLINE`; RSS alternate "CyberTracker daily brief"; `robots` noindex in sample mode
+(always with `SampleBanner`, §6); `viewport.themeColor` from `themeColor()` (`lib/site.ts`): `#f3eee3`
+(paper) or `#121821` (night). `<html lang="en" data-look={siteLook()}>`; the skip link "Skip to the
+brief" to `#main` as `<body>`'s first child; `SampleBanner` in sample mode; then the column with
+`Masthead`, `<main id="main">`, `Footer`.
 - **Masthead** (`components/layout/`, reads `run.json`): row 1 `TabBar variant="family"`; row 2 the
-  wordmark "Cyber Tracker" with "Cyber" in italic (Newsreader 600, 23px, 28px from `md`) linking `/`, the
-  tagline and "Daily before 08:00 Taipei · @8gara8" (both hidden below `md`), `<Stamp text="AI-written ·
+  wordmark "Cyber Tracker", `SITE_NAME` split before "Tracker" with "Cyber" in italic (Newsreader 600,
+  23px, 28px from `md`) linking `/`, the tagline and "Daily before 08:00 Taipei · @8gara8" (`dailyLine()`,
+  `components/pages/site-text.ts`; both hidden below `md`), `<Stamp text="AI-written ·
   open sources" />`, Europe's 3px double rule; row 3 `TabBar variant="main"`. No day count and no brief
   number anywhere.
-- **TabBar** `{ variant: "family" | "main"; siblings?: { me; europe } }` ("use client"). Family, `<nav
+- **TabBar** `{ variant: "family" | "main"; siblings?: { me; europe }; pathname?: string }` ("use
+  client"; `pathname` is for tests, default `usePathname()`, then "/"). Family, `<nav
   aria-label="Trackers">`: ME and Europe as plain `<a>` to `run.json` `siblings`, then Cyber (`/`,
   `aria-current="true"`, ink fill). Main, `<nav aria-label="Main">` (Europe's MastheadNav): Today (active
-  on `/` and `/brief/*`), Archive, Method, About; item pages mark none; active `bg-fg text-bg`,
-  `aria-current="page"`. Mono 11px uppercase, scrolls sideways with a hidden scrollbar, tabs 40px tall.
+  on `/` and `/brief/*`), Archive, Method, About; item pages and the 404 mark none; a trailing slash is
+  ignored; active `bg-fg text-bg`, `aria-current="page"`; hover is an ink underline (never Europe's
+  `hover:bg-deep` fill). Mono 11px uppercase, scrolls sideways with a hidden scrollbar, tabs 40px tall.
+  Because the nav scrolls, it clips anything drawn outside a tab, so each tab draws its focus ring inset
+  (`focus-visible:-outline-offset-4`), and the ink-filled active tab's ring is `var(--bg)`
+  (`focus-visible:outline-bg`).
 - **StaleBanner** `{ lastDate: IsoDate; lastPublishedAt: IsoTimestamp; staleAfter: string }` ("use
   client", props baked in at build, `staleAfter` = `run.json` `schedule.stale_after`, "08:00"). Renders
   nothing on the server and first render; in `useEffect` checks `isStale(new Date(), …)` and again every
@@ -4062,7 +4211,8 @@ are the defence. No `vercel.json`; `next/font` self-hosts fonts.
 - **Footer** (reads `run.json`), Europe's frame: "CyberTracker · @8gara8" · "Written by Claude each
   morning; ready before 08:00 Taipei" · "Data: CISA KEV · CVE List · FIRST EPSS · GitHub advisories" ·
   "Audit trail" (`https://github.com/<repos.repo>/tree/main/content`); links RSS, Methodology, Corrections
-  (`/methodology#corrections`), About, Report an error (`issueFormUrl()`).
+  (`/methodology#corrections`), About, Report an error (`issueFormUrl()`), in a `<div>`, not a third
+  `<nav>` (the landmarks stay those of Accessibility, below).
 - **`components/layout/chrome.tsx`:** Europe's Dateline, PageHeader, Section, Empty and Stamp, with
   `text-accent`/`border-accent` replaced by `text-fg`/`border-rule`.
 
@@ -4074,7 +4224,12 @@ interface BriefViewProps {          // components/brief/BriefView.tsx; built by 
   gapOk: boolean;                   // false when the brief failed GAP_MATCH: the Gap is treated as missing
   annotations: Annotation[];        // config/annotations.json
   correctionsByItem: Record<string, Correction[]>; // correctionsFor(content, item.id, brief.date)
-  itemPages: Set<string>; isLatest: boolean; prevDate: IsoDate | null; nextDate: IsoDate | null;
+  heldItems: Set<string>;           // heldItemIds(content) (§6 item 7)
+  itemPages: Set<string>;           // itemPageIds(content)
+  editionDates: Set<string>;        // the loaded briefs' dates: CorrectionsList links only these
+  earlierItems: EarlierItems;       // per region-rule item this brief lacks: { date, headline } of its newest
+                                    // earlier loaded copy (the stored headline, WITHHELD_HEADLINE when withheld)
+  isLatest: boolean; prevDate: IsoDate | null; nextDate: IsoDate | null;
 }
 ```
 
@@ -4102,9 +4257,14 @@ aria-label="Other editions">` ("← <longDate(prev)>", "<longDate(next)> →"). 
 
 ### Brief components
 
-In `components/brief/` and `components/ui/`. Props are the obvious slices of `BriefViewProps` (`index` is
-Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `edition`, `index`,
-`sourcesById`, `corrections` and `hasPage`).
+In `components/brief/` and `components/ui/`, with the parts several share in `brief-parts.tsx`
+(`itemAnchor`, `configAnchor`, `fillTemplate`, Europe's `Aside`, `ItemRef`, `FootBlock`, ...) and
+`item-parts.tsx` (the kicker, Impact line, card body, links and footer row of `ItemCard` and `ItemRow`).
+Props are the obvious slices of `BriefViewProps` (`index` is Europe's `SourceIndex`; `ItemCard` and
+`ItemRow` take `item`, `editionDate`, `edition`, `index`, `sourcesById`, `corrections`, `held` and
+`hasPage`). No `<header>` or `<footer>` element sits inside the brief (the page has one of each), and
+labels shown in capitals are written in sentence case under CSS `uppercase` ("Strongest evidence
+against", "Why it matters", "Angle").
 - **EditionMasthead** `{ brief; gapOk }`: dateline "MORNING BRIEF · TAIPEI" (+ " · DATA-ONLY EDITION" or
   " · PARTIAL EDITION"); `h1` `longDate(date)`; `mastheadLine()`: "Published 05:12 Taipei · 5 min read ·
   AI-linked: 4 of 7 items", data-only "Published 04:48 Taipei · 2 min read · AI roles unassessed", with
@@ -4113,25 +4273,41 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
   feeds are stale: <name> (since <date>), …; their figures are shown with their own dates." A data-only
   edition shows the same sentence when feeds are stale, else nothing.
 - **Lead:** one paragraph, ink drop cap; each sentence a `<span>` plus a mono "↓" link to its first item
-  (`aria-label "Read: <headline>"`), or `#gap` for `gap: true` with no items. **AngleLine** (Europe's
-  Aside): "ANGLE →", text, refs or "Gap metrics, data to <as_of> UTC", "(<shortDate(as_of)>)",
-  "Counter-point:" with refs, "Bears on: <claim_id> <claim_text>" when set.
-- **RegionRow:** a closed `<details>`, one line at 375px: code (US · EU · TW · JP), region pips,
-  `REGION_CHANGE` glyph with a hidden word ("up from ELEVATED"), reason (truncated). Open: full reason;
-  `BASELINE_TOOLTIP` on baseline rows (also `title`); "Yesterday: <WORD>"; each fired rule "<rule_id> ·
-  <WORD>" linking `/methodology#rule-<rule_id>`, with item links; when raised, `EDITOR_RAISED` and "Rules
-  alone: <WORD>". Then "GLOBAL · <regions.global.item_count> items" (no level) linking `#also-today`.
+  (`aria-label "Read: <headline>"`), or `#gap` for `gap: true` with no items (`aria-label "Read: The
+  Gap"`). **AngleLine** (Europe's Aside): "ANGLE →", text, then for a source Angle its refs and
+  "(<shortDate(as_of)>)", for a metric Angle "Gap metrics, data to <shortDate(as_of)> UTC" linking `#gap`
+  (no second date); "Counter-point:" with refs, "Bears on: <claim_id> <claim_text>" when set.
+- **RegionRow** `{ row; itemsById; earlierItems }`: a closed `<details>`, one line at 375px: code (US ·
+  EU · TW · JP), region pips, `REGION_CHANGE` glyph with hidden words (`changeWords()`: "up from
+  ELEVATED", "down from HIGH", "same as yesterday", none for new), reason (truncated while closed, wrapped
+  when open, so it is shown and counted once). Open: `BASELINE_TOOLTIP` on baseline rows (also `title`);
+  "Yesterday: <WORD>" ("Yesterday: no edition" when `previous_level` is null); each fired rule "<rule_id>
+  · <WORD>" linking `/methodology#rule-<rule_id>` (a `gap-1` list), with its items through `ItemRef`: an
+  item of this brief by headline to its `#<id>`, one of an earlier edition (rules look back several days)
+  by that copy's stored headline to `/brief/<date>#<id>` (`earlierItems`), only an item no loaded brief
+  holds as its id in mono; when raised, `EDITOR_RAISED` (split around `{reason}`, so only the stored
+  reason is counted) with "↓" item links, and "Rules alone: <WORD>". Then "GLOBAL · <n> items" (singular
+  for 1; no level) linking `#also-today`.
 - **ItemCard** `<article id={item.id}>`: `CorrectionBanner` when corrected; `cardKicker()` (pips, `AIChip`,
   region codes, vendor as text "QNAP (TW)", never a flag); "Impact: <incident.impact>" for incidents; `h3`
   headline; summary with `SourceRefs`; "WHY IT MATTERS →" `why_it_matters`; `releaseLine()` for a patch
   batch, else `cveTimeline()` of the first CVE block, else neither; chips `SELF_REPORTED_CHIP` (self_reported), `NOT_VENDOR_CONFIRMED` (a `critical_flaw`
   whose first CVE block has `vendor_confirmed` false), `PUBLIC_EXPLOIT_LABEL` when set; `ANTHROPIC_LINE`
-  when `anthropic_disclosure`; footer "sources [1][3] ·", a "details" `<details>` with `ItemDetails`,
-  "Timeline →" (`/items/<id>`) when `hasPage`, "Report an error" (`issueFormUrl(item)`). Withheld items
-  render as stored; data-only items show "UNRATED" and the unassessed chip. **ItemRow:** a closed
-  `<details id={item.id}>`, summary (44px min) the kicker and headline; open, the card parts with
-  `ItemDetails` inline (no nested `<details>`).
-- **ItemDetails:** a `<dl>` of every §4.6 field the item has, each dated and linked. Per CVE block: id
+  when `anthropic_disclosure`; footer (`FOOTER_ROW`, mono 11px uppercase, `leading-[24px]`) "sources
+  [1][3] ·", a "details" `<details>` (summary `aria-label "Details: <headline>"`) with `ItemDetails`, then
+  "id <item id>" in lower case (`normal-case`: the error form asks for the id at the foot of the item, and
+  intake reads only lower-case ids), "Timeline →" (`/items/<id>`) when `hasPage`, "Report an error"
+  (`issueFormUrl(item)`, a plain `<a rel="noopener noreferrer">`, §7 Untrusted text item 3). Data-only
+  items show "UNRATED" and the unassessed chip. A **withheld** item renders as stored and counts nothing
+  (no `data-words`, §0.4 row 126), with no Impact line, no "· details" and no `ItemDetails`, since the
+  rewrite keeps fields such as the impact and quotes; the card shows only what the item page's withheld
+  form shows. A withheld item never assessed (`ai_role` unassessed) in a full or partial edition shows
+  neither its level nor its AI chip, since "UNRATED" and "AI: unassessed" mean a data-only edition (as the
+  chat, §0.4 row 132): its kicker is the region codes and the vendor. **ItemRow:** a closed `<details
+  id={item.id}>`, summary (44px min) the kicker and headline; open, the card parts with `ItemDetails`
+  inline (no nested `<details>`; none for a withheld item).
+- **ItemDetails:** a `<dl>` of every §4.6 field the item has, each dated (`shortDate()`) and linked (CVE
+  ids to `cveRecordUrl()`, GHSA ids to `ghsaRecordUrl()`, through `ExternalLink`). Per CVE block: id
   and title; vendor (country) and product; CVSS "<score> (CVSS <version>, scored by the CNA (assigner) |
   CISA | NVD)"; EPSS with percentile and date; CISA SSVC; KEV added and due dates (each "(US date)") and
   ransomware use; credits; AI credit "<finder_id> (<family>), matched '<matched>'"; discovery credit;
@@ -4140,8 +4316,9 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
   (fixes, exploited, critical); AI role and confidence words with each `ai_evidence` quote, claimant and
   claim type; each attribution "<attributed_by> (<basis word>) names <actor_name_as_used>; sponsor stated:
   <sponsor_claimed or 'none'>; their words: '<confidence_text>' (<date>)"; incident fields; exposure;
-  topics; standing story.
-- **SeverityPips** `{ scale: "severity" | "region"; level; landmark?; kind? }`: `<span class="pips"
+  topics; standing story. Its exposure text is counted here, its only place on the page.
+- **SeverityPips** `{ scale: "severity" | "region"; level; landmark?; kind?; words? }` (`words: false`
+  leaves the hidden words to the caller, as the kicker and region head do, below): `<span class="pips"
   aria-hidden="true">●●●○</span>`, the word (HIGH), hidden "High, 3 of 4" ("level 3 of 4" for regions).
   Null level: "LANDMARK · <KIND label>" when landmark, else the kind label in grey (POLICY, AI CAPABILITY,
   ECOSYSTEM), or "UNRATED" for a threat kind in a data-only brief.
@@ -4150,70 +4327,132 @@ Europe's `SourceIndex`; `ItemCard` and `ItemRow` take `item`, `editionDate`, `ed
   `AI_CONFIDENCE_INFO[confidence]`; `claimed` violet outline, no fill, then `CLAIMED_CHIP`. Primary role
   only; `ai_role_secondary` is never rendered.
 - **ActorChips:** square tags linking each actor's first item; when nexus isn't `unknown`, "· <nexus
-  label>, per <attributed_by>" from the first matching attribution (never a sponsor without its
-  attributor); `cross_link` adds a separate "<Europe | ME> ↗" link.
+  label>, per <attributed_by>" from the first qualifying attribution with the actor's nexus, the actor's
+  own name first (never a sponsor without its attributor); `cross_link` adds a separate "Europe ↗" or "ME
+  ↗" link, a plain `<a>` to `SIBLINGS[tracker]` (the `run.json` URL publish stores in `cross_link.url`)
+  with `aria-label "<Europe | ME> tracker: <actor name>"`.
 - **TaiwanLens:** analysis with refs and item links (`TAIWAN_NO_NEWS` verbatim on a quiet day); active
-  watch windows "Watch: <title>, <shortDate(start)> to <shortDate(end)>"; the six `TAIWAN_LENS_ROWS`
+  watch windows (start <= edition date <= end) "Watch: <title>, <shortDate(start)> to <shortDate(end)>"; the six `TAIWAN_LENS_ROWS`
   (label, then text or `NO_NEWS_ROW`; `home_vendors` adds `lensKevLines()`); "JAPAN" with its text or
   `NO_NEWS_ROW`. Data-only: the analysis reads "Not in a data-only edition."; script lines still show.
 - **ScoreboardSection:** Mondays, `week_in_review.text`, `ScoreboardTable` (Claim, Status, Zone, Reading
   "as of <date>"; words only: OPEN, HIT, MISS, VOID; SUPPORT, CHALLENGE, BETWEEN, NO READING) and
   `StrongestAgainst` (a panel "STRONGEST EVIDENCE AGAINST": text or `NONE_FOUND`, refs, claim id). Every
-  day, each entry "<entry id> · <claim_id> · <DIRECTION word>", summary, value or `reported_value`, quote,
-  link; none: `SCOREBOARD_NO_ENTRY` from `scoreboard.last`.
-- **CorrectionBanner** (`role="note"`, left rule, panel): per correction "<TYPE> <shortDate(date)> ·
-  <field>: now '<after>'. <reason>" with link; TYPE CORRECTED, CLARIFIED, UPDATED or NAME REMOVED ("NAME
-  REMOVED <date> · while a dispute about a named party is reviewed."). **CorrectionsList:** "<id> ·
-  <longDate(edition_date)> edition · <item id> (linked) · <TYPE> · <reason>".
+  day, each entry "<entry id> · <claim_id> · <DIRECTION word>", summary, a report entry's `reported_value`
+  (a metric entry's summary already holds its reading formatted, so its raw stored `value` is never
+  printed), quote, and the link, or "From <file>, <path>" for a metric entry; a Reading with none reads
+  "none"; no entry: `SCOREBOARD_NO_ENTRY` filled with `{date}` `shortDate(last.date)` and `{claim}`
+  "<claim_id> <claim_text>" from `scoreboard.last`, or "No Scoreboard entries yet.".
+- **CorrectionBanner** `{ corrections; held }` (`role="note"`, left rule, panel): per correction "<TYPE>
+  <shortDate(date)> · <field>: now '<after>'. <reason>" (printed as written, so an `after` ending in "."
+  reads ".'.") with a " Source" `ExternalLink`; TYPE from `CORRECTION_WORD` (CORRECTED, CLARIFIED, UPDATED
+  or NAME REMOVED; "NAME REMOVED <date> · while a dispute about a named party is reviewed.", no reason);
+  while held (§6 item 7) "<TYPE> <date> · [withheld]". **CorrectionsList** `{ corrections; held;
+  editionDates }`: "<id> · <longDate(edition_date)> edition · <item id> · <TYPE> · <reason>", the item id
+  linked to `/brief/<edition date>#<item id>` only when `editionDates` holds that edition (a skipped
+  edition's id stays unlinked), `[withheld]` for the reason while held.
 - **Elsewhere:** up to six lines, title link · outlet. **EpssMovers:** CVE, score, 7-day change,
   percentile, tabular figures.
-- **Sources** (Europe's `sourceIndex`, `SourceRefs`, `SourceList`): `[n]` links `#src-<id>` (`aria-label
-  "Source n"`). Each `<li id="src-<id>">`: [01], outlet, title as `ExternalLink` with `lang={language}`,
-  `title_en`, "↳ Tier <n> <TIER_INFO label> · <language> · <published date>", `state_label`. Foot:
-  `<details id="sources"><summary>Sources (N) · M publishers</summary>`. Verify in P4: a `[n]` link opens
-  the closed `<details>` in iOS Safari and the Claude app's browser; if not, link `[n]` straight to the
-  source via `safeHref` and add a §0.4 row.
+- **Sources** (Europe's `sourceIndex`, `SourceRefs`, `SourceList({ sources, withheld? })`): `[n]` links
+  `#src-<id>` (`aria-label "Source n"`). Each `<li id="src-<id>">`: [01], outlet, title as `ExternalLink`
+  with `lang={language}`, `title_en`, "↳ Tier <n> <TIER_INFO label> · <language> · <published date>",
+  `state_label`. A source only withheld items cite (`withheldOnlySources(brief)`, passed as `withheld`) or
+  one titled `WITHHELD_MARK` shows only "[NN]" and "[withheld]" as plain text, with its tier line: no
+  outlet, link, `title_en` or state label. Foot: `<details id="sources"><summary>Sources (N) · M
+  publishers</summary>` (N `sources.length`, M `computed.publisher_count`, each pluralised), or a foot
+  block `id="sources"` reading "No sources." with none. Verify in P4: a `[n]` link opens the closed
+  `<details>` in iOS Safari and the Claude app's browser; if not, link `[n]` straight to the source via
+  `safeHref` and add a §0.4 row. **Checked in the container (2026-11-12)** in Chrome's mobile emulation
+  at 375px: `[1]` opens `details#sources` and scrolls to `#src-s1`. A fragment link to an Also-today row
+  (the row is itself a closed `<details>`) scrolls to it and leaves it closed, its summary showing the
+  kicker and headline. Still open: iOS Safari and the Claude app's browser (Kobol).
 
 ### GapPanel and charts
 
-The Gap is the only dark surface on a paper page: `<section id="gap" className="night ...">` scopes the
-night tokens (Appendix A); edge to edge below 640px (`-mx-4 px-4`), `px-6` from 640px. Props: `GapPanel {
-gap; metrics; gapOk; annotations }`, `FloodChart { series; flood; markers }`, `WindowChart { series;
-window; markers }`, `AiCreditedChart { series; ai; markers }`, `FixSideStrip { fixSide; editionDate }`.
+The Gap is the only dark surface on a paper page: GapPanel renders its own `<section id="gap"
+className="night mt-9 -mx-4 px-4 pt-4 pb-6 sm:mx-0 sm:px-6">`, which scopes the night tokens (Appendix
+A): edge to edge below 640px, inset with `px-6` from 640px. GapPanel and FixSideStrip are in
+`components/brief/`, the charts in `components/charts/`. Props: `GapPanel { gap; metrics; gapOk;
+annotations; editionDate }` (`gapNotices()` and `fixSideLines()` need the brief's date), `FloodChart {
+series; flood; markers; caption? }`, `WindowChart { series; window; markers; caption? }`,
+`AiCreditedChart { series; ai; markers; caption? }`, `FixSideStrip { fixSide; editionDate }`. GapPanel
+builds and marks the counted caption lines and passes them in as `caption` (a `ReactNode` rendered inside
+the figure under its marker key), so no file in `components/charts/` marks anything.
 
-GapPanel, top to bottom: "§03 THE GAP", right "DATA TO <shortDate(data_cutoff_utc)> UTC";
+GapPanel, top to bottom: "§03 THE GAP" (the siblings' `Section` `h2` markup inside its own section),
+right "DATA TO <shortDate(data_cutoff_utc)> UTC" only when the Gap is shown;
 `gap.second_line`; `gapNotices()` (`role="note"`: "Gap figures are from <as_of>; today's could not be
 computed." when stale; "<block> data from <as_of>: <note>" per stale block of the metrics shown,
 named Flood, Window, AI-credited and Fix-side); the three charts; the
-**FixSideStrip** (text, each figure dated: the Anthropic dashboard line as §5.6 renders it, with its link,
-when `anthropic_cvd` is set; the GitHub line when `ghsa_unfixed` is set; `FIX_SIDE_CAPTION` always);
+**FixSideStrip** (under an uncounted "Fix-side" kicker; text, each figure dated: the Anthropic dashboard
+line as §5.6 renders it when `anthropic_cvd` is set, its text before the first " (" ("Anthropic
+disclosure dashboard") being the `ExternalLink` to `source_url` inside the counted line, an unsafe URL as
+text; the GitHub line when `ghsa_unfixed` is set; `FIX_SIDE_CAPTION` always);
 `gapFooter()`: `footerLine()` (§5.8), then "Weeks before <shortDate(series.live_from)>: reconstructed
 from current records." when `series.live_from` is after the chart's first week. With `metrics` null, status `missing` or `gapOk` false: the header and "The Gap is not
 available for this edition." only. A null block: "<Chart name> is not available today." (its
-`chartCaptions()` entry).
+`chartCaptions()` entry) in place of its figure. Captions: `flood` under chart A, `window` under chart B's
+row 3, `ai` (the key line in mono, then `AI_CREDIT_CAPTION`) and `aiInKev` (a head `<p>`, the entries as
+`<li>`) under chart C; each line one marked `<p>` or `<li>`, `PlainText` inside (the in-KEV `matched` text
+is untrusted credit text). Under chart B, a second `<details>` "Data table: The Window by period"
+(`WindowPeriods`) is §5.3's Gap data table: columns "26 weeks, <from> to <to>", "13 weeks, ..." and
+"2023–24, 1 Jan 2023 to 31 Dec 2024", §5.3's row labels, every number `gapTableDisplays()`'s display
+looked up by key (so it equals what `metricNumbers()` reads), a share or interval below `MIN_N` "share n
+too small" or left out, then §5.3's change-call line exactly. The drawn Gap with 104 weeks is about 200 KB
+of markup (520 hover titles, three tables); table cell styles are set once on each table.
 
-**Chart conventions.** `components/charts/`: `scale.ts` (`weekScale`, `niceMax`, `dayIndex`), `parts.tsx`
-(`ChartFigure`, `DataTable`, `YGrid`, `YearTicks`, `LinePath`, `BandPath`, `RefLine`, `Bars`, `HatchDefs`,
-`Markers`, `MarkerKey`, `HoverColumns`, `DirectLabel`). Europe's `LineChart`, `MonthlyBars`, `HeatGrid`
-are not carried over.
+**Chart conventions.** `components/charts/`: `scale.ts` (`weekScale`, `niceMax`, `dayIndex`, the
+geometry `W`, `M`, `PLOT_W`, `PLOT_H`, `H`, `STRIP_H`, `STRIP_VIEW_H`, `PLOT_RIGHT`, and `yScale`,
+`ticks`, `fmtTick`, `fmtShareTick`, `shareCount`, `shareShown`, `runs`, `letter`, `r2`), `parts.tsx`
+(`ChartFigure { id; name; title; children }`, `ChartSvg`, `DataTable`, `YGrid`, `YearTicks`, `LiveTick`,
+`LinePath`, `BandPath`, `AreaPath`, `RefLine`, `Bars`, `StackBars`, `HatchDefs`, `placeMarkers`,
+`Markers`, `MarkerKey`, `HoverColumns`, `DirectLabel`, `NTooSmall`, `sideOf`), `labels.ts` (the charts'
+own strings: titles, row titles, "n too small", "(KEV dates are US dates)", table heads, family names,
+§5.3's row labels and change-call line, Source values, and `floodLabel()`, `windowLabel()`, `aiLabel()`
+as `chartLabel()`; none is counted, and none is in `lib/vocab.ts` or `lib/page-text.ts`, whose
+`chartName()` gives "Data table: <chart name>" its name), `WindowPeriods.tsx`. Europe's `LineChart`,
+`MonthlyBars`, `HeatGrid` are not carried over.
 - Server SVG, no library, no client JS: `<svg viewBox="0 0 400 H" className="block w-full" role="img"
   aria-label={chartLabel()}>`, figure `max-w-[560px]`. Margins `{ l: 40, r: 56, t: 8, b: 16 }`; plot 304
   wide, 84 high (`H` 108, about 72px at 375px); the Window bar strip 36 high (`H` 60).
 - **One shared x-axis:** week `i` at `x = l + (i + 0.5) × 304 / weeks.length`; a date goes to its ISO week,
-  `floor((dayIndex(date) − dayIndex(weeks[0])) / 7)`. Year labels only, at each year's first week, with a
-  faint gridline.
-- Axis text 11 units mono muted (verify in P4: at least 9px at 375px); direct labels 12 units, 600, ink, at
-  each line's right end with a dot (`r = 2.5`); no legends except chart C's text key. Gridlines at y ticks,
-  `var(--border)`, dash `1 3`; lines 1.5px, `vectorEffect="non-scaling-stroke"`. Three y ticks, top
-  `niceMax` (next 1, 2 or 5 × 10ⁿ) unless fixed; counts over 999 as "12k".
-- Nulls (below `MIN_N`, §5.2) break lines; bands only where both bounds exist; a null latest value reads
-  "n too small".
+  `floor((dayIndex(date) − dayIndex(weeks[0])) / 7)`. Year labels only, at the week holding each 1 January,
+  with a faint gridline at that week's left edge. §5.1's `live_from` tick is a thin tick under the plot at
+  the `live_from` week's left edge, drawn only when that week is on the axis and is not the first week.
+- Axis text 11 units mono muted (verify in P4: at least 9px at 375px; **checked in the container
+  (2026-11-12)** in Chrome at 375px: 9.43px in paper and 9.38px in night; to repeat on the Kobol
+  screenshots; it is the one exception to Accessibility's 10px floor); direct labels 12 units, 600, ink:
+  the latest value in the right margin after a dot (`r = 2.5`), and the second label ("a year earlier",
+  the 2023–24 values) anchored at the end inside the plot on the side away from the main line, with a
+  `paint-order` halo in `var(--bg)`. Chart B row 3's and chart C's labels are too long for the 56-unit
+  margin, so they are HTML text (mono 12px 600 ink) on row 3's title line and above chart C's svg. No
+  legends except chart C's text key. Gridlines at y ticks, `var(--border)`, dash `1 3`; lines 1.5px,
+  `vectorEffect="non-scaling-stroke"`. Three y ticks, top `niceMax` (next 1, 2 or 5 × 10ⁿ) unless fixed;
+  `fmtTick()` prints whole ticks with `fmtInt`, halves with one decimal ("0.5", "2.5k"), counts over 999 as
+  "12k" (an all-zero series gives `niceMax(0)` 1, so 0, 0.5, 1).
+- Nulls (below `MIN_N`, §5.2) break lines; bands only where both bounds exist; a null latest value (rows 1
+  and 2) reads "n too small", right-aligned at the svg edge at the top of the plot (the bottom when the
+  2023–24 line is in the upper half), with no dot. A null year-ago value means no week a year back, not few
+  cases: no label, and "not available" in titles and the table. A weekly share is shown with §5.2's `pct(k,
+  n)`, `k = round(share × n)` (`shareShown()`; exact for n under 10,000), and "Listed after disclosure (n)"
+  as n − k.
 - Hover: a transparent `<rect>` per week, `<title>` with every value ("Week of 2 Nov 2026 · 13-week CVE
   records: 14,212 · Linux kernel: 3,104 · a year earlier: 9,880"); KEV charts add "(KEV dates are US dates)".
-- Markers, per annotation for the chart's panel dated on the axis: a muted dashed (`2 2`) line (a shaded
-  span to `end_date`), a letter key (a, b, c… by date) atop the plot, a mono key below ("a · 15 Apr 2026 ·
-  NVD stops scoring most CVEs", `detail` as title). `policy` markers are lines, never series.
-- Hatching means caveated: a 45° muted `<pattern>`, id prefixed with the chart id.
+- Markers, per annotation for the chart's panel dated on the axis: a muted dashed (`2 2`) line, or for a
+  span (`end_date`) a shaded rect (`var(--muted)`, `fill-opacity 0.16`) from its start week's left edge to
+  its end week's right edge (clamped to the axis); a letter key (a, b, c… by date, then id, per chart; atop
+  row 1 only in chart B) atop the plot, a mono key below ("a · 15 Apr 2026 · NVD stops scoring most CVEs";
+  a span "c · 19 Jul 2026 to 20 Jul 2026 · <label>"; `detail` as the item's title; `source_url` not
+  linked). Dates in chart text use `shortDate()` (the year always shown). `policy` markers are lines, never
+  series.
+- Hatching means caveated: a 45° muted `<pattern>`, id prefixed with the chart id (`url(#<id>-hatch)`).
+- **Chart B** is three svgs (`H` 108, 108 and 60) under HTML row titles; only row 1's is `role="img"`
+  with `chartLabel()`, rows 2 and 3 are `aria-hidden` (the label covers all three and the table holds
+  every value). Each row has its own hover rects and titles (that row's values and the 2023–24 value).
+  Row 2's y top is `niceMax` of the band tops, the drawn medians and the 2023–24 median, so the flat
+  reference line always fits. **Chart C** draws OpenAI, Google and other as one solid `var(--ai)` rect per
+  week (one colour, no seams) with Anthropic on top at `fill-opacity 0.4`, and a hatch rect over the bars
+  from `provisional_from`'s week to the plot's right edge.
 - Each chart has a `<details>` "Data table: <chart name>": newest week first, every drawn value with bounds
   and n, and a "Source" column ("backfill" or "live" by `series.live_from`).
 - Numbers use §5.2's display helpers. Only the AI-credited series is violet. No `rx` or rounded bars.
@@ -4232,7 +4471,8 @@ Flood: <n> new CVE records in the 13 weeks to <to>, <kernel_n> of them Linux ker
 <year_ago.n>." B "The Window over 26 weeks to <to>: <share> already exploited at disclosure (2023–24:
 <ref>); for the rest, a median <days> days to CISA listing (2023–24: <ref> days); <cohort_n> recent flaws
 listed." C "AI-credited records, a lower bound: <total> in 13 weeks, <ex_anthropic> without Anthropic;
-<in_kev.n> AI-credited flaws on CISA's list since 1 Jan 2025."
+<in_kev.n> AI-credited flaws on CISA's list since 1 Jan 2025." A count of 1 takes the singular in chart B's and chart C's labels ("1 recent flaw listed", "1
+AI-credited flaw"), through `plural()` (now exported from `lib/page-text.ts`).
 
 ### Script-written page text (`lib/page-text.ts`, P1)
 
@@ -4243,8 +4483,8 @@ the page shows in that range, joined in page order, so the validator counts what
 Components render those outputs, never their own copies, and mark each with `data-words`, as they mark
 the counted model fields. Exports: `mastheadLine(brief)`, `gapHeadlineLine(brief, gapOk)` (`gap.headline`
 as stored; null when EditionMasthead hides it) and `editionNotice(brief)` (null for full, and for
-data-only with no stale feed; all three as EditionMasthead shows them); `briefDescription(brief)` (page metadata and the feed only, so never in the
-count); `regionSummary(row)` (`{ head, reason }`: "TW ●●○○ ELEVATED ↑", then the stored reason);
+data-only with no stale feed; all three as EditionMasthead shows them); `briefDescription(brief, gapOk)`
+(page metadata and the feed only, so never in the count; §6); `regionSummary(row)` (`{ head, reason }`: "TW ●●○○ ELEVATED ↑", then the stored reason);
 `cardKicker(item)` ("●●●○ HIGH · AI-FOUND · US · TW · QNAP (TW)": the level, the role chip upper
 case, every region code, the vendor); `cveTimeline(cve, editionDate)` (below);
 `releaseLine(release, editionDate)` ("Released 10 Nov · 63 fixes · 2 exploited · 5 critical"); `gapSecondLine(brief)` (as stored); `gapNotices(brief, metrics)`;
@@ -4261,6 +4501,16 @@ lines), the
 GapPanel header ("§03 THE GAP", "DATA TO <date> UTC"), and everything `components/charts/` builds: chart
 titles, the `chartLabel()` aria-labels, direct labels ("17 d", "this week: <R> of <all>"), axis text,
 marker keys, hover titles and the data tables.
+
+**Marking** (`components/ui/Counted.tsx`): `<Counted text>` renders `<span data-words="">` around
+`PlainText`, and `COUNTED` is the attribute object for an element (`<span>`, `<p>` or `<li>`) whose own
+text is the counted string. A marked element holds nothing else and is never nested; a withheld card or
+row and `components/charts/` mark nothing. A kicker and a region head are counted as the page-text string
+exactly (`cardKicker()`, `regionSummary().head`), the pips and change glyph `aria-hidden` inside it
+(`countWords()` gives them 0 words), and their hidden words ("High, 3 of 4", "level 2 of 4, up from
+BASELINE") just after it, outside the marked span. `lib/page-text.ts` also exports, for the components,
+`plural()`, `chartName()`, `kickerLevel()`, `kickerAi()`, `KickerParts` and `cardKickerParts()` (the parts
+of `cardKicker()`, so the kicker renders its chips without retyping the string).
 
 Dates and times here and on every page come from `lib/format.ts` (P1, §10): `longDate()` ("Sunday 8 November
 2026"), `shortDate()` ("7 Nov 2026": §5.2's `fmtDate()` with the year always shown), `dayMonth()` ("3 Nov")
@@ -4281,19 +4531,29 @@ On top of the rules above ("Text first", `ExternalLink`, the banners' roles, cha
   aria-label="Other editions">`, `<footer>`; the skip link is the first focusable element. **Headings:**
   one `h1` (the edition date on a brief), sections `h2`, item headlines and Also-today heads `h3`, no gaps.
 - **Focus:** `:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }`; `--focus` is ink
-  on paper and `#E6EDF3` in the night scope, at least 3:1 everywhere; never a bare `outline: none`.
+  on paper and `#E6EDF3` in the night scope, at least 3:1 everywhere (Appendix A.5); never a bare
+  `outline: none`. The masthead tabs draw it inset (offset -4px), since their sideways-scrolling nav clips
+  anything outside a tab, and the ink-filled active tab's ring is `var(--bg)` (Page frame, TabBar).
 - **Never colour alone:** claimed is an outline plus text; chart series differ by label, dash and hatch;
   pips are `aria-hidden` with hidden words; change glyphs carry hidden words; `↓` and `↗` links have
   `aria-label`s.
 - **Disclosure:** native `<details>`/`<summary>`, each summary descriptive. **Motion:** none. **Links:**
-  `rel="noopener noreferrer"`, same tab, link text says where it goes. **Size:** body at least 15px, prose
-  17 to 18px, nothing under 10px; tabs and row summaries at least 40px tall; inline links at least 24px
-  line height.
+  `rel="noopener noreferrer"`, same tab, link text says where it goes. **Size:** body 15px at line-height
+  1.6 (24px), prose 17 to 18px (`.prose-serif` 17px, 18px from 48rem), nothing under 10px outside the
+  charts' svg (axis text, §7 chart conventions) and `sr-only` text; tabs and row summaries at least 40px
+  tall; every block that holds a link has a line of at least 24px (`leading-[24px]` on ItemDetails rows,
+  the sources list, region details and their `gap-1` rule list, the Angle counter-point, the Taiwan Lens,
+  Elsewhere, the Scoreboard source, the correction banner and list, the Fix-side strip and the card
+  footer row).
 
 ### Site tests (P4)
 
-`tests/site.test.tsx` (Vitest, `renderToStaticMarkup`, `environment: "node"`, as Europe's),
-`tests/content.test.ts` and `tests/stale.test.ts`; every case must pass.
+`tests/site.test.tsx` (Vitest, `renderToStaticMarkup`, `environment: "node"`, as Europe's; one top-level
+`describe` per bullet below but Skipping and Stale, plus Routes for the routes, the item page and the page
+frame; `next/font/google` is mocked, since its functions exist only under Next.js's compiler),
+`tests/content.test.ts` (Skipping and the loader), `tests/stale.test.ts` (Stale, its cases in
+`tests/helpers/stale-cases.ts`), `tests/color-check.test.ts` (Appendix A.5) and
+`tests/screenshots.test.ts` (§9.9 item 6); every case must pass.
 - **Sample.** Every `fixtures/site-content/` brief renders through `BriefView` with `id="<first item id>"`,
   `id="src-s1"` and `BRIEF_END`; Monday's has "Strongest evidence against"; the data-only edition
   `EDITION_INFO.data_only` and "AI: unassessed"; the partial edition names its stale feeds.
@@ -4311,24 +4571,49 @@ On top of the rules above ("Text first", `ExternalLink`, the banners' roles, cha
   test file holds none) skip that brief with `CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` or `SECRET_LIKE`;
   the log names file and code, never the text. A Gap sentence's number changed in the Lead (`LEAD_GROUNDED`,
   word count unchanged) leaves the brief shown with one warning. `SITE_BLOCKING_CODES` holds every `SAFETY_CODES` code, and every entry but
-  `FILE_NAME` is a † rule (§4.12).
+  `FILE_NAME` is a † rule (§4.12; the test reads the `| CODE † |` rows of §4.12's table from this file and
+  checks each rule code against `RULES`' `dataOnly` flag). An unparsable `corrections.json`,
+  `scoreboard.json` or status file is skipped with `SCHEMA`, never a warning; a correction whose text fails
+  a safety code is left out of `corrections` too, logged by id and code; the corrections list never links
+  an edition the site skipped.
 - **Withholding.** The withheld item shows `WITHHELD_HEADLINE` on its brief and item page; no edition's
-  original headline appears in either page.
+  original headline appears in either page (the sample's withheld item has no item page, so these cases
+  render `ItemPage` from an in-memory copy with an unwithheld earlier edition). While a withhold binds,
+  the item's other corrections show only their type word and date on its card, the brief's foot, the item
+  page and Methodology, and once nothing binds they print in full; a copy whose withhold the site cannot
+  read stays held; a source only withheld items cite shows "[NN]" and "[withheld]"; a withheld card and
+  row show no Impact line and no details; a carried data-only item withheld the same morning shows no
+  UNRATED and no AI chip in a full edition; a copy masked by URL under another id gets the withhold's
+  banner on its card and page.
 - **Levels.** Every level renders pips and a word; `UNRATED` only in the data-only edition.
-- **Accessibility.** Every sample page has one `h1` and headings in order with no gaps, the landmarks
-  (`<header>`, both tab `<nav>`s, `<main id="main">`, `<footer>`, and `<nav aria-label="Other editions">` on
-  a brief), the skip link as the first focusable element, `aria-label`s on `↓` and `↗` links, and hidden
-  words on pips and change glyphs (Accessibility, above).
+- **Accessibility** (121 cases). Every sample page (`/`, the ten briefs, `/archive`,
+  `/items/cve-2026-108917`, `/methodology`, `/about`, a 404), rendered inside the real `app/layout.tsx`
+  with `usePathname()` set to its route, has `<html lang="en">`, one `h1` and headings in order with no
+  gaps, the landmarks (one `<header>` holding both tab `<nav>`s, `<main id="main">`, one `<footer>`, and
+  `<nav aria-label="Other editions">` on a brief; the nav labels exactly these) and the active tab, the
+  skip link as the first focusable element and `<body>`'s first child, `aria-label`s on `↓` and `↗` links
+  (one case adds a `cross_link` to a copy of 14 Oct), each `.pips` `aria-hidden` with the next `.sr-only`
+  holding "<n> of 4", region change glyphs `aria-hidden` with `changeWords()` in their hidden words, no
+  `target` attribute, and `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling
+  links. Every tab draws its focus ring inset; every line that holds a link is at least 24px tall at
+  375px (the block's own size and leading, body text at 15px × 1.6).
 - **Charts.** Each renders `<svg role="img">`, a `<table>` and a `<title>` per week; an all-null series
-  shows "n too small" and no band; off-axis markers are not drawn; no `rx=`; `var(--ai)` only in chart C.
+  shows "n too small" and no band; off-axis markers are not drawn; no `rx=`; `var(--ai)` only in chart C;
+  a count of 1 takes the singular in chart B's and chart C's labels; the panel marks exactly the Gap
+  slice of `scriptParts()`, in order.
 - **Stale.** `lastDate` 2026-11-07: false at 2026-11-07T23:59:00Z (07:59 Taipei on 8 Nov), true at
   2026-11-08T00:00:00Z (08:00); `lastDate` 2026-11-06: true at 07:59 on 8 Nov; `lastDate` 2026-11-08: false
-  all day; the same under `TZ=America/New_York` and `TZ=UTC`.
-- **Methodology.** Each `STYLE_SECTIONS` number resolves to its title with a body over 100 characters;
-  every `regions.json` rule has `id="rule-<id>"`.
-- **Word count.** On every full sample edition, components mark counted strings with `data-words` (the
+  all day; a newest brief dated yesterday viewed at 08:01 Taipei is stale. The same cases run again in
+  child processes started with `TZ=America/New_York` and `TZ=UTC`, each reporting its zone and
+  `getTimezoneOffset()` (300 and 0) so the test proves where it ran.
+- **Methodology.** Each `STYLE_SECTIONS` number resolves to its pinned title, and the page's own section
+  prints that title as its `h2` and STYLE.md's opening prose (so empty sections or swapped numbers fail);
+  every `regions.json` rule has `id="rule-<id>"`; the feeds table reads each day's last record that lists
+  feeds.
+- **Word count.** On every sample edition (the data-only, partial and withheld ones included), components mark counted strings with `data-words` (the
   §4.12 model fields in the total and the `scriptText()` outputs; nothing in `components/charts/`), and
-  their `countWords()` sum equals `computed.word_count` exactly (§4.5, §4.12).
+  their `countWords()` sum equals `computed.word_count` exactly (§4.5, §4.12), reading `<span>`, `<p>` and
+  `<li>` marks with entities decoded; the words outside `#gap` are that total less the Gap's.
 
 ## 8. Scripts
 
@@ -4392,7 +4677,10 @@ table: Foundation `npm run typecheck && npm test`; P1 adds `schema:check`, `fixt
 `validate:all`), `validate`, `validate:all`, `validate:sample`, `schema:gen`, `schema:check`,
 `fixtures:gen`, `fixtures:check`, `chat` and `agent:check`, each as above; P2 adds `collect`,
 `sources:check`, `metrics` and `backfill` (`check` unchanged); P3 adds `postinstall`, `context`, `daily`,
-`publish`, `recheck` and `links`, each as above (`check` unchanged); the rest arrive with their phases.
+`publish`, `recheck` and `links`, each as above (`check` unchanged); P4 adds `dev`, `dev:sample`, `build`,
+`build:sample`, `build:empty`, `start` and `color:check` and the last three steps of `check`; `calibrate`
+arrives with calibration. The screenshot script has no package script: §10 P4 runs
+`node scripts/screenshots.mjs` on Kobol.
 Content-only pushes to `main` skip CI (§9.2): publish runs `validateAll`
 before every commit (§8.7), and every PR's `validate:all` checks `content/` with the PR's code. No test
 touches the network (feed tests read `fixtures/feeds/`, agent tests use `fixtures/agent/fake-claude.mjs`).
@@ -6206,8 +6494,11 @@ clones, `staged/` and `cvelist/records/`, and never throws (§0.4 row 107).
    version in Appendix C), driving Kobol's Chrome; nothing added to the project's dependencies. Node's
    ES module resolver ignores `NODE_PATH`, so `scripts/screenshots.mjs` loads it with
    `createRequire("/Users/kobol/.cybertracker/tools/package.json")("playwright-core")` and launches
-   `chromium.launch({ channel: "chrome" })`; if either the package or Chrome is missing it exits 1 with a
-   message naming this step.
+   `chromium.launch({ channel: "chrome", headless: true })`; if the tools folder, the package or Chrome is
+   missing it exits 1 with a message naming this step and the install line. `--playwright FILE` (another
+   `package.json` to load from) and `--channel NAME` (`none`: the browser `playwright-core` installed
+   itself) exist for the container, where both ran; on Kobol the defaults apply. Not done yet: the install,
+   its version in Appendix C and the screenshots are the P4 PR's Kobol steps (§10 P4).
 7. P5: the scheduled task, with JL present (§9.3).
 
 ---
@@ -6406,7 +6697,8 @@ numbers this PR shows (§0.3).
 validate within budget; the timed dry run fits the morning; a forced failure still leaves a data-only
 edition.
 
-**Status on 2026-11-11:** in progress on draft PR #5. Items 2 to 4 and 7, and the code of item 1, were
+**Status:** merged by JL as PR #5 on 2026-11-11 at 23:48 Taipei (15:48 UTC; `main` at `9ad5df3`), after
+Codex round 3 (23:17 Taipei, on `f990fc2`) found nothing. Before that, on draft PR #5: items 2 to 4 and 7, and the code of item 1, were
 built and tested in the cloud container (§0.4 rows 67 to 94); an independent review's findings and the
 build's known items were then fixed there (rows 95 to 120), and two more fix passes closed the edge
 cases those fixes left (rows 121 to 132). On Kobol, `--help` of CLI 2.1.316 lists every §9.4 flag and
@@ -6566,15 +6858,40 @@ prompt or style changes the dry runs caused. **For JL:** the keychain step.
 and the dry-run editions in the paper and full-dark looks, passes the accessibility checks, and deploys
 on the merge.
 
-1. `app/`, `components/`, `lib/{content,site,site-data,markdown}.ts`, `lib/format.ts` extended (P1
-   wrote it), the CSP and headers in `next.config.ts` (§6, §7), the `CT_LOOK` switch;
-   `scripts/color-check.ts`; `tests/site.test.tsx`, `tests/content.test.ts`, `tests/stale.test.ts` (§7).
+**Status on 2026-11-12:** in progress on draft PR #6. Built and tested in the cloud container from
+2026-11-12 00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel lanes (brief, charts,
+pages, tools), their integration, then an independent review. Of its 39 findings 27 were confirmed and
+fixed, 25 in code with a test each and 2 in the spec (§5.8 and STYLE §14), and the check of those fixes
+added one more (`c8f294b`); §0.4 rows 150 to 168. In the container `npm run check` passes and every
+route is static with the sample, the empty folder and the repo's `content/` (§6); the CSP, the headers,
+the axis text and a `[n]` link were checked in Chrome on a local build (§6, §7). The PR stays a draft,
+an exception to §0.1 item 4 since the milestone needs Kobol, until these Kobol steps are done:
+install `playwright-core` (§9.9 item 6) and record its version in Appendix C; build both looks from the
+P3 dry-run tree and commit the screenshots (item 3); check that the CISA KEV search link filters (§6
+`/items/[id]`); check that a `[n]` link opens the sources list in iOS Safari and in the Claude app's
+browser (§7 Sources); and read the route summary on the dry-run tree (§6). Then it is marked ready with an
+`@codex review` comment, JL picks the look from the screenshots, and the other look is deleted (item 5,
+Appendix A.6).
+
+1. `app/`, `components/` (`layout/`, `brief/`, `charts/`, `pages/`, `ui/` and `Markdown.tsx`, §3),
+   `lib/{content,site,site-data,markdown,record-links,stale}.ts`, `lib/format.ts` (`rfc822()`) and
+   `lib/page-text.ts` extended (P1 wrote them), `safeHref()` in `lib/urls.ts`, the CSP and headers in
+   `next.config.ts` (§6, §7), the `CT_LOOK` switch; `scripts/color-check.ts` (Appendix A.5);
+   `tests/site.test.tsx`, `tests/content.test.ts`, `tests/stale.test.ts`, `tests/color-check.test.ts` and
+   `tests/screenshots.test.ts` (§7).
 2. `check` gains `color:check`, `build:sample`, `build:empty` (§9.2); the `dev`, `dev:sample`, `build`
    and `start` scripts (§8.1).
 3. `scripts/screenshots.mjs` drives Kobol's Chrome through `playwright-core` (§9.9) at 375 and 1280 px
-   for `/`, `/brief/2026-10-14`, `/archive` and `/methodology`, both looks, into
-   `docs/screenshots/p4/<look>/<page>-<width>.png` (P4 adds the `<look>/` level to the template's path,
-   §10), after `--base` answers 200. The builds read P3's dry-run tree straight
+   for `/`, `/brief/2026-10-14`, `/archive` and `/methodology` (`index`, `brief-2026-10-14`, `archive`,
+   `methodology`), both looks, into `docs/screenshots/p4/<look>/<page>-<width>.png` (P4 adds the `<look>/`
+   level to the template's path, §10), full page at device scale 2 (images 750 and 2560 px wide), after
+   `--base` answers 200 (it polls every 0.5 s for `--wait` seconds, default 60). At 375 it emulates a
+   phone (`isMobile`, `hasTouch`); every context has reduced motion, service workers blocked, locale
+   en-US and time zone Asia/Taipei, waits for `networkidle` and `document.fonts.ready`, and hides the
+   caret and animations. Every request to another origin is aborted and named in one line at the end; a
+   page answering anything but 200 fails the run (exit 1), so a tree without the 2026-10-14 edition fails
+   loudly. The browser clock is real, so the stale banner shows on `/` when the tree's newest edition is
+   not today. The builds read P3's dry-run tree straight
    (`CT_CONTENT_DIR=logs/dry-run/tree`): it is not under `fixtures/`, so no sample banner shows (§6), and
    `content/` is never touched.
 4. The PR's Vercel preview (§9.1); the Toolbar turned off only if it trips the CSP.
@@ -6595,8 +6912,8 @@ both looks' screenshots at both widths are committed and linked; the accessibili
 with no gaps, the landmarks, the skip link as the first focusable element, `aria-label`s on `↓` and `↗`
 links, hidden words on pips and change glyphs) alongside §7's "Site tests", and `color:check` passes on
 both token sets; `tests/stale.test.ts` passes, including a newest brief dated yesterday viewed at 08:01
-Taipei; the preview renders every route with the sample banner; JL has picked the look and the other is
-gone. After the merge Claude checks the first production deploy reached READY,
+Taipei; the preview renders every route with the sample banner; the Kobol checks of the status above
+are recorded on the PR; JL has picked the look and the other is gone. After the merge Claude checks the first production deploy reached READY,
 the domain (§9.1), and `curl -sI https://cybertracker.vercel.app/` (200 and the five headers of §7), for
 the P5 PR. **For JL:** pick the look from the screenshots (paper is the default).
 
@@ -6929,18 +7246,44 @@ WCAG 2 ratios, computed 2026-11-07. Text needs 4.5:1, non-text 3:1.
   (filled chip) 6.69; sample text `#7a4f08` on `#f3e3c6` 5.63.
 - **Dark:** `#E6EDF3` 16.27 on `#0B0F14`, 15.08 on `#121821`; `#C3CCD6` 11.83 / 10.97; `#8B98A5` 6.53 /
   6.05 / 5.37 on `#1A2330`; violet `#A78BFA` 7.06 / 6.55 / 5.81; `#F3D9A4` on `#3A2E12` 9.67.
-- **Focus:** ink on any paper surface at least 14.05; `#E6EDF3` on any dark surface at least 13.39.
+- **Edition notice:** ink on `--badge-mix` 14.33 on paper; `#E6EDF3` on `#3A2E12` 11.25 in full dark.
+- **Focus:** ink on any paper surface at least 14.05 (on `--bg-deep`); `#E6EDF3` on any dark neutral
+  surface at least 13.39, and 11.25 on full dark's amber edition-notice and sample-banner surface
+  `#3A2E12` (still far over 3).
   **Decorative, exempt:** gridlines `#c9bfa8` on card 1.72 and `#33424F` on `#121821` 1.73; the panel
   border `#1F2A37` on `#0B0F14` 1.32 (never a focus ring).
+- **Chart marks drawn by opacity** (chart C's Anthropic layer, `var(--ai)` at 0.4: 2.09 on the night
+  card and 3.13 against the solid violet below it; the 80% bands at 0.18; marker spans at 0.16) are not
+  token pairs and not required for understanding in WCAG 1.4.11's sense: the direct labels, hover titles
+  and data table give every value they show.
 
-`scripts/color-check.ts` (`npm run color:check`, in `npm run check` from P4) parses the `:root`, `.night`
-and `html[data-look="night"]` blocks (`:root` and `.night` only after the P4 pick, A.6), resolves `var()` per scope, prints a line per pair, exits 1 on any
-failure. (1) **Contrast:** every pair in `PAIRS` (the above plus every chip foreground on its background,
-A.3); decorative pairs listed as exempt with a reason, so none slips through unlisted. (2) **Colour
-vision:** per scope, `--ai` against `--ink`, `--ink-soft` and `--muted`, simulated for protanopia,
-deuteranopia and tritanopia (Machado et al. 2009, severity 1.0, linear RGB), CIEDE2000 ΔE at least 10
-(smallest on 2026-11-07: 12.5, night violet against muted, tritan). (3) **No blue:** no `--sev-*` token
-has an HSL hue of 190° to 250° with saturation above 25%.
+`scripts/color-check.ts` (`npm run color:check`, in `npm run check` from P4; `--css FILE` reads another
+file) parses the blocks named on one line, `BLOCKS = [":root", 'html[data-look="night"]', ".night"]` (the
+P4 pick deletes the middle entry, A.6). Its scopes derive from it: each page look (`:root`, and
+`html[data-look="night"]` over `:root`) and `.night` inside each, so four scopes now and two after the
+pick. It resolves `var()` per scope as the cascade does (fallbacks and cycles handled), prints one line
+per pair and check (`ok`, `FAIL`, `exempt`) and a summary, and exits 0 on a pass, 1 on any failure or an
+unreadable file, 2 on a usage error; on 2026-11-12 it prints 209 lines, 0 failed and 41 exempt.
+(1) **Contrast:** every pair in `PAIRS`, each with the scopes it applies to: the above, every chip
+foreground on its background (A.3), and `--ink` on `--bg-deep` (tab hover text), `--bg` on `--ink` (the
+active tab), `--fg` on `--panel`, `--ink` on `--badge-mix`, `--rule`, the chip borders and the Critical
+fill as non-text, and `--focus` on every surface. Every A.5 and A.3 ratio reproduces to 2 decimals
+(pinned in `tests/color-check.test.ts`). Pairs below their bar are listed in `EXEMPT` with ratio and
+reason: mute on `--bg-deep` 4.22, the gridlines, `--rule-soft` borders and link underlines, the panel
+border 1.32, the High chip's tint (its box is its 1px border) and the `Tag`'s 30% `color-mix` border
+(composited in sRGB). So none slips through unlisted, every custom property of the read blocks must be
+a `#hex` colour named by a pair, an exemption or `UNPAIRED` (the five parity tokens, each with its
+reason), else it fails. (2) **Colour vision:** per scope, `--ai` against `--ink`, `--ink-soft` and
+`--muted`, simulated for protanopia, deuteranopia and tritanopia (Machado et al. 2009, severity 1.0,
+linear RGB, the simulated colour rounded to 8-bit sRGB before the comparison, as a simulator shows it),
+CIEDE2000 ΔE at least 10 (`VISION_MIN_DE`; smallest on 2026-11-07: 12.5, night violet against muted,
+tritan, which is 12.32 unrounded; paper's smallest 17.2). (3) **No blue:** no `--sev-*` token has an HSL
+hue of 190° to 250° with saturation above 25%, except full dark's two near-neutrals, `#E6EDF3`
+(hsl(208°, 35%, 93%): the Critical fill, the High text and border, Elevated) and `#0B0F14` (hsl(213°,
+29%, 6%): the Critical text). HSL saturation runs high near white and black, and their chroma (maximum
+less minimum channel) is about 5% and 4%. `NO_BLUE_NEUTRALS` exempts exactly those two values, printed
+as exempt with that reason, so any other value in the range fails (`#9EC5F0` and `#E6EDF4` do in the
+tests); `#3A4757` (the High fill) passes at 20%, and paper passes the rule unchanged.
 
 ### A.6 `app/globals.css` order
 
@@ -6953,7 +7296,8 @@ in ink; `.pips { letter-spacing: 0.02em; }`); `* { border-radius: 0 !important; 
 
 **After JL's pick** (§10 P4 item 5). Either way the commit deletes the `html[data-look="night"]` and
 `html[data-look="night"] .night` blocks, `CT_LOOK`, `siteLook()` (§6) and the `data-look` attribute on
-`<html>`, and keeps the `.night` Gap scope (A.2); `color-check` then parses `:root` and `.night` only.
+`<html>`, and keeps the `.night` Gap scope (A.2); `color-check` then parses `:root` and `.night` only (the
+commit deletes `BLOCKS`' middle entry; a test already runs that case on today's file).
 - **Paper wins:** `:root` stays as A.1; `themeColor` is `#f3eee3`.
 - **Full dark wins:** the `html[data-look="night"]` declarations (`color-scheme: dark` included) replace
   the matching paper values in `:root` (the parity tokens it does not set stay); the panel border
