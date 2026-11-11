@@ -12,7 +12,8 @@ import { SourceTiersFile, VendorsFile } from "@/lib/schema/config";
 import { DraftBrief } from "@/lib/schema/draft-brief";
 import type { DraftItem } from "@/lib/schema/item";
 import { blockedReason, compileTier1Paths, isGithubTier1, publisherFor, urlOnAnyDomain, urlOnDomain, type PublisherConfig } from "@/lib/sources";
-import { countWords, jaccard, numberMatches, numbersIn, splitSentences, wordSet } from "@/lib/text";
+import { windowWeeksOf } from "@/lib/metrics/headline";
+import { countWords, jaccard, numberMatches, numbersBesideWindow, numbersIn, splitSentences, wordSet } from "@/lib/text";
 import { TAIWAN_LENS_ROWS, type KindId, type Severity } from "@/lib/vocab";
 
 // ── format ───────────────────────────────────────────────────────────────────────────────────────
@@ -95,6 +96,32 @@ describe("splitSentences", () => {
   it("ends a sentence on May. (no abbreviation) but not on No.", () => {
     expect(splitSentences("It was fixed in May. Then it broke.")).toEqual(["It was fixed in May.", "Then it broke."]);
     expect(splitSentences("Advisory No. 5 lists it.")).toEqual(["Advisory No. 5 lists it."]);
+  });
+});
+
+describe("numbersBesideWindow and windowWeeksOf (row 145)", () => {
+  const raw = (t: string, w: readonly number[]) => numbersBesideWindow(t, w).map((n) => n.raw);
+  it("drops only the given window lengths written as a length", () => {
+    expect(raw("37% over the last 26 weeks.", [26])).toEqual(["37%"]);
+    expect(raw("In the 26-week Window, 37% were exploited.", [26])).toEqual(["37%"]);
+    expect(raw("37% (26 Weeks), 26\u2011week view.", [26])).toEqual(["37%"]);
+    expect(raw("37% in 13 weeks.", [26])).toEqual(["37%", "13"]);
+    expect(raw("37% of 26 flaws in 26 days.", [26])).toEqual(["37%", "26", "26"]);
+    expect(raw("37% over 126 weeks or 26.5 weeks or 1,26 weeks.", [26])).toEqual(["37%", "126", "26.5"]);
+    expect(raw("37% over 26 weekdays.", [26])).toEqual(["37%", "26"]);
+    expect(raw("37% in 26 weeks.", [])).toEqual(["37%", "26"]);
+    expect(numbersBesideWindow("37% in 26 weeks.", [])).toEqual(numbersIn("37% in 26 weeks."));
+  });
+  it("names the window each metrics path covers, as its quotable label does", () => {
+    for (const p of ["window.w26.at_disclosure_share", "window.w26.cohort_n", "window.kev_pace_ratio", "window.volume_ratio", "window.reference_pace_26w"]) {
+      expect(windowWeeksOf(p), p).toBe(26);
+    }
+    for (const p of ["window.w13.at_disclosure_share", "flood.n", "flood.vs_reference_ratio", "flood.yoy_pct", "flood.reference.w13_mean_n", "ai_credited.w13.total", "ai_credited.w13.ex_anthropic"]) {
+      expect(windowWeeksOf(p), p).toBe(13);
+    }
+    for (const p of ["window.reference.at_disclosure_share", "flood.last_week.n", "ai_credited.in_kev.n", "base_rate.ratio", "home_vendors.tw.d30_n", "constant"]) {
+      expect(windowWeeksOf(p), p).toBeNull();
+    }
   });
 });
 

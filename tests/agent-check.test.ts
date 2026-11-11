@@ -496,6 +496,21 @@ describe("AC7: the canary on the fake CLI (plan A22)", () => {
     untouched();
     for (const f of Object.values(files)) expect(fs.existsSync(path.join(w.root, f)), f).toBe(false);
   }, 60_000);
+  it("AC7: a quiet draft whose metric Angle names its own window passes (row 145, Kobol canary 2026-11-11)", async () => {
+    const w = world();
+    const now = Date.now();
+    const d = quietDraft(now);
+    const angle = { ...d.angle, metric_path: "window.w26.at_disclosure_share",
+      text: "In the 26-week Window, 37% of recently disclosed flaws on CISA's list were already exploited at disclosure." };
+    w.fake({ mode: "ok", draft: { ...d, angle }, draftPath: path.join(w.root, files.draft) });
+    expect(await main(["--canary", "--json"], deps(w, { now: () => now }))).toBe(0);
+    expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)?.result).toBe("PASS");
+    out.length = 0;
+    const w2 = world();
+    w2.fake({ mode: "ok", draft: { ...d, angle: { ...angle, text: angle.text.replace("26-week", "13-week") } }, draftPath: path.join(w2.root, files.draft) });
+    expect(await main(["--canary", "--json"], deps(w2, { now: () => now }))).toBe(1);
+    expect((JSON.parse(out.join("\n")) as { rows: Row[] }).rows.at(-1)?.evidence).toContain("hard rule code(s): WORDS_OVER, LEAD_GROUNDED");
+  }, 60_000);
   it("AC7: the canary call runs to its own limit, past the deadline plus the reserve; every other call keeps 5 minutes", async () => {
     const w = world();
     const now = Date.now();

@@ -245,6 +245,24 @@ describe("WORDS_OVER and WORDS_UNDER", () => {
     expect(check(d, W)[0]!.message).toBe("angle.text has 31 words; the limit is 30. Cut at least 1.");
   });
 
+  it("a metric Angle may name its own window without it counting as a number (row 145)", () => {
+    const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "In the 26-week Window, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(check(d, W, { edition: "monday" })).toEqual([]);
+    d.angle.text = "Over the last 13 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    const wrong = check(d, W, { edition: "monday" });
+    expect(codesOf(wrong)).toEqual(["WORDS_OVER angle.text"]);
+    expect(wrong[0]!.message).toContain("2 numbers (13, 17)");
+    expect(wrong[0]!.hint).toContain('nor the metric\'s own window written as "26 weeks"');
+    d.angle.text = "Over the last 26 weeks, CISA listed the rest after a while.";
+    expect(codesOf(check(d, W, { edition: "monday" }))).toEqual(["WORDS_UNDER angle.text"]);
+    const s = weekdayDraft(); // a sourced Angle: its window is the source's number
+    s.angle.text = "Red Hat has credited AISLE with 24 flaws in 26 weeks.";
+    expect(codesOf(check(s, W))).toEqual(["WORDS_OVER angle.text"]);
+  });
+
   it("the page total: WORDS_OVER above budgets.words_max, with the parts in the message", () => {
     const inputs = draftInputs("weekday");
     const count = pageWordCount(weekdayDraft(), inputs.metrics, inputs);

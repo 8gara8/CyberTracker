@@ -314,7 +314,8 @@ Every full edition has a Taiwan Lens: what today's events mean for Taiwan, then 
 over-reading it, and the claim it bears on.
 
 - At most 30 words holding exactly one number, from either a cited source or a metrics path (exactly
-  one of the two), with its date.
+  one of the two), with its date. With a metrics path you may name the window its label gives ("in 26
+  weeks", "the 13-week count"); that length is not counted, and no other window length may appear.
 - The counterpoint, at most 30 words, is the strongest evidence against over-reading the number, with its
   sources, or exactly "none found" with none.
 - Tie it to an open Scoreboard claim when it bears on one; otherwise leave the claim empty.

@@ -42,7 +42,10 @@
     "angle": {
       "type": "object",
       "properties": {
-        "text": {"type":"string","description":"At most 30 words, holding exactly one number"},
+        "text": {
+          "type": "string",
+          "description": "At most 30 words, holding exactly one number; with a metric_path, its own window (\"26 weeks\") is not counted"
+        },
         "source_id": {
           "description": "The source of the number; exactly one of source_id and metric_path is non-null",
           "type": ["string","null"]

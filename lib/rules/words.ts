@@ -10,6 +10,7 @@ import type { LoadedConfig } from "../config";
 import { matchVendor } from "../config";
 import { KEV_ABSENCE_NOTE, AI_LINKED_ROLES, BANNED_WORDS, WITHHELD_MARK } from "../vocab";
 import { isWithheld, TOP_STORY_COUNT } from "../items";
+import { windowWeeksOf } from "../metrics/headline";
 import { kevLineUnavailable, kevLines } from "../metrics/home-vendors";
 import { fmtInt } from "../metrics/stats";
 import { scriptText, type CardItem, type PageBrief, type ScriptOptions, type SummaryRow } from "../page-text";
@@ -20,7 +21,8 @@ import type { AgentContext } from "../schema/context";
 import type { DraftBrief } from "../schema/draft-brief";
 import type { CveBlock, DraftItem, ReleaseBlock } from "../schema/item";
 import type { Metrics } from "../schema/metrics";
-import { countWords, numbersIn } from "../text";
+import { countWords } from "../text";
+import { angleNumbers } from "./grounding";
 import { draftFirstSeen } from "./items";
 import { entriesOf, isBrief, proseFields, quotedFields, raisesOf } from "./shared";
 import { defineRule, error, plural, type AnyBrief, type AnyItem, type CveLookup, type RegionsBase, type Rule, type ValidationIssue } from "./types";
@@ -303,14 +305,16 @@ function fieldIssues(b: AnyBrief): ValidationIssue[] {
   }
   const angle = b.angle;
   if (angle && !isMark(angle.text)) {
-    const nums = numbersIn(angle.text);
+    const nums = angleNumbers(angle);
+    const weeks = angle.metric_path ? windowWeeksOf(angle.metric_path) : null;
+    const notCounted = `Dates, years, CVE ids and version strings are not counted as numbers${weeks === null ? "" : `, nor the metric's own window written as "${weeks} weeks"`}.`;
     if (nums.length === 0) {
       out.push(error("WORDS_UNDER", "angle.text", "angle.text holds no number; the Angle states exactly one sourced number. Add the one number its source or metric gives.",
-        "Dates, years, CVE ids and version strings are not counted as numbers."));
+        notCounted));
     } else if (nums.length > 1) {
       out.push(error("WORDS_OVER", "angle.text",
         `angle.text holds ${nums.length} numbers (${nums.map((x) => x.raw).join(", ")}); the Angle states exactly one. Keep one and cut the other${nums.length > 2 ? "s" : ""}.`,
-        "Dates, years, CVE ids and version strings are not counted as numbers."));
+        notCounted));
     }
   }
   return out;

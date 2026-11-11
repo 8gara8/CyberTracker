@@ -198,6 +198,20 @@ export function numbersIn(text: string, opts: { words?: boolean } = {}): NumberT
   return out;
 }
 
+/**
+ * numbersIn() of `text` without the window lengths in `weeks` where they are written as a length: "26
+ * weeks", "26-week", "13 week" (§4.12, §0.4 row 145). A metric Angle may name its path's window that way;
+ * the Gap prints the same lengths as constants (`headline.quoted` path "constant", §5.8), so there they
+ * label the number rather than add one. Any other number, and these lengths written any other way, still
+ * count.
+ */
+export function numbersBesideWindow(text: string, weeks: readonly number[]): NumberToken[] {
+  if (!weeks.length) return numbersIn(text);
+  const lengths = weeks.map((w) => String(Math.trunc(w))).join("|");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}.,])(?:${lengths})(?=[\\s\\u2010-]weeks?(?![\\p{L}\\p{N}]))`, "giu");
+  return numbersIn(text.normalize("NFKC").replace(re, " "));
+}
+
 /** Removes binary noise from a product of a decimal and a power of ten (0.1 * 1e6 is 100000.00000000001). */
 function tidy(x: number): number {
   return Number(x.toPrecision(15));

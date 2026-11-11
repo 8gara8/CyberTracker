@@ -218,6 +218,22 @@ export function inKevLine(ai: Pick<AiCredited, "in_kev">, editionDate: string): 
   };
 }
 
+// ── Window lengths (§4.12, §0.4 row 145) ────────────────────────────────────────────────────────
+
+/**
+ * The window, in weeks, that a metrics path covers, as its quotable label names it ("…, 26 weeks",
+ * lib/context.ts): 26 for `window.w26.*`, `window.kev_pace_ratio`, `window.volume_ratio` and
+ * `window.reference_pace_26w`; 13 for `window.w13.*`, `ai_credited.w13.*` and `flood.*` other than
+ * `flood.last_week.*`; null for any other path (the 2023–24 reference, the in-KEV list, the base rate, the
+ * Lens KEV lines). A metric Angle may name this window ("in 26 weeks") without it counting as its number.
+ */
+export function windowWeeksOf(path: string): 26 | 13 | null {
+  if (path.startsWith("window.w26.") || ["window.kev_pace_ratio", "window.volume_ratio", "window.reference_pace_26w"].includes(path)) return 26;
+  if (path.startsWith("window.w13.") || path.startsWith("ai_credited.w13.")) return 13;
+  if (path.startsWith("flood.") && !path.startsWith("flood.last_week.")) return 13;
+  return null;
+}
+
 // ── Display strings (§4.12 metricNumbers) ────────────────────────────────────────────────────────
 
 /** One number the Gap shows: the metrics path it comes from, what it is, and the exact string shown. */

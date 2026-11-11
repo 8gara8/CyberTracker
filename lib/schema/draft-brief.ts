@@ -24,7 +24,7 @@ const exactlyOneBasis = (a: { source_id: string | null; metric_path: string | nu
 const exactlyOneBasisError = { error: "Exactly one of source_id and metric_path is non-null", path: ["source_id"] };
 
 const angleFields = {
-  text: words("At most 30 words, holding exactly one number"),
+  text: words(`At most 30 words, holding exactly one number; with a metric_path, its own window ("26 weeks") is not counted`),
   source_id: z.string().nullable().describe("The source of the number; exactly one of source_id and metric_path is non-null"),
   metric_path: MetricPath.nullable().describe('A dotted path into the metrics file, e.g. "window.w26.at_disclosure_share"; the number in text equals its display string'),
   as_of: IsoDate.describe("The source's date, or data_cutoff_utc for a metric"),

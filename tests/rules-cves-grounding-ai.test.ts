@@ -534,6 +534,22 @@ describe("LEAD_GROUNDED", () => {
     expect(only(check(missing, "monday"), "LEAD_GROUNDED").map((e) => e.path)).toEqual(["angle.metric_path"]);
   });
 
+  it("lets a metric Angle name its own window, and no other (row 145)", () => {
+    const d = mondayDraft(); // metric_path window.w26.after_disclosure_median_days, display 17
+    d.angle.text = "Over the last 26 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    d.angle.text = "Over the last 13 weeks, flaws not exploited at disclosure reached CISA's list a median 17 days after it.";
+    const r = only(check(d, "monday"), "LEAD_GROUNDED");
+    expect(r.map((e) => e.path)).toEqual(["angle.text"]);
+    expect(r[0]!.message).toContain("holds 13");
+    expect(r[0]!.hint).toContain('may be named as "26 weeks"');
+    d.angle.metric_path = "flood.vs_reference_ratio";
+    d.angle.text = "Over 13 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED")).toEqual([]);
+    d.angle.text = "Over 26 weeks, new CVE records arrived at 5.2 times the 2023–24 pace.";
+    expect(only(check(d, "monday"), "LEAD_GROUNDED").map((e) => e.message)).toEqual([expect.stringContaining("holds 26")]);
+  });
+
   it("reads a raw metric with the rounding rule when the Gap shows no display for its path", () => {
     const m = draftInputs("monday").metrics!;
     expect(displaysFor(m, "flood.kernel_n")).toEqual([]);
