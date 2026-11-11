@@ -299,7 +299,8 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(flatPrompt).toContain('- [ ] A Lead sentence that cites no item has `"gap": true` and quotes only Gap headline numbers.');
     // Review of row 145: a label figure counts the second time, "1.9x" is no number, and an hour count is no Gap number.
     // Review of the sixth pass: the label figures are optional, at most once, and only a Gap sentence that names the day uses dates.
-    expect(flatPrompt).toContain('- [ ] Angle label figures at most once; ratios say "times", not "x"; a Gap sentence that names the day uses dates, not hours. - [ ] ');
+    // Review of the seventh pass: a ratio in words is no number either, so ratios are written in digits.
+    expect(flatPrompt).toContain('- [ ] Angle label figures at most once; ratios in digits with "times", not "x"; a Gap sentence that names the day uses dates, not hours. - [ ] ');
     expect(flatPrompt).not.toContain("label figures appear once");
   });
 
@@ -319,7 +320,12 @@ describe("PR11: the Angle's one number and the Gap sentences, as WORDS_OVER and 
     expect(s6).toContain("A Lead sentence that cites no item is a Gap sentence: `gap: true` with `item_ids` empty, quoting only the Gap headline's numbers, or none.");
     expect(s6).toContain("On a day with no items, every Lead sentence is one.");
     expect(s6).toContain('When a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours ("the 24 hours to 04:30"), which is not a Gap number.');
-    expect(s6).toContain('A ratio is written as the Gap writes it, "1.9 times", never "1.9x", in every field, even where a source writes "1.9x": the validator cannot read a number glued to x, so it fails one.');
+    // Review of the seventh pass: a verbatim quote keeps the source's words ("10x"), and a ratio in words is not read either.
+    expect(s6).toContain('A ratio is written as the Gap writes it, in digits, "1.9 times", never "1.9x" or "ten times the pace", even where a source '
+      + 'writes it so, in every field but a verbatim quote, which keeps the source\'s words: the validator cannot read a ratio glued to x or in '
+      + "words, so it fails any it finds.");
+    expect(flatStyle).not.toContain("so it fails one");
+    expect(flatStyle).not.toContain("in every field, even where");
     expect(styleSection(2)).toContain("a day with nothing that clears a bar has no items at all, and a Lead of Gap sentences only (§6)");
     expect(styleSection(2)).toContain('Gap sentences only (§6); when a Gap sentence names the day, it names it by its dates ("13 to 14 Oct"), never as a length of hours.');
     // Said only of a Gap sentence that names the day, never as a rule for every Gap sentence (review of the sixth pass).
