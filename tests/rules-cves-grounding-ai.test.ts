@@ -822,7 +822,8 @@ describe("NUMBER_FORM (review of the sixth P3 fix pass)", () => {
       }
     }
     for (const text of ["Cisco Catalyst 9500X and 9600X Series Switches", "versions from 4.3x before 5.1", "a 30X HTTP response",
-      "sprintf('%08x%05x')", "Windows 9x is legacy.", "Catalyst 9300X switches are affected.", "+0x159/0x200 and 0x"]) {
+      "sprintf('%08x%05x')", "Windows 9x is legacy.", "Catalyst 9300X switches are affected.", "+0x159/0x200 and 0x",
+      "affects versions 4.3x of the plugin", "firmware 2.1x is affected"]) {
       expect(gluedRatios(text), text).toEqual([]);
     }
     for (const [text, ratio] of RATIOS) expect(gluedRatios(text), text).toEqual([ratio]);

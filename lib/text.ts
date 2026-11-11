@@ -288,14 +288,18 @@ const GLUED_RATIO_RE = new RegExp(
 const RATIO_LEAD_INS: ReadonlySet<string> = new Set(["a", "about", "almost", "also", "an", "and", "approximately", "around", "at",
   "but", "by", "close", "down", "even", "for", "from", "in", "just", "less", "more", "nearly", "now", "of", "on", "only", "or",
   "over", "roughly", "so", "some", "still", "than", "the", "then", "to", "under", "up", "with"]);
+/** Words that name a release before its number: "versions 4.3x", "firmware 2.1x". */
+const RELEASE_WORDS: ReadonlySet<string> = new Set(["build", "builds", "firmware", "model", "models", "release", "releases", "series",
+  "version", "versions"]);
 /** A version range after the token: "4.3x before 5.1". */
 const VERSION_AFTER_RE = /^\s+(?:before|through|until|prior\s+to)\s+v?\d+\.\d/u;
 
 /**
  * The word right before a glued token names a product, standard or release, so the token is a model
- * number, not a ratio: it holds a digit ("Ryzen 9 7950X", "4K 12X") or a capital letter ("Catalyst 9300X",
- * "Windows 9x", "iPhone 16x", "HTTP 30x"), unless it ends a clause ("October,"), is a possessive ("KEV's")
- * or opens a sentence as one of RATIO_LEAD_INS ("Nearly 10x more").
+ * number, not a ratio: it holds a digit ("Ryzen 9 7950X", "4K 12X"), is one of RELEASE_WORDS ("versions
+ * 4.3x") or holds a capital letter ("Catalyst 9300X", "Windows 9x", "iPhone 16x", "HTTP 30x"), unless it
+ * ends a clause ("October,"), is a possessive ("KEV's") or opens a sentence as one of RATIO_LEAD_INS
+ * ("Nearly 10x more").
  */
 function nameBefore(before: string): boolean {
   const m = /(\S+)\s+$/u.exec(before);
@@ -303,7 +307,7 @@ function nameBefore(before: string): boolean {
   const opener = /^[(\["'“‘]+/u.exec(m[1]!);
   const word = opener ? m[1]!.slice(opener[0].length) : m[1]!;
   if (!/[\p{L}\p{N}]$/u.test(word) || /['’]s$/u.test(word)) return false;
-  if (/\p{N}/u.test(word)) return true;
+  if (/\p{N}/u.test(word) || RELEASE_WORDS.has(word.toLowerCase())) return true;
   if (!/\p{Lu}/u.test(word)) return false;
   const opensSentence = opener !== null || /(?:^|[.!?:;]["'”’)\]]*)\s*$/u.test(before.slice(0, m.index));
   return !opensSentence || !RATIO_LEAD_INS.has(word.toLowerCase());
