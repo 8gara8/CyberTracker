@@ -33,7 +33,7 @@ const NAME_REMOVED_LINE = "while a dispute about a named party is reviewed.";
 export function CorrectionBanner({ corrections, held }: CorrectionBannerProps) {
   if (!corrections.length) return null;
   return (
-    <div role="note" className="mb-3 border-l-2 border-rule bg-panel px-3 py-2 text-[13px] leading-[1.5] text-soft">
+    <div role="note" className="mb-3 border-l-2 border-rule bg-panel px-3 py-2 text-[13px] leading-[24px] text-soft">
       <ul className="flex flex-col gap-1">
         {corrections.map((c) => (
           <li key={c.id}>

@@ -68,7 +68,7 @@ export function TaiwanLens({ lens, edition, editionDate, index, itemsById }: Tai
           return (
             <div key={id} className="contents">
               <dt className={LABEL}>{TAIWAN_LENS_ROW_INFO[id].label}</dt>
-              <dd className="pb-2 text-[14px] leading-[1.5] text-soft">
+              <dd className="pb-2 text-[14px] leading-[24px] text-soft">
                 <RowText text={row?.text ?? null} itemIds={row?.item_ids ?? []} sourceIds={row?.source_ids ?? []} index={index} itemsById={itemsById} />
                 {id === "home_vendors" ? (
                   <span className="mt-1 block font-mono text-[12px] leading-[1.6] text-soft tabular-nums">
@@ -81,7 +81,7 @@ export function TaiwanLens({ lens, edition, editionDate, index, itemsById }: Tai
         })}
         <div className="contents">
           <dt className={LABEL}>Japan</dt>
-          <dd className="pb-2 text-[14px] leading-[1.5] text-soft">
+          <dd className="pb-2 text-[14px] leading-[24px] text-soft">
             <RowText text={lens.japan.text} itemIds={lens.japan.item_ids} sourceIds={lens.japan.source_ids} index={index} itemsById={itemsById} />
           </dd>
         </div>

@@ -98,7 +98,7 @@ function Entry({ entry }: { entry: ScoreboardEntry }) {
       </p>
       {entry.quote ? <p className="mt-1 text-[14px] italic leading-[1.5] text-soft">“<PlainText text={entry.quote} />”</p> : null}
       {entry.source_url ? (
-        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em]"><ExternalLink href={entry.source_url}>Source</ExternalLink></p>
+        <p className="mt-1 font-mono text-[11px] uppercase leading-[24px] tracking-[0.1em]"><ExternalLink href={entry.source_url}>Source</ExternalLink></p>
       ) : entry.metrics_ref ? (
         <p className="mt-1 font-mono text-[11px] text-muted">
           From <PlainText text={entry.metrics_ref.file} />, <PlainText text={entry.metrics_ref.path} />

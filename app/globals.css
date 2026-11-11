@@ -77,7 +77,7 @@ html[data-look="night"] .night { border: 1px solid #33424F; } /* the panel keeps
     color: var(--ink);
     font-family: var(--font-sans);
     font-size: 15px;
-    line-height: 1.55;
+    line-height: 1.6; /* 24px: a link in body text meets §7's 24px line */
     -webkit-font-smoothing: antialiased;
   }
 

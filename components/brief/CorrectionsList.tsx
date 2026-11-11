@@ -21,7 +21,7 @@ export interface CorrectionsListProps {
 
 export function CorrectionsList({ corrections, held, editionDates }: CorrectionsListProps) {
   return (
-    <ol className="flex flex-col gap-1.5 text-[13px] leading-[1.5] text-soft">
+    <ol className="flex flex-col gap-1.5 text-[13px] leading-[24px] text-soft">
       {corrections.map((c) => {
         const anchor = itemAnchor(c.item_id);
         return (

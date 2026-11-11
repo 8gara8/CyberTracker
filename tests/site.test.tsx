@@ -1002,6 +1002,48 @@ describe("Accessibility", () => {
     expect($(links[0]!).attr("href")).toBe(SIBLINGS.europe);
   });
 
+  it("every line that holds a link is at least 24px tall at 375px: the block's own size and leading, body text at 15px x 1.6", async () => {
+    // §7 "inline links at least 24px line height". A link's line box is at least its block container's strut, so
+    // the check reads the nearest block (or the link itself when it is a block): its font size and line height from
+    // the first class that sets them (text-[Npx], leading-[X], .prose-serif, .kicker), else the body's. Mobile only:
+    // md: and sm: variants are ignored. Controls with their own 40px or 44px box (the tab bars, summaries) and the
+    // chart SVGs are outside it.
+    const css = fs.readFileSync(path.join(REPO_ROOT, "app/globals.css"), "utf8");
+    const body = /\n {2}body \{([^}]*)\}/.exec(css)![1]!;
+    const BODY = { size: Number(/font-size:\s*(\d+)px/.exec(body)![1]), leading: Number(/line-height:\s*([\d.]+)/.exec(body)![1]) };
+    expect(BODY.size * BODY.leading).toBeGreaterThanOrEqual(24);
+    const BLOCK_TAGS = new Set(["p", "li", "dd", "dt", "div", "td", "th", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "figcaption", "section", "article", "aside", "header", "footer", "main", "ol", "ul", "dl", "details", "form", "body"]);
+    const BLOCK_CLASSES = /^(block|flex|grid|inline-block|inline-flex)$/;
+    const OWN_BOX = /^min-h-(10|11|12|\[(2[4-9]|[3-9]\d)px\])$/;
+    let checked = 0;
+    const short: string[] = [];
+    for (const route of ROUTES) {
+      const $ = await pageAt(route);
+      for (const a of $("a[href]").toArray()) {
+        const chain = [a, ...$(a).parents().toArray()];
+        const classes = (el: (typeof chain)[number]) => ($(el).attr("class") ?? "").split(/\s+/).filter(Boolean);
+        if (chain.some((el) => ["nav", "summary", "svg"].includes(el.tagName) || classes(el).some((c) => OWN_BOX.test(c) || c === "sr-only"))) continue;
+        const at = chain.findIndex((el) => BLOCK_TAGS.has(el.tagName) || classes(el).some((c) => BLOCK_CLASSES.test(c)));
+        let size: number | null = null;
+        let leading: string | null = null;
+        for (const el of chain.slice(at)) {
+          for (const c of classes(el)) {
+            if (size === null && /^text-\[\d+px\]$/.test(c)) size = Number(c.slice(6, -3));
+            if (leading === null && /^leading-\[[\d.]+(px)?\]$/.test(c)) leading = c.slice(9, -1);
+            if (c === "prose-serif") { size ??= 17; leading ??= "1.55"; }
+            if (c === "kicker") size ??= 10;
+          }
+        }
+        const fontPx = size ?? BODY.size;
+        const linePx = leading === null ? fontPx * BODY.leading : leading.endsWith("px") ? Number(leading.slice(0, -2)) : Number(leading) * fontPx;
+        checked += 1;
+        if (linePx < 24) short.push(`${route} ${linePx.toFixed(2)}px <${chain[at]!.tagName} class="${$(chain[at]).attr("class") ?? ""}"> ${$(a).text().slice(0, 40)}`);
+      }
+    }
+    expect(checked).toBeGreaterThan(300);
+    expect([...new Set(short)]).toEqual([]);
+  });
+
   it("the Lead's ↓ links read \"Read: <headline>\" (or \"Read: The Gap\")", async () => {
     let seen = 0;
     for (const route of ROUTES.filter(isBrief)) {

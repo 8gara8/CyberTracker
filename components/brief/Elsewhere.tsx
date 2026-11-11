@@ -20,7 +20,7 @@ export function Elsewhere({ links, sourcesById }: ElsewhereProps) {
         const source = sourcesById[l.source_id];
         const title = <PlainText text={l.title} />;
         return (
-          <li key={`${l.source_id}-${i}`} className="border-b border-dotted border-line py-2 text-[14px] leading-[1.5] text-soft">
+          <li key={`${l.source_id}-${i}`} className="border-b border-dotted border-line py-2 text-[14px] leading-[24px] text-soft">
             {source ? <ExternalLink href={source.url}>{title}</ExternalLink> : title}
             {source ? <span className="text-muted"> · <PlainText text={source.outlet} /></span> : null}
           </li>

@@ -28,7 +28,7 @@ export function AngleLine({ angle, index }: AngleLineProps) {
           <a href="#gap" className="font-mono text-[11px] text-muted">Gap metrics, data to {shortDate(angle.as_of)} UTC</a>
         )}
       </p>
-      <p className="mt-1.5 text-[14px] leading-[1.5] text-soft">
+      <p className="mt-1.5 text-[14px] leading-[24px] text-soft">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">Counter-point: </span>
         <Counted text={angle.counterpoint} /> <SourceRefs ids={angle.counterpoint_source_ids} index={index} />
       </p>

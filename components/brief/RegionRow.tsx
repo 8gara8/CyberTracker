@@ -73,13 +73,13 @@ export function RegionRow({ row, itemsById, earlierItems }: RegionRowProps) {
           <Counted text={summary.reason} />
         </span>
       </summary>
-      <div className="pb-3 pl-1 text-[13px] leading-[1.6] text-soft">
+      <div className="pb-3 pl-1 text-[13px] leading-[24px] text-soft">
         {baseline ? <p className="italic text-muted">{BASELINE_TOOLTIP}</p> : null}
         <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
           Yesterday: {row.previous_level ? REGION_LEVEL_INFO[row.previous_level].word : "no edition"}
         </p>
         {row.fired.length ? (
-          <ul className="mt-1 flex flex-col gap-0.5">
+          <ul className="mt-1 flex flex-col gap-1">
             {row.fired.map((f, i) => {
               const anchor = configAnchor(f.rule_id);
               const label = `${f.rule_id} · ${REGION_LEVEL_INFO[f.level].word}`;

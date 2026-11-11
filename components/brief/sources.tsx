@@ -59,7 +59,7 @@ export function SourceList({ sources, withheld }: SourceListProps) {
       {sources.map((s, i) => {
         const held = withheld?.has(s.id) || s.title === WITHHELD_MARK;
         return (
-          <li key={s.id} id={sourceAnchor(s.id) ? `src-${s.id}` : undefined} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px]">
+          <li key={s.id} id={sourceAnchor(s.id) ? `src-${s.id}` : undefined} className="flex gap-2.5 border-b border-dotted border-line py-2 text-[13px] leading-[24px]">
             <span className="tabular shrink-0 pt-px text-[11px] text-muted">[{String(i + 1).padStart(2, "0")}]</span>
             <span className="min-w-0 [overflow-wrap:anywhere]">
               {held ? (

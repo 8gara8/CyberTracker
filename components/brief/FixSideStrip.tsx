@@ -28,7 +28,7 @@ export function FixSideStrip({ fixSide, editionDate }: FixSideStripProps) {
     <div className="mt-7 max-w-[72ch] border-t border-line pt-3">
       <p className="kicker mb-1">Fix-side</p>
       {lines.map((line, i) => {
-        const cls = i === last ? "mt-1 text-[13px] text-muted" : "mt-1 text-[14px] text-soft";
+        const cls = i === last ? "mt-1 text-[13px] leading-[24px] text-muted" : "mt-1 text-[14px] leading-[24px] text-soft";
         if (i === 0 && cvd) {
           const { head, rest } = linkParts(line);
           return (

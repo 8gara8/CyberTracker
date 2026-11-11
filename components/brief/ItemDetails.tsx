@@ -55,7 +55,7 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
     <>
       <dt className="pt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:pt-[3px]">{term}</dt>
-      <dd className="min-w-0 pb-1.5 text-[13px] leading-[1.5] text-soft [overflow-wrap:anywhere] sm:pb-[3px]">{children}</dd>
+      <dd className="min-w-0 pb-1.5 text-[13px] leading-[24px] text-soft [overflow-wrap:anywhere] sm:pb-[3px]">{children}</dd>
     </>
   );
 }
