@@ -10,6 +10,8 @@
 //   draft       the JSON value written as the draft (ok: on --session-id; on --resume when no repair)
 //   invalidDraft  repair mode: written on --session-id in place of draft when given
 //   repair      the JSON value written on --resume
+//   repairs     the JSON values written on the first, second, ... --resume calls (one per repair round, across
+//               attempts); a call past the list writes repair
 //   fetches     URLs reported as WebFetch calls, each with a non-error tool_result
 //   searches    how many WebSearch calls to report
 //   delayMs     sleep before the result event
@@ -31,14 +33,16 @@ const configDir = process.env.CLAUDE_CONFIG_DIR ?? null;
 const cfgFile = configDir ? path.join(configDir, "fake-agent.json") : null;
 const cfg = cfgFile && fs.existsSync(cfgFile) ? JSON.parse(fs.readFileSync(cfgFile, "utf8")) : {};
 
-/** Counts the --session-id calls recorded so far, this one included (the attempt number). */
+/** Counts the --session-id calls recorded so far, this one included (the attempt number), and the --resume calls likewise. */
 let attemptNo = 0;
+let resumeNo = 0;
 if (configDir && fs.existsSync(configDir)) {
   const call = { argv: args, envKeys: Object.keys(process.env).sort(), cwd: process.cwd() };
   const callsFile = path.join(configDir, "calls.jsonl");
   fs.appendFileSync(callsFile, `${JSON.stringify(call)}\n`);
-  attemptNo = fs.readFileSync(callsFile, "utf8").split("\n").filter((l) => l.trim())
-    .filter((l) => JSON.parse(l).argv.includes("--session-id")).length;
+  const calls = fs.readFileSync(callsFile, "utf8").split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l).argv);
+  attemptNo = calls.filter((a) => a.includes("--session-id")).length;
+  resumeNo = calls.filter((a) => a.includes("--resume")).length;
 }
 
 if (!args.includes("-p") && (args.includes("--version") || args.includes("-v"))) {
@@ -76,6 +80,7 @@ function result(isError, text) {
 /** The value to write as the draft on this call, or undefined for none. */
 function draftValue() {
   if (mode === "nodraft") return undefined;
+  if (resume && Array.isArray(cfg.repairs) && resumeNo <= cfg.repairs.length) return cfg.repairs[resumeNo - 1];
   if (mode === "repair") return resume ? cfg.repair : (cfg.invalidDraft ?? cfg.draft);
   return resume ? (cfg.repair ?? cfg.draft) : cfg.draft;
 }

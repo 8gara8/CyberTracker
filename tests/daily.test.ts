@@ -357,6 +357,32 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D46 attempt 1 uses both repairs and fails, and attempt 2 is repaired to valid and publishes the full edition, with the fake agent", async () => {
+    // The Kobol dry run of 2026-11-11: the run's two repair rounds were shared across both attempts, so attempt 2
+    // had none left and its draft, one repair from valid, failed E_VALIDATION unrepaired.
+    const h = harness();
+    h.fakeAgent({ mode: "repair", invalidDraft: INVALID, repairs: [INVALID, INVALID, DRAFT], fetches: FETCHES });
+    expect(await run(h, ["--trigger", "schedule"])).toBe(0);
+    const runs = statusOn(h)!.runs;
+    expect(runs.map((r) => [r.trigger, r.attempt, r.outcome, r.error_code, r.budgets.repair_rounds])).toEqual([
+      ["schedule", 1, "published_data_only", "E_VALIDATION", 2],
+      ["retry", 2, "published_full", null, 1],
+    ]);
+    const calls = agentRuns(h);
+    expect(calls.map((c) => (c.argv.includes("--resume") ? "resume" : "new"))).toEqual(["new", "resume", "resume", "new", "resume"]);
+    const log = dailyLog(h);
+    expect(log).toContain("Attempt 1: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+    expect(log).toContain("Attempt 1: repair 2 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+    expect(log).toContain("Attempt 2: repair 1 for 1 error and 0 snapshot warnings (BANNED_WORDS).");
+    expect(log).not.toContain("Attempt 2: repair 2");
+    expect(fs.existsSync(path.join(h.root, "logs", `${D}.agent-2-repair-1.jsonl`))).toBe(true);
+    expect(briefOn(h)!.edition).toBe("full");
+    // The run's repairs, across both attempts: the chat line sums each record's rounds, runs.jsonl counts them too.
+    expect(summary(h)).toContain("2 attempts, 3 repairs");
+    expect(runsJsonl(h).at(-1)).toMatchObject({ outcome: "published_full", attempts: 2, repairs: 3, error_code: null });
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D38 a start at 05:21 leaves too little time for attempt 1: E_TIMEOUT with the no-retry line, the data-only edition stands", async () => {
     const h = harness({ start: "05:21" });
     okAgent(h);

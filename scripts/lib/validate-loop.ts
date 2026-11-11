@@ -61,7 +61,7 @@ export interface ValidateLoopIo {
   writeDropped(r: DropReport): void;
 }
 
-/** Shared across attempts. */
+/** One attempt's repair rounds: daily.ts starts a new state for each attempt, so each has `maxRepairs` (§8.2). */
 export interface ValidateLoopState {
   repairsUsed: number;
   maxRepairs: number;

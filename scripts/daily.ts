@@ -54,7 +54,7 @@ import {
   runIdFor, runsJsonlLine, setStage,
 } from "./lib/status";
 import type { Transcript } from "./lib/transcript";
-import { validateLoop, type ValidateLoopIo } from "./lib/validate-loop";
+import { validateLoop, type ValidateLoopIo, type ValidateLoopState } from "./lib/validate-loop";
 import { runMetrics } from "./metrics";
 import {
   checkCliAndToken, checkNetwork, checkPlatform, clockRule, depsChanged, idempotency, loadRunConfig, prepareGit, PreflightFail, scheduleFor,
@@ -651,7 +651,6 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
 
   const attempts = async (x: AttemptInputs) => {
     const { cfg, sch } = x;
-    const loopState = { repairsUsed: 0, maxRepairs: cfg.run.budgets.repair_rounds };
     const transcripts: Transcript[] = [];
     const runSnapshots: Snapshot[] = [];
     const max = cfg.run.budgets.attempts_max;
@@ -696,6 +695,9 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
 
     for (let attempt = 1; attempt <= max; attempt++) {
       state.attempts = attempt;
+      // Each attempt has its own repair rounds (§8.2); the run's count adds them up.
+      const loopState: ValidateLoopState = { repairsUsed: 0, maxRepairs: cfg.run.budgets.repair_rounds };
+      const repairsBefore = state.repairs;
       const t = attemptBudget(sch.hardStop, now());
       if (t < P3_LIMITS.agentMinMs) {
         fail("E_TIMEOUT", "draft", { agentMinutes: null });
@@ -816,13 +818,13 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
       } catch (e) {
         if (!(e instanceof RepairStopped)) throw e;
         // A repair round denied by the sandbox, signed out or stopped by the usage limit: never retried (§8.2).
-        state.repairs = loopState.repairsUsed;
+        state.repairs = repairsBefore + loopState.repairsUsed;
         setBudgets(roundsRun);
         fail(e.code, "validate");
         await maybeRetry(e.code, attempt);
         return;
       }
-      state.repairs = loopState.repairsUsed;
+      state.repairs = repairsBefore + loopState.repairsUsed;
       cur().validation = {
         errors: out.result.errors.length, warnings: out.result.warnings.length,
         codes: [...new Set([...out.result.errors, ...out.result.warnings].map((i) => i.code))].sort(),

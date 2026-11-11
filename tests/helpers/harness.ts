@@ -57,6 +57,8 @@ export interface FakeAgentConfig {
   invalidDraft?: unknown;
   /** The draft written on --resume. */
   repair?: unknown;
+  /** The drafts written on the first, second, ... --resume calls (one per repair round, across attempts); a call past the list writes `repair`. */
+  repairs?: unknown[];
   /** URLs reported as WebFetch calls, each with a non-error tool_result. */
   fetches?: string[];
   /** How many WebSearch calls to report. */

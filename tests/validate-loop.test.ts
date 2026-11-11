@@ -221,7 +221,7 @@ describe("validateLoop", () => {
     ]);
   });
 
-  it("V6 repairsUsed is shared across attempts", async () => {
+  it("V6 repairsUsed carries over when the same state is passed again (daily.ts passes a new one per attempt, D46)", async () => {
     const state = st(0, 2);
     const first = fake(banned(), [banned(), banned()]);
     const a1 = await validateLoop(1, inputs, first.io, state);
