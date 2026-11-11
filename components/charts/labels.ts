@@ -5,6 +5,7 @@
 // (shortDate: the charts get no edition date, so a date always shows its year). Owner: gap lane.
 import { shortDate } from "@/lib/format";
 import { fmtDays, fmtInt, pct } from "@/lib/metrics/stats";
+import { plural } from "@/lib/page-text";
 import type { AiCredited, Flood, GapWindow } from "@/lib/schema/metrics";
 import { MIN_N } from "@/lib/vocab";
 
@@ -85,7 +86,7 @@ export function floodLabel(flood: Pick<Flood, "n" | "to" | "kernel_n" | "year_ag
 /**
  * B: "The Window over 26 weeks to <to>: <share> already exploited at disclosure (2023–24: <ref>); for the rest, a
  * median <days> days to CISA listing (2023–24: <ref> days); <cohort_n> recent flaws listed." A share or median
- * not shown (below MIN_N) is said in words with "n too small".
+ * not shown (below MIN_N) is said in words with "n too small"; a cohort of 1 reads "1 recent flaw listed".
  */
 export function windowLabel(win: Pick<GapWindow, "w26" | "reference">): string {
   const w = win.w26;
@@ -98,11 +99,15 @@ export function windowLabel(win: Pick<GapWindow, "w26" | "reference">): string {
   const days = w.after_disclosure_median_days === null
     ? `the median days to CISA listing is not shown (${N_TOO_SMALL}; ${REF}: ${refDays})`
     : `a median ${fmtDays(w.after_disclosure_median_days)} days to CISA listing (${REF}: ${refDays})`;
-  return `The Window over 26 weeks to ${shortDate(w.to)}: ${share}; for the rest, ${days}; ${fmtInt(w.cohort_n)} recent flaws listed.`;
+  return `The Window over 26 weeks to ${shortDate(w.to)}: ${share}; for the rest, ${days}; ${plural(w.cohort_n, "recent flaw", "recent flaws")} listed.`;
 }
 
-/** C: "AI-credited records, a lower bound: <total> in 13 weeks, <ex_anthropic> without Anthropic; <in_kev.n> AI-credited flaws on CISA's list since 1 Jan 2025." */
+/**
+ * C: "AI-credited records, a lower bound: <total> in 13 weeks, <ex_anthropic> without Anthropic; <in_kev.n>
+ * AI-credited flaws on CISA's list since 1 Jan 2025." A count of 1 takes the singular ("1 AI-credited flaw"), as
+ * B's "1 recent flaw listed".
+ */
 export function aiLabel(ai: Pick<AiCredited, "w13" | "in_kev">): string {
   return `AI-credited records, a lower bound: ${fmtInt(ai.w13.total)} in 13 weeks, ${fmtInt(ai.w13.ex_anthropic)} without Anthropic; `
-    + `${fmtInt(ai.in_kev.n)} AI-credited flaws on CISA's list since ${shortDate(ai.in_kev.since)}.`;
+    + `${plural(ai.in_kev.n, "AI-credited flaw", "AI-credited flaws")} on CISA's list since ${shortDate(ai.in_kev.since)}.`;
 }

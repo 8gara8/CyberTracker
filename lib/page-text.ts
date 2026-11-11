@@ -77,7 +77,8 @@ const CHART_NAMES = { flood: "The Flood", window: "The Window", ai: "AI-credited
 /** The Gap panel's metrics blocks, in panel order, with the name a stale-block notice uses. */
 const PANEL_BLOCKS = [["flood", "Flood"], ["window", "Window"], ["ai_credited", "AI-credited"], ["fix_side", "Fix-side"]] as const;
 
-const plural = (n: number, one: string, many: string) => `${fmtInt(n)} ${n === 1 ? one : many}`;
+/** "1 item", "1,384 items": the count with fmtInt() and the noun's singular for 1 (the chart labels use it too). */
+export const plural = (n: number, one: string, many: string) => `${fmtInt(n)} ${n === 1 ? one : many}`;
 
 // ── Masthead ─────────────────────────────────────────────────────────────────────────────────────
 

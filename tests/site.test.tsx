@@ -1074,6 +1074,15 @@ describe("Charts", () => {
       expect(aiLabel(s.ai_credited!)).toBe("AI-credited records, a lower bound: 502 in 13 weeks, 224 without Anthropic; 0 AI-credited flaws on CISA's list since 1 Jan 2025.");
     });
 
+    it("a count of 1 takes the singular in chart B's and chart C's labels", () => {
+      const m = sampleMetrics();
+      const ai = { ...m.ai_credited!, in_kev: { ...m.ai_credited!.in_kev, n: 1 } };
+      expect(aiLabel(ai)).toContain("; 1 AI-credited flaw on CISA's list since ");
+      const win = { ...m.window!, w26: { ...m.window!.w26, cohort_n: 1 } };
+      expect(windowLabel(win)).toMatch(/; 1 recent flaw listed\.$/);
+      expect(aiLabel({ ...ai, in_kev: { ...ai.in_kev, n: 1384 } })).toContain("; 1,384 AI-credited flaws on CISA's list since ");
+    });
+
     it("an all-null series shows \"n too small\" and no band", () => {
       const sample = sampleMetrics();
       expect(sample.series.window_at_disclosure_share.every((v) => v === null)).toBe(true);
