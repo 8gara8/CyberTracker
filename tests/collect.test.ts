@@ -396,7 +396,7 @@ function pinMorning(o: { tw: number; notes: ReturnType<typeof notePackRecords>; 
   const keep = recordKeepIds(rankBase);
   const provisional = provisionalRecords([
     ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
-    ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg),
     ...o.notes,
   ]);
   const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
@@ -560,7 +560,7 @@ describe("items", () => {
     const keep = recordKeepIds(rankBase);
     const provisional = provisionalRecords([
       ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
-      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg),
     ]);
     const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
     const capR = capRecords(provisional, new Set(ranked.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id))));
@@ -1317,8 +1317,8 @@ describe("collect's other runs", () => {
     expect(md).not.toContain("  advisory: https://example.com/");
     // The pack is the run's evidence: a draft citing the note from the pack is citing a URL the run saw.
     for (const u of [fixtureNote, ...notes]) expect(packEvidence(r.pack).seen_as[u]).toBe("pack");
-    // On the fixture morning alone the SAP fix is no release member (one record, under min_records): no vendor page, and no
-    // other record's advisory URLs change either way.
+    // On the fixture morning alone the SAP fix is no release member (one record, under min_records) and no test keeps it, so the
+    // pack holds no record of it; the six fixes change no other record's advisory URLs.
     const before = await run(tempRoot(true));
     expect(before.candidates.kept.some((c) => c.kind === "patch_batch" && c.id.startsWith("pt-sap-"))).toBe(false);
     for (const x of before.pack.records) {

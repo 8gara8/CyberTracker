@@ -7,7 +7,6 @@
 import { matchVendor, type AiCreditMatch, type CompiledConfig, type LoadedConfig } from "./config";
 import { utcDateOf } from "./dates";
 import { advisoryUrlFilter, cveIdsIn } from "./collect";
-import { ADVISORY_TAGS } from "./feeds/cvelist";
 import { epssJump } from "./feeds/epss";
 import type { NewKevIdsResult } from "./feeds/kev";
 import type { CveRecord, EpssDay, GhsaAdvisory, KevCatalog, KevEntry } from "./feeds/types";
@@ -19,7 +18,6 @@ import type { TimeWindow } from "./schema/common";
 import type { Vendor, WatchWindow, WatchWindowsFile } from "./schema/config";
 import type { Candidate } from "./schema/context";
 import type { CutEntry, PackItem, PackRecord, RankLogEntry } from "./schema/pack";
-import { publisherFor, type PublisherConfig } from "./sources";
 import type { Coverage, KindId } from "./vocab";
 
 /** §5.12's weights: `base` (the highest that applies) plus each `bonus` that applies, once. */
@@ -320,42 +318,6 @@ export function releasePackMembers(b: { members: readonly CveRecord[]; exploited
 }
 
 /**
- * The release vendor's own pages among a member record's references (§5.12 step 2, §8.3 Advisory URLs):
- * its CNA references that carry no advisory tag (recordAdvisoryUrls() takes the tagged ones) and no
- * exploit tag, and whose publisherFor() publisher is the vendor itself (`vendor:<id>`, tier 1), through
- * advisoryUrlFilter() (https, not blocked, at most 500 characters, normalised, unique, at most 5). SAP,
- * Siemens, Fortinet, Ivanti and Schneider Electric tag none of their references, so without these a
- * release of theirs would carry no vendor page; a reference on any other host is left out.
- */
-export function releaseVendorUrls(rec: CveRecord, vendor: Pick<Vendor, "id">, cfg: PublisherConfig): string[] {
-  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.includes("exploit") && !r.tags.some((t) => ADVISORY_TAGS.has(t)))
-    .map((r) => r.url)
-    .filter((u) => {
-      const p = publisherFor(u, "vendor_advisory", cfg);
-      return p.publisher === `vendor:${vendor.id}` && p.tier === 1;
-    });
-  return advisoryUrlFilter(own, cfg.sourceTiers);
-}
-
-/**
- * The vendor pages (releaseVendorUrls()) of every member a release candidate references
- * (releasePackMembers()), by CVE id: collect adds them to those members' CVE List pack records, after
- * their tagged advisory URLs, so the pack and the run's evidence hold the page the patch batch is dated
- * from (RELEASE_SOURCE). No other record's advisory URLs change.
- */
-export function releaseMemberUrls(input: Omit<RankInput, "pack">): Map<string, string[]> {
-  const ctx = context({ ...input, pack: { items: [], records: [] } });
-  const out = new Map<string, string[]>();
-  for (const b of bundles(ctx)) {
-    for (const id of releasePackMembers(b)) {
-      const urls = releaseVendorUrls(ctx.recs.get(id)!, b.vendor, ctx.input.config.loaded);
-      if (urls.length) out.set(id, urls);
-    }
-  }
-  return out;
-}
-
-/**
  * The CVE ids whose CVE List records the pack keeps (§4.14 Records): records published or updated in the
  * record window that meet a §5.12 step 1 test, name a TW or JP vendor or carry an AI-finder match, every
  * new KEV id with a record and, of each release bundle, the members its candidate references
@@ -403,7 +365,7 @@ function firstUrls(lists: readonly (readonly string[])[]): string[] {
 /**
  * A release candidate's advisory URLs (§5.12 step 2): member by member in releasePackMembers() order
  * (exploited, then critical, then the rest), each member's CVE List pack record's advisory URLs (its tagged
- * ones, then the vendor pages collect adds, releaseMemberUrls()); then those of the other records it
+ * ones, then its vendor's own pages, vendorPageUrls() in lib/collect.ts); then those of the other records it
  * references (merged notes), in record id order; repeats dropped, at most ADVISORY_MAX. So the exploited
  * fix's own advisory is never pushed out by the fill's better-scored fixes, a vendor that tags no reference
  * still gives its page, and every URL is one a pack record holds, after collect's link screen (safeLink()).
