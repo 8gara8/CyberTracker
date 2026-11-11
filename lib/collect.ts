@@ -880,7 +880,7 @@ export interface BuildPackOptions {
   lookbackHours?: number;
   /**
    * Final ids of the items and records a kept candidate references (its own id and its pack_ids): such a
-   * record is never cut, such an item only after every other item and record the caps may cut.
+   * record is never cut, such an item only after every unreferenced record and item.
    */
   referenced?: ReadonlySet<string>;
   /** `feeds[]` and `injection_flags` for what is left after a size cut (default: unchanged). */
@@ -889,11 +889,12 @@ export interface BuildPackOptions {
 
 /**
  * Pack.parse() of the input, then the size caps (2 MB JSON, 150 KB Markdown, §4.14 Caps). Over a cap,
- * cut in this order, about a twentieth of what is left of a group at a time: the items no kept candidate
- * references, lowest score first; then records from the end of capRecords()' keep order (recordKeepOrder()),
- * never a KEV record and never one a kept candidate references; then the referenced items, lowest score
- * first. When only those remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags`
- * are recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
+ * cut in this order, about a twentieth of what is left of a group at a time: records from the end of
+ * capRecords()' keep order (recordKeepOrder()), never a KEV record and never one a kept candidate
+ * references; then the items no kept candidate references, lowest score first; then the referenced items,
+ * lowest score first (§0.4 row 146: news goes only after every record the caps may cut). When only KEV and
+ * referenced records remain and it is still over, it stops (`over`). `feeds[]` and `injection_flags` are
+ * recounted after each cut. Returns the pack, its Markdown and what the size caps cut.
  */
 export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">, opts: BuildPackOptions = {}): { pack: Pack; md: string; sizeCut: { items: number; records: number; over: boolean } } {
   const referenced = opts.referenced ?? new Set<string>();
@@ -910,8 +911,8 @@ export function buildPack(input: PackInput, registry: Pick<SourcesFile, "feeds">
   const over = () => byteLength(jsonText(pack)) > PACK_JSON_MAX_BYTES || byteLength(md) > PACK_MD_MAX_BYTES;
   const lowestFirst = input.items.map((it, i) => ({ it, i })).sort((a, b) => a.it.score - b.it.score || b.i - a.i).map((x) => x.it);
   const groups: string[][] = [
-    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
     [...input.records].sort(recordKeepOrder(referenced)).reverse().filter((r) => r.source !== "kev" && !referenced.has(r.id)).map((r) => r.id),
+    lowestFirst.filter((i) => !referenced.has(i.id)).map((i) => i.id),
     lowestFirst.filter((i) => referenced.has(i.id)).map((i) => i.id),
   ];
   const gone = new Set<string>();
