@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  buildPack, capItems, capRecords, cveIdsIn, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn,
+  buildPack, capItems, capRecords, cveIdsIn, cvePackRecords, dedupe, emptyPack, emptyPackMd, epssJumps, epssPackRecords, feedState, freshColumn, kevPackRecords,
   injectionCount, inWindow, isDegraded, keywordHits, MD_LINE_MAX, PACK_MD_MAX_BYTES, packScore, packWindow, provisionalRecords,
   notePackRecords, PER_ID_MAX, perIdPlan, recordWindow, remapIds, RECORD_ID_PATTERNS, safeLink, safeRecordId, skippedOutcome, toItemDrafts, toPackItems, zipPlan, zipsReach, zipsShortNote, type FeedOutcome, type ItemContext, type ItemDraft,
   dayReads, hourlyZip, wantsStandIn, zipsAsRead,
@@ -19,9 +19,9 @@ import { addDays } from "../lib/dates";
 import { parseEpssCsv } from "../lib/feeds/epss";
 import { fetchFeed } from "../lib/feeds/http";
 import { parseRss } from "../lib/feeds/rss";
-import type { CveRecord, RawItem } from "../lib/feeds/types";
+import type { CveRecord, KevEntry, RawItem } from "../lib/feeds/types";
 import { sha256Hex } from "../lib/json";
-import type { AiHit } from "../lib/rank";
+import { rankCandidates, recordKeepIds, RELEASE_PACK_IDS_MAX, type AiHit, type RankInput } from "../lib/rank";
 import { regionsConfig } from "../lib/regions";
 import { sanitize } from "../lib/sanitize";
 import { CANARY_URL_MARK } from "../lib/vocab";
@@ -445,6 +445,83 @@ describe("items", () => {
     expect(built.sizeCut.items.length).toBe(items.length - leftItems.length);
     expect(built.sizeCut.records.length).toBe(40);
     expect(built.sizeCut.items.every((i) => i.feed_id === "therecord" && i.title === "SAMPLE base item")).toBe(true);
+  });
+
+  it("a Patch Tuesday morning like Kobol's 2026-11-11 keeps its news under the 150 KB cap, with the release's pack_ids bounded and its counts whole (row 146)", () => {
+    // 390 Microsoft fixes (1 newly on KEV, 30 critical, 359 high; about 190 KB of Markdown together, as on Kobol), 9 other new KEV
+    // entries with no CVE List record, 250 Arcadyan (TW) records a test keeps but the candidate cap leaves out, and 90 news items.
+    // Before row 146 the release referenced all 390 fixes, the 400-record cap kept them over the Arcadyan records, and the size caps
+    // cut every news item and stopped over the cap.
+    const at = (n: number) => `2026-10-13T${String(10 + Math.floor(n / 60) % 9).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00Z`;
+    const cve = (n: number, over: Partial<CveRecord>): CveRecord => ({
+      cve_id: `CVE-2026-${600000 + n}`, state: "PUBLISHED", date_published: "2026-10-13", assigner: "microsoft", scored: true, credits: [],
+      affected: [{ vendor: "Microsoft", product: "Windows" }], published_at: at(n), updated_at: at(n), date_updated: "2026-10-13",
+      title: `SAMPLE Windows flaw ${n}`, description: `SAMPLE ${"windows ".repeat(40)}`, cvss: { score: 7.5, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" },
+      cna_severity: "HIGH", ssvc: null, kev_marker: null, references: [], exploit_reference: false, ...over,
+    });
+    const exploited = cve(0, { cvss: { score: 8.8, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } });
+    const critical = Array.from({ length: 30 }, (_, i) => cve(1 + i, { cna_severity: "CRITICAL", cvss: { score: 9 + (i % 10) / 10, version: "3.1", vector: "CVSS:3.1/AV:N", scorer: "cna" } }));
+    const high = Array.from({ length: 359 }, (_, i) => cve(31 + i, {}));
+    const tw = Array.from({ length: 250 }, (_, i) => cve(1000 + i, {
+      assigner: "example", affected: [{ vendor: "Arcadyan", product: "SAMPLE Router" }], cvss: null, cna_severity: null, title: `SAMPLE router flaw ${i}`,
+      description: `SAMPLE ${"router ".repeat(130)}`,
+    }));
+    const records = [exploited, ...critical, ...high, ...tw];
+    const kev = (id: string): KevEntry => ({
+      cveID: id, vendorProject: "Example Corp", product: "Example Server", vulnerabilityName: `SAMPLE KEV ${id}`, dateAdded: "2026-10-13",
+      shortDescription: "SAMPLE.", requiredAction: "Apply updates.", dueDate: "2026-11-03", knownRansomwareCampaignUse: "Unknown", forensicTriage: null, notes: "", cwes: [],
+    });
+    const newKevIds = [exploited.cve_id, ...Array.from({ length: 9 }, (_, i) => `CVE-2026-${700000 + i}`)];
+    const catalog = { catalogVersion: "2026.10.13", dateReleased: "2026-10-13T17:02:11Z", count: 10, vulnerabilities: newKevIds.map(kev) };
+    const feedsFor = ["therecord", "securityweek", "krebs", "thehackernews", "techcrunch-security"];
+    const coverages: ItemDraft["coverage"][] = [["exploits"], ["breaches"], ["ai"], ["policy"]];
+    const draft0 = toItemDrafts(feedById("therecord"), [raw("SAMPLE base item", "https://therecord.media/ct-sample/base")], itemCtx).drafts[0]!;
+    const items = toPackItems(capItems(Array.from({ length: 90 }, (_, i) => ({
+      ...draft0, feed_id: feedsFor[i % 5]!, key: `k${i}`, url: `https://therecord.media/ct-sample/pt-${i}`, title: `SAMPLE story ${i} on a breach`,
+      snippet: `SAMPLE ${"s".repeat(280)}`, coverage: [...coverages[i % 4]!], score: 30 + (i % 19),
+    }))).kept);
+    expect(items).toHaveLength(90);
+
+    // collect's steps 7 to 11 (scripts/collect.ts), pure.
+    const rankBase: Omit<RankInput, "pack"> = {
+      date: DATE, window, recordWindow: recordWindow(window), catalog, newKevIds, records, epss: { e: null, e1: null, e7: null }, ghsa: [],
+      earlierReleaseIds: [], config: { loaded: cfg, compiled: cfg.compiled, watchWindows: [] }, kevSource: "kev-index", aiMatch,
+    };
+    const keep = recordKeepIds(rankBase);
+    const provisional = provisionalRecords([
+      ...kevPackRecords(catalog.vulnerabilities, new Set(newKevIds), cfg.sourceTiers),
+      ...cvePackRecords(records, (r) => keep.has(r.cve_id), cfg.sourceTiers),
+    ]);
+    const ranked = rankCandidates({ ...rankBase, pack: { items, records: provisional } });
+    const capR = capRecords(provisional, new Set(ranked.kept.flatMap((c) => [c.id, ...c.pack_ids]).filter((id) => /^r\d{4,}$/.test(id))));
+    expect(capR.cut).toBe(0);
+    const kept = remapIds(ranked.kept, ranked.cut, ranked.log, capR.idMap).kept;
+    const referenced = new Set(kept.flatMap((c) => [c.id, ...c.pack_ids]));
+    const built = buildPack({ date: DATE, window, generatedAt: GENERATED_AT, cutoff: "2026-10-12", degraded: false, feeds: [], items, records: capR.kept, injectionFlags: 0 }, cfg.sources, { referenced });
+
+    // The release: its counts cover all 390 fixes; its pack_ids name at most 20 records, every one still in the pack.
+    const pt = kept.find((c) => c.kind === "patch_batch")!;
+    expect(pt.release).toEqual({ release_id: "rel-microsoft-2026-10", vendor: "Microsoft", total: 390, critical: 30, exploited: 1, exploited_cve_ids: [exploited.cve_id] });
+    expect(pt.pack_ids).toHaveLength(RELEASE_PACK_IDS_MAX);
+    const inPack = new Set([...built.pack.items.map((i) => i.id), ...built.pack.records.map((r) => r.id)]);
+    for (const id of pt.pack_ids) expect(inPack.has(id)).toBe(true);
+    // The 359 high fixes no test keeps never reach the pack.
+    const recordIds = new Set(capR.kept.map((r) => r.record_id));
+    for (const r of high) expect(recordIds.has(r.cve_id)).toBe(false);
+
+    // Under the cap, with every news item kept: only unreferenced records went, never a KEV or referenced one.
+    expect(Buffer.byteLength(built.md)).toBeLessThanOrEqual(PACK_MD_MAX_BYTES);
+    expect(built.sizeCut.over).toBe(false);
+    expect(built.sizeCut.items).toEqual([]);
+    expect(built.pack.items).toHaveLength(90);
+    expect(built.sizeCut.records.length).toBeGreaterThan(100);
+    for (const r of built.sizeCut.records) {
+      expect(r.source).toBe("cvelist");
+      expect(referenced.has(r.id)).toBe(false);
+    }
+    expect(built.pack.records.filter((r) => r.source === "kev")).toHaveLength(10);
+    for (const id of referenced) if (/^[pr]\d{4,}$/.test(id)) expect(inPack.has(id), id).toBe(true);
+    expectAudit(built, items, capR.kept);
   });
 
   it("drafts keep the window, drop unusable links and must_match misses, and wrap nothing yet", () => {
