@@ -18,8 +18,9 @@ import { computeRegions, regionItems } from "./regions";
 import { mentionsAnthropic } from "./rules/ai";
 import { READING_WORDS_PER_MINUTE, aiLinkedOf, lateOf, manifestFacts, vendorConfirmedByOf } from "./rules/computed";
 import type { CveLookup, RegionsBase } from "./rules/types";
-import { pageWords } from "./rules/words";
+import { LEAD_WORDS, pageWords } from "./rules/words";
 import { sanitize } from "./sanitize";
+import { countWords } from "./text";
 import { publisherFor } from "./sources";
 import { Brief, type ActorSeen, type FeedStale, type GapRef, type TaiwanLens } from "./schema/brief";
 import { ID_PATTERNS, type Ransomware, type Source, type VendorRef } from "./schema/common";
@@ -71,6 +72,11 @@ export interface DropReport {
   items: { index: number; id: string; headline: string; codes: string[] }[];
   angle: { text: string; codes: string[] } | null;
   scoreboard_entries: { index: number; claim_id: string; codes: string[] }[];
+  /**
+   * The parts the drop left citing no item and removed with it: a Lead sentence (`lead[2]`, its text) and a
+   * region raise (`region_raises[0]`, "TW: <reason>"), each at its path in the draft before the drop.
+   */
+  removed: { path: string; text: string }[];
 }
 
 const ITEM_PATH_RE = /^items(?:\[(\d+)\]|\.(\d+))(?=$|[.[])/;
@@ -96,8 +102,11 @@ function addCode(map: Map<number, Set<string>>, index: number, code: string): vo
  * - sets `angle` to null when any SNAP_* code is on an `angle` path;
  * - removes a scoreboard entry whose quote carries SNAP_QUOTE (an unverified quote is never published);
  * - deletes the dropped item ids from every `item_ids` list: the Lead, the Taiwan Lens and its rows and
- *   Japan block, and `region_raises`. Lists left empty stay empty: the hard rules run again and what the
- *   drop broke goes to the next repair round.
+ *   Japan block, and `region_raises`;
+ * - removes what that leaves citing no item where a brief may lack it (`report.removed`): a Lead sentence
+ *   that is not a Gap sentence, while the Lead keeps at least one sentence and LEAD_WORDS.min words, and a
+ *   region raise. Other lists left empty (the Lens analysis, rows and Japan block, a Lead sentence the
+ *   minimum keeps) stay empty: the hard rules run again and what the drop broke goes to the next repair round.
  * Sources are kept (an orphan is only SOURCE_ORPHAN's warning), so source ids keep their numbering.
  */
 export function dropUnverified(draft: DraftBrief | GatedDraft, issues: readonly SoftIssue[]): { draft: GatedDraft; report: DropReport } {
@@ -116,7 +125,7 @@ export function dropUnverified(draft: DraftBrief | GatedDraft, issues: readonly 
   }
 
   const out = structuredClone(draft) as GatedDraft;
-  const report: DropReport = { items: [], angle: null, scoreboard_entries: [] };
+  const report: DropReport = { items: [], angle: null, scoreboard_entries: [], removed: [] };
 
   const dropIndex = new Set<number>();
   draft.items.forEach((item, i) => {
@@ -147,10 +156,28 @@ export function dropUnverified(draft: DraftBrief | GatedDraft, issues: readonly 
   const gone = new Set(report.items.map((d) => d.id).filter((id) => !remaining.has(id)));
   if (gone.size > 0) {
     const keep = (ids: string[]) => ids.filter((id) => !gone.has(id));
+    const emptied = (ids: readonly string[]) => ids.length > 0 && keep([...ids]).length === 0;
+    // A Lead sentence the drop leaves citing no item fails LEAD_GROUNDED, so it goes with the item, unless
+    // it is a Gap sentence or the Lead would fall under its minimum (one sentence, LEAD_WORDS.min words).
+    const lead = out.lead.map((s, i) => ({ s, i, emptied: !s.gap && emptied(s.item_ids) }));
+    for (const x of lead.filter((y) => y.emptied)) {
+      const rest = lead.filter((y) => y !== x);
+      if (rest.length < 1 || countWords(rest.map((y) => y.s.text).join(" ")) < LEAD_WORDS.min) continue;
+      lead.splice(lead.indexOf(x), 1);
+      report.removed.push({ path: `lead[${x.i}]`, text: x.s.text });
+    }
+    out.lead = lead.map((y) => y.s);
     for (const s of out.lead) s.item_ids = keep(s.item_ids);
+    // The Lens analysis, its six rows and the Japan block are fixed parts: an emptied list stays for the next round.
     out.taiwan_lens.item_ids = keep(out.taiwan_lens.item_ids);
     for (const row of out.taiwan_lens.rows) row.item_ids = keep(row.item_ids);
     out.taiwan_lens.japan.item_ids = keep(out.taiwan_lens.japan.item_ids);
+    // A raise needs an item (REGION_RAISE) and a brief may have none, so a raise left citing no item goes.
+    out.region_raises = out.region_raises.filter((r, i) => {
+      if (!emptied(r.item_ids)) return true;
+      report.removed.push({ path: `region_raises[${i}]`, text: `${r.region}: ${r.reason}` });
+      return false;
+    });
     for (const r of out.region_raises) r.item_ids = keep(r.item_ids);
   }
   return { draft: out, report };
