@@ -583,30 +583,76 @@ export function cnaVendorOf(rec: Pick<CveRecord, "assigner">, vendors: Pick<Vend
 }
 
 /**
- * A CVE record's vendor pages (§8.3 Advisory URLs): its CNA references that carry no advisory tag
- * (recordAdvisoryUrls() takes the tagged ones) and no exploit tag, on the own hosts of the vendor whose CNA
- * assigned it (cnaVendorOf(): publisherFor() gives `vendor:<id>` at tier 1), through advisoryUrlFilter()
- * (https, not blocked, at most 500 characters, normalised, unique, at most 5). SAP, Siemens, Fortinet,
- * Ivanti and Schneider Electric tag none of their references, so without these their records, release
- * members and out-of-band exploited flaws alike, would carry no vendor page; a reference on any other
- * host, and every reference of a record no vendor's CNA assigned, is left out.
+ * The most vendor pages a record takes (§8.3 Advisory URLs): the first in reference order on each of its
+ * vendor's own hosts, so one for nearly every record, and two for SAP's (its note on me.sap.com, then its
+ * patch day page on url.sap, which needs no login).
+ */
+export const VENDOR_PAGES_MAX = 2;
+
+/** Reference tags that mark an exploit, a bug tracker or a mailing list: never a vendor page. */
+const NOT_PAGE_TAGS: ReadonlySet<string> = new Set(["exploit", "issue-tracking", "mailing-list"]);
+/** Hosts of commits, code review, bug trackers and mailing lists (a label, or part of one). */
+const NOT_PAGE_HOST_RE = /^git\.kernel\.org$|(?:^|\.)(?:issues|issuetracker|bug[a-z]*|jira|lists|mail)\.|gerrit|bugzilla|mail-archive|chromium-review/;
+/** Paths of commits, bug trackers and mailing list archives. */
+const NOT_PAGE_PATH_RE = /\/commits?\/|\/stable\/c\/|\/issues\/|\/bug|\/browse\/|\/pipermail\//;
+
+/**
+ * True for a link that looks like a commit, a code review, a bug tracker or a mailing list rather than a
+ * vendor's advisory page: git.kernel.org; a host with a label `issues`, `issuetracker`, `bug...`, `jira`,
+ * `lists` or `mail`, or with gerrit, bugzilla, mail-archive or chromium-review in it; a path with
+ * `/commit/`, `/commits/`, `/stable/c/`, `/issues/`, `/bug`, `/browse/` or `/pipermail/`. An unparsable URL
+ * counts as one, so it is left out.
+ */
+export function notVendorPage(url: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return true;
+  }
+  return NOT_PAGE_HOST_RE.test(u.hostname.toLowerCase()) || NOT_PAGE_PATH_RE.test(u.pathname.toLowerCase());
+}
+
+/**
+ * A CVE record's vendor pages (§8.3 Advisory URLs), only for a record with no tagged advisory URL of its
+ * own (recordAdvisoryUrls() gives none): its CNA references that carry no advisory tag and no exploit,
+ * issue-tracking or mailing-list tag, are not commit, code review, bug tracker or mailing list links
+ * (notVendorPage()), sit on the own hosts of the vendor whose CNA assigned it (cnaVendorOf(): publisherFor()
+ * gives `vendor:<id>` at tier 1) and pass advisoryUrlFilter() (https, not blocked, at most 500 characters,
+ * normalised); of those, the first in reference order on each host, at most VENDOR_PAGES_MAX (2). SAP,
+ * Siemens, Fortinet, Ivanti and Schneider Electric tag none of their references, so without these their
+ * records, release members and out-of-band exploited flaws alike, would carry no vendor page. A record with
+ * a tagged advisory URL, a reference on any other host, and every reference of a record no vendor's CNA
+ * assigned get none.
  */
 export function vendorPageUrls(rec: CveRecord, cfg: PublisherConfig): string[] {
   const vendor = cnaVendorOf(rec, cfg.vendors);
-  if (!vendor) return [];
-  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.includes("exploit") && !r.tags.some((t) => ADVISORY_TAGS.has(t)))
+  if (!vendor || recordAdvisoryUrls(rec, cfg.sourceTiers).length > 0) return [];
+  const own = rec.references.filter((r) => r.from === "cna" && !r.tags.some((t) => NOT_PAGE_TAGS.has(t) || ADVISORY_TAGS.has(t)))
     .map((r) => r.url)
     .filter((u) => {
+      if (notVendorPage(u)) return false;
       const p = publisherFor(u, "vendor_advisory", cfg);
       return p.publisher === `vendor:${vendor.id}` && p.tier === 1;
     });
-  return advisoryUrlFilter(own, cfg.sourceTiers);
+  const hosts = new Set<string>();
+  const out: string[] = [];
+  for (const raw of own) {
+    const u = advisoryUrlFilter([raw], cfg.sourceTiers)[0];
+    if (u === undefined) continue;
+    const host = new URL(u).hostname;
+    if (hosts.has(host)) continue;
+    hosts.add(host);
+    out.push(u);
+    if (out.length >= VENDOR_PAGES_MAX) break;
+  }
+  return out;
 }
 
 /**
  * CVE List records collect keeps (`keep`), with §4.6's facts: CVSS, SSVC, the KEV marker and the exploit
- * flag. Its advisory URLs are its tagged ones (recordAdvisoryUrls()), then its vendor's own pages
- * (vendorPageUrls()), through advisoryUrlFilter(), so the tagged ones stay first under the five-URL cap.
+ * flag. Its advisory URLs are its tagged ones (recordAdvisoryUrls()), or, when it has none, its vendor's own
+ * pages (vendorPageUrls(): one per host, at most two), through advisoryUrlFilter().
  */
 export function cvePackRecords(
   recs: readonly CveRecord[], keep: (r: CveRecord) => boolean, cfg: PublisherConfig, extra?: RecordFacts, screen: LinkScreen = { dropped: 0 },

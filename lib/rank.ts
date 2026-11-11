@@ -365,10 +365,11 @@ function firstUrls(lists: readonly (readonly string[])[]): string[] {
 /**
  * A release candidate's advisory URLs (§5.12 step 2): member by member in releasePackMembers() order
  * (exploited, then critical, then the rest), each member's CVE List pack record's advisory URLs (its tagged
- * ones, then its vendor's own pages, vendorPageUrls() in lib/collect.ts); then those of the other records it
- * references (merged notes), in record id order; repeats dropped, at most ADVISORY_MAX. So the exploited
- * fix's own advisory is never pushed out by the fill's better-scored fixes, a vendor that tags no reference
- * still gives its page, and every URL is one a pack record holds, after collect's link screen (safeLink()).
+ * ones, or, when it has none, its vendor's own pages, vendorPageUrls() in lib/collect.ts); then those of the
+ * other records it references (merged notes), in record id order; repeats dropped, at most ADVISORY_MAX. So
+ * the exploited fix's own advisory is never pushed out by the fill's better-scored fixes, a vendor that tags
+ * no reference still gives its page, and every URL is one a pack record holds, after collect's link screen
+ * (safeLink()).
  */
 function releaseUrls(ctx: Ctx, w: Work, pack: readonly string[]): string[] {
   const lists: (readonly string[])[] = [];

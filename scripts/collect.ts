@@ -425,7 +425,7 @@ export async function collect(o: CollectOptions): Promise<CollectResult> {
     return { epss: s?.epss ?? null, epss_percentile: s?.percentile ?? null };
   };
   if (catalog) recordDrafts.push(...kevPackRecords((catalog as KevCatalog).vulnerabilities, new Set(newKevIds), config.sourceTiers, screen));
-  // Each record also carries its vendor's own pages that its references give untagged (vendorPageUrls(), §8.3).
+  // A record with no tagged advisory URL carries its vendor's own pages instead, one per host (vendorPageUrls(), §8.3).
   recordDrafts.push(...cvePackRecords(allRecords, (r) => keep.has(r.cve_id), config, cveFacts, screen));
   if (e?.e) recordDrafts.push(...epssPackRecords(e.e7 ? epssMovers(e.e, e.e7) : [], e.e.score_date, epssJumps(e.e, e.e1), screen));
   recordDrafts.push(...ghsaPackRecords(rankBase.ghsa, window, screen));

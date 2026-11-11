@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { releaseMember } from "../lib/rules/sources";
 import { publisherFor } from "../lib/sources";
 import type { CveRecordInfo } from "../lib/rules/types";
-import { cnaVendorOf, cveIdsIn, cvePackRecords, ghsaPackRecords, kevPackRecords, notePackRecords, packWindow, provisionalRecords, recordWindow, vendorPageUrls } from "../lib/collect";
+import { cnaVendorOf, cveIdsIn, cvePackRecords, ghsaPackRecords, kevPackRecords, notePackRecords, notVendorPage, packWindow, provisionalRecords, recordWindow, VENDOR_PAGES_MAX, vendorPageUrls } from "../lib/collect";
 import { loadConfig, matchCredit, type LoadedConfig } from "../lib/config";
 import { parseCveRecord } from "../lib/feeds/cvelist";
 import { parseEpssCsv } from "../lib/feeds/epss";
@@ -512,20 +512,94 @@ describe("rankCandidates() on built cases", () => {
     expect(pt.advisory_urls).toEqual(["https://me.sap.com/notes/3700102"]);
   });
 
-  it("cvePackRecords() keeps a record's tagged advisory URLs first: tagged ones and vendor pages together past five keep the tagged (fourth review of row 146)", () => {
+  it("cvePackRecords() gives vendor pages only to a record with no tagged advisory URL, the first on each of its vendor's hosts, at most two (review of the eighth pass)", () => {
+    // Before, every kept record of a vendor's CNA took up to five untagged pages after its tagged ones; on real October mornings
+    // that grew the pack's advisory lines up to eightfold (Linux stable commits, Apple and Mozilla pages, bug trackers).
     const msrc = (n: number) => `https://msrc.microsoft.com/update-guide/ct-sample/${n}`;
     const kb = (n: number) => `https://learn.microsoft.com/ct-sample/kb50600${n}`;
     const of = (tagged: number, untagged: number) => rec("CVE-2026-620101", {
       assigner: "microsoft", affected: [{ vendor: "Microsoft", product: "Windows" }],
-      // The vendor pages first in the record, so only the order cvePackRecords() puts them in keeps the tagged ones first.
       references: [
         ...Array.from({ length: untagged }, (_, i) => ({ url: kb(i), tags: [], from: "cna" as const })),
         ...Array.from({ length: tagged }, (_, i) => ({ url: msrc(i), tags: ["vendor-advisory"], from: "cna" as const })),
       ],
     });
-    expect(cvePackRecords([of(4, 3)], () => true, cfg)[0]!.advisory_urls).toEqual([msrc(0), msrc(1), msrc(2), msrc(3), kb(0)]);
+    expect(cvePackRecords([of(4, 3)], () => true, cfg)[0]!.advisory_urls).toEqual([msrc(0), msrc(1), msrc(2), msrc(3)]);
     expect(cvePackRecords([of(6, 3)], () => true, cfg)[0]!.advisory_urls).toEqual([0, 1, 2, 3, 4].map(msrc));
-    expect(cvePackRecords([of(0, 7)], () => true, cfg)[0]!.advisory_urls).toEqual([0, 1, 2, 3, 4].map(kb));
+    expect(cvePackRecords([of(1, 7)], () => true, cfg)[0]!.advisory_urls).toEqual([msrc(0)]);
+    // No tagged URL: seven pages on one host give the first only.
+    expect(cvePackRecords([of(0, 7)], () => true, cfg)[0]!.advisory_urls).toEqual([kb(0)]);
+    expect(vendorPageUrls(of(0, 7), cfg)).toEqual([kb(0)]);
+    // Pages on three of SAP's hosts: the first on each of the first two. A second note on me.sap.com comes after both in
+    // reference order and is not taken, nor is a note past the five that advisoryUrlFilter() would keep together.
+    const sap = untaggedFix(90, "sap", "SAP", [
+      ...[0, 1, 2, 3, 4].map((n) => `https://me.sap.com/notes/37009${n}`), "https://url.sap/sapsecuritypatchday", "https://www.sap.com/ct-sample/page",
+    ]);
+    expect(vendorPageUrls(sap, cfg)).toEqual(["https://me.sap.com/notes/370090", "https://url.sap/sapsecuritypatchday"]);
+    expect(VENDOR_PAGES_MAX).toBe(2);
+  });
+
+  it("a Linux-shaped record with six untagged git.kernel.org stable commits gains no vendor page (review of the eighth pass)", () => {
+    // kernel.org is Linux's own domain (vendors.json), so before each of these took up to five commit links.
+    const commit = (n: number) => `https://git.kernel.org/stable/c/${String(n).repeat(8)}${"a".repeat(32)}`;
+    const linux = rec("CVE-2026-620201", {
+      assigner: "Linux", affected: [{ vendor: "Linux", product: "Linux" }],
+      references: [1, 2, 3, 4, 5, 6].map((n) => ({ url: commit(n), tags: [], from: "cna" as const })),
+    });
+    expect(cnaVendorOf(linux, cfg.vendors)?.id).toBe("linux");
+    expect(publisherFor(commit(1), "vendor_advisory", cfg)).toMatchObject({ publisher: "vendor:linux", tier: 1 });
+    expect(vendorPageUrls(linux, cfg)).toEqual([]);
+    expect(cvePackRecords([linux], () => true, cfg)[0]!.advisory_urls).toEqual([]);
+  });
+
+  it("a Fortinet-shaped record gains exactly one FortiGuard page, and an Ivanti one its hub page (review of the eighth pass)", () => {
+    // Fortinet's CNA cites its PSIRT page untagged; this one cites it twice on the same host, and CISA's ADP adds the KEV entry.
+    const forti = rec("CVE-2026-620301", {
+      assigner: "fortinet", affected: [{ vendor: "Fortinet", product: "FortiOS" }],
+      references: [
+        { url: "https://fortiguard.fortinet.com/psirt/FG-IR-26-620301", tags: [], from: "cna" as const },
+        { url: "https://fortiguard.fortinet.com/psirt/FG-IR-26-620302", tags: [], from: "cna" as const },
+        { url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-620301", tags: ["government-resource"], from: "adp" as const },
+      ],
+    });
+    expect(vendorPageUrls(forti, cfg)).toEqual(["https://fortiguard.fortinet.com/psirt/FG-IR-26-620301"]);
+    expect(cvePackRecords([forti], () => true, cfg)[0]!.advisory_urls).toEqual(["https://fortiguard.fortinet.com/psirt/FG-IR-26-620301"]);
+    const ivanti = rec("CVE-2026-620302", {
+      assigner: "ivanti", affected: [{ vendor: "Ivanti", product: "Connect Secure" }],
+      references: [{ url: "https://hub.ivanti.com/s/article/ct-sample-advisory", tags: [], from: "cna" as const }],
+    });
+    expect(vendorPageUrls(ivanti, cfg)).toEqual(["https://hub.ivanti.com/s/article/ct-sample-advisory"]);
+  });
+
+  it("notVendorPage() leaves out commits, code review, bug trackers and mailing lists, and keeps the advisory pages of vendors that tag none (review of the eighth pass)", () => {
+    const not = [
+      "https://git.kernel.org/stable/c/0123456789abcdef", "https://git.kernel.org/linus/0123456789abcdef", "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0123",
+      "https://gitlab.example.com/group/project/-/commit/0123", "https://code.example.com/project/commits/main",
+      "https://gerrit.example.org/c/project/+/123", "https://chromium-review.googlesource.com/c/chromium/src/+/123",
+      "https://bugzilla.mozilla.org/show_bug.cgi?id=123", "https://bugzilla.redhat.com/show_bug.cgi?id=123", "https://bugs.example.org/123",
+      "https://bugtracker.example.org/ct-sample/123", "https://issues.chromium.org/issues/123", "https://issues.apache.org/jira/browse/X-1",
+      "https://issuetracker.google.com/issues/123", "https://www.example.com/project/issues/12", "https://www.example.com/bug/12",
+      "https://support.zabbix.com/browse/ZBX-1", "https://jira.atlassian.com/browse/X-1", "https://lists.apache.org/thread/ct-sample",
+      "https://www.example.org/pipermail/security/2026-October/000001.html", "https://www.mail-archive.com/ct-sample@example.org/msg1.html",
+      "https://mail.python.org/archives/list/security-announce@python.org/thread/X/", "not a url",
+    ];
+    expect(not.filter((u) => !notVendorPage(u))).toEqual([]);
+    const pages = [
+      "https://me.sap.com/notes/3694380", "https://url.sap/sapsecuritypatchday", "https://cert-portal.siemens.com/productcert/html/ssa-063510.html",
+      "https://fortiguard.fortinet.com/psirt/FG-IR-26-630003", "https://hub.ivanti.com/s/article/ct-sample", "https://forums.ivanti.com/s/article/ct-sample",
+      "https://download.schneider-electric.com/files?p_Doc_Ref=SEVD-2026-286-02", "https://download.se.com/files?p_Doc_Ref=SEVD-2026-286-01",
+      "https://chromereleases.googleblog.com/2026/10/stable-channel-update-for-desktop.html", "https://support.apple.com/en-us/126000",
+      "https://www.mozilla.org/security/advisories/mfsa2026-100/", "https://www.jetbrains.com/privacy-security/issues-fixed/",
+    ];
+    expect(pages.filter((u) => notVendorPage(u))).toEqual([]);
+    // A reference tagged issue-tracking or mailing-list on the vendor's own host is not a page either.
+    const tagged = (tag: string) => rec("CVE-2026-620401", {
+      assigner: "mozilla", affected: [{ vendor: "Mozilla", product: "Firefox" }],
+      references: [{ url: "https://www.mozilla.org/ct-sample/thread", tags: [tag], from: "cna" as const }],
+    });
+    expect(vendorPageUrls(tagged("issue-tracking"), cfg)).toEqual([]);
+    expect(vendorPageUrls(tagged("mailing-list"), cfg)).toEqual([]);
+    expect(vendorPageUrls(tagged("release-notes"), cfg)).toEqual(["https://mozilla.org/ct-sample/thread"]);
   });
 
   it("a release's advisory URLs list a merged note's after its members' pages (fourth review of row 146)", () => {
@@ -567,7 +641,7 @@ describe("rankCandidates() on built cases", () => {
     }
   });
 
-  it("Microsoft-style records whose references are tagged keep the same advisory URLs; their untagged pages on the vendor's hosts come after (fourth review of row 146)", () => {
+  it("Microsoft-style records whose references are tagged keep the same advisory URLs, and an untagged page on the vendor's host does not join them (review of the eighth pass)", () => {
     const msrc = (id: string) => `https://msrc.microsoft.com/update-guide/vulnerability/${id}`;
     const r = rec("CVE-2026-620001", {
       assigner: "microsoft", affected: [{ vendor: "Microsoft", product: "Windows" }],
@@ -579,13 +653,17 @@ describe("rankCandidates() on built cases", () => {
     // Every reference tagged: the same URLs as recordAdvisoryUrls() alone gives.
     expect(cvePackRecords([r], () => true, cfg)[0]!.advisory_urls).toEqual([msrc("CVE-2026-620001"), "https://example.com/ct-sample/writeup"]);
     expect(vendorPageUrls(r, cfg)).toEqual([]);
-    // An untagged page on Microsoft's own host joins after them; one on another host does not.
+    // An untagged page on Microsoft's own host does not join them: the record has tagged advisory URLs of its own.
     const more = { ...r, references: [...r.references,
       { url: "https://learn.microsoft.com/ct-sample/kb5060001", tags: [], from: "cna" as const },
       { url: "https://example.org/ct-sample/blog", tags: [], from: "cna" as const }] };
-    expect(cvePackRecords([more], () => true, cfg)[0]!.advisory_urls).toEqual([
-      msrc("CVE-2026-620001"), "https://example.com/ct-sample/writeup", "https://learn.microsoft.com/ct-sample/kb5060001",
-    ]);
+    expect(vendorPageUrls(more, cfg)).toEqual([]);
+    expect(cvePackRecords([more], () => true, cfg)[0]!.advisory_urls).toEqual([msrc("CVE-2026-620001"), "https://example.com/ct-sample/writeup"]);
+    // So does an SAP record with one tagged note: it keeps that note, and neither its other note nor the patch day page joins.
+    const sapTagged = untaggedFix(91, "sap", "SAP", ["https://me.sap.com/notes/3700911", "https://url.sap/sapsecuritypatchday"]);
+    sapTagged.references.unshift({ url: "https://me.sap.com/notes/3700910", tags: ["vendor-advisory"], from: "cna" });
+    expect(vendorPageUrls(sapTagged, cfg)).toEqual([]);
+    expect(cvePackRecords([sapTagged], () => true, cfg)[0]!.advisory_urls).toEqual(["https://me.sap.com/notes/3700910"]);
   });
 
   it("every advisory URL a release candidate carries is one its pack records hold: a vendor page collect's link screen refuses stays out (fourth review of row 146)", () => {
