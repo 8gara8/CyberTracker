@@ -77,7 +77,8 @@ const CHART_NAMES = { flood: "The Flood", window: "The Window", ai: "AI-credited
 /** The Gap panel's metrics blocks, in panel order, with the name a stale-block notice uses. */
 const PANEL_BLOCKS = [["flood", "Flood"], ["window", "Window"], ["ai_credited", "AI-credited"], ["fix_side", "Fix-side"]] as const;
 
-const plural = (n: number, one: string, many: string) => `${fmtInt(n)} ${n === 1 ? one : many}`;
+/** "1 item", "1,384 items": the count with fmtInt() and the noun's singular for 1 (the chart labels use it too). */
+export const plural = (n: number, one: string, many: string) => `${fmtInt(n)} ${n === 1 ? one : many}`;
 
 // ── Masthead ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -117,12 +118,13 @@ export function editionNotice(brief: Pick<PageBrief, "date" | "edition" | "feeds
 
 /**
  * Page metadata and the feed only, so never counted (§6 `/feed.xml`): the Lead sentences joined, or
- * `gap.headline` when the Lead is empty, else the edition's EDITION_INFO text; whitespace collapsed and
- * cut to 300 characters at a word boundary.
+ * `gap.headline` when the Lead is empty and the page shows the Gap (gapHeadlineLine(brief, gapOk): not
+ * missing, not failed GAP_MATCH), else the edition's EDITION_INFO text; whitespace collapsed and cut to 300
+ * characters at a word boundary.
  */
-export function briefDescription(brief: Pick<PageBrief, "edition" | "lead" | "gap">): string {
+export function briefDescription(brief: Pick<PageBrief, "edition" | "lead" | "gap">, gapOk = true): string {
   const lead = brief.lead.map((l) => l.text).join(" ");
-  const text = [lead, brief.gap.headline, EDITION_INFO[brief.edition]].map((t) => t.replace(/\s+/g, " ").trim()).find(Boolean)!;
+  const text = [lead, gapHeadlineLine(brief, gapOk) ?? "", EDITION_INFO[brief.edition]].map((t) => t.replace(/\s+/g, " ").trim()).find(Boolean)!;
   return cutAtWord(text, 300);
 }
 
@@ -396,4 +398,49 @@ export function scriptParts(brief: PageBrief, metrics: Metrics | null, opts: Scr
 /** scriptParts() joined with newlines: what pageWords() counts with countWords() (§4.5, §4.12). */
 export function scriptText(brief: PageBrief, metrics: Metrics | null, opts: ScriptOptions = {}): string {
   return scriptParts(brief, metrics, opts).join("\n");
+}
+
+// ── P4 additions (gap lane) ──────────────────────────────────────────────────────────────────────
+
+/**
+ * A Gap chart's name as chartCaptions() writes it for a null block ("The Flood", "The Window",
+ * "AI-credited"), for the charts' own uncounted text: the "Data table: <chart name>" summaries (§7).
+ */
+export function chartName(chart: keyof typeof CHART_NAMES): string {
+  return CHART_NAMES[chart];
+}
+
+// ── The kicker's parts (P4, for the site's chips) ────────────────────────────────────────────────
+
+/**
+ * The level part of a kicker as cardKicker() writes it (levelPart() above): "●●●○ HIGH", "LANDMARK · POLICY",
+ * the kind label, or UNRATED. SeverityPips shows exactly this text for a severity level or a null one.
+ */
+export function kickerLevel(item: Pick<CardItem, "kind" | "severity" | "landmark">): string {
+  return levelPart(item);
+}
+
+/**
+ * The AI part of a kicker as cardKicker() writes it (aiPart() above): [] for none, ["AI: unassessed"], or the
+ * role chip in upper case, then CLAIMED_CHIP when claimed. AIChip shows these strings joined with " · ".
+ */
+export function kickerAi(item: Pick<CardItem, "ai_role" | "ai_confidence" | "ai_claimant">): string[] {
+  return aiPart(item);
+}
+
+/** cardKicker()'s parts, in its order: joined with " · " (empty parts left out) they are cardKicker(item). */
+export interface KickerParts {
+  level: string;
+  ai: string[];
+  regions: string[];
+  vendor: string | null;
+}
+
+/**
+ * The parts cardKicker() joins, so a component can wrap the level and AI chips in their treatments and the
+ * pips in aria-hidden spans while the text stays cardKicker(item) exactly (§7 ItemCard, Appendix A.3).
+ */
+export function cardKickerParts(item: Omit<CardItem, "cves" | "release">): KickerParts {
+  const vendor = item.vendor ? (item.vendor.country ? `${item.vendor.name} (${item.vendor.country})` : item.vendor.name) : null;
+  return { level: levelPart(item), ai: aiPart(item), regions: [...item.regions], vendor: vendor || null };
 }

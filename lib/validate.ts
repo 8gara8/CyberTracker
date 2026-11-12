@@ -352,7 +352,7 @@ export function cveLookupFromDir(dir: string): CveLookup {
       if (!cache.has(id)) {
         let info: CveRecordInfo | undefined;
         try {
-          const rec = cveRecordInfo(JSON.parse(fs.readFileSync(path.join(dir, `${id}.json`), "utf8")));
+          const rec = cveRecordInfo(JSON.parse(fs.readFileSync(path.join(/*turbopackIgnore: true*/ dir, `${id}.json`), "utf8")));
           info = rec && rec.cve_id === id ? rec : undefined;
         } catch {
           info = undefined;

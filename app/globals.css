@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+/* The siblings' "paper" design (SPEC Appendix A): cream paper, ink rules, square corners, Newsreader for
+   display, IBM Plex Sans for text and IBM Plex Mono for labels and numbers. AI violet is the single accent
+   and the Gap is the one dark "night desk" panel. Fonts come from next/font in app/layout.tsx. The order of
+   this file is A.6's; scripts/color-check.ts parses the :root and .night blocks. JL picked paper in P4. */
+
+@theme {
+  --font-display: var(--font-newsreader), "Source Serif Pro", Georgia, serif;
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, "Segoe UI", "PingFang TC", "Noto Sans TC", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Semantic colours as Tailwind utilities (bg-panel, text-muted, border-line, ...): the siblings' map, unchanged. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-deep: var(--bg-deep);
+  --color-fg: var(--ink);
+  --color-soft: var(--ink-soft);
+  --color-muted: var(--ink-mute);
+  --color-rule: var(--rule);
+  --color-line: var(--rule-soft);
+  --color-panel: var(--card);
+  --color-accent: var(--accent);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+}
+
+:root { /* paper: copied exactly from the siblings' app/globals.css */
+  --bg: #f3eee3; --bg-deep: #eae2d0; --card: #fbf8f0;      /* page, point outline; tab hover, bar tracks; bg-panel */
+  --ink: #14161a; --ink-soft: #3b3e45; --ink-mute: #6b6a62; /* text-fg and bg-fg; text-soft; text-muted, .kicker */
+  --rule: #14161a; --rule-soft: #c9bfa8;                    /* border-rule; border-line, link underlines, High chip */
+  --badge-mix: #f3e3c6; --badge-neutral: #ece6d8;           /* edition notice (data-only, partial); Tag chips */
+  --sample-bg: #f3e3c6; --sample-fg: #7a4f08;               /* SampleBanner */
+  --border: var(--rule-soft); --muted: var(--ink-mute); --fg: var(--ink); --panel: var(--card); /* gridlines; axis text */
+  --accent: #b33a2e; --amber: #c48416; --green: #3e6b3a; --badge-esc: #f1d9d5; --badge-ok: #d9e3d3; /* parity, unused */
+  /* CyberTracker additions */
+  --ai: #6D28D9; --ai-on: #fbf8f0; --focus: #14161a;        /* AI chips and the AI-credited series only */
+  --sev-critical-bg: #14161a; --sev-critical-fg: #fbf8f0;
+  --sev-high-bg: #c9bfa8; --sev-high-fg: #14161a; --sev-high-border: #14161a;
+  --sev-elevated-border: #14161a; --sev-elevated-fg: #14161a; --sev-watch-fg: #6b6a62;
+}
+
+/* The night desk: the Gap panel, <section id="gap" class="night">, the one dark surface on a paper page.
+   Gridlines use #33424F (1.73:1 on #121821), not the design's border #1F2A37 (1.23:1). */
+.night {
+  color-scheme: dark; background: var(--bg); color: var(--ink);
+  --bg: #0B0F14; --bg-deep: #121821; --card: #121821; --ink: #E6EDF3; --ink-soft: #C3CCD6; --ink-mute: #8B98A5;
+  --rule: #E6EDF3; --rule-soft: #1F2A37; --border: #33424F; --muted: #8B98A5; --fg: #E6EDF3; --panel: #121821;
+  --ai: #A78BFA; --ai-on: #0B0F14; --focus: #E6EDF3;
+}
+
+/* Element defaults sit in the base layer and our classes in the components layer, so Tailwind's
+   utilities (text-fg, no-underline, ...) can override them. */
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6; /* 24px: a link in body text meets §7's 24px line */
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--rule-soft);
+    text-underline-offset: 3px;
+  }
+
+  /* Violet means AI, so link hover is ink, never a colour (A.1). */
+  a:hover {
+    text-decoration-color: var(--ink);
+    color: inherit;
+  }
+
+  /* Ink on paper and #E6EDF3 in the night scope, at least 3:1 everywhere (§7 Accessibility). */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Kickers and small labels: mono, uppercase, tracked. */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  /* Display headings in Newsreader. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .brief-h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(30px, 5.2vw, 48px);
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  /* Running prose in the brief: Newsreader for reading, 17px, 18px from md, at a comfortable measure. */
+  .prose-serif {
+    font-family: var(--font-display);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+    max-width: 72ch;
+  }
+
+  @media (min-width: 48rem) {
+    .prose-serif {
+      font-size: 18px;
+    }
+  }
+
+  .dropcap::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 56px;
+    line-height: 0.85;
+    padding: 6px 8px 0 0;
+    color: var(--ink);
+  }
+
+  /* Severity and region pips, U+25CF and U+25CB (A.3); always aria-hidden beside a word. */
+  .pips {
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Square corners everywhere: part of the document look. */
+* {
+  border-radius: 0 !important;
+}
+
+/* Anchor targets (source list, sections, items) clear the top of the window. */
+:target,
+[id] {
+  scroll-margin-top: 1.5rem;
+}
+
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Chinese and Japanese need their own glyphs (A.4). */
+:lang(zh) { font-family: var(--font-plex-sans), "PingFang TC", "Noto Sans TC", sans-serif; }
+:lang(ja) { font-family: var(--font-plex-sans), "Hiragino Sans", "Noto Sans JP", sans-serif; }

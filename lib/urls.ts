@@ -1,6 +1,7 @@
 // URL helpers (SPEC §4.1, §4.2, §4.12): normalisation for evidence matching and duplicate checks, defanging
 // for indicators shown as text, and host helpers. Adapted from the Europe fork's lib/urls.ts.
 
+import sourceTiersFile from "../config/source-tiers.json";
 import { BLOCKED_HOSTS, type BlockedHost } from "./vocab";
 
 const ARCHIVE_RE = /^(?:https?:\/\/)?(?:www\.)?web\.archive\.org\/web\/[^/]+\/(.+)$/i;
@@ -129,4 +130,56 @@ export function blockedEntry(url: string): BlockedHost | null {
     if (hostMatches(host, h) && matchPath(u.pathname).startsWith(path)) return entry;
   }
   return null;
+}
+
+/**
+ * The flags `github.tier1_paths` compile with (§4.11). They compare matchPath() forms, which are lower-cased
+ * (§4.2), while the seed patterns are written with capitals (`^/CVEProject/`, `GHSA-`), so "iu", not §4.11's
+ * default "u". lib/sources.ts re-exports it; lib/config.ts's CONFIG_REGEX check compiles with the same flags.
+ */
+export const TIER1_PATH_FLAGS = "iu";
+
+/**
+ * For a github.com URL (after normalizeUrl()), whether its matchPath() path, trailing slashes removed, matches
+ * one of `tier1Paths`; null for any other host, a scheme other than http(s), or an unparseable URL. The one
+ * github.com path check: isGithubTier1() and blockedReason() in lib/sources.ts and safeHref() read it.
+ */
+export function githubPathTier1(url: string, tier1Paths: readonly RegExp[]): boolean | null {
+  let u: URL;
+  try {
+    u = new URL(normalizeUrl(url));
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+  if (u.hostname.toLowerCase().replace(/\.$/, "") !== "github.com") return null;
+  const p = matchPath(u.pathname).replace(/\/+$/, "") || "/";
+  return tier1Paths.some((re) => re.test(p));
+}
+
+/** The longest URL safeHref() links (§7 "Untrusted text" item 3). */
+export const SAFE_HREF_MAX = 2_000;
+
+let siteTier1Paths: RegExp[] | null = null;
+
+/**
+ * safeHref(url) (§7 "Untrusted text" item 3): the URL as given when `new URL()` parses it, the protocol is
+ * `https:`, there is no username or password, it is at most 2,000 characters, it is not on BLOCKED_HOSTS
+ * (blockedEntry(), §4.2) and it is not a blocked github.com path (a path matching no `github.tier1_paths`
+ * regex of the committed config/source-tiers.json, §4.11); else null, and the caller renders plain text.
+ * `ExternalLink` (components/ui/) is the only renderer of a content URL and the only caller on the site.
+ */
+export function safeHref(url: string): string | null {
+  if (typeof url !== "string" || url.length === 0 || url.length > SAFE_HREF_MAX) return null;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" || u.username !== "" || u.password !== "") return null;
+  if (blockedEntry(url) !== null) return null;
+  siteTier1Paths ??= sourceTiersFile.github.tier1_paths.map((p) => new RegExp(p, TIER1_PATH_FLAGS));
+  if (githubPathTier1(url, siteTier1Paths) === false) return null;
+  return url;
 }

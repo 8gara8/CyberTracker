@@ -372,10 +372,11 @@ gone or changed, or a reader's report. Each flag goes to the next morning's edit
 - **Update:** something changed after publication.
 - **Name removed:** a named victim or attribution is withheld while a dispute is reviewed.
 
-**How they appear.** The archived brief keeps its text. Its item shows a "Corrected" banner with the date,
-and the correction is listed at the foot of the next brief, in the chat edition and on the Methodology page: the
-field, what it now says, why, and the source that shows it. The draft writes a correction only for items
-the re-check flagged, with the corrected text, a reason of at most 40 words and its source.
+**How they appear.** The archived brief keeps its text. Its item shows a banner with the correction's type
+and date, the field, what it now says, why, and a link to the source that shows it. The foot of the next
+brief and the Methodology page list the correction with its type and reason, linked to the item, and the
+chat edition names it. The draft writes a correction only for items the re-check flagged, with the
+corrected text, a reason of at most 40 words and its source.
 
 **Disputes withhold first.** Readers report errors through a structured form on the repo's issue tracker;
 free text in a report is never read by the pipeline. A dispute about a named victim or an attribution

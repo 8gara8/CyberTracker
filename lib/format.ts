@@ -1,7 +1,8 @@
 // Date and time formatters for page text, the chat edition and the site (SPEC §7 "Script-written page
 // text", §5.2). Pure string work on "YYYY-MM-DD" calendar dates, so no machine time zone leaks in; clock
 // times are Taipei (UTC+8, no daylight saving). §5.2's number helpers (pct, fmtPct, fmtInt, fmt1, fmtDays,
-// fmtDate) live in lib/metrics/stats.ts. P4 extends this file for the site.
+// fmtDate) live in lib/metrics/stats.ts. P4 extends this file for the site. Adapted from the siblings'
+// lib/format.ts (docs/PROVENANCE.md).
 
 import { isValidDate } from "./dates";
 
@@ -40,4 +41,15 @@ export function shortDate(date: string): string {
 export function dayMonth(date: string): string {
   const { m, d } = parts(date);
   return `${d} ${monthShort(m)}`;
+}
+
+/**
+ * An RSS 2.0 pubDate (RFC 822 in its RFC 1123 form, in GMT) for a timestamp:
+ * "2026-11-08T05:12:40+08:00" gives "Sat, 07 Nov 2026 21:12:40 GMT".
+ * The siblings' helper; P4 adds it for app/feed.xml/route.ts (SPEC §6 `/feed.xml`).
+ */
+export function rfc822(timestamp: string): string {
+  const ms = Date.parse(timestamp);
+  if (Number.isNaN(ms)) throw new Error(`Invalid timestamp: ${timestamp}`);
+  return new Date(ms).toUTCString();
 }

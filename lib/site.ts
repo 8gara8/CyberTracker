@@ -1,7 +1,7 @@
 // Site-wide settings (SPEC §6 "Content loading", §9.7), adapted from the fork's lib/site.ts. Names and
-// URLs come from config/run.json; the only variable read is CT_CONTENT_DIR (P4 adds CT_LOOK), never a
-// secret. run.json is imported as a module so the site bundles it; lib/config.ts parses the same file with
-// its schema (CONFIG_SCHEMA), and contentDir() cannot wait for loadConfig(), which needs isSampleData().
+// URLs come from config/run.json; the only variable read is CT_CONTENT_DIR, never a secret. run.json is
+// imported as a module so the site bundles it; lib/config.ts parses the same file with its schema
+// (CONFIG_SCHEMA), and contentDir() cannot wait for loadConfig(), which needs isSampleData().
 
 import path from "node:path";
 import run from "../config/run.json";
@@ -10,11 +10,20 @@ import run from "../config/run.json";
 export const SITE_NAME: string = run.site.name;
 /** run.json site.tagline. */
 export const SITE_TAGLINE: string = run.site.tagline;
+/** run.json repos.repo, "owner/name": the audit trail, the issue form and the About page's repo link. */
+export const SITE_REPO: string = run.repos.repo;
+/** run.json siblings: the family tab bar's ME and Europe links, and ActorChips' cross-links. */
+export const SIBLINGS: { readonly me: string; readonly europe: string } = { me: run.siblings.me, europe: run.siblings.europe };
+/** run.json schedule.stale_after ("08:00", Taipei): StaleBanner's staleAfter (§7). */
+export const STALE_AFTER: string = run.schedule.stale_after;
 
 /** run.json site.url, trailing slashes removed. No variable overrides it. */
 export function siteUrl(): string {
   return run.site.url.replace(/\/+$/, "");
 }
+
+/** The layout's themeColor (§7 "Page frame", Appendix A.6): the paper's --bg, JL's pick in P4. */
+export const THEME_COLOR = "#f3eee3";
 
 /** The content folder: CT_CONTENT_DIR, else run.json paths.content_dir ("content"), as given (relative to the repo root). */
 export function contentDir(): string {
