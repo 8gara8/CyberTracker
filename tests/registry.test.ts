@@ -188,8 +188,15 @@ describe("the registry as Kobol's reads finalised it", () => {
     expect(fetched.filter((f) => f.kind === "rss")).toHaveLength(28);
   });
 
-  it("source-tiers version 2 places the new paths with their publishers; TDnet's www host matches its parent domain", () => {
-    expect([cfg.sourceTiers.version, cfg.sourceTiers.updated]).toEqual([2, "2026-11-10"]);
+  it("source-tiers from version 2 places the new paths with their publishers; TDnet's www host matches its parent domain", () => {
+    // Version 3 (P5, row 184) only adds verizon-dbir, so version 2's paths still hold.
+    expect([cfg.sourceTiers.version, cfg.sourceTiers.updated]).toEqual([3, "2026-11-12"]);
+    expect(tierOf("https://www.verizon.com/business/resources/reports/dbir/")).toEqual([1, "verizon-dbir"]);
+    expect(tierOf("https://www.verizon.com/business/resources/reports/dbir.html")).toEqual([1, "verizon-dbir"]);
+    // Only the DBIR's page: Verizon's other reports in the same folder, and the rest of verizon.com, stay tier 3.
+    expect(tierOf("https://www.verizon.com/business/resources/reports/mobile-security-index/")[0]).toBe(3);
+    expect(tierOf("https://www.verizon.com/business/resources/reports/dbirx/")[0]).toBe(3);
+    expect(tierOf("https://www.verizon.com/about/news/")[0]).toBe(3);
     expect(tierOf(byId("gtig").url)).toEqual([1, "mandiant"]);
     expect(tierOf(byId("google-security").url)).toEqual([1, "google-security"]);
     expect(tierOf("https://feeds.feedburner.com/googleonlinesecurityblog/")).toEqual([1, "google-security"]);

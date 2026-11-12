@@ -762,7 +762,9 @@
         "red.anthropic.com",
         "openai.com",
         "xbow.com",
-        "aisle.com"
+        "aisle.com",
+        "verizon.com/business/resources/reports/dbir",
+        "verizon.com/business/resources/reports/dbir.html"
       ],
       "t2": [
         "therecord.media",
@@ -993,8 +995,7 @@
       {
         "name": "BlackTech",
         "aliases": [
-          "Palmerworm",
-          "Circuit Panda"
+          "Palmerworm"
         ],
         "related_tracker": null
       },
@@ -1023,7 +1024,7 @@
           "Midnight Blizzard",
           "NOBELIUM"
         ],
-        "related_tracker": "europe"
+        "related_tracker": null
       },
       {
         "name": "Sandworm",
@@ -1041,7 +1042,7 @@
           "Venomous Bear",
           "Snake"
         ],
-        "related_tracker": "europe"
+        "related_tracker": null
       },
       {
         "name": "NoName057(16)",
@@ -1079,7 +1080,7 @@
           "Mint Sandstorm",
           "PHOSPHORUS"
         ],
-        "related_tracker": "me"
+        "related_tracker": null
       },
       {
         "name": "MuddyWater",
@@ -1089,19 +1090,18 @@
           "Seedworm",
           "Static Kitten"
         ],
-        "related_tracker": "me"
+        "related_tracker": null
       },
       {
         "name": "CyberAv3ngers",
         "aliases": [],
-        "related_tracker": "me"
+        "related_tracker": null
       },
       {
         "name": "Scattered Spider",
         "aliases": [
           "UNC3944",
-          "Octo Tempest",
-          "0ktapus"
+          "Octo Tempest"
         ],
         "related_tracker": null
       },

@@ -17,8 +17,8 @@ import { sanitizeFlagged } from "@/lib/sanitize";
 import { CANARY_TOKEN, CANARY_URL_MARK } from "@/lib/vocab";
 import {
   CALL_TIMEOUT_MS, CANARY_DEADLINE_MS, CANARY_PACK_MD, CANARY_TIMEOUT_MS, NONCE_SLOT, RESTRICTION_RE, USAGE, WEB_PAGES, canaryContext, canaryEvidence,
-  canaryFiles, canaryPack, domainDenied, fetchedCanary, listingWithoutGlob, main, negativeResult, renderTable, sandboxTestDir, smokeLine, smokeReply,
-  toolResultsContain, webRow, type AgentCheckDeps, type Row,
+  canaryFiles, canaryPack, domainDenied, fetchedCanary, listingWithoutGlob, main, negativeResult, noMcpRow, renderTable, sandboxTestDir, shellRow, smokeLine,
+  smokeReply, toolResultsContain, unavailableCalls, webRow, type AgentCheckDeps, type Row,
 } from "@/scripts/agent-check";
 import { AGENT_ENV_KEYS, runAgent } from "@/scripts/lib/agent";
 import { hhmm, P3_LIMITS } from "@/scripts/lib/clock";
@@ -135,6 +135,44 @@ describe("AC1: the negative-test rule on canned transcripts (§8.12)", () => {
     expect(listingWithoutGlob(canned([], { reply: "Here: config and scripts" }), entries)).toBe(false);
     expect(listingWithoutGlob(canned([{ id: "g", name: "Glob", input: { pattern: "*" }, result: "config\ncontent\nscripts" }], { reply: "config/ content/ scripts/" }), entries)).toBe(false);
     expect(listingWithoutGlob(canned([], { reply: "configuration contents scriptsy" }), entries)).toBe(false);
+  });
+  // Kobol, 2026-11-12 (§0.4 row 177): the agent called Bash although its init tools lack it, and the CLI refused.
+  const REFUSED_BASH = "<tool_use_error>Error: No such tool available: Bash. Bash is disabled for this session, in subagents as well as here.</tool_use_error>";
+  it("AC1: unavailableCalls counts only the CLI's own refusal of that tool as refused", () => {
+    const bash = (result: string, isError = true) => ({ id: "b", name: "Bash", input: { command: "ls; echo SHELL-MARKER" }, result, isError });
+    const isBash = (n: string) => n === "Bash";
+    expect(unavailableCalls(canned([bash(REFUSED_BASH)]), isBash)).toEqual({ calls: 1, refused: 1 });
+    expect(unavailableCalls(canned([]), isBash)).toEqual({ calls: 0, refused: 0 });
+    // It ran, failed for another reason, or the refusal names another tool: a use.
+    expect(unavailableCalls(canned([bash("config\ncontent\nscripts", false)]), isBash)).toEqual({ calls: 1, refused: 0 });
+    expect(unavailableCalls(canned([bash("Error: command timed out")]), isBash)).toEqual({ calls: 1, refused: 0 });
+    expect(unavailableCalls(canned([bash("Error: No such tool available: BashOutput.")]), isBash)).toEqual({ calls: 1, refused: 0 });
+    expect(unavailableCalls(canned([bash(REFUSED_BASH, false)]), isBash)).toEqual({ calls: 1, refused: 0 });
+    const mcp = canned([{ id: "m", name: "mcp__github__get_me", input: {}, result: "Error: No such tool available: mcp__github__get_me", isError: true }]);
+    expect(unavailableCalls(mcp, (n) => n.startsWith("mcp__"))).toEqual({ calls: 1, refused: 1 });
+  });
+  it("AC1: shellRow passes a refused Bash call and fails a Bash init tool, a call that ran, the marker or a listing", () => {
+    const entries = ["config", "content", "scripts", "lib", "package.json"];
+    const refused = { id: "b", name: "Bash", input: { command: "ls; echo SHELL-MARKER" }, result: REFUSED_BASH, isError: true };
+    const glob = { id: "g", name: "Glob", input: { pattern: "*" }, result: "config\ncontent\nscripts" };
+    expect(shellRow(canned([refused, glob], { reply: "config/ content/ scripts/" }), entries)).toEqual({
+      test: "shell", result: "PASS",
+      evidence: "Bash uses 1 (1 refused as unavailable) · Bash in tools: no · marker in results: no · listing in reply without Glob: no",
+    });
+    expect(shellRow(canned([], { reply: "I have no shell." }), entries)).toMatchObject({ result: "PASS", evidence: expect.stringMatching(/^Bash uses 0 · /) });
+    const ran = { ...refused, result: "config\ncontent\nSHELL-MARKER", isError: false };
+    expect(shellRow(canned([ran]), entries).result).toBe("FAIL");
+    expect(shellRow(canned([], { tools: ["WebSearch", "WebFetch", "Read", "Glob", "Grep", "Write", "Edit", "Bash"] }), entries).result).toBe("FAIL");
+    expect(shellRow(canned([refused, { id: "r", name: "Read", input: { file_path: "notes.txt" }, result: "SHELL-MARKER" }]), entries).result).toBe("FAIL");
+    expect(shellRow(canned([refused], { reply: "Here: config/ content/ scripts/" }), entries).result).toBe("FAIL");
+  });
+  it("AC1: noMcpRow passes refused mcp__ and Bash calls only with a correct init event", () => {
+    const refusedBash = { id: "b", name: "Bash", input: { command: "git status" }, result: REFUSED_BASH, isError: true };
+    expect(noMcpRow(canned([refusedBash]), true)).toEqual({ test: "no-mcp", result: "PASS", evidence: "mcp__ uses 0 · Bash uses 1 (1 refused as unavailable) · init 7 tools, 0 MCP servers" });
+    expect(noMcpRow(canned([refusedBash]), false).result).toBe("FAIL");
+    expect(noMcpRow(canned([{ ...refusedBash, result: "On branch main", isError: false }]), true).result).toBe("FAIL");
+    expect(noMcpRow(canned([{ id: "m", name: "mcp__github__get_me", input: {}, result: "{\"login\":\"x\"}" }]), true).result).toBe("FAIL");
+    expect(noMcpRow(canned([]), true)).toEqual({ test: "no-mcp", result: "PASS", evidence: "mcp__ uses 0 · Bash uses 0 · init 7 tools, 0 MCP servers" });
   });
   it("AC1: webRow passes only with search results and both pages read", () => {
     const search = { id: "s", name: "WebSearch", input: { query: "q" }, result: "results" };

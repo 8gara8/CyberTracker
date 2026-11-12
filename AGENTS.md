@@ -82,7 +82,8 @@ faster?
   `/Users/kobol/Projects/CyberTracker-worktrees/` removed; `git worktree list` shows the main checkout
   and `p4-site`.
 
-- **P4 on `p4-site`, PR #6, ready for review (JL marked it ready on 2026-11-12 at 07:36 Taipei):** the
+- **P4 on `p4-site`, PR #6, merged by JL on 2026-11-12 at 10:13 Taipei (02:13 UTC; `main` at `f9812ab`)
+  after Codex round 3 (09:50 Taipei, on `1a3dcc9`) found nothing:** the
   static site (every route, the brief, the Gap charts, Methodology, About, the feed),
   `scripts/color-check.ts` and `scripts/screenshots.mjs`, built in the cloud container from 2026-11-12
   00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel lanes (brief, charts, pages, tools),
@@ -105,9 +106,33 @@ faster?
   17 exempt), and `docs/screenshots/p4/night/` stays as the record of the comparison. B.9's `siblings.me`
   and the PR's Vercel preview are checked (SPEC §10 P4 item 4, row 175): every route 200 with the sample
   banner and the five headers; the Vercel Toolbar's script tripped the CSP in a browser, so the Toolbar is
-  off for previews (`enablePreviewFeedback: false`, 2026-11-12 09:41 Taipei). Waiting on: Codex round 3
-  (the last). After the merge: rule 4's fast-forward on Kobol, remove the
-  `p4-site` worktree, check the production deploy, the domain and `curl -sI` (SPEC §10 P4's Done when).
+  off for previews (`enablePreviewFeedback: false`, 2026-11-12 09:41 Taipei). That browser was the
+  Claude app's on JL's other Mac, not Kobol (row 176 corrects row 175). Production (row 176): the first
+  deploy was READY at 10:14 Taipei, public without a login, 200 with the five headers, from the
+  container and from Kobol's `curl -sI`. The production domain is `cybertracker-alpha.vercel.app`
+  (`cybertracker.vercel.app` is an unrelated site, and the `cyber-tracker.vercel.app` JL picked is held
+  by another team), so `site.url` moved in P5. Kobol housekeeping is done: the main checkout
+  fast-forwarded to `f9812ab` (`package-lock.json` unchanged, no `npm ci`) and the `p4-site` worktree
+  removed.
+- **P5 on `p5-golive`, PR #7, opened ready for review on 2026-11-12:** item 1 of SPEC §10 P5, built in
+  the cloud container, with the Kobol steps in the worktree
+  `/Users/kobol/Projects/CyberTracker-worktrees/p5-golive` (rule 4). The site address in `run.json` (row
+  176); `regions.json` version 3 with `review_due` 2026-12-11 and the Taiwan election window, its polling
+  day checked with the Central Election Commission (row 178); the catch-up backfill on Kobol (commit
+  `483aefe`: cutoff 2026-11-10, CVE List `ca66623`, KEV `6b8d7ba`, `validate:all` 0 errors; the 4.6G
+  clone in that worktree's `cache/cvelistV5` is kept); `agent:check -- --all` 13 of 13 on `ea62ab3` with
+  the canary safe, after a fix that counts a `Bash` call the CLI refuses as unavailable as refused (row
+  177); `actors.json` version 2 from the MITRE pages and the siblings' sites (row 179); `claims.json`
+  version 1 with the rival claims SB-01 and SB-02 (row 180); the `glasswing-launch` marker (row 181).
+  Codex round 1 on `ad726c8` found nothing. JL then stated their theses in chat (2026-11-12, 13:38
+  Taipei, 05:38 UTC) instead of sending links, so `claims.json` adds JL's six claims SB-03 to SB-08 with
+  `restates` null (row 182), and a metric claim is now settled on its zone at its deadline (row 183;
+  before, it was rescored on every later edition); `source-tiers.json` version 3 makes Verizon's breach
+  report, which SB-07 is judged on, a tier 1 source (row 184). `routine/TASK.md` already matches SPEC
+  §11, so it is final as it is. Codex round 2 (on `ca349e5`) found one P2, fixed in `bca76f3`
+  (`verizon-dbir` covers the report's page only), and round 3 (on `bca76f3`, 15:25 Taipei, 07:25 UTC)
+  found nothing. Waiting on: JL's read of the six claims, and the merge. After the merge: the task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three
+  supervised mornings.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -130,8 +155,8 @@ faster?
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
-| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; JL picked paper (08:39 Taipei); preview checked, Toolbar off; waiting on Codex round 3 |
-| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
+| P4 Site | `p4-site` | #6 | Merged 2026-11-12, 10:13 Taipei (02:13 UTC) |
+| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; Codex round 3 found nothing; waiting on JL's read of the claims and the merge |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI

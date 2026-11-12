@@ -1,1 +1,24 @@
-{ "schema_version": 1, "windows": [] }
+{
+  "schema_version": 1,
+  "windows": [
+    {
+      "id": "taiwan-local-elections-2026",
+      "title": "Taiwan local elections, 28 November 2026",
+      "start": "2026-11-08",
+      "end": "2026-12-05",
+      "regions": ["TW"],
+      "lens_row": "influence_ops",
+      "search_terms": [
+        "Taiwan local elections cyber",
+        "Taiwan election disinformation",
+        "Central Election Commission Taiwan cyberattack",
+        "九合一 資安",
+        "選舉 認知作戰",
+        "選舉 假訊息",
+        "中選會 網路攻擊",
+        "台湾 統一地方選挙 サイバー"
+      ],
+      "note": "Ends a week after polling day to catch post-election claims"
+    }
+  ]
+}

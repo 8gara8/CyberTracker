@@ -1,1 +1,160 @@
-{ "schema_version": 1, "version": 0, "claims": [] }
+{
+  "schema_version": 1,
+  "version": 1,
+  "claims": [
+    {
+      "id": "SB-01",
+      "origin": "rival",
+      "text": "AI-credited flaws reach CISA's exploited list no more often than other flaws.",
+      "restates": {
+        "quote": "the data does not suggest that AI discovered vulnerabilities are inherently more likely to be exploited than those found through traditional methods.",
+        "source_title": "VulnCheck State of Exploitation 1H-2026",
+        "source_url": "https://www.vulncheck.com/blog/state-of-exploitation-1h-2026",
+        "date": "2026-07-28"
+      },
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "base_rate.ratio",
+      "data_source": "CISA KEV and CVE List: AI-credited base rate, records listed within 90 days",
+      "support": { "kind": "value", "op": "<=", "value": 1.0, "bound": "ci80_hi" },
+      "challenge": { "kind": "value", "op": ">=", "value": 2.0, "bound": "ci80_lo" },
+      "opened": "2026-11-12",
+      "deadline": "2027-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-02",
+      "origin": "rival",
+      "text": "By the end of 2028, AI-powered malware is used in a ransomware attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "restates": {
+        "quote": "It is highly likely that between now and 2028, AI-powered malware will have been used in a ransomware attack on UK CNI.",
+        "source_title": "Artificial intelligence and cyber intrusion",
+        "source_url": "https://www.ncsc.gov.uk/report/artificial-intelligence-and-cyber-intrusion",
+        "date": "2026-11-03"
+      },
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "Statements by the UK government and the NCSC",
+      "support": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that a ransomware attack on UK critical infrastructure used AI-powered malware"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that a claimed AI-powered ransomware attack on UK critical infrastructure did not use AI-powered malware"
+      },
+      "opened": "2026-11-12",
+      "deadline": "2028-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-03",
+      "origin": "jl",
+      "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "flood.vs_reference_pct",
+      "data_source": "CVE List: Gap Flood, 13-week count of new CVE records against the 2023 to 2024 mean",
+      "support": { "kind": "value", "op": ">=", "value": 300, "bound": "value" },
+      "challenge": { "kind": "value", "op": "<=", "value": 150, "bound": "value" },
+      "opened": "2026-11-12",
+      "deadline": "2028-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-04",
+      "origin": "jl",
+      "text": "AI flaw-finding keeps scaling beyond Anthropic: at the end of 2027 the 13-week count of AI-credited flaws excluding Anthropic is at least 450 (224 in the 13 weeks to 8 Nov 2026).",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "ai_credited.w13.ex_anthropic",
+      "data_source": "CVE List: AI-credited CVE records published in 13 weeks, excluding Anthropic (a lower bound)",
+      "support": { "kind": "value", "op": ">=", "value": 450, "bound": "value" },
+      "challenge": { "kind": "value", "op": "<=", "value": 110, "bound": "value" },
+      "opened": "2026-11-12",
+      "deadline": "2027-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-05",
+      "origin": "jl",
+      "text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36).",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "window.w26.after_disclosure_median_days",
+      "data_source": "CISA KEV and CVE List: Gap Window, 26 weeks, median days after disclosure and its 80% range",
+      "support": { "kind": "value", "op": "<", "value": 15, "bound": "ci80_hi" },
+      "challenge": { "kind": "value", "op": ">=", "value": 21, "bound": "ci80_lo" },
+      "opened": "2026-11-12",
+      "deadline": "2027-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-06",
+      "origin": "jl",
+      "text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent.",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "Statements by cyber agencies, data protection authorities and other regulators in the US, UK, EU, Japan and Taiwan",
+      "support": {
+        "kind": "event",
+        "text": "An authority in the US, UK, EU, Japan or Taiwan reports a case, first public after 12 Nov 2026, of an AI agent causing a breach without its owner's consent"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "An authority in the US, UK, EU, Japan or Taiwan finds that a breach blamed on an AI agent acting without its owner's consent in fact involved no AI agent"
+      },
+      "opened": "2026-11-12",
+      "deadline": "2028-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-07",
+      "origin": "jl",
+      "text": "Unpatched holes get exploited more: Verizon's 2028 Data Breach Investigations Report puts exploited vulnerabilities above 31% of breaches with a known way in (2026 report: 31%).",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "Verizon's 2028 Data Breach Investigations Report: exploitation of vulnerabilities among known initial access vectors",
+      "support": {
+        "kind": "event",
+        "text": "Verizon's 2028 Data Breach Investigations Report puts exploitation of vulnerabilities at more than 31% of known initial access vectors in breaches"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "Verizon's 2028 Data Breach Investigations Report puts exploitation of vulnerabilities at 31% or less of known initial access vectors in breaches"
+      },
+      "opened": "2026-11-12",
+      "deadline": "2028-09-30",
+      "resolution": null
+    },
+    {
+      "id": "SB-08",
+      "origin": "jl",
+      "text": "Geopolitics turns AI flaw-finding into a state weapon: by the end of 2028 the US, UK, Japan, Taiwan, the EU or an EU state blames a foreign state for a new intrusion using AI to find or exploit flaws.",
+      "restates": null,
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "Government attributions, joint advisories, indictments and sanctions notices in the US, UK, EU, Japan and Taiwan",
+      "support": {
+        "kind": "event",
+        "text": "The US, UK, Japan, Taiwan, the EU or an EU state blames a foreign state for an intrusion made public after 12 Nov 2026 and says AI found or exploited the flaws"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "After 12 Nov 2026 the US and Chinese governments both commit, jointly or in a shared UN text, to limits on the use of AI in cyberattacks"
+      },
+      "opened": "2026-11-12",
+      "deadline": "2028-12-31",
+      "resolution": null
+    }
+  ]
+}

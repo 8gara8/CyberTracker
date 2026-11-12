@@ -30,6 +30,16 @@
       "panels": ["flood", "window"],
       "kind": "data_change",
       "source_url": null
+    },
+    {
+      "id": "glasswing-launch",
+      "date": "2026-04-07",
+      "end_date": null,
+      "label": "Project Glasswing launches",
+      "detail": "Anthropic and its launch partners begin using an unreleased AI model to find and fix flaws in critical software.",
+      "panels": ["ai", "window"],
+      "kind": "event",
+      "source_url": "https://www.anthropic.com/glasswing"
     }
   ]
 }

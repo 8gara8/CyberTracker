@@ -24,7 +24,7 @@ import { AgentContext } from "@/lib/schema/context";
 import { DraftBrief } from "@/lib/schema/draft-brief";
 import { InputsManifest, Metrics, type KevIndexFile } from "@/lib/schema/metrics";
 import { ArchiveIndex, CorrectionsFile, Evidence, type Correction, type Dispute } from "@/lib/schema/misc";
-import { ScoreboardFile, type Claim } from "@/lib/schema/scoreboard";
+import { ScoreboardFile, type Claim, type ScoreboardEntry } from "@/lib/schema/scoreboard";
 import { normalizeUrl } from "@/lib/urls";
 import { RegionsInputFile, cveLookupFromDir, regionsInputFile, validateAll, validateDraft, validatePublished } from "@/lib/validate";
 import { WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
@@ -956,14 +956,46 @@ describe("Scoreboard zones, entries and status (§4.9)", () => {
 
   it("C10: status is open to the deadline, then hit or miss; a resolution overrides", () => {
     const report = cfg.claims.claims.find((c) => c.judged_by === "report")!;
-    const support = [{ ...GOLDEN_BOARD.entries[1]!, direction: "support" as const }];
-    expect(claimStatus(report, "no_reading", support, report.deadline)).toBe("open");
-    expect(claimStatus(report, "no_reading", support, addDays(report.deadline, 1))).toBe("hit");
-    expect(claimStatus(report, "no_reading", [], addDays(report.deadline, 1))).toBe("miss");
-    expect(claimStatus(share, "support", [], addDays(share.deadline, 1))).toBe("hit");
-    expect(claimStatus(share, "between", [], addDays(share.deadline, 1))).toBe("miss");
+    const support = [{ ...GOLDEN_BOARD.entries[1]!, claim_id: report.id, direction: "support" as const, date: report.deadline }];
+    const after = addDays(report.deadline, 1);
+    expect(claimStatus(report, support, report.deadline)).toBe("open");
+    expect(claimStatus(report, support, after)).toBe("hit");
+    expect(claimStatus(report, [], after)).toBe("miss");
+    expect(claimStatus(report, [{ ...support[0]!, date: after }], after)).toBe("miss");
+    // A metric claim: the newest metric entry dated on or before the deadline holds its zone there.
+    const metric = (date: string, direction: ScoreboardEntry["direction"], id: string): ScoreboardEntry => ({
+      id, date, claim_id: share.id, origin: "metric", direction, summary: "SAMPLE.", value: 0.4, reported_value: null,
+      quote: null, claim_type: null, source_url: null, metrics_ref: { file: `metrics/${date}.json`, path: "window.w26.at_disclosure_share" },
+    });
+    const due = addDays(share.deadline, 1);
+    const toSupport = [metric("2026-10-14", "neutral", "SE-0001"), metric(addDays(share.deadline, -3), "support", "SE-0002")];
+    expect(claimStatus(share, toSupport, share.deadline)).toBe("open");
+    expect(claimStatus(share, toSupport, due)).toBe("hit");
+    expect(claimStatus(share, [...toSupport, metric(due, "neutral", "SE-0003")], addDays(share.deadline, 30))).toBe("hit");
+    expect(claimStatus(share, [toSupport[0]!], due)).toBe("miss");
+    expect(claimStatus(share, [toSupport[0]!, metric(due, "support", "SE-0003")], due)).toBe("miss");
+    expect(claimStatus(share, [], due)).toBe("miss");
     const voided = { ...share, resolution: { status: "void" as const, date: "2026-10-20", note: "SAMPLE.", source_url: null } };
-    expect(claimStatus(voided, "support", [], "2026-10-14")).toBe("void");
+    expect(claimStatus(voided, toSupport, "2026-10-14")).toBe("void");
+  });
+
+  it("C10: after a metric claim's deadline its zone and reading stay as they were, with no new entries", () => {
+    const supportAt = (value: number): Claim => ({ ...share, deadline: "2026-10-15", support: { kind: "value", op: ">=", value, bound: "ci80_lo" } });
+    const day1 = updateScoreboard({ date: "2026-10-14", config: withClaims([supportAt(0.3)]), metrics, scoreboard: null, reports: [], sources: [] });
+    const day2 = updateScoreboard({ date: "2026-10-15", config: withClaims([supportAt(0.3)]), metrics, scoreboard: day1.file, reports: [], sources: [] });
+    expect(day2.file.claims[0]).toMatchObject({ zone: "support", status: "open", reading: 0.3694, reading_as_of: "2026-10-12" });
+    // The day after the deadline the threshold no longer holds on today's reading (support needs 0.35 now) and
+    // the metrics are newer, yet the claim keeps the deadline's zone and reading, and is a hit.
+    const later = { ...metrics, date: "2026-10-16", data_cutoff_utc: "2026-10-14" };
+    const day3 = updateScoreboard({ date: "2026-10-16", config: withClaims([supportAt(0.35)]), metrics: later, scoreboard: day2.file, reports: [], sources: [] });
+    expect(day3.file.claims[0]).toEqual({ ...day2.file.claims[0]!, status: "hit" });
+    expect(day3.file.entries).toEqual(day2.file.entries);
+    expect(day3.brief.entries).toEqual([]);
+    // A claim that was between at its deadline is a miss, even if today's reading would be in support.
+    const between = updateScoreboard({ date: "2026-10-15", config: withClaims([supportAt(0.35)]), metrics, scoreboard: null, reports: [], sources: [] });
+    const after = updateScoreboard({ date: "2026-10-16", config: withClaims([supportAt(0.3)]), metrics: later, scoreboard: between.file, reports: [], sources: [] });
+    expect(after.file.claims[0]).toMatchObject({ zone: "between", status: "miss" });
+    expect(after.file.entries).toEqual(between.file.entries);
   });
 });
 

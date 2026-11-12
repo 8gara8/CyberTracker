@@ -3,7 +3,7 @@
   "site": {
     "name": "CyberTracker",
     "tagline": "The AI-era exploit and breach brief",
-    "url": "https://cybertracker.vercel.app"
+    "url": "https://cybertracker-alpha.vercel.app"
   },
   "repos": {
     "repo": "8gara8/CyberTracker",
@@ -87,6 +87,6 @@
     "logs": "logs",
     "needs_review": "needs-review"
   },
-  "user_agent": "CyberTracker/1.0 (+https://cybertracker.vercel.app)",
+  "user_agent": "CyberTracker/1.0 (+https://cybertracker-alpha.vercel.app)",
   "task_name": "CyberTracker morning"
 }

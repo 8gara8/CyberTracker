@@ -22,7 +22,7 @@ not been sent.
   reads at a time; one retry after 2 s on a timeout, network error or 5xx, never on a 4xx; and a 240 s
   cap on the whole run (SPEC §8.3). The waves came from session 1's first run, where six small feeds
   timed out while the 37 MB delta log, the EPSS files and the GHSA data downloaded beside them.
-- **User agent:** `CyberTracker/1.0 (+https://cybertracker.vercel.app)` (`config/run.json`
+- **User agent:** `CyberTracker/1.0 (+https://cybertracker-alpha.vercel.app)` (`config/run.json`
   `user_agent`), on every HTTP request.
 - **No keys and no accounts.** No source is read with an API key, token or login. Git reads
   (`ls-remote`, the GHSA sparse clone, the backfill's CVE List clone) go to github.com without

@@ -19,9 +19,9 @@
     "config_versions": {
       "vendors": 4,
       "ai_finders": 2,
-      "source_tiers": 2,
-      "regions": 2,
-      "actors": 1
+      "source_tiers": 3,
+      "regions": 3,
+      "actors": 2
     },
     "reference": {
       "from": "2023-01-01",

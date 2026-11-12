@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "version": 2,
-  "updated": "2026-11-10",
+  "version": 3,
+  "updated": "2026-11-12",
   "publishers": [
     { "id": "cve-org", "name": "CVE Program", "tier": 1, "kind": "other", "country": "US", "domains": ["cve.org", "cve.mitre.org"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "nvd", "name": "NIST NVD", "tier": 1, "kind": "government", "country": "US", "domains": ["nvd.nist.gov"], "state_label": null, "sole_newsroom_for_critical": true },
@@ -107,6 +107,7 @@
     { "id": "openai", "name": "OpenAI", "tier": 1, "kind": "research", "country": "US", "domains": ["openai.com"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "xbow", "name": "XBOW", "tier": 1, "kind": "research", "country": "US", "domains": ["xbow.com"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "aisle", "name": "AISLE", "tier": 1, "kind": "research", "country": "US", "domains": ["aisle.com"], "state_label": null, "sole_newsroom_for_critical": true },
+    { "id": "verizon-dbir", "name": "Verizon Data Breach Investigations Report", "tier": 1, "kind": "research", "country": "US", "domains": ["verizon.com/business/resources/reports/dbir", "verizon.com/business/resources/reports/dbir.html"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "the-record", "name": "The Record", "tier": 2, "kind": "newsroom", "country": "US", "domains": ["therecord.media"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "bleepingcomputer", "name": "BleepingComputer", "tier": 2, "kind": "newsroom", "country": "US", "domains": ["bleepingcomputer.com"], "state_label": null, "sole_newsroom_for_critical": true },
     { "id": "securityweek", "name": "SecurityWeek", "tier": 2, "kind": "newsroom", "country": "US", "domains": ["securityweek.com"], "state_label": null, "sole_newsroom_for_critical": true },

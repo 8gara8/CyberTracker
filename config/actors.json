@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "version": 1,
-  "updated": "2026-11-07",
+  "version": 2,
+  "updated": "2026-11-12",
   "actors": [
     {
       "id": "volt-typhoon",
@@ -20,9 +20,9 @@
       "id": "salt-typhoon",
       "name": "Salt Typhoon",
       "aliases": [],
-      "mitre_id": null,
+      "mitre_id": "G1045",
       "related_tracker": null,
-      "note": "Aliases only with a cited mapping"
+      "note": "MITRE's page lists no associated groups"
     },
     {
       "id": "flax-typhoon",
@@ -72,7 +72,7 @@
       "name": "APT40",
       "aliases": [
         { "name": "Leviathan", "by": "Proofpoint", "source_url": "https://attack.mitre.org/groups/G0065/" },
-        { "name": "TEMP.Periscope", "by": "Mandiant", "source_url": "https://attack.mitre.org/groups/G0065/" },
+        { "name": "TEMP.Periscope", "by": "FireEye", "source_url": "https://attack.mitre.org/groups/G0065/" },
         { "name": "Kryptonite Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0065/" },
         { "name": "Gingham Typhoon", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G0065/" }
       ],
@@ -109,8 +109,7 @@
       "id": "blacktech",
       "name": "BlackTech",
       "aliases": [
-        { "name": "Palmerworm", "by": "Symantec", "source_url": "https://attack.mitre.org/groups/G0098/" },
-        { "name": "Circuit Panda", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0098/" }
+        { "name": "Palmerworm", "by": "Symantec", "source_url": "https://attack.mitre.org/groups/G0098/" }
       ],
       "mitre_id": "G0098",
       "related_tracker": null,
@@ -149,7 +148,7 @@
         { "name": "NOBELIUM", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0016/" }
       ],
       "mitre_id": "G0016",
-      "related_tracker": "europe",
+      "related_tracker": null,
       "note": null
     },
     {
@@ -173,7 +172,7 @@
         { "name": "Snake", "by": "MITRE ATT&CK", "source_url": "https://attack.mitre.org/groups/G0010/" }
       ],
       "mitre_id": "G0010",
-      "related_tracker": "europe",
+      "related_tracker": null,
       "note": null
     },
     {
@@ -226,7 +225,7 @@
         { "name": "PHOSPHORUS", "by": "Microsoft, former name", "source_url": "https://attack.mitre.org/groups/G0059/" }
       ],
       "mitre_id": "G0059",
-      "related_tracker": "me",
+      "related_tracker": null,
       "note": null
     },
     {
@@ -239,15 +238,15 @@
         { "name": "Static Kitten", "by": "CrowdStrike", "source_url": "https://attack.mitre.org/groups/G0069/" }
       ],
       "mitre_id": "G0069",
-      "related_tracker": "me",
+      "related_tracker": null,
       "note": null
     },
     {
       "id": "cyberav3ngers",
       "name": "CyberAv3ngers",
       "aliases": [],
-      "mitre_id": null,
-      "related_tracker": "me",
+      "mitre_id": "G1027",
+      "related_tracker": null,
       "note": "Targets internet-exposed industrial controllers"
     },
     {
@@ -255,8 +254,7 @@
       "name": "Scattered Spider",
       "aliases": [
         { "name": "UNC3944", "by": "Mandiant", "source_url": "https://attack.mitre.org/groups/G1015/" },
-        { "name": "Octo Tempest", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G1015/" },
-        { "name": "0ktapus", "by": "Group-IB", "source_url": "https://attack.mitre.org/groups/G1015/" }
+        { "name": "Octo Tempest", "by": "Microsoft", "source_url": "https://attack.mitre.org/groups/G1015/" }
       ],
       "mitre_id": "G1015",
       "related_tracker": null,
