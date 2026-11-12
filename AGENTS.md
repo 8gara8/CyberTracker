@@ -76,26 +76,32 @@ faster?
   4 min 19 s, 8 items, 1,091 words). CERT-FR's live alerts gave `regions.json` version 2 (row 147).
   Codex rounds 1 and 2 each found one P1, fixed with rows 148 (a reopened dispute is withheld again) and
   149 (a withhold not in the tree stops the editorial pass with `E_WITHHOLD`). `package-lock.json` has
-  not changed since `cbf3a9b`, so no `npm ci`. **Kobol housekeeping still due**, in the Kobol session
-  JL's next message starts: fast-forward the main checkout to `9ad5df3` (rule 4); copy the P3
-  worktree's `logs/dry-run/tree` into `logs/dry-run/tree` of the checkout where P4's Kobol steps run
-  (for example `/Users/kobol/Projects/CyberTracker-worktrees/p4-site/logs/dry-run/tree`), since SPEC
-  §10 P4's loop reads `CT_CONTENT_DIR=logs/dry-run/tree`; then remove the worktree
-  `/Users/kobol/Projects/CyberTracker-worktrees/p3-pipeline` and
-  `/Users/kobol/Projects/CyberTracker-worktrees/p3-saved-packs`.
-- **P4 on `p4-site`, draft PR #6:** the static site (every route, the brief, the Gap charts,
-  Methodology, About, the feed), `scripts/color-check.ts` and `scripts/screenshots.mjs`, built in the
-  cloud container from 2026-11-12 00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel
-  lanes (brief, charts, pages, tools), their integration, then an independent review. Of its 39 findings
-  27 were confirmed: 25 code fixes with tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of
-  those fixes added one more (`c8f294b`). Spec changes: §0.4 rows 150 to 169. STYLE §14's change leaves
-  the drafting rule as it was, so a Kobol canary rerun (`agent:check -- --canary`) is optional. The PR
-  stays a draft until these Kobol steps (SPEC §10 P4's status) are done: install `playwright-core` in
-  `/Users/kobol/.cybertracker/tools` (§9.9 item 6) and record its version in Appendix C; build both
-  looks from the P3 dry-run tree and commit the screenshots into `docs/screenshots/p4/<look>/`; check
-  the CISA KEV search link; check that a `[n]` link opens the sources list in iOS Safari and in the
-  Claude app's browser; check the route summary on the dry-run tree. Then it is marked ready with
-  `@codex review`; JL picks the look from the screenshots and the other look is deleted (Appendix A.6).
+  not changed since `cbf3a9b`, so no `npm ci`. Kobol housekeeping done on 2026-11-12 (08:00 to 08:07
+  Taipei): the main checkout fast-forwarded to `9ad5df3`, the P3 dry-run tree copied into the `p4-site`
+  worktree's `logs/dry-run/tree`, and the worktree `p3-pipeline` and the folder `p3-saved-packs` under
+  `/Users/kobol/Projects/CyberTracker-worktrees/` removed; `git worktree list` shows the main checkout
+  and `p4-site`.
+
+- **P4 on `p4-site`, PR #6, ready for review (JL marked it ready on 2026-11-12 at 07:36 Taipei):** the
+  static site (every route, the brief, the Gap charts, Methodology, About, the feed),
+  `scripts/color-check.ts` and `scripts/screenshots.mjs`, built in the cloud container from 2026-11-12
+  00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel lanes (brief, charts, pages, tools),
+  their integration, then an independent review. Of its 39 findings 27 were confirmed: 25 code fixes
+  with tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of those fixes added one more
+  (`c8f294b`). STYLE §14's change leaves the drafting rule as it was, so a Kobol canary rerun
+  (`agent:check -- --canary`) is optional. Codex round 1 found one P2 (row 169), round 2 nothing. The
+  Kobol steps ran on 2026-11-12, 08:00 to 08:07 Taipei (row 170, commit `59edb6e`): `playwright-core`
+  1.65.0 in `/Users/kobol/.cybertracker/tools` with Chrome 157.0.8103.50, `npm run check` 2,664 tests,
+  both looks built from the dry-run tree (every route static), 16 screenshots in
+  `docs/screenshots/p4/{paper,night}/`, and the KEV search link checked (it ignores the CVE). The
+  screenshots showed three defects, fixed in the container: the KEV link is the catalog root (row 171),
+  charts A's and B's end labels now print the Gap text's figures through a latest point at the cutoff
+  (row 172), and chart B's 2023–24 labels moved to the row titles (row 173). Spec changes: §0.4 rows 150
+  to 173. The `[n]` check on iOS is JL's optional look (WebKit opens the closed sources list from Safari
+  26.2). Waiting on: Codex round 3 (the last), then JL's pick of the look (a decision card in the thread;
+  paper recommended) and the deletion of the other look, `CT_LOOK` and `siteLook()` (Appendix A.6).
+  After the merge: rule 4's fast-forward on Kobol, remove the `p4-site` worktree, check the production
+  deploy, the domain and `curl -sI` (SPEC §10 P4's Done when).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -117,7 +123,7 @@ faster?
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
-| P4 Site | `p4-site` | #6 | In progress: built in the cloud container 2026-11-12; a draft until its Kobol steps |
+| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; waiting on Codex round 3 and JL's pick of the look |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 

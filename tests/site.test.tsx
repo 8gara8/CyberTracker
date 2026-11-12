@@ -38,7 +38,7 @@ import { AiCreditedChart } from "@/components/charts/AiCreditedChart";
 import { FloodChart } from "@/components/charts/FloodChart";
 import { WindowChart } from "@/components/charts/WindowChart";
 import { CHANGE_CALL_LINE, KEV_US_DATES, N_TOO_SMALL, aiLabel, floodLabel, windowLabel } from "@/components/charts/labels";
-import { fmtShareTick, fmtTick, niceMax, shareShown, weekScale, yScale } from "@/components/charts/scale";
+import { fmtShareTick, fmtTick, latestPoint, niceMax, shareShown, weekScale, yScale } from "@/components/charts/scale";
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 import { SampleBanner } from "@/components/layout/SampleBanner";
@@ -1164,6 +1164,16 @@ describe("Charts", () => {
     it("an all-null series shows \"n too small\" and no band", () => {
       const sample = sampleMetrics();
       expect(sample.series.window_at_disclosure_share.every((v) => v === null)).toBe(true);
+      // As shipped (window.w26 157, a Monday cutoff): rows 1 and 2 show only the latest point's dot and label.
+      const shipped = charts(sampleMetrics()).window;
+      expect(shipped).toContain(">37%</text>");
+      expect(shipped).toContain(">17 d</text>");
+      expect(shipped).not.toContain(`>${N_TOO_SMALL}</text>`);
+      expect(shipped).not.toContain('fill-opacity="0.18"');
+      expect(shipped).not.toMatch(/<path d="M[^"]*" fill="none" stroke="var\(--ink\)"/);
+      // window.w26 below MIN_N too, so the latest point has nothing to draw either.
+      sample.window!.w26 = { ...sample.window!.w26, cohort_n: 12, at_disclosure_n: 4, at_disclosure_share: null, at_disclosure_ci80: null,
+        after_disclosure_median_days: null, after_disclosure_median_ci80: null };
       const w = charts(sample).window;
       expect(count(w, `>${N_TOO_SMALL}</text>`)).toBe(2); // rows 1 and 2
       expect(w).not.toContain('fill-opacity="0.18"');
@@ -1171,9 +1181,22 @@ describe("Charts", () => {
       expect(c.window).toContain('fill-opacity="0.18"');
       expect(c.window).toContain(">37%</text>");
       expect(c.window).toContain(">17 d</text>");
-      expect(c.window).toContain(">2023–24 37%</text>");
-      expect(c.window).toContain(">2023–24 21 d</text>");
       expect(c.window).not.toContain(`>${N_TOO_SMALL}</text>`);
+    });
+
+    it("chart B's 2023–24 values are keys on rows 1's and 2's title lines, by a dashed rule, never text inside a plot", () => {
+      const titleLines = [...c.window.matchAll(/<p class="mt-3 flex[^"]*">([\s\S]*?)<\/p>/g)].map((x) => text(x[1]!.replace(/<\/span>/g, " </span>")));
+      expect(titleLines).toEqual([
+        "Already exploited at disclosure 2023–24 37%",
+        "Median days to CISA listing, for the rest 2023–24 21 d",
+        "Recent flaws CISA listed each week this week: 2 of 5",
+      ]);
+      expect(count(c.window, /<span aria-hidden="true" class="[^"]*border-dashed border-muted[^"]*"><\/span>/g)).toBe(2);
+      // Right-aligned when wrapped under a long row name at 375px (row 173).
+      expect(count(c.window, 'class="ml-auto font-mono')).toBe(3);
+      expect(c.window).not.toMatch(/>2023–24 [^<]*<\/text>/);
+      // The reference lines are still drawn, one per row.
+      expect(count(c.window, 'stroke-dasharray="4 3"')).toBe(2);
     });
 
     it("nulls break lines: one null week splits the share line and its band in two", () => {
@@ -1263,13 +1286,161 @@ describe("Charts", () => {
     it("data tables: \"Data table: <chart name>\", newest week first, bounds and n, Source by series.live_from", () => {
       for (const [id, h] of Object.entries(c)) expect(h).toContain(`<summary class="kicker cursor-pointer py-2">Data table: ${chartName(id as "flood")}</summary>`);
       const firstRow = (h: string) => decode(h.match(/<tbody><tr>([\s\S]*?)<\/tr>/)![1]!.replace(/<\/t[dh]>/g, "|"));
-      expect(firstRow(c.flood)).toBe("Week of 5 Oct 2026|45,050|4,090|9,030|live|");
-      expect(firstRow(c.window)).toBe("Week of 5 Oct 2026|37%|32%–43%|150|17|13–31|94|5|2|live|");
+      // The cutoff (12 Oct) is a day after the last week's Sunday: the latest point's row comes first (§7 "Latest point").
+      expect(firstRow(c.flood)).toBe("To 12 Oct 2026|44,944|4,804|12,275|live|");
+      expect(firstRow(c.window)).toBe("To 12 Oct 2026|37%|32%–42%|157|17|13–22|99|||live|");
+      expect(c.flood).toContain("<tr><th scope=\"row\">Week of 5 Oct 2026</th><td>45,050</td><td>4,090</td><td>9,030</td><td>live</td></tr>");
+      expect(c.window).toContain("<tr><th scope=\"row\">Week of 5 Oct 2026</th><td>37%</td><td>32%–43%</td><td>150</td><td>17</td><td>13–31</td><td>94</td>");
       expect(firstRow(c.ai)).toBe("Week of 5 Oct 2026|5|3|1|0|1|2|yes|live|");
       expect(c.ai).toContain("Anthropic ledger only, not in the total");
       expect(c.flood).toContain("<th scope=\"row\">Week of 14 Oct 2024</th><td>9,000</td><td>1,000</td><td>not available</td><td>backfill</td>");
       // The null week reads "n too small" in the table too.
       expect(c.window).toContain(`<th scope="row">Week of 29 Sep 2025</th><td>${N_TOO_SMALL}</td><td></td><td>20</td><td>${N_TOO_SMALL}</td>`);
+    });
+
+    describe("the latest point (§7): on a mid-week cutoff the lines run on to the block's own figures", () => {
+      const r2 = (v: number) => Math.round(v * 100) / 100;
+      /** drawn() with window.w26 moved off the last week's values, so the two can be told apart. */
+      const moved = () => {
+        const m = drawn();
+        m.window!.w26 = { ...m.window!.w26, at_disclosure_n: 70, at_disclosure_share: round4(70 / 157), at_disclosure_ci80: [0.4, 0.49],
+          after_disclosure_median_days: 24, after_disclosure_median_ci80: [18, 30] };
+        return m;
+      };
+
+      it("latestPoint(): k sevenths of a week past the last week's centre for a cutoff k = 1 to 6 days after its Sunday, else null", () => {
+        const weeks = drawn().series.weeks;
+        const s = weekScale(weeks);
+        expect(weeks.at(-1)).toBe("2026-10-05");
+        for (const k of [1, 2, 3, 4, 5, 6]) {
+          const p = latestPoint(weeks, s, `2026-10-${String(11 + k).padStart(2, "0")}`)!;
+          expect(p.x).toBeCloseTo(s.x(103) + (k * s.step) / 7, 10);
+          expect(p.week).toBe("2026-10-12");
+        }
+        for (const to of ["2026-10-11", "2026-10-18", "2026-10-04", "2026-11-30"]) expect(latestPoint(weeks, s, to), to).toBeNull();
+        expect(latestPoint([], weekScale([]), "2026-10-12")).toBeNull();
+      });
+
+      it("chart A: the end label, the line's end and the table's first row are flood.n, as the aria-label and the second line print it", () => {
+        const m = drawn();
+        const f = charts(m).flood;
+        const s = weekScale(m.series.weeks);
+        const end = latestPoint(m.series.weeks, s, m.flood!.to)!;
+        const y = yScale(50_000, 84);
+        expect(m.flood!.n).toBe(44_944);
+        expect(floodLabel(m.flood!)).toContain("44,944 new CVE records in the 13 weeks to 12 Oct 2026");
+        expect(f).toContain(">44,944</text>");
+        expect(f).not.toContain(">45,050</text>"); // the last week's total is in its hover title and table row only
+        expect(f).toContain(`<circle cx="${r2(end.x)}" cy="${r2(y(44_944))}" r="2.5"`);
+        expect(f).toMatch(new RegExp(`L${r2(end.x)},${r2(y(44_944))}" fill="none" stroke="var\\(--ink\\)"`));
+        expect(f).toMatch(new RegExp(`L${r2(end.x)},${r2(y(12_275))}" fill="none" stroke="var\\(--muted\\)"`)); // the year-ago line too
+        expect(f).toContain(`L${r2(end.x)},${r2(y(4_804))}L${r2(end.x)},${r2(y(0))}`); // and the kernel area
+        // Hover titles stay one per week.
+        expect(count(f, "<title>")).toBe(m.series.weeks.length);
+        // "a year earlier" anchors at the latest point too (row 172).
+        expect(f).toContain(`<circle cx="${r2(end.x)}" cy="${r2(y(12_275))}" r="2.5"`);
+        expect(f).toMatch(new RegExp(`<text x="${r2(end.x - 5)}" y="[\\d.-]+" text-anchor="end"[^>]*>a year earlier</text>`));
+      });
+
+      it("chart B: rows 1 and 2 end at window.w26's share and median, as the headline and the aria-label print them", () => {
+        const m = moved();
+        const w = charts(m).window;
+        expect(windowLabel(m.window!)).toContain("45% already exploited at disclosure");
+        expect(windowLabel(m.window!)).toContain("a median 24 days to CISA listing");
+        expect(w).toContain(">45%</text>");
+        expect(w).toContain(">24 d</text>");
+        expect(w).not.toContain(">37%</text>");
+        expect(w).not.toContain(">17 d</text>");
+        const firstRow = decode(w.match(/<tbody><tr>([\s\S]*?)<\/tr>/)![1]!.replace(/<\/t[dh]>/g, "|"));
+        expect(firstRow).toBe("To 12 Oct 2026|45%|40%–49%|157|24|18–30|87|||live|");
+        // Row 1's dot and band end at the latest point; the line ends and row 2's top are the next case.
+        const row1 = w.split("<svg")[1]!;
+        const end = latestPoint(m.series.weeks, weekScale(m.series.weeks), m.window!.w26.to)!;
+        expect(row1).toContain(`<circle cx="${r2(end.x)}" cy="${r2(yScale(1, 84)(round4(70 / 157)))}" r="2.5"`);
+        expect(row1).toContain(`L${r2(end.x)},${r2(yScale(1, 84)(0.49))}`);
+      });
+
+      it("chart B rows 1 and 2: line, band, dot and label at the latest point; row 2's top takes the latest band", () => {
+        const m = moved();
+        m.window!.w26 = { ...m.window!.w26, after_disclosure_median_ci80: [18, 60] }; // the weeks' band tops are 31 (niceMax 50)
+        const w = charts(m).window;
+        const end = latestPoint(m.series.weeks, weekScale(m.series.weeks), m.window!.w26.to)!;
+        const [, row1, row2] = w.split("<svg") as [string, string, string];
+        const y1 = yScale(1, 84);
+        const y2 = yScale(100, 84); // niceMax(60): the latest band's top, above the weeks'
+        expect(row1).toMatch(new RegExp(`L${r2(end.x)},${r2(y1(round4(70 / 157)))}" fill="none" stroke="var\\(--ink\\)"`));
+        expect(row2).toContain(`<circle cx="${r2(end.x)}" cy="${r2(y2(24))}" r="2.5"`);
+        expect(row2).toContain(`<text x="${r2(end.x + 6)}" y="${r2(y2(24) + 4)}"`);
+        expect(row2).toMatch(new RegExp(`L${r2(end.x)},${r2(y2(24))}" fill="none" stroke="var\\(--ink\\)"`));
+        expect(row2).toContain(`L${r2(end.x)},${r2(y2(60))}L${r2(end.x)},${r2(y2(18))}`);
+        expect(row2).toContain(">100</text>");
+      });
+
+      it("chart A's y top takes the latest point: a flood.n above the weeks' top still fits the plot", () => {
+        const m = drawn();
+        m.flood = { ...m.flood!, n: 61_000 }; // the weeks top out at 45,050 (niceMax 50k)
+        const f = charts(m).flood;
+        const end = latestPoint(m.series.weeks, weekScale(m.series.weeks), m.flood!.to)!;
+        expect(f).toContain(">100k</text>");
+        expect(f).toContain(`<circle cx="${r2(end.x)}" cy="${r2(yScale(100_000, 84)(61_000))}" r="2.5"`);
+      });
+
+      it("the To row's Source is the cutoff's week's: live when live_from is that week, while the last week reads backfill", () => {
+        const m = moved();
+        m.series.live_from = "2026-10-12"; // the Monday after the last week (5 Oct), the cutoff's week
+        const c2 = charts(m);
+        const rows = (h: string) => [...h.match(/<tbody>([\s\S]*?)<\/tbody>/)![1]!.matchAll(/<tr>([\s\S]*?)<\/tr>/g)]
+          .map((r) => decode(r[1]!.replace(/<\/t[dh]>/g, "|")));
+        for (const h of [c2.flood, c2.window]) {
+          const [first, second] = rows(h);
+          expect(first).toMatch(/^To 12 Oct 2026\|.*\|live\|$/);
+          expect(second).toMatch(/^Week of 5 Oct 2026\|.*\|backfill\|$/);
+        }
+      });
+
+      it("a long end label late in the week ends inside the viewBox, its dot still at the latest point", () => {
+        const m = drawn();
+        m.flood = { ...m.flood!, n: 144_944, to: "2026-10-17" }; // k = 6, a Monday edition's cutoff
+        m.series.flood_n13 = [...m.series.flood_n13.slice(0, -1), 144_944];
+        const f = charts(m).flood;
+        const end = latestPoint(m.series.weeks, weekScale(m.series.weeks), "2026-10-17")!;
+        expect(end.x + 6).toBeGreaterThan(400 - 7 * 7.2);
+        expect(f).toMatch(new RegExp(`<circle cx="${r2(end.x)}" cy="[\\d.]+" r="2.5"`));
+        const x = Number(f.match(/<text x="([\d.]+)"[^>]*text-anchor="start"[^>]*>144,944<\/text>/)![1]);
+        expect(x).toBe(r2(400 - 7 * 7.2));
+        // A shorter label keeps its place after the dot.
+        expect(charts(drawn()).flood).toMatch(new RegExp(`<text x="${r2(latestPoint(m.series.weeks, weekScale(m.series.weeks), drawn().flood!.to)!.x + 6)}"[^>]*>44,944</text>`));
+      });
+
+      it("a cutoff on the last week's Sunday, a stale block or a series that stopped early: no latest point, the last week ends the line", () => {
+        for (const to of ["2026-10-11", "2026-10-04", "2026-10-19"]) {
+          const m = moved();
+          m.flood = { ...m.flood!, to };
+          m.window!.w26 = { ...m.window!.w26, to };
+          const c2 = charts(m);
+          expect(c2.flood, to).toContain(">45,050</text>");
+          expect(c2.flood, to).not.toContain(">44,944</text>");
+          expect(c2.window, to).toContain(">37%</text>");
+          expect(c2.window, to).toContain(">17 d</text>");
+          expect(c2.flood, to).not.toContain(">To ");
+          expect(c2.window, to).not.toContain(">To ");
+        }
+      });
+
+      it("the year-ago line runs on only from a last week it has; window.w26 below MIN_N reads \"n too small\" at the end", () => {
+        const m = drawn();
+        m.series.flood_n13_year_ago = m.series.flood_n13_year_ago.map(() => null);
+        const f = charts(m).flood;
+        expect(f).not.toContain('stroke-dasharray="4 3"');
+        expect(f).not.toContain(">a year earlier</text>");
+        expect(decode(f.match(/<tbody><tr>([\s\S]*?)<\/tr>/)![1]!.replace(/<\/t[dh]>/g, "|"))).toBe("To 12 Oct 2026|44,944|4,804|not available|live|");
+        m.window!.w26 = { ...m.window!.w26, cohort_n: 12, at_disclosure_n: 4, at_disclosure_share: null, at_disclosure_ci80: null,
+          after_disclosure_median_days: null, after_disclosure_median_ci80: null };
+        const w = charts(m).window;
+        expect(count(w, `>${N_TOO_SMALL}</text>`)).toBe(2);
+        expect(decode(w.match(/<tbody><tr>([\s\S]*?)<\/tr>/)![1]!.replace(/<\/t[dh]>/g, "|")))
+          .toBe(`To 12 Oct 2026|${N_TOO_SMALL}||12|${N_TOO_SMALL}|||||live|`);
+      });
     });
 
     it("the live_from tick and the provisional hatch: chart-prefixed pattern ids", () => {
@@ -1764,7 +1935,7 @@ describe("Routes", () => {
       });
     });
 
-    it("links cve.org, CISA's KEV catalog search, NVD and the GitHub advisory", () => {
+    it("links cve.org, CISA's KEV catalog (the root: its search parameter is ignored), NVD and the GitHub advisory", () => {
       const content = sampleCopy();
       const item = briefOf(content, "2026-10-14").items.find((i) => i.id === "cve-2026-104935")!;
       const cve = item.cves[0]!;
@@ -1774,7 +1945,7 @@ describe("Routes", () => {
       const records = /<section id="records"[\s\S]*?<\/section>/.exec(out)![0];
       expect(hrefs(records)).toEqual([
         `https://www.cve.org/CVERecord?id=${cve.cve_id}`,
-        `${KEV_CATALOG_URL}?search_api_fulltext=${cve.cve_id}`,
+        KEV_CATALOG_URL,
         `https://nvd.nist.gov/vuln/detail/${cve.cve_id}`,
         "https://github.com/advisories/GHSA-2c3v-4f5g-6h7j",
       ]);

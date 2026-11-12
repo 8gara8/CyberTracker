@@ -319,15 +319,19 @@ export function HoverColumns({ titles, x, step, top, bottom }: { titles: readonl
   );
 }
 
+/** A label character's advance: IBM Plex Mono is 0.6 em wide. */
+const CHAR_W = LABEL_FONT * 0.6;
+
 /**
  * A direct label (§7): 12 units, 600, ink, mono, with a dot (r 2.5) at the line's end. `anchor` "start" puts the
- * text in the right margin after the dot; "end" puts it inside the plot, ending just left of the dot, `dy` above
- * or below it. Without `dot` the text alone (a null latest value's "n too small").
+ * text in the right margin after the dot, started at min(dot + 6, 400 - 7.2 x characters) so a long figure at a
+ * latest point late in the week still ends inside the viewBox; "end" puts it inside the plot, ending just left of
+ * the dot, `dy` above or below it. Without `dot` the text alone (a null latest value's "n too small").
  */
 export function DirectLabel({ x, y, text, anchor = "start", dy = 0, dot = true }: {
   x: number; y: number; text: string; anchor?: "start" | "end"; dy?: number; dot?: boolean;
 }) {
-  const tx = anchor === "start" ? x + 6 : x - 5;
+  const tx = anchor === "start" ? Math.min(x + 6, W - text.length * CHAR_W) : x - 5;
   return (
     <g>
       {dot ? <circle cx={r2(x)} cy={r2(y)} r={2.5} fill="var(--ink)" /> : null}

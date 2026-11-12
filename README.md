@@ -5,8 +5,8 @@ Daily AI-era cyber threat brief: exploits, breaches and the AI shift across the 
 Status: rebuilt for Kobol (SPEC.md v2.0, 2026-11-08); the build follows in phases P1 to P5 (SPEC.md §10).
 P1 (data contract, validator, chat edition) merged on 2026-11-09, P2 (feeds, metrics and the two-year
 backfill) on 2026-11-10 and P3 (the morning pipeline and its dry runs on Kobol) on 2026-11-11. P4 (the
-static site) is in progress on draft PR #6: built and tested, with its Kobol steps (the screenshots of
-both looks and a few phone and link checks) next.
+static site) is in review on PR #6: built and tested, its Kobol steps done (the screenshots of both looks
+are in [docs/screenshots/p4](docs/screenshots/p4)), with Codex's last round and the pick of one look next.
 
 - Design: [docs/DESIGN.md](docs/DESIGN.md) (approved v0.2, frozen)
 - Build spec: [SPEC.md](SPEC.md)

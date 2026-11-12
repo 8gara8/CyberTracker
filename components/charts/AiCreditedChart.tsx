@@ -9,7 +9,7 @@ import { chartName } from "@/lib/page-text";
 import { fmtInt } from "@/lib/metrics/stats";
 import type { Annotation } from "@/lib/schema/config";
 import type { AiCredited, Series } from "@/lib/schema/metrics";
-import { CHART_TITLES, FAMILY_NAMES, FAMILY_ORDER, SOURCE, aiLabel, tableSummary, weekOf } from "./labels";
+import { CHART_TITLES, FAMILY_NAMES, FAMILY_ORDER, aiLabel, sourceOf, tableSummary, weekOf } from "./labels";
 import {
   ChartFigure, ChartSvg, DataTable, HatchDefs, HoverColumns, LiveTick, MarkerKey, Markers, StackBars, YGrid, YearTicks, hatchFill, placeMarkers,
 } from "./parts";
@@ -47,7 +47,7 @@ export function AiCreditedChart({ series, ai, markers, caption }: AiCreditedChar
   ].join(" · ") + (isProvisional(i) ? ` (${PROVISIONAL})` : ""));
   const rows = weeks.map((w, i) => [
     weekOf(w), fmtInt(totals[i]!), fmtInt(fam.anthropic[i]!), fmtInt(fam.openai[i]!), fmtInt(fam.google[i]!), fmtInt(fam.other[i]!),
-    fmtInt(series.ai_ledger_only_weekly[i]!), isProvisional(i) ? "yes" : "no", w < series.live_from ? SOURCE.backfill : SOURCE.live,
+    fmtInt(series.ai_ledger_only_weekly[i]!), isProvisional(i) ? "yes" : "no", sourceOf(w, series.live_from),
   ]).reverse();
   const head = ["Week", "AI-credited", "Anthropic", "OpenAI", "Google", "Other", "Anthropic ledger only, not in the total", "Provisional", "Source"];
 

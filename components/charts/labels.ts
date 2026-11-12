@@ -65,6 +65,16 @@ export function weekOf(week: string): string {
   return `Week of ${shortDate(week)}`;
 }
 
+/** The data table's first row for the latest point (§7 "Latest point"): "To 12 Oct 2026", the cutoff. */
+export function latestRowLabel(to: string): string {
+  return `To ${shortDate(to)}`;
+}
+
+/** A data table row's Source (§7): "backfill" for a week before series.live_from, else "live". */
+export function sourceOf(week: string, liveFrom: string): string {
+  return week < liveFrom ? SOURCE.backfill : SOURCE.live;
+}
+
 /** "Data table: <chart name>" (§7). */
 export function tableSummary(name: string): string {
   return `Data table: ${name}`;

@@ -3,6 +3,7 @@
 // at x = l + (i + 0.5) x 304 / weeks.length; a date goes to its ISO week, floor((dayIndex(date) -
 // dayIndex(weeks[0])) / 7); three y ticks topped by niceMax (the next 1, 2 or 5 x 10^n). Pure; the axis
 // text helpers (fmtTick, shareShown) follow §5.2's display rules. Owner: gap lane.
+import { addDays } from "@/lib/dates";
 import { MIN_N } from "@/lib/vocab";
 import { fmtInt, fmtPct, pct } from "@/lib/metrics/stats";
 
@@ -54,6 +55,34 @@ export function weekScale(weeks: readonly string[], left = 40, width = 304): Wee
       return i >= 0 && i < weeks.length ? i : null;
     },
   };
+}
+
+/**
+ * The latest point of charts A and B (§7 "Latest point"): the block's own figure, over the window that ends on
+ * the cutoff `to`. The series ends with the newest complete week, whose window ends on its Sunday; on a cutoff 1
+ * to 6 days later the block's window is k days newer, so its point sits k sevenths of a week past the last
+ * week's centre and the line runs to it. Null when there is no week, when `to` is that Sunday (the block's
+ * window is the last week's, so its figure is the last point) or when `to` is not 1 to 6 days after it (a stale
+ * block, or a series that stopped early): the line then ends with the last week, as before.
+ */
+export interface LatestPoint {
+  /** The point's x: the last week's centre plus k x step / 7. */
+  x: number;
+  /** The Monday of the cutoff's ISO week, for the data table's Source column. */
+  week: string;
+}
+
+export function latestPoint(weeks: readonly string[], scale: WeekScale, to: string): LatestPoint | null {
+  if (!weeks.length) return null;
+  const lastWeek = weeks[weeks.length - 1]!;
+  const k = dayIndex(to) - (dayIndex(lastWeek) + 6);
+  if (k < 1 || k > 6) return null;
+  return { x: scale.x(weeks.length - 1) + (k * scale.step) / 7, week: addDays(lastWeek, 7) };
+}
+
+/** The x of index i over the weeks, with index `weeks` (one past the last week) at the latest point. */
+export function xWithLatest(scale: WeekScale, weeks: number, latest: LatestPoint | null): (i: number) => number {
+  return (i: number) => (latest !== null && i >= weeks ? latest.x : scale.x(i));
 }
 
 /** A y scale from 0 to `top` over a plot `height` high starting at `plotTop`. */

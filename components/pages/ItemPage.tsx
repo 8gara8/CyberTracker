@@ -31,7 +31,7 @@ import { correctionsFor, heldCorrection, heldItemIds, itemHistory, type ItemEdit
 import { normalizeUrl } from "@/lib/urls";
 import { EXPLOITATION_BASIS_INFO, KIND_INFO, WITHHELD_HEADLINE, WITHHELD_MARK, WITHHELD_TEXT } from "@/lib/vocab";
 import { CORRECTION_WORD } from "@/components/brief/CorrectionBanner";
-import { cveRecordUrl, ghsaRecordUrl, kevRecordUrl, nvdRecordUrl } from "@/lib/record-links";
+import { KEV_CATALOG_URL, cveRecordUrl, ghsaRecordUrl, nvdRecordUrl } from "@/lib/record-links";
 import { EDITION_WORD } from "./labels";
 
 type ItemContent = Pick<Content, "briefs" | "corrections">;
@@ -162,7 +162,7 @@ function Records({ item }: { item: Item }) {
         <li key={cve}>
           <span className="font-mono text-[13px]">{cve}</span>:{" "}
           <ExternalLink href={cveRecordUrl(cve)}>CVE record</ExternalLink>
-          {blocks.get(cve)?.kev ? <> · <ExternalLink href={kevRecordUrl(cve)}>CISA KEV catalog</ExternalLink></> : null}
+          {blocks.get(cve)?.kev ? <> · <ExternalLink href={KEV_CATALOG_URL}>CISA KEV catalog</ExternalLink></> : null}
           {" · "}<ExternalLink href={nvdRecordUrl(cve)}>NVD</ExternalLink>
         </li>
       ))}
