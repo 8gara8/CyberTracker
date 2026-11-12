@@ -103,9 +103,10 @@ faster?
   the `data-look` attribute, `CT_LOOK`, `siteLook()`, `themeColor()` (now the constant `THEME_COLOR`,
   `#f3eee3`) and `NO_BLUE_NEUTRALS`; `color:check` reads `:root` and `.night` only (107 lines, 0 failed,
   17 exempt), and `docs/screenshots/p4/night/` stays as the record of the comparison. B.9's `siblings.me`
-  is checked (row 175). Waiting on: the PR's Vercel preview on the last commit (SPEC §10 P4 item 4: every
-  route renders the sample with the sample banner and no CSP violation, and whether the Toolbar trips the
-  CSP) and Codex round 3 (the last). After the merge: rule 4's fast-forward on Kobol, remove the
+  and the PR's Vercel preview are checked (SPEC §10 P4 item 4, row 175): every route 200 with the sample
+  banner and the five headers; the Vercel Toolbar's script tripped the CSP in a browser, so the Toolbar is
+  off for previews (`enablePreviewFeedback: false`, 2026-11-12 09:41 Taipei). Waiting on: Codex round 3
+  (the last). After the merge: rule 4's fast-forward on Kobol, remove the
   `p4-site` worktree, check the production deploy, the domain and `curl -sI` (SPEC §10 P4's Done when).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
@@ -129,7 +130,7 @@ faster?
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
-| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; JL picked paper (08:39 Taipei); waiting on the Vercel preview and Codex round 3 |
+| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; JL picked paper (08:39 Taipei); preview checked, Toolbar off; waiting on Codex round 3 |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
