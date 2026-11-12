@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08",
+  "updated_at": "2026-11-10",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -5194,6 +5194,12 @@
       "WatchGuard AI Security Research"
     ],
     [
+      "CVE-2026-82337",
+      "2026-11-09",
+      "cna.credits",
+      "Claude Security Scans"
+    ],
+    [
       "CVE-2026-82355",
       "2026-09-21",
       "cna.credits",
@@ -5260,6 +5266,12 @@
       "The ASF using Claude Agents"
     ],
     [
+      "CVE-2026-82436",
+      "2026-11-09",
+      "cna.credits",
+      "The ASF using Claude Agents"
+    ],
+    [
       "CVE-2026-82437",
       "2026-09-14",
       "cna.credits",
@@ -5274,6 +5286,12 @@
     [
       "CVE-2026-82439",
       "2026-09-14",
+      "cna.credits",
+      "The ASF using Claude Agents"
+    ],
+    [
+      "CVE-2026-82440",
+      "2026-11-09",
       "cna.credits",
       "The ASF using Claude Agents"
     ],
@@ -5752,6 +5770,12 @@
       "Red Hat would like to thank Dmitry Maranik (Sectum AI) for reporting this issue."
     ],
     [
+      "CVE-2026-86336",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
       "CVE-2026-86342",
       "2026-09-07",
       "cna.credits",
@@ -5866,6 +5890,18 @@
       "Red Hat would like to thank Aisle Research for reporting this issue."
     ],
     [
+      "CVE-2026-86531",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-86532",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
       "CVE-2026-86535",
       "2026-10-02",
       "cna.credits",
@@ -5892,6 +5928,18 @@
     [
       "CVE-2026-86792",
       "2026-09-16",
+      "cna.credits",
+      "Claude Security Scans"
+    ],
+    [
+      "CVE-2026-86811",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-86829",
+      "2026-11-09",
       "cna.credits",
       "Claude Security Scans"
     ],
@@ -5930,6 +5978,24 @@
       "2026-10-02",
       "cna.credits",
       "The ASF -- found using Claude agents to study the security of open-source projects, validated and reported by Apache Thrift."
+    ],
+    [
+      "CVE-2026-87755",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-87756",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-87758",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
     ],
     [
       "CVE-2026-87802",
@@ -7030,10 +7096,64 @@
       "MopMonk-AI"
     ],
     [
+      "CVE-2026-97849",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
       "CVE-2026-97863",
       "2026-09-25",
       "cna.credits",
       "Claude Opus 5"
+    ],
+    [
+      "CVE-2026-97867",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97870",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97872",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97874",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97880",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97881",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97888",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-97890",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
     ],
     [
       "CVE-2026-100227",
@@ -7924,6 +8044,144 @@
       "ZAST.AI (VulDB User)"
     ],
     [
+      "CVE-2026-111239",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111240",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111241",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111242",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111243",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111244",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111245",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111246",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111247",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111248",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111249",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111250",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111251",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111256",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111257",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111258",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111259",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111260",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111261",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111262",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111263",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111264",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-111421",
+      "2026-11-09",
+      "cna.credits",
+      "Qi Qin of depthfirst"
+    ],
+    [
       "CVE-2026-111497",
       "2026-10-22",
       "cna.credits",
@@ -7990,6 +8248,66 @@
       "Claude Opus 5"
     ],
     [
+      "CVE-2026-112314",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112315",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112316",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112317",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112318",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112319",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112320",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112321",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112322",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-112323",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
       "CVE-2026-112341",
       "2026-11-06",
       "cna.credits",
@@ -8044,6 +8362,12 @@
       "ZAST.AI (VulDB User)"
     ],
     [
+      "CVE-2026-113508",
+      "2026-11-09",
+      "cna.credits",
+      "Claude Security Scans"
+    ],
+    [
       "CVE-2026-113881",
       "2026-10-27",
       "cna.credits",
@@ -8094,6 +8418,12 @@
     [
       "CVE-2026-115541",
       "2026-11-03",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
+      "CVE-2026-115640",
+      "2026-11-10",
       "cna.credits",
       "Fluid Attacks' AI SAST Scanner"
     ],
@@ -8416,16 +8746,52 @@
       "OpenAI Codex Security (kylebot)"
     ],
     [
+      "CVE-2026-119078",
+      "2026-11-09",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-119079",
+      "2026-11-09",
+      "cna.credits",
+      "This issue was discovered by AISLE Research and Found by AISLE in partnership with Red Hat."
+    ],
+    [
       "CVE-2026-119378",
       "2026-10-30",
       "cna.credits",
       "Claude and Ada Logics"
     ],
     [
+      "CVE-2026-119610",
+      "2026-11-09",
+      "cna.credits",
+      "Upstream acknowledges Ada Logics (Ada Logics) and Claude (Anthropic) as the original reporters."
+    ],
+    [
       "CVE-2026-119776",
       "2026-11-04",
       "cna.credits",
       "Anthropic OSS-scanner (re-report, ANT-2026-N0E1INIV)"
+    ],
+    [
+      "CVE-2026-120244",
+      "2026-11-01",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-120245",
+      "2026-11-01",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-120367",
+      "2026-11-09",
+      "cna.credits",
+      "MopMonk-AI"
     ],
     [
       "CVE-2026-121559",
@@ -8504,6 +8870,960 @@
       "2026-11-06",
       "cna.credits",
       "Claude Opus 5"
+    ],
+    [
+      "CVE-2026-124077",
+      "2026-11-09",
+      "cna.credits",
+      "Claude Security"
+    ],
+    [
+      "CVE-2026-124858",
+      "2026-11-10",
+      "cna.credits",
+      "Amy Burnett of OpenAI"
+    ],
+    [
+      "CVE-2026-124872",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124877",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124878",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124879",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124880",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124881",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124882",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124883",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124884",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124885",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124886",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124887",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124888",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124889",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124890",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124891",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124892",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124893",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124894",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124895",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124896",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124897",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124898",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124899",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-124904",
+      "2026-11-10",
+      "cna.credits",
+      "OpenAI Codex Security (kylebot)"
+    ],
+    [
+      "CVE-2026-125064",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125065",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125066",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125067",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125068",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125069",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125070",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125071",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125072",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125073",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125095",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125096",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125097",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125098",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125099",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125100",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125101",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125102",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125103",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125104",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125170",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125171",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125172",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125173",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125174",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125174",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125175",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125176",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125177",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125178",
+      "2026-11-09",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-125178",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125179",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125180",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125181",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125182",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125183",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125184",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125185",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125186",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125187",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125188",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125188",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125189",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125190",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125191",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125192",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125193",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125194",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125195",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125196",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125197",
+      "2026-11-09",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-125197",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125198",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125199",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125200",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125201",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125202",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125203",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125203",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125204",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125205",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125206",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125206",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125207",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125208",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125209",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125209",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125210",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125211",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125212",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125213",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125214",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125215",
+      "2026-11-09",
+      "cna.credits",
+      "Zheng Yu @ Depthfirst"
+    ],
+    [
+      "CVE-2026-125215",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125216",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125217",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125218",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125219",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125220",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125221",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125222",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125223",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125224",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125225",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125226",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125227",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125228",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125229",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125230",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125231",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125232",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125233",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125234",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125235",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125236",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125237",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125238",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125239",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125240",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125241",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125242",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125243",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125244",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125245",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125246",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125247",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125248",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125249",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125250",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125251",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125252",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125253",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125254",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125255",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125256",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125257",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125258",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125259",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125260",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125261",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125262",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125263",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125264",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125265",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125266",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125267",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125268",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125269",
+      "2026-11-09",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-125269",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125270",
+      "2026-11-09",
+      "cna.credits",
+      "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-125396",
+      "2026-11-09",
+      "cna.credits",
+      "Paulos Yibelo and pwn.ai"
+    ],
+    [
+      "CVE-2026-125871",
+      "2026-11-10",
+      "cna.credits",
+      "Claude Opus 5 (1M context)"
     ]
   ]
 }

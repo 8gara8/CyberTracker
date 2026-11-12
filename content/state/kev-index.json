@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08",
-  "catalog_version": "2026.11.06",
+  "updated_at": "2026-11-10",
+  "catalog_version": "2026.11.10",
   "entries": [
     [
       "CVE-2010-5326",
@@ -15922,6 +15922,96 @@
       "SonicOS SSLVPN",
       "2026-11-06",
       "sonicwall",
+      "unknown"
+    ],
+    [
+      "CVE-2026-102895",
+      "2026-11-09",
+      "GPUStack",
+      "GPUStack",
+      "2026-11-04",
+      "GitHub_M",
+      "unknown"
+    ],
+    [
+      "CVE-2026-116779",
+      "2026-11-09",
+      "SignalWire",
+      "FreeSwitch",
+      "2026-11-05",
+      "GitHub_M",
+      "unknown"
+    ],
+    [
+      "CVE-2026-123158",
+      "2026-11-09",
+      "OpenBSD",
+      "OpenSSH",
+      "2026-11-05",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-123218",
+      "2026-11-09",
+      "IBM",
+      "Aspera Faspex",
+      "2026-11-07",
+      "ibm",
+      "unknown"
+    ],
+    [
+      "CVE-2026-20320",
+      "2026-11-10",
+      "Cisco",
+      "BroadWorks",
+      "2026-08-19",
+      "cisco",
+      "unknown"
+    ],
+    [
+      "CVE-2026-111560",
+      "2026-11-10",
+      "Barracuda Networks",
+      "Multiple Products",
+      "2026-11-02",
+      "Mandiant",
+      "unknown"
+    ],
+    [
+      "CVE-2026-111793",
+      "2026-11-10",
+      "Openwave Messaging Limited",
+      "Webtop Media Transcoder",
+      "2026-10-16",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-116606",
+      "2026-11-10",
+      "Barracuda Networks",
+      "Barracuda Email Security Gateway (ESG)",
+      "2026-11-02",
+      "Mandiant",
+      "unknown"
+    ],
+    [
+      "CVE-2026-124194",
+      "2026-11-10",
+      "Microsoft",
+      "Office",
+      "2026-11-10",
+      "microsoft",
+      "unknown"
+    ],
+    [
+      "CVE-2026-125350",
+      "2026-11-10",
+      "Google",
+      "Chromium",
+      "2026-11-10",
+      "Chrome",
       "unknown"
     ]
   ]
