@@ -110,7 +110,7 @@ describe("seed counts (Appendix B)", () => {
     expect(t1.filter((p) => p.state_label === "PRC state source").map((p) => p.id)).toEqual(["cverc", "prc-mfa", "prc-mps", "prc-cac"]);
     expect(t1.filter((p) => p.kind === "research")).toHaveLength(47);
     // P5 (row 184): SB-07 is judged on Verizon's Data Breach Investigations Report, so its report pages are tier 1.
-    expect(publishers.find((p) => p.id === "verizon-dbir")?.domains).toEqual(["verizon.com/business/resources/reports"]);
+    expect(publishers.find((p) => p.id === "verizon-dbir")?.domains).toEqual(["verizon.com/business/resources/reports/dbir", "verizon.com/business/resources/reports/dbir.html"]);
     expect(t1.filter((p) => ["government", "cert", "regulator"].includes(p.kind) && p.state_label === null)).toHaveLength(48 + 2);
     expect(publishers.filter((p) => p.tier === 2 && p.kind === "newsroom")).toHaveLength(55);
     expect(publishers.filter((p) => p.tier === 2)).toHaveLength(55);
