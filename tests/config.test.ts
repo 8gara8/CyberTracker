@@ -72,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 3, actors: 2 });
+    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 3, regions: 3, actors: 2 });
   });
 });
 
@@ -102,13 +102,15 @@ describe("seed counts (Appendix B)", () => {
     expect(af.strip).toHaveLength(8);
   });
 
-  it("B.3 source tiers: 6 + 48 + 4 + 46 tier 1, 55 tier 2, 29 tier 3", () => {
+  it("B.3 source tiers: 6 + 48 + 4 + 47 tier 1, 55 tier 2, 29 tier 3", () => {
     const { publishers, github } = prod().sourceTiers;
     const t1 = publishers.filter((p) => p.tier === 1);
-    expect(t1).toHaveLength(104);
+    expect(t1).toHaveLength(105);
     expect(publishers.slice(0, 6).map((p) => p.id)).toEqual(["cve-org", "nvd", "cisa-kev", "github-advisories", "osv", "first-epss"]);
     expect(t1.filter((p) => p.state_label === "PRC state source").map((p) => p.id)).toEqual(["cverc", "prc-mfa", "prc-mps", "prc-cac"]);
-    expect(t1.filter((p) => p.kind === "research")).toHaveLength(46);
+    expect(t1.filter((p) => p.kind === "research")).toHaveLength(47);
+    // P5 (row 184): SB-07 is judged on Verizon's Data Breach Investigations Report, so its report pages are tier 1.
+    expect(publishers.find((p) => p.id === "verizon-dbir")?.domains).toEqual(["verizon.com/business/resources/reports"]);
     expect(t1.filter((p) => ["government", "cert", "regulator"].includes(p.kind) && p.state_label === null)).toHaveLength(48 + 2);
     expect(publishers.filter((p) => p.tier === 2 && p.kind === "newsroom")).toHaveLength(55);
     expect(publishers.filter((p) => p.tier === 2)).toHaveLength(55);
@@ -182,12 +184,26 @@ describe("seed counts (Appendix B)", () => {
     ]);
     expect(c.standingStories.stories.map((s) => s.id)).toEqual(["salt-typhoon", "volt-typhoon", "dprk-it-workers", "taiwan-undersea-cables"]);
     expect(c.standingStories.stories.every((s) => s.seed_last_development === null && s.seed_source_url === null)).toBe(true);
-    // P5 (B.10): version 1 seeds the two rival claims, each restating a source verbatim; JL's claims start at SB-03.
+    // P5 (B.10): version 1 seeds the two rival claims, each restating a source verbatim, and JL's six, which
+    // restate JL's theses as stated in chat on 2026-11-12, so they carry no restates (§0.4 row 182).
     expect(c.claims.version).toBe(1);
-    expect(c.claims.claims.map((x) => [x.id, x.origin, x.judged_by, x.metric_path, x.opened, x.deadline, x.restates?.date])).toEqual([
+    expect(c.claims.claims.map((x) => [x.id, x.origin, x.judged_by, x.metric_path, x.opened, x.deadline, x.restates?.date ?? null])).toEqual([
       ["SB-01", "rival", "script", "base_rate.ratio", "2026-11-12", "2027-12-31", "2026-07-28"],
       ["SB-02", "rival", "report", null, "2026-11-12", "2028-12-31", "2026-11-03"],
+      ["SB-03", "jl", "script", "flood.vs_reference_pct", "2026-11-12", "2028-12-31", null],
+      ["SB-04", "jl", "script", "ai_credited.w13.ex_anthropic", "2026-11-12", "2027-12-31", null],
+      ["SB-05", "jl", "script", "window.w26.after_disclosure_median_days", "2026-11-12", "2027-12-31", null],
+      ["SB-06", "jl", "report", null, "2026-11-12", "2028-12-31", null],
+      ["SB-07", "jl", "report", null, "2026-11-12", "2028-09-30", null],
+      ["SB-08", "jl", "report", null, "2026-11-12", "2028-12-31", null],
     ]);
+    expect(c.claims.claims.filter((x) => x.origin === "jl").every((x) => x.restates === null)).toBe(true);
+    expect(c.claims.claims.filter((x) => x.judged_by === "script").slice(1).map((x) => [x.support, x.challenge])).toEqual([
+      [{ kind: "value", op: ">=", value: 300, bound: "value" }, { kind: "value", op: "<=", value: 150, bound: "value" }],
+      [{ kind: "value", op: ">=", value: 450, bound: "value" }, { kind: "value", op: "<=", value: 110, bound: "value" }],
+      [{ kind: "value", op: "<", value: 15, bound: "ci80_hi" }, { kind: "value", op: ">=", value: 21, bound: "ci80_lo" }],
+    ]);
+    expect(c.claims.claims.filter((x) => x.judged_by === "report").every((x) => x.support.kind === "event" && x.challenge.kind === "event")).toBe(true);
     expect(c.claims.claims.every((x) => x.stated_probability === null && x.resolution === null && !/SAMPLE/.test(JSON.stringify(x)))).toBe(true);
     expect(c.claims.claims.map((x) => [x.support, x.challenge])[0]).toEqual([
       { kind: "value", op: "<=", value: 1, bound: "ci80_hi" }, { kind: "value", op: ">=", value: 2, bound: "ci80_lo" },
@@ -218,10 +234,10 @@ describe("seed counts (Appendix B)", () => {
     expect(actors.find((a) => a.id === "apt40")?.aliases.find((x) => x.name === "TEMP.Periscope")?.by).toBe("FireEye");
   });
 
-  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), regions at 3 (P3: CERT-FR's live alert host; P5: review_due), actors at 2 (P5: the MITRE and sibling checks)", () => {
+  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders at 2 (P2: the AISLE and Team Atlanta spellings), source-tiers at 3 (P2: Kobol's feed domains; P5: Verizon's DBIR), regions at 3 (P3: CERT-FR's live alert host; P5: review_due), actors at 2 (P5: the MITRE and sibling checks)", () => {
     const c = prod();
-    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([4, 2, 2]);
-    expect(c.sourceTiers.updated).toBe("2026-11-10");
+    expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([4, 2, 3]);
+    expect(c.sourceTiers.updated).toBe("2026-11-12");
     expect(c.vendors.updated).toBe("2026-11-11");
     // Its notices sit on download.schneider-electric.com as well as download.se.com (23 and 11 of its 34 2026 CVE records).
     expect(c.vendors.vendors.find((v) => v.id === "schneider-electric")?.domains).toEqual(["se.com", "schneider-electric.com"]);
@@ -452,7 +468,7 @@ describe("sample mode and overrides (§4.11)", () => {
       const c = loadConfig({ root, fresh: true });
       expect(c.sampleClaims, dir).toBe(false);
       expect(c.paths.claims, dir).toBe("config/claims.json");
-      expect(c.claims.claims.map((x) => x.text.startsWith("SAMPLE")), dir).toEqual([false, false]);
+      expect(c.claims.claims.map((x) => x.text.startsWith("SAMPLE")), dir).toEqual(Array(8).fill(false));
     }
   });
 

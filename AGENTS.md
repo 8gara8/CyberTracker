@@ -116,18 +116,22 @@ faster?
   removed.
 - **P5 on `p5-golive`, PR #7, opened ready for review on 2026-11-12:** item 1 of SPEC §10 P5, built in
   the cloud container, with the Kobol steps in the worktree
-  `/Users/kobol/Projects/CyberTracker-worktrees/p5-golive` (rule 4). The site address in `run.json`
-  (row 176); `regions.json` version 3 with `review_due` 2026-12-11 and the Taiwan election window, its
-  polling day checked with the Central Election Commission (row 178); the catch-up backfill on Kobol
-  (commit `483aefe`: cutoff 2026-11-10, CVE List `ca66623`, KEV `6b8d7ba`, `validate:all` 0 errors; the
-  4.6G clone in that worktree's `cache/cvelistV5` is kept); `agent:check -- --all` 13 of 13 on
-  `ea62ab3` with the canary safe, after a fix that counts a `Bash` call the CLI refuses as unavailable
-  as refused (row 177); `actors.json` version 2 from the MITRE pages and the siblings' sites (row 179);
-  `claims.json` version 1 with the rival claims SB-01 and SB-02 (row 180); the `glasswing-launch`
-  marker (row 181). `routine/TASK.md` already matches SPEC §11, so it is final as it is. Waiting on:
-  links to JL's published predictions, for JL's own claims (SB-03 on), and Codex. After the merge: the
-  task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three supervised
-  mornings.
+  `/Users/kobol/Projects/CyberTracker-worktrees/p5-golive` (rule 4). The site address in `run.json` (row
+  176); `regions.json` version 3 with `review_due` 2026-12-11 and the Taiwan election window, its polling
+  day checked with the Central Election Commission (row 178); the catch-up backfill on Kobol (commit
+  `483aefe`: cutoff 2026-11-10, CVE List `ca66623`, KEV `6b8d7ba`, `validate:all` 0 errors; the 4.6G
+  clone in that worktree's `cache/cvelistV5` is kept); `agent:check -- --all` 13 of 13 on `ea62ab3` with
+  the canary safe, after a fix that counts a `Bash` call the CLI refuses as unavailable as refused (row
+  177); `actors.json` version 2 from the MITRE pages and the siblings' sites (row 179); `claims.json`
+  version 1 with the rival claims SB-01 and SB-02 (row 180); the `glasswing-launch` marker (row 181).
+  Codex round 1 on `ad726c8` found nothing. JL then stated their theses in chat (2026-11-12, 13:38
+  Taipei, 05:38 UTC) instead of sending links, so `claims.json` adds JL's six claims SB-03 to SB-08 with
+  `restates` null (row 182), and a metric claim is now settled on its zone at its deadline (row 183;
+  before, it was rescored on every later edition); `source-tiers.json` version 3 makes Verizon's breach
+  report, which SB-07 is judged on, a tier 1 source (row 184). `routine/TASK.md` already matches SPEC
+  §11, so it is final as it is. Waiting on: JL's read of the six claims, and Codex round 2. After the
+  merge: the task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three
+  supervised mornings.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -151,7 +155,7 @@ faster?
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
 | P4 Site | `p4-site` | #6 | Merged 2026-11-12, 10:13 Taipei (02:13 UTC) |
-| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; waiting on JL's prediction links and Codex |
+| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; waiting on JL's read of the claims and Codex round 2 |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI

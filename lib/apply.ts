@@ -813,12 +813,18 @@ export function claimZone(claim: Pick<Claim, "support" | "challenge">, r: ClaimR
   return "between";
 }
 
-/** §4.9 Status: a resolution, else open until the deadline, then hit or miss. */
-export function claimStatus(claim: Claim, zone: ClaimState["zone"], entries: readonly ScoreboardEntry[], date: string): ClaimState["status"] {
+/**
+ * §4.9 Status: a resolution, else open until the deadline, then hit or miss. A metric claim is scored on its
+ * zone at the last edition on or before the deadline, which the newest metric entry dated on or before it
+ * holds (one is written on the first reading and on each zone change); a report claim on any support entry
+ * dated on or before the deadline. Nothing after the deadline changes either.
+ */
+export function claimStatus(claim: Claim, entries: readonly ScoreboardEntry[], date: string): ClaimState["status"] {
   if (claim.resolution) return claim.resolution.status;
   if (date <= claim.deadline) return "open";
-  if (claim.judged_by === "script") return zone === "support" ? "hit" : "miss";
-  return entries.some((e) => e.claim_id === claim.id && e.direction === "support" && e.date <= claim.deadline) ? "hit" : "miss";
+  const due = entries.filter((e) => e.claim_id === claim.id && e.date <= claim.deadline);
+  if (claim.judged_by === "script") return due.filter((e) => e.origin === "metric").at(-1)?.direction === "support" ? "hit" : "miss";
+  return due.some((e) => e.direction === "support") ? "hit" : "miss";
 }
 
 const ZONE_WORDS: Readonly<Record<ClaimState["zone"], string>> = {
@@ -845,7 +851,8 @@ export interface ScoreboardUpdate {
  * Each publish's Scoreboard step (§4.9): the zones read from today's metrics; a metric entry on a claim's
  * first reading and on each zone change against the stored state; a report entry per draft entry (a
  * rerun of the same date replaces that date's report entries); the claim states in claim id order; as_of
- * the edition date. The brief lists the entries dated D and the newest entry dated before D.
+ * the edition date. After a metric claim's deadline its stored zone and reading stay as they were and it
+ * gets no more metric entries. The brief lists the entries dated D and the newest entry dated before D.
  */
 export function updateScoreboard(o: {
   date: string; config: LoadedConfig; metrics: Metrics | null; scoreboard: ScoreboardFile | null;
@@ -857,16 +864,25 @@ export function updateScoreboard(o: {
   let next = kept.reduce((n, e) => Math.max(n, entryNumber(e.id)), 0) + 1;
   const claims = [...o.config.claims.claims].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  const readings = new Map<string, { reading: ClaimReading; zone: ClaimState["zone"] }>();
+  type Shown = Pick<ClaimState, "zone" | "reading" | "reading_text" | "reading_as_of">;
+  const readings = new Map<string, Shown>();
   const created: ScoreboardEntry[] = [];
   for (const claim of claims) {
     if (claim.judged_by !== "script" || !claim.metric_path) {
-      readings.set(claim.id, { reading: { value: null, lo: null, hi: null, text: null }, zone: "no_reading" });
+      readings.set(claim.id, { zone: "no_reading", reading: null, reading_text: null, reading_as_of: null });
+      continue;
+    }
+    const settled = o.date > claim.deadline ? prevState.get(claim.id) : undefined;
+    if (settled) {
+      readings.set(claim.id, { zone: settled.zone, reading: settled.reading, reading_text: settled.reading_text, reading_as_of: settled.reading_as_of });
       continue;
     }
     const reading = claimReading(o.metrics, claim.metric_path);
     const zone = claimZone(claim, reading);
-    readings.set(claim.id, { reading, zone });
+    readings.set(claim.id, {
+      zone, reading: reading.value, reading_text: reading.text,
+      reading_as_of: reading.value === null ? null : o.metrics?.data_cutoff_utc ?? null,
+    });
     const first = !kept.some((e) => e.claim_id === claim.id);
     const before = prevState.get(claim.id)?.zone ?? null;
     if (!first && (before === null || before === zone)) continue;
@@ -887,14 +903,10 @@ export function updateScoreboard(o: {
     });
   }
   const entries = [...kept, ...created];
-  const states: ClaimState[] = claims.map((claim) => {
-    const { reading, zone } = readings.get(claim.id)!;
-    return {
-      id: claim.id, text: claim.text, status: claimStatus(claim, zone, entries, o.date), zone,
-      reading: reading.value, reading_text: reading.text, reading_as_of: reading.value === null ? null : o.metrics?.data_cutoff_utc ?? null,
-      last_entry_id: [...entries].reverse().find((e) => e.claim_id === claim.id)?.id ?? null,
-    };
-  });
+  const states: ClaimState[] = claims.map((claim) => ({
+    id: claim.id, text: claim.text, status: claimStatus(claim, entries, o.date), ...readings.get(claim.id)!,
+    last_entry_id: [...entries].reverse().find((e) => e.claim_id === claim.id)?.id ?? null,
+  }));
   const last = [...entries].reverse().find((e) => e.date < o.date) ?? null;
   const lastText = last ? claimTextOf(o.config, last.claim_id) ?? prevState.get(last.claim_id)?.text ?? last.claim_id : null;
   return {
