@@ -1,1 +1,52 @@
-{ "schema_version": 1, "version": 0, "claims": [] }
+{
+  "schema_version": 1,
+  "version": 1,
+  "claims": [
+    {
+      "id": "SB-01",
+      "origin": "rival",
+      "text": "AI-credited flaws reach CISA's exploited list no more often than other flaws.",
+      "restates": {
+        "quote": "the data does not suggest that AI discovered vulnerabilities are inherently more likely to be exploited than those found through traditional methods.",
+        "source_title": "VulnCheck State of Exploitation 1H-2026",
+        "source_url": "https://www.vulncheck.com/blog/state-of-exploitation-1h-2026",
+        "date": "2026-07-28"
+      },
+      "stated_probability": null,
+      "judged_by": "script",
+      "metric_path": "base_rate.ratio",
+      "data_source": "CISA KEV and CVE List: AI-credited base rate, records listed within 90 days",
+      "support": { "kind": "value", "op": "<=", "value": 1.0, "bound": "ci80_hi" },
+      "challenge": { "kind": "value", "op": ">=", "value": 2.0, "bound": "ci80_lo" },
+      "opened": "2026-11-12",
+      "deadline": "2027-12-31",
+      "resolution": null
+    },
+    {
+      "id": "SB-02",
+      "origin": "rival",
+      "text": "By the end of 2028, AI-powered malware is used in a ransomware attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "restates": {
+        "quote": "It is highly likely that between now and 2028, AI-powered malware will have been used in a ransomware attack on UK CNI.",
+        "source_title": "Artificial intelligence and cyber intrusion",
+        "source_url": "https://www.ncsc.gov.uk/report/artificial-intelligence-and-cyber-intrusion",
+        "date": "2026-11-03"
+      },
+      "stated_probability": null,
+      "judged_by": "report",
+      "metric_path": null,
+      "data_source": "Statements by the UK government and the NCSC",
+      "support": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that a ransomware attack on UK critical infrastructure used AI-powered malware"
+      },
+      "challenge": {
+        "kind": "event",
+        "text": "The UK government or the NCSC states that a claimed AI-powered ransomware attack on UK critical infrastructure did not use AI-powered malware"
+      },
+      "opened": "2026-11-12",
+      "deadline": "2028-12-31",
+      "resolution": null
+    }
+  ]
+}
