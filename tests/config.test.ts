@@ -72,7 +72,7 @@ describe("config/ files", () => {
   it("records SHA-256 hashes and the versions the metrics file stores", () => {
     const c = prod();
     expect(c.sha256.aiFinders).toMatch(/^[0-9a-f]{64}$/);
-    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 2, actors: 1 });
+    expect(configVersions(c)).toEqual({ vendors: 4, ai_finders: 2, source_tiers: 2, regions: 3, actors: 1 });
   });
 });
 
@@ -142,7 +142,8 @@ describe("seed counts (Appendix B)", () => {
 
   it("B.4 regions: four regions, EU is the EU 27 plus IS, LI, NO, CH and GB, seven rules", () => {
     const r = prod().regions;
-    expect(r.review_due).toBe("2026-12-02");
+    // P5: about four weeks after the first supervised morning (§10 P5, B.4).
+    expect(r.review_due).toBe("2026-12-11");
     expect(r.regions.map((x) => x.code)).toEqual([...LEVELLED_REGIONS]);
     const eu = r.regions.find((x) => x.code === "EU")!;
     expect(eu.countries).toHaveLength(32);
@@ -170,7 +171,10 @@ describe("seed counts (Appendix B)", () => {
     ]);
     expect(a("kernel-batch-2026-07").detail).toBe("The Linux kernel CNA published 429 CVE records on 19 July and 9 on 20 July.");
     expect([a("nvd-scoring-stop").label, a("nvd-scoring-stop").source_url]).toEqual(["NVD stops scoring most CVEs", "https://nvd.nist.gov/general/news"]);
-    expect(c.watchWindows).toEqual({ schema_version: 1, windows: [] });
+    // P5 (B.7): the Taiwan local elections window, polling day 28 November 2026.
+    expect(c.watchWindows.windows.map((w) => [w.id, w.start, w.end, w.regions, w.lens_row, w.search_terms.length])).toEqual([
+      ["taiwan-local-elections-2026", "2026-11-08", "2026-12-05", ["TW"], "influence_ops", 8],
+    ]);
     expect(c.standingStories.stories.map((s) => s.id)).toEqual(["salt-typhoon", "volt-typhoon", "dprk-it-workers", "taiwan-undersea-cables"]);
     expect(c.standingStories.stories.every((s) => s.seed_last_development === null && s.seed_source_url === null)).toBe(true);
     expect(json("config/claims.json")).toEqual({ schema_version: 1, version: 0, claims: [] });
@@ -189,7 +193,7 @@ describe("seed counts (Appendix B)", () => {
     expect(silk.aliases).toEqual([{ name: "HAFNIUM", by: "Microsoft, former name", source_url: "https://attack.mitre.org/groups/G0125/" }]);
   });
 
-  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), regions at 2 (P3: CERT-FR's live alert host), actors at 1", () => {
+  it("versioned files: vendors at 4 (P3: Schneider Electric's schneider-electric.com, then SAP's url.sap), ai-finders and source-tiers at 2 (P2: the AISLE and Team Atlanta spellings; Kobol's feed domains), regions at 3 (P3: CERT-FR's live alert host; P5: review_due), actors at 1", () => {
     const c = prod();
     expect([c.vendors, c.aiFinders, c.sourceTiers].map((f) => f.version)).toEqual([4, 2, 2]);
     expect(c.sourceTiers.updated).toBe("2026-11-10");
@@ -199,8 +203,8 @@ describe("seed counts (Appendix B)", () => {
     // SAP's public patch-day link is on url.sap, SAP SE's own brand top-level domain; its notes on me.sap.com need a login.
     expect(c.vendors.vendors.find((v) => v.id === "sap")?.domains).toEqual(["sap.com", "url.sap"]);
     // CERT-FR's live feed links its alerts under www.cert.cyber.gouv.fr (Kobol, 2026-11-11); the old host's pattern stays (row 147).
-    expect(c.regions.version).toBe(2);
-    expect(c.regions.updated).toBe("2026-11-11");
+    expect(c.regions.version).toBe(3);
+    expect(c.regions.updated).toBe("2026-11-12");
     expect(c.regions.regions.find((r) => r.code === "EU")?.alert_patterns).toEqual([
       "cert\\.ssi\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+", "cert\\.cyber\\.gouv\\.fr/alerte/CERTFR-\\d{4}-ALE-\\d+"]);
     expect(c.actors.version).toBe(1);
@@ -628,7 +632,7 @@ describe("lib/site.ts (§6, §9.7)", () => {
   it("names and URLs come from run.json", () => {
     expect(SITE_NAME).toBe("CyberTracker");
     expect(SITE_TAGLINE).toBe("The AI-era exploit and breach brief");
-    expect(siteUrl()).toBe("https://cybertracker.vercel.app");
+    expect(siteUrl()).toBe("https://cybertracker-alpha.vercel.app");
     expect(issueFormUrl()).toBe("https://github.com/8gara8/CyberTracker/issues/new?template=correction.yml");
     expect(issueFormUrl({ id: "cve-2026-104935", date: "2026-11-08" }))
       .toBe("https://github.com/8gara8/CyberTracker/issues/new?template=correction.yml&item_id=cve-2026-104935&edition_date=2026-11-08");

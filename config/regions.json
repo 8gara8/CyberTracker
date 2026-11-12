@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "version": 2,
-  "updated": "2026-11-11",
-  "review_due": "2026-12-02",
+  "version": 3,
+  "updated": "2026-11-12",
+  "review_due": "2026-12-11",
   "regions": [
     {
       "code": "US",
