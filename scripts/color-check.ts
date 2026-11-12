@@ -6,7 +6,7 @@
 // (2) colour vision: per scope, --ai against --ink, --ink-soft and --muted, simulated for protanopia,
 //     deuteranopia and tritanopia (Machado, Oliveira and Fernandes 2009, severity 1.0, in linear RGB), CIEDE2000
 //     at least 10;
-// (3) no blue: no --sev-* token with an HSL hue of 190 to 250 degrees and saturation above 25%.
+// (3) no blue: no --sev-* token with an HSL hue of 190 to 250 degrees and saturation above 25%, none exempt.
 // One line per pair and check, then a summary; exit 1 on any failure, 2 on a usage error. The colour maths is
 // written here (no dependency) and tested against published values in tests/color-check.test.ts.
 import fs from "node:fs";
@@ -15,8 +15,8 @@ import { fileURLToPath } from "node:url";
 
 // ── Scopes ───────────────────────────────────────────────────────────────────────────────────────────
 
-/** The token blocks read, in cascade order. JL's pick (A.6) deletes the html[data-look="night"] entry. */
-export const BLOCKS: readonly string[] = [":root", 'html[data-look="night"]', ".night"];
+/** The token blocks read, in cascade order: the paper page (JL's pick in P4, A.6) and the Gap panel. */
+export const BLOCKS: readonly string[] = [":root", ".night"];
 
 /** The Gap panel's scope: nested inside each page look, never a look of its own (A.2). */
 export const PANEL = ".night";
@@ -24,7 +24,7 @@ export const PANEL = ".night";
 export type ScopeKind = "page" | "panel";
 
 export interface Scope {
-  /** The selectors as they nest, e.g. `html[data-look="night"] .night`. */
+  /** The selectors as they nest, e.g. `:root .night`. */
   name: string;
   kind: ScopeKind;
   /** Blocks applied in order, outermost first. */
@@ -75,7 +75,7 @@ const pairs = (fg: string, bgs: string[], need: Need, use: string, where?: Scope
 
 /** A.5's pairs and every chip foreground on its background (A.3), in each scope where it applies. */
 export const PAIRS: readonly Pair[] = [
-  // Text, in every scope (paper, full dark and the Gap panel in each).
+  // Text, in every scope (the paper page and the Gap panel).
   ...pairs("--ink", ["--bg", "--card", "--bg-deep"], "text", "text-fg on the page, cards (bg-panel) and bg-deep (the siblings' tab-hover surface, kept for parity, not drawn)"),
   ...pairs("--bg", ["--ink"], "text", "bg-fg text-bg: active tab, stale banner, skip link"),
   ...pairs("--fg", ["--panel"], "text", "the siblings' aliases --fg on --panel"),
@@ -105,7 +105,7 @@ export const PAIRS: readonly Pair[] = [
 export const EXEMPT: readonly Exempt[] = [
   { fg: "--ink-mute", bg: "--bg-deep", reason: "bg-deep is kept for parity and not drawn; were it drawn, its text is ink (A.5)" },
   { fg: "--border", bg: "--card", reason: "chart gridlines, decorative: the axis text and table carry the values (A.2)" },
-  { fg: "--border", bg: "--bg", reason: "gridlines; in full dark also the Gap panel's 1px #33424F border, decorative" },
+  { fg: "--border", bg: "--bg", reason: "gridlines on --bg, where the Gap panel's charts sit, decorative" },
   { fg: "--rule-soft", bg: "--bg", reason: "border-line hairlines and link underlines (the text is ink); the Gap's panel border (A.5)" },
   { fg: "--rule-soft", bg: "--card", reason: "border-line hairlines on cards, decorative" },
   { fg: "--sev-high-bg", bg: "--bg", where: "page", reason: "HIGH chip tint: its box is the 1px --sev-high-border" },
@@ -127,14 +127,6 @@ export const VISION_MIN_DE = 10;
 /** No blue (3): --sev-* tokens with a hue in this range and saturation above NO_BLUE_MAX_SAT fail. */
 export const NO_BLUE_HUE: readonly [number, number] = [190, 250];
 export const NO_BLUE_MAX_SAT = 25;
-/**
- * Near-neutrals exempt from the no-blue rule by value, each with its reason: HSL saturation runs high at the
- * ends of the lightness scale, so these read as 29% to 35% "saturated" though their chroma is about 4%.
- */
-export const NO_BLUE_NEUTRALS: Readonly<Record<string, string>> = {
-  "#E6EDF3": "the dark ink, a near-white neutral (Critical fill, High text and border, Elevated in full dark, A.3)",
-  "#0B0F14": "the night desk's background, a near-black neutral (Critical text in full dark, A.3)",
-};
 
 // ── Colour maths ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -483,7 +475,7 @@ export function runColorCheck(css: string, spec: CheckSpec = {}): CheckResult {
         if (!smallestVision || de < smallestVision.de) smallestVision = { de, scope: scope.name, token, kind };
       }
     }
-    // (3) No blue, with the near-neutrals of NO_BLUE_NEUTRALS exempt by value.
+    // (3) No blue.
     for (const [name, raw] of values) {
       if (!name.startsWith("--sev-")) continue;
       const rgb = parseHex(raw);
@@ -493,11 +485,10 @@ export function runColorCheck(css: string, spec: CheckSpec = {}): CheckResult {
       }
       const { h, s, l } = hsl(rgb);
       const blue = h >= NO_BLUE_HUE[0] && h <= NO_BLUE_HUE[1] && s > NO_BLUE_MAX_SAT;
-      const neutral = NO_BLUE_NEUTRALS[toHex(rgb)];
       const chroma = ((Math.max(...rgb) - Math.min(...rgb)) / 255) * 100;
       const hslText = `hsl(${fix(h, 0)}, ${fix(s, 0)}%, ${fix(l, 0)}%), chroma ${fix(chroma, 0)}%`;
-      const verdict: Verdict = !blue ? "ok" : neutral ? "exempt" : "FAIL";
-      const tail = !blue ? "not blue" : neutral ? `exempt: ${neutral}` : `blue: hue ${NO_BLUE_HUE[0]} to ${NO_BLUE_HUE[1]} with saturation above ${NO_BLUE_MAX_SAT}%`;
+      const verdict: Verdict = blue ? "FAIL" : "ok";
+      const tail = blue ? `blue: hue ${NO_BLUE_HUE[0]} to ${NO_BLUE_HUE[1]} with saturation above ${NO_BLUE_MAX_SAT}%` : "not blue";
       lines.push({ check: "no-blue", scope: scope.name, verdict, value: s, text: `${name} (${toHex(rgb)}) ${hslText}, ${tail}` });
     }
   }

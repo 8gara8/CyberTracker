@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-  BLOCKS, DEFICIENCIES, EXEMPT, MACHADO, MINIMUM, NO_BLUE_NEUTRALS, PAIRS, PANEL, UNPAIRED, VISION_MIN_DE, ciede2000, contrastRatio, hsl, main,
+  BLOCKS, DEFICIENCIES, EXEMPT, MACHADO, MINIMUM, PAIRS, PANEL, UNPAIRED, VISION_MIN_DE, ciede2000, contrastRatio, hsl, main,
   over, parseBlocks, parseHex, resolveScope, runColorCheck, scopesOf, simulate, toHex, toLab, type CheckLine, type Lab,
 } from "@/scripts/color-check";
 
@@ -17,7 +17,6 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "ct-color-"));
 afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }));
 
 const hex = (h: string) => parseHex(h)!;
-const NIGHT = 'html[data-look="night"]';
 
 /** The stylesheet with one token's value changed inside one top-level block. */
 function withToken(css: string, selector: string, token: string, value: string): string {
@@ -151,9 +150,9 @@ describe("reading the stylesheet", () => {
 @layer base { :root { --ink: #00ff00; } }
 :root { --ink: #111111; --bg: #eeeeee; color-scheme: light }
 .night { --ink: #eeeeee; }
-html[data-look="night"] .night { border: 1px solid #333; }
+html.other .night { border: 1px solid #333; }
 :root { --bg: #f0f0f0; }`;
-    const blocks = parseBlocks(css, [":root", ".night", NIGHT]);
+    const blocks = parseBlocks(css, [":root", ".night", "html.other"]);
     expect([...blocks.keys()]).toEqual([":root", ".night"]);
     expect(Object.fromEntries(blocks.get(":root")!)).toEqual({ "--ink": "#111111", "--bg": "#f0f0f0" });
     expect(() => parseBlocks(":root { --a: #000;", [":root"])).toThrow(/unbalanced/);
@@ -172,17 +171,13 @@ html[data-look="night"] .night { border: 1px solid #333; }
     expect(night.has("--x")).toBe(false); // a cycle is invalid
   });
 
-  it("the scopes: each page look and the Gap panel inside it; the pick removes one BLOCKS entry", () => {
-    expect(BLOCKS).toContain(":root");
-    expect(BLOCKS).toContain(PANEL);
-    const names = scopesOf(BLOCKS).map((s) => s.name);
-    expect(names.slice(0, 2)).toEqual([":root", ":root .night"]);
-    if (BLOCKS.includes(NIGHT)) expect(names).toEqual([":root", ":root .night", NIGHT, `${NIGHT} .night`]);
-    const picked = scopesOf(BLOCKS.filter((b) => b !== NIGHT));
-    expect(picked.map((s) => [s.name, s.kind, s.chain])).toEqual([
+  it("the scopes: the paper page and the Gap panel inside it (JL's pick, A.6); another look would add two", () => {
+    expect(BLOCKS).toEqual([":root", PANEL]);
+    expect(scopesOf(BLOCKS).map((s) => [s.name, s.kind, s.chain])).toEqual([
       [":root", "page", [":root"]],
       [":root .night", "panel", [":root", ".night"]],
     ]);
+    expect(scopesOf([":root", "html.other", PANEL]).map((s) => s.name)).toEqual([":root", ":root .night", "html.other", "html.other .night"]);
     expect(() => scopesOf([".night"])).toThrow(/start with :root/);
   });
 });
@@ -217,27 +212,19 @@ describe("app/globals.css", () => {
     [":root .night", "--ink-mute", "--bg", "6.53"], [":root .night", "--ink-mute", "--card", "6.05"],
     [":root .night", "--ai", "--bg", "7.06"], [":root .night", "--ai", "--card", "6.55"],
     [":root .night", "--border", "--card", "1.73"], [":root .night", "--rule-soft", "--bg", "1.32"],
-    [":root .night", "--rule-soft", "--card", "1.23"],
-    [NIGHT, "--ink-mute", "--card", "5.37"], [NIGHT, "--ai", "--card", "5.81"], [NIGHT, "--sample-fg", "--sample-bg", "9.67"],
-    [NIGHT, "--focus", "--card", "13.39"], [NIGHT, "--sev-critical-fg", "--sev-critical-bg", "16.27"],
-    [NIGHT, "--sev-high-fg", "--sev-high-bg", "8.01"], [NIGHT, "--sev-watch-fg", "--bg", "6.05"],
-    [NIGHT, "--ai-on", "--ai", "7.06"], [NIGHT, "--border", "--bg", "1.73"],
+    [":root .night", "--rule-soft", "--card", "1.23"], [":root .night", "--focus", "--card", "15.08"],
   ];
 
-  it("reproduces every A.5 and A.3 ratio (to 2 decimals) in the scopes that are read", () => {
-    for (const [scope, fg, bg, want] of FIGURES) {
-      if (!scopes.has(scope)) continue;
-      expect(ratio(scope, fg, bg), `${scope} ${fg} on ${bg}`).toBe(want);
-    }
+  it("reproduces every A.5 and A.3 ratio (to 2 decimals)", () => {
+    expect(scopes).toEqual(new Set([":root", ":root .night"]));
+    for (const [scope, fg, bg, want] of FIGURES) expect(ratio(scope, fg, bg), `${scope} ${fg} on ${bg}`).toBe(want);
   });
 
-  it("the focus ring is at least 14.05 on any paper surface and 13.39 on the dark neutrals (A.5)", () => {
+  it("the focus ring is at least 14.05 on any paper surface and 15.08 in the Gap panel (A.5)", () => {
     const focus = result.lines.filter((l) => l.check === "contrast" && l.text.startsWith("--focus on "));
-    expect(focus.length).toBeGreaterThan(0);
+    expect(focus.map((l) => l.scope)).toEqual([...Array(6).fill(":root"), ...Array(3).fill(":root .night")]);
     for (const l of focus) {
-      // Full dark's amber notice and banner surface (#3A2E12) is the exception: 11.25, still far over 3.
-      const amber = l.scope === NIGHT && /--focus on --(badge-mix|sample-bg) /.test(l.text);
-      const min = l.scope === ":root" ? 14.05 : amber ? 11.25 : 13.39;
+      const min = l.scope === ":root" ? 14.05 : 15.08;
       expect(Number(l.value!.toFixed(2)), `${l.scope} ${l.text}`).toBeGreaterThanOrEqual(min);
     }
   });
@@ -252,12 +239,10 @@ describe("app/globals.css", () => {
     for (const l of vision) expect(l.value!).toBeGreaterThanOrEqual(VISION_MIN_DE);
   });
 
-  it("no --sev-* token is blue; the two dark near-neutrals are the only exemptions", () => {
+  it("no --sev-* token is blue, and none is exempt", () => {
     const noBlue = result.lines.filter((l) => l.check === "no-blue");
-    expect(noBlue.length).toBeGreaterThan(0);
-    const exempt = noBlue.filter((l) => l.verdict === "exempt").map((l) => /\((#[0-9A-F]{6})\)/.exec(l.text)![1]);
-    expect(new Set(exempt)).toEqual(new Set(scopes.has(NIGHT) ? Object.keys(NO_BLUE_NEUTRALS) : []));
-    expect(noBlue.find((l) => l.scope === NIGHT && l.text.startsWith("--sev-high-bg "))?.verdict ?? "ok").toBe("ok");
+    expect(noBlue).toHaveLength(2 * 8); // 8 --sev-* tokens, in the page and in the panel
+    for (const l of noBlue) expect(l.verdict, l.text).toBe("ok");
   });
 
   it("every pair has a known need and use, every exemption a reason, the Tag uses 4.3", () => {
@@ -278,10 +263,9 @@ describe("app/globals.css", () => {
     expect(out.every((l) => !l.includes(String.fromCharCode(0x2014)))).toBe(true);
   });
 
-  it("after the pick (BLOCKS without the full-dark look) the same file still passes", () => {
-    const picked = runColorCheck(CSS, { blocks: BLOCKS.filter((b) => b !== NIGHT) });
-    expect(fails(picked.lines)).toEqual([]);
-    expect(new Set(picked.lines.map((l) => l.scope))).toEqual(new Set([":root", ":root .night", "all"]));
+  it("reads the paper page and the Gap panel only: no other look is left in the file (A.6)", () => {
+    expect(new Set(result.lines.map((l) => l.scope))).toEqual(new Set([":root", ":root .night", "all"]));
+    expect(CSS).not.toContain("data-look");
   });
 });
 
@@ -310,9 +294,9 @@ describe("failing stylesheets", () => {
     expect(tag.value!).toBeLessThan(4.3);
   });
 
-  it("a non-text pair under 3:1 fails (the focus ring on the dark card)", () => {
-    const r = runColorCheck(withToken(CSS, NIGHT, "--focus", "#2a3546"));
-    expect(fails(r.lines).some((l) => l.scope === NIGHT && l.text.startsWith("--focus on --card "))).toBe(true);
+  it("a non-text pair under 3:1 fails (the focus ring on the Gap panel's card)", () => {
+    const r = runColorCheck(withToken(CSS, ".night", "--focus", "#2a3546"));
+    expect(fails(r.lines).some((l) => l.scope === ":root .night" && l.text.startsWith("--focus on --card "))).toBe(true);
   });
 
   it("violet too close to muted for a tritanope fails the colour-vision check", () => {
@@ -321,11 +305,15 @@ describe("failing stylesheets", () => {
     expect(bad.some((l) => l.scope === ":root .night" && l.text.includes("--muted") && l.text.includes("tritanopia"))).toBe(true);
   });
 
-  it("a blue severity token fails; a near-neutral not on the list does too", () => {
+  it("a blue severity token fails; a blue-hued near-neutral does too, with no exemption list", () => {
     const blue = runColorCheck(withToken(CSS, ":root", "--sev-high-bg", "#9ec5f0"));
     expect(fails(blue.lines).some((l) => l.check === "no-blue" && l.text.startsWith("--sev-high-bg (#9EC5F0)"))).toBe(true);
     const nearWhite = runColorCheck(withToken(CSS, ":root", "--sev-critical-fg", "#E6EDF4"));
     expect(fails(nearWhite.lines).some((l) => l.check === "no-blue" && l.text.startsWith("--sev-critical-fg (#E6EDF4)"))).toBe(true);
+    for (const v of ["#E6EDF3", "#0B0F14"]) { // full dark's near-neutrals, exempt by value before the pick
+      const r = runColorCheck(withToken(CSS, ":root", "--sev-critical-fg", v));
+      expect(r.lines.find((l) => l.check === "no-blue" && l.scope === ":root" && l.text.startsWith(`--sev-critical-fg (${v})`))?.verdict, v).toBe("FAIL");
+    }
   });
 
   it("a new token no pair names fails coverage, and a non-hex value fails too", () => {

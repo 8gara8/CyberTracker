@@ -170,7 +170,7 @@ everything else and puts only these in a PR's "For JL" list.
 - **P3, once, about two minutes:** create the agent's token in Terminal on Kobol and store it in the
   keychain (two commands, §9.6).
 - **P4:** pick the look, paper or full dark, from the PR's side-by-side screenshots of both looks on the
-  dry-run editions (§10 P4).
+  dry-run editions (§10 P4). Done: JL picked paper on 2026-11-12 (row 174).
 - **P5:** be present for the scheduled task's first Run now and approve its
   `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh` command as "Always allowed" (§9.3); read the
   two or three supervised mornings.
@@ -191,7 +191,7 @@ rows are what review and building found.
 |---|---|---|---|---|
 | 1 | #2 | All | v1.0 ran as a cloud scheduled task at 05:47 in its own cloud environment, never on Kobol, with a second repo, `CyberTracker-content`, for what the run writes, rebuilt through a workflow and a Vercel deploy hook secret; an ops task with probes, `ops/*` branches and fired-session reading; rulesets; J-numbered setup steps; phases P0 to P6. v2.0 is built and run on Kobol the EuropeTracker way: a Claude desktop scheduled task at 04:30 runs `scripts/daily.sh` (§9.3); one repo holds code and `content/`, only `scripts/publish.ts` pushes to `main`, and Vercel's Git integration deploys it (§9.1); the agent is Europe's private CLI install with a keychain token (§9.4, §9.6). New times: start 04:30, data-only 04:50, full 05:15, retry cutoff 05:00, hard stop 05:30. Phases: Foundation, P1 to P5, then one calibration PR | JL's decision card, 2026-11-08: the cloud setup needed seven manual steps from JL ("way too manual"), where Europe's runs with almost none. The product does not change |
 | 2 | #2 | §0.2, §9.2 | The plan had CI run on pushes to `main` and pass on content-only ones. Now content-only pushes skip CI (`paths-ignore: ["content/**"]`); publish runs `validateAll` before every commit, and every PR's `npm run check` validates `content/` with the PR's code | A red check on a content push would email JL |
-| 3 | #2 | §0.3, §10 P4 | JL picks the look from the P4 PR's side-by-side screenshots of both looks on the dry-run editions, not on the Vercel preview as planned | The preview builds only the sample, in paper |
+| 3 | #2 | §0.3, §10 P4 | JL picks the look from the P4 PR's side-by-side screenshots of both looks on the dry-run editions, not on the Vercel preview as planned (row 174: JL picked paper) | The preview builds only the sample, in paper |
 | 4 | #2 | §8.2 | In v1.0 and Europe, `E_CLI` and `E_AUTH` in preflight stop the run. Now the run goes on as data-only and ends `published_data_only` with that code | An expired token still leaves a dated edition |
 | 5 | #2 | §0.2, §3, §8.4, §8.7 | The plan let only the morning pipeline push to `main`. After go-live, a state rebuild (`npm run backfill -- --catch-up --push` or `-- --credits --push`) also pushes, as `state:` commits through `publishState()` under the run lock; before go-live, backfill output goes through a phase PR | A PR touching `content/state/` would conflict with the daily commits |
 | 6 | #2 | §4.2 | Path rules compare `matchPath()`: unreserved percent-escapes decoded, repeated slashes collapsed, lower case | Codex round 3: an encoded `/%73earch` slipped past a blocked path prefix |
@@ -339,9 +339,9 @@ rows are what review and building found.
 | 148 | P3 | §0.3, §4.10, §4.12, §8.9 | Dispute intake follows a reopened issue (`intakeDisputes()`, `scripts/recheck.ts`). A `rejected` dispute whose issue reads open again, or closed `completed`, is not flipped back: it keeps its status, `resolved_on` and `correction_id`, and the issue gets a new dispute (the next `D-NNNN`, the same `issue_number`, `item_id`, `edition_date`, `kind` and `evidence_url`, `received` the issue's `updated_at` in Taipei, else the run's clock), `open`, or `upheld` with `resolved_on` D, with `correction_id` null. A victim or attribution review is withheld at step 4 in every stored brief that holds the item (or takes the id of a withhold that still binds the item and edition); a fact or link review goes to the agent as a report and raises the `reader_report` flag again. The run logs "issue #N: reviewed again as D-NNNN (D-MMMM was rejected).". The issue's newest dispute (highest id) is the one its state moves from then on. Open and upheld disputes are not reviewed again when their issue reads open: they already keep the name out, and publish makes a dispute upheld while its issue is still open (step 5); so an upheld ruling reopened and closed as not planned leaves the name withheld (the safe side). A rejected restore report goes to the agent once per issue, the oldest dispute not yet restored. Three changes in `lib/withhold-mask.ts` make the review hold: a `name_removed` correction also binds while a dispute that names it as its `correction_id` is `open` or `upheld` (`withholdsOf()`), so rejecting the report a withhold answered no longer unmasks an item a later report intake answered with the same id still disputes (this predates row 148: rejecting the first of two reports on one item and edition left the second unprotected); a binding withhold lists the `name_removed` corrections on the same item and kind, in any edition (a reader who leaves the edition blank disputes the newest one), that no longer bind (`BindingWithhold.supersedes`), and `withheldRefs()` counts the stored items whose `withheld` names one, so a copy the rejected withhold masked by URL under another id stays a withheld reference of the new one (row 87's open item); and `rewriteItem()` writes `WITHHELD_TEXT` with the date of the `withheld` an item keeps, so the item a second withhold rewrites again still says when it was first withheld | Codex review of PR #5, round 1: a rejected dispute stayed rejected when JL reopened its issue, so its name was never withheld again. Setting the stored dispute back to `open` would make its correction bind every later edition again without rewriting the copies printed after the rejection, which fails XREF_CORRECTION on the next publish (`tests/recheck.test.ts`, I-R20). An internal review of the fix then found the two masking gaps and the date (`tests/apply.test.ts` C30 and C31, `tests/recheck.test.ts` R16 and I-R20) |
 | 149 | P3 | §4.8, §8.2, §8.7, §8.8, §8.9 | A withhold that is not made stops the editorial pass. After `publishWithholds()`, whether it returned or threw, the run reads `content/corrections.json` and checks each of intake's requests against `bindingWithholds()` over it and intake's disputes: a withhold is made when a binding correction for the request's item, edition and kind is in the tree, pushed or not (a commit whose push failed stays local, and the next push carries it), and the item is guarded when one binds for the same item and kind on any edition (the mask covers every edition on or after it, §4.10). When a request is not guarded (the tree could not be synced, `composeWithholds()` threw, the tree failed validation, or the commit failed, each leaving the tree as it was), the recheck stage is `failed` with "Could not withhold N item(s) on reader disputes, so no full edition is drafted until the withhold is made (see the daily log).", the run logs "Not withheld: <item ids>; no editorial pass today.", draft, validate and publish are `skipped` with "Not run: a reader dispute's withhold was not made.", and the run records the new code `E_WITHHOLD` (stage `recheck`, not retried, after `E_DATA_ONLY` in `ERROR_CODES`, also on a `published_data_only` record) unless an earlier code is set. Intake's disputes then go into `corrections.json` with the end record's status commit (`publishStatus()`'s new `disputes` option; if they fail validation the record is committed without them), so a rerun whose intake cannot read GitHub still finds them. The data-only edition stands (exit 3); after a `--force` start the earlier full edition stands, and when the data-only edition failed no edition does (exit 1). What happened: "A reader dispute's item could not be withheld, so no full edition is drafted until the withhold is made.", after the `--data-only` or late-start reason when there is one; next step: "read logs/D.daily.log, then <rerun>; if the withhold fails again, its fix goes through a PR", whose rerun takes `--force` when brief D as committed is a full or partial edition (`withForce()`, as for `E_PUBLISH`, row 132; a dry run's is its files, as for the other codes; dry runs skip intake). The dispute keeps no `correction_id`, so the rerun's intake asks for the withhold again. "Withheld N item(s) on reader disputes." now counts only the items made, and is added after the call | Codex review of PR #5, round 2: a withhold that failed validation or could not be composed was only logged, and the run drafted and published a full edition with no correction to mask the item, so the disputed name could be printed again, while the recheck note said the item was withheld. An internal review of the fix then found that an item already withheld on another edition stopped the pass for nothing, that a rerun with intake down lost the disputes, that the rerun after a failed `--force` run lacked `--force`, and that the chat dropped a `--data-only` reason. `tests/daily.test.ts` D48 (without the check the run published the full edition and exited 0), D49, D50 and D51, and a `tests/chat.test.ts` case |
 | 150 | P4 | §3, §6 (Content loading, items 2, 3 and 5) | The loader's API and its skip rules. `lib/content.ts` adds `FileCodes { file; codes }`, `Content.warnings` (files loaded although `validateAll()` found errors in them: their distinct error codes, in the validator's order; validator warnings such as an archived brief's `SOURCE_URL` are not logged) and `Content.gapFailed` (the dates of loaded briefs whose per-file result has `GAP_MATCH`, which includes having no valid same-date metrics file; `briefPropsFor()` sets `gapOk` from it). `loadContent(dir, opts)` takes `LoadContentOptions { fresh?; config?; log? }`: `config` lets a test check a sample copy outside `fixtures/` with the sample claims, and `log` collects the lines, by default `console.warn` once per folder per process (so `next build`'s workers may each print them). A brief is skipped for a `SITE_BLOCKING_CODES` code of either severity, and the skip line lists only those codes; one the validator passes but `Brief.safeParse` refuses is skipped with `SCHEMA`. A metrics, status, scoreboard or corrections file is skipped for `SCHEMA`, `FILE_NAME` or `DATE_MISMATCH` (the internal `FILE_BLOCKING_CODES`), and every listed status file and a present `scoreboard.json` or `corrections.json` goes through the same load, so one that does not parse is skipped with `SCHEMA`. Each correction's `field`, `after` and `reason` go through `correctionSafetyCodes(c, hosts)` (`CANARY`, `NO_LIVE_IOC`, `NO_EXPLOIT_LINK` for a payload or a scanner query, `SECRET_LIKE`; the brief rules' matchers, the hosts of `listedHosts()`), and a hit is left out of `corrections` and logged by id and code only, "content: skipped corrections.json C-0002 (NO_LIVE_IOC)". Metrics files are checked at load and parsed only by `loadMetrics()`, cached per `Content`. The log is `contentLogLines()`: "content: skipped <file> (<codes>)", then "content: warning <file> (<codes>)" | §6's interface had no way to know `gapOk` or to test the warning case (foundation notes, items 1 to 5). Review finding O: an unparsable status, scoreboard or corrections file never reached the load, so the build log called it a warning while the site used the empty default. Finding L: `validateAll()` checks a correction's texts only inside the brief that lists it, so a brief skipped for `NO_LIVE_IOC` under a changed list still printed the same text from `corrections.json`. Tests (`tests/content.test.ts`): the Skipping cases, "an unparsable corrections.json, scoreboard.json or status file is skipped with SCHEMA, never a warning" and "a correction whose text fails a safety code is dropped from corrections.json too, not only from the brief listing it" |
-| 151 | P4 | §3, §6 (Content loading), §7 (Script-written page text) | Site helpers. `lib/site.ts` adds `SITE_REPO`, `SIBLINGS { me, europe }` and `STALE_AFTER` (`run.json` `repos.repo`, `siblings`, `schedule.stale_after`) and `themeColor()` (`#f3eee3` paper, `#121821` night), which lives there because Next.js refuses other named exports from `app/layout.tsx`; `isSampleData(dir = contentDir(), root = process.cwd())` is true only for a folder under `<root>/fixtures/`. `lib/site-data.ts`'s helpers take `Pick<Content, ...>` slices, `itemHistory()` returns `ItemEdition { date, edition, item, sources }`, `itemPageIds()` is cached per `Content`, and it adds `heldItemIds()` and `heldCorrection()` (row 156). Appended without changing an existing export: `rfc822()` to `lib/format.ts` (the siblings' helper, for the feed); `chartName()`, `kickerLevel()`, `kickerAi()`, `KickerParts` and `cardKickerParts()` to `lib/page-text.ts`, which now also exports `plural()`. `lib/config.ts` (two calls) and `lib/validate.ts` (one) mark their `path.resolve` and `path.join` with `/*turbopackIgnore: true*/`, as `app/methodology/page.tsx` does when it reads `STYLE.md`; no behaviour change | Foundation notes, items 8 and 9; the lanes' contract that shared files only gain helpers at their end. Without the comments Turbopack warned "Dynamic filesystem access causes tracing of the whole project" and scanned the repo, `cache/` included. Tests: Sample and Routes in `tests/site.test.tsx`; `tests/helpers.test.ts` and `tests/config.test.ts` unchanged |
+| 151 | P4 | §3, §6 (Content loading), §7 (Script-written page text) | Site helpers. `lib/site.ts` adds `SITE_REPO`, `SIBLINGS { me, europe }` and `STALE_AFTER` (`run.json` `repos.repo`, `siblings`, `schedule.stale_after`) and `themeColor()` (`#f3eee3` paper, `#121821` night; row 174: now the constant `THEME_COLOR`), which lives there because Next.js refuses other named exports from `app/layout.tsx`; `isSampleData(dir = contentDir(), root = process.cwd())` is true only for a folder under `<root>/fixtures/`. `lib/site-data.ts`'s helpers take `Pick<Content, ...>` slices, `itemHistory()` returns `ItemEdition { date, edition, item, sources }`, `itemPageIds()` is cached per `Content`, and it adds `heldItemIds()` and `heldCorrection()` (row 156). Appended without changing an existing export: `rfc822()` to `lib/format.ts` (the siblings' helper, for the feed); `chartName()`, `kickerLevel()`, `kickerAi()`, `KickerParts` and `cardKickerParts()` to `lib/page-text.ts`, which now also exports `plural()`. `lib/config.ts` (two calls) and `lib/validate.ts` (one) mark their `path.resolve` and `path.join` with `/*turbopackIgnore: true*/`, as `app/methodology/page.tsx` does when it reads `STYLE.md`; no behaviour change | Foundation notes, items 8 and 9; the lanes' contract that shared files only gain helpers at their end. Without the comments Turbopack warned "Dynamic filesystem access causes tracing of the whole project" and scanned the repo, `cache/` included. Tests: Sample and Routes in `tests/site.test.tsx`; `tests/helpers.test.ts` and `tests/config.test.ts` unchanged |
 | 152 | P4 | §6 (`/items/[id]` Records), §7 (Untrusted text, items 1 to 3) | Safe links and record links. `safeHref()` is in `lib/urls.ts` with `SAFE_HREF_MAX` (2,000) and reads the committed `config/source-tiers.json` `github.tier1_paths` as a JSON import (so it bundles), compiled once; to avoid an import cycle `githubPathTier1(url, tier1Paths)` and `TIER1_PATH_FLAGS` moved there from `lib/sources.ts`, whose `isGithubTier1()` and `blockedReason()` call it and which re-exports the flags (behaviour unchanged). The site's own links built from `run.json` are plain `<a>`, not passed through `safeHref()`: "Report an error" (`issueFormUrl()`, a `github.com` path `safeHref()` blocks), the repo, audit-trail and `docs/SOURCES.md` links, and ActorChips' "Europe ↗" or "ME ↗" to `SIBLINGS[tracker]` (with `aria-label` "<Europe or ME> tracker: <actor name>", since `ExternalLink` takes no label) carry `rel="noopener noreferrer"`; the TabBar family links and About's two sibling links carry no `rel`. `components/Markdown.tsx` keeps a STYLE.md link's `href` only for a site path (`/...` but not `//...`, or `#...`) or a URL `safeHref()` passes. Item, source and rule ids are checked against their patterns (`itemAnchor()`, `sourceAnchor()`, `configAnchor()`, or the regions.json schema for Methodology's `rule-<id>` rows) before any `id` attribute and before every `#` href on the brief page; Methodology's corrections log and the item page's edition links put the stored item id after the `#` as is. The record links are one light module, `lib/record-links.ts` (`cveRecordUrl()`, `kevRecordUrl()`, `KEV_CATALOG_URL`, `nvdRecordUrl()`, and `ghsaRecordUrl()` re-exported from `lib/feeds/ghsa.ts`), used by the item page, `ItemDetails` and `EpssMovers`. The KEV link keeps `?search_api_fulltext=<CVE>`, unverified: a Kobol check, and if it does not filter `kevRecordUrl()` returns `KEV_CATALOG_URL` (row 171: it does not, so the link is the root) | Foundation notes, items 7 and 11; brief lane, items 3, 4 and 14; pages lane (Records); integration item 5 (no duplicated builders). The cve.org builders in `lib/rank.ts`, `lib/collect.ts` and `lib/apply.ts` would pull the feed readers and git helpers into the site bundle (checked with an import-graph script). The container's proxy refused `www.cisa.gov`, so the KEV filter could not be checked. Tests: Plain text, and Accessibility (no `target`, `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling links) |
-| 153 | P4 | §7 (Page frame, Site tests) | The page frame. The layout sets `viewport.themeColor` from `themeColor()`, puts the skip link "Skip to the brief" first in `<body>`, and sets `robots` noindex exactly when it shows `SampleBanner`. The Masthead splits `SITE_NAME` before "Tracker" ("Cyber" in italic) and takes "Daily before 08:00 Taipei · @8gara8" from `dailyLine()` (`run.json`). `TabBar` gains an optional `pathname` prop for tests (default `usePathname()`, then "/"); a trailing slash is ignored; item pages and the 404 mark no tab; hover is an ink underline, not the siblings' `hover:bg-deep` fill. The Footer's link row is a `<div>`, not a third `<nav>`. `chrome.tsx`'s `Section` takes an optional `className`. `StaleBanner` rechecks every 60 s (`RECHECK_MS`) and on `visibilitychange`, as specified. `tests/stale.test.ts` runs the cases of `tests/helpers/stale-cases.ts` (15, among them a newest brief dated yesterday viewed at 08:01 Taipei; `--print` writes them as JSON) in the test process and again in child processes started with `TZ=America/New_York` and `TZ=UTC`, each reporting its zone and `getTimezoneOffset()` (300 and 0). The tab focus ring is row 162 | Pages lane (TabBar, Footer, Masthead); foundation notes, items 14 and 17. Link hover is ink, never a colour (A.1). The accessibility test counts the landmarks, so the footer adds none. The child processes prove each case ran in that zone, which a mocked clock in the test process cannot. Tests: Routes (the page frame), Accessibility and Stale |
+| 153 | P4 | §7 (Page frame, Site tests) | The page frame. The layout sets `viewport.themeColor` from `themeColor()` (row 174: `THEME_COLOR`), puts the skip link "Skip to the brief" first in `<body>`, and sets `robots` noindex exactly when it shows `SampleBanner`. The Masthead splits `SITE_NAME` before "Tracker" ("Cyber" in italic) and takes "Daily before 08:00 Taipei · @8gara8" from `dailyLine()` (`run.json`). `TabBar` gains an optional `pathname` prop for tests (default `usePathname()`, then "/"); a trailing slash is ignored; item pages and the 404 mark no tab; hover is an ink underline, not the siblings' `hover:bg-deep` fill. The Footer's link row is a `<div>`, not a third `<nav>`. `chrome.tsx`'s `Section` takes an optional `className`. `StaleBanner` rechecks every 60 s (`RECHECK_MS`) and on `visibilitychange`, as specified. `tests/stale.test.ts` runs the cases of `tests/helpers/stale-cases.ts` (15, among them a newest brief dated yesterday viewed at 08:01 Taipei; `--print` writes them as JSON) in the test process and again in child processes started with `TZ=America/New_York` and `TZ=UTC`, each reporting its zone and `getTimezoneOffset()` (300 and 0). The tab focus ring is row 162 | Pages lane (TabBar, Footer, Masthead); foundation notes, items 14 and 17. Link hover is ink, never a colour (A.1). The accessibility test counts the landmarks, so the footer adds none. The child processes prove each case ran in that zone, which a mocked clock in the test process cannot. Tests: Routes (the page frame), Accessibility and Stale |
 | 154 | P4 | §7 (BriefView and section order, Brief components, Script-written page text) | The brief page and its counting rules. `BriefViewProps` gains `heldItems`, `editionDates` and `earlierItems` (rows 155 and 156), and `briefPropsFor()` sets `gapOk` from `content.gapFailed`. Marking: `<Counted text>` and `COUNTED` (`components/ui/Counted.tsx`) mark a `<span>`, `<p>` or `<li>` whose own text is the counted string, never nested; a kicker and a region head are counted as the exact page-text string (`cardKicker()`, `regionSummary().head`), the pips and change glyph `aria-hidden` inside it (0 words to `countWords()`) and their hidden words ("High, 3 of 4", "level 2 of 4, up from BASELINE") just after it, outside; a withheld card or row marks nothing (row 126). No `<header>` or `<footer>` sits inside the brief, and labels shown in capitals are written in sentence case under CSS `uppercase`. Wording §7 left open: the sources foot "Sources (N) · M publishers" (N `sources.length`, M `computed.publisher_count` with "publisher" or "publishers"), else a foot block reading "No sources."; "GLOBAL · N items" pluralised; the Lead's "↓" to `#gap` with `aria-label` "Read: The Gap"; a metric Angle's basis "Gap metrics, data to <shortDate(as_of)> UTC" linking `#gap`, without a second date; `SCOREBOARD_NO_ENTRY` filled with `{date}` `shortDate(last.date)` and `{claim}` "<claim_id> <claim_text>", a metric entry's "From <file>, <path>" in place of a link, a missing reading "none", and "No Scoreboard entries yet."; the Taiwan Lens shows watch windows with start <= edition date <= end. A Scoreboard entry prints only a report entry's `reported_value`, never a metric entry's raw `value` | Brief lane, items 1, 7, 9, 10, 11 and 13; charts lane (the word-count test reads `<p>` and `<li>` marks and decodes entities). Review finding G: a metric entry's summary already gives its reading formatted ("37% (80% range 32% to 42%)"), and the entry then printed `String(value)`, "0.3712", after it. Tests: Word count (every sample edition, data-only included: the marked words sum to `computed.word_count`), Sample, and "a metric Scoreboard entry never prints its raw stored value after the formatted summary" |
 | 155 | P4 | §7 (Brief components) | Item cards, rows and corrections. Every card and row prints "id <item id>" in lower case at its foot (`CardLinks`, `normal-case` inside the uppercased `FOOTER_ROW`), before "Timeline →" and "Report an error"; the "details" summary has `aria-label` "Details: <headline>". `ItemDetails` dates go through `shortDate()`, KEV dates read "(US date)", CVE and GHSA ids link their records (row 152), and the exposure text is counted there, its only place on the page. `SeverityPips` takes `words` (false leaves the hidden words to the caller); the region change words are "up from X", "down from X", "same as yesterday" and none for new. `CorrectionBanner { corrections, held }` exports `CORRECTION_WORD` (the item page and Methodology use it too), prints NAME REMOVED's fixed line with no reason and other types' "<field>: now '<after>'. <reason>" as written, then a " Source" `ExternalLink`. `CorrectionsList { corrections, held, editionDates }` links an item id only when the site loaded that edition. `RegionRow { row, itemsById, earlierItems }`: "Yesterday: no edition" when `previous_level` is null; the reason renders once (truncated closed, wrapped open); `EDITOR_RAISED` is split around `{reason}`, so only the stored reason is counted; a fired rule's items go through `ItemRef`: an item of this brief by headline, one of an earlier edition by that copy's stored headline to `/brief/<date>#<id>` (`earlierItems`, the newest earlier loaded copy of each fired or raised item the brief lacks), only an item no loaded brief holds as its id in mono. ActorChips' attribution is the first qualifying one with the actor's nexus, the actor's own name first | Brief lane, items 2, 6, 8 and 12. Review finding C: About and the error form say the item id is at the foot of each item, but no page printed it, so a report filed from About or the footer could not name the item and intake would not withhold it (intake reads only lower-case ids). Finding N: `CorrectionsList` linked `/brief/<edition_date>` even when that brief was skipped, landing on not-found. Finding I: region rules look back several days, so a row often fires on an earlier edition's item, which showed as a bare id. Tests: "prints each card's and row's lower-case item id at its foot, outside the uppercased footer text", "the corrections list never links an edition the site skipped" and "links the kicker, region and fired-rule parts to this page and the methodology" |
 | 156 | P4 | §4.10, §6 (Content loading item 7, `/items/[id]`, `/methodology`), §7 (Brief components, Site tests) | Withholding on the site. `heldItemIds(content)` holds the item ids of `withheldRefs(bindingWithholds(corrections), briefs)` (each ref's id after its date) and every loaded copy whose `withheld.correction_id` names no `name_removed` correction the site loaded (`corrections.json` skipped, or that correction left out or missing), so it fails closed. `heldCorrection(c, held)` is `c.type !== "name_removed" && held.has(c.item_id)`: such a correction shows only "<TYPE> <date> · [withheld]" in the `CorrectionBanner`, and `[withheld]` for its reason in `CorrectionsList`, the item page's timeline and Methodology's log; once the dispute is rejected or withdrawn and nothing binds, it prints in full again, so a restoring `update` shows. `correctionsFor()` also returns the correction a withheld copy's `withheld.correction_id` names, whatever its `item_id` (a copy masked by URL keeps its own id). A source only withheld items cite (`withheldOnlySources(brief)`) or one titled `WITHHELD_MARK` shows only "[NN]" and "[withheld]" as plain text, with its tier line. A withheld card or row shows no Impact line, no "· details" and no `ItemDetails`. A withheld item never assessed shows neither its level nor its AI chip in a full or partial edition's kicker. The item page's withheld form: the header and title `WITHHELD_HEADLINE`, `WITHHELD_TEXT` with the earliest `since` through `longDate()`, the `CorrectionBanner` and a Section "Editions" of "<shortDate> · <word> edition" links; no headline, summary, source or record of any copy. §4.10's correction bullet says how the site shows corrections | Review findings A (while withheld, the item's other corrections printed their new text, reason and source on the card, the foot, the item page and Methodology; also found as routes 1, brief 6 and security 12), E (a withheld-only source printed its outlet and link; brief 5, security 14), F (`correctionsFor()` dropped the withhold's correction for a copy masked by URL), K (the rewrite keeps the impact, quotes and `claimed_by`, which the Impact line and `ItemDetails` printed) and H (a carried data-only item withheld the same morning showed UNRATED in a full edition's kicker; brief lane item 5, §0.4 row 132). `c8f294b`, from the check of those fixes: with `corrections.json` skipped or the withhold's correction left out, a brief's own corrections list printed a correction to the withheld item in full; a rejected dispute's correction is still loaded, so its restore prints as before. Tests: the Withholding cases, among them "a restore after a rejected dispute stays hidden when a new dispute withholds again, and shows once nothing binds" |
@@ -350,8 +350,8 @@ rows are what review and building found.
 | 159 | P4 | §6 (`/items/[id]`) | The item page, `components/pages/ItemPage.tsx` with `itemPageTitle()`; static params sorted. The timeline's wording and same-date order: edition 0, "<CVE> published" 1, vendor advisory 2, fix available 3, added to CISA's list 4, US deadline 5 (both "(US date)"), each exploitation "<CVE> exploited (<basis word>)" 6, "Release: N fixes, n exploited" 7, a correction "<C-id> · <TYPE> · <field>: <reason>" 8, a Scoreboard entry 9, then input order; each row "<shortDate> · <body>"; the edition link text "<word> edition" with `aria-label` "<longDate>, <word> edition", so the date is not read twice; CVE steps from the newest copy's `cves` only. A Scoreboard event is a report entry of brief D whose normalised `source_url` matches a source the item cites in D, "<SE-id> on <SB-id>" linking `/brief/D#scoreboard`. The item's corrections are every correction with its `item_id` plus `correctionsFor()` of each edition, once each, oldest first. Records are labelled "CVE record", "CISA KEV catalog", "NVD" and "GitHub advisory", or "No CVE or GitHub advisory records."; Sources read "No sources." with none. The withheld form is row 156's | §6 listed the events and their order but not their wording; the Scoreboard rule is the one `itemPageIds()` uses; `correctionsFor()` alone is per edition, and the page spans every edition (pages lane). Tests: Routes, on `/items/cve-2026-108917`, and cases on an in-memory copy of the sample with an added GHSA id and an unwithheld earlier edition, since the sample's withheld item has no page and the sample no GHSA id (fixtures are never edited by hand) |
 | 160 | P4 | §6 (`/methodology`), §7 (Site tests) | Methodology. `STYLE_SECTIONS` is `{ gap: 6, sources: 7, naming: 8, corrections: 14 }` in `components/pages/methodology-data.ts`; the sections come in the anchor table's order, titled "Severity and kinds", "AI roles", "Regions", "AI finders", "Feed status" and the four STYLE titles. The severity list carries hidden words ", N of 4" (the region list's ", level N of 4"), and a defined term that holds a colon ("AI: unassessed") takes " ·", not a second colon. Landmark is described from `KIND_INFO`, the kinds listed by rank, each rule row has label, id, level word, regions and type, agencies and CERTs show by publisher name, with version, updated and `review_due`. The Gap's live parameters come from `newestMetrics()` under "Live parameters, from the newest metrics file", or "No metrics file yet.". Feeds: `lastStatusDays()` takes each day's last run record that lists feeds (as `feedIn()` and publish do); the intro reads "Each feed in the registry, from the last feed check of each of the last N days with a status file (<from> to <to>)."; each row its latest status ("not run" when that record lacks the feed) and "N of M days ok", M the days read; "Fewer than 14 days of status so far."; "No status files yet.". The corrections log adds the correction id ("<date> · <C-id> · <edition date> · <item id>", the last two linked when that edition is loaded), newest first by date, then id. `EDITION_WORD`, `BLOCK_REASON_LABEL`, `FINDER_FAMILY_LABEL` and `FINDER_KIND_LABEL` are in `components/pages/labels.ts`. STYLE.md's own "§12" and "§14" render as written | Pages lane: §6's "N of 14 days ok" undercounts the sample's 11 status files. Integration items 3 and 4 (the hidden words, from the accessibility test; the doubled colon). Review finding B: the feeds table read the very last run record, which after a hand publish, a skipped rerun or a start record lists no feeds, so every feed read "not run" (also routes 2, data 16). Finding T: the Methodology test measured STYLE.md and only looked for the title in some `h2`, so empty sections passed. Tests: "the feeds table reads each day's last record that lists feeds: a later skipped or start-only record changes nothing" and "each STYLE_SECTIONS number resolves to its title, and its section prints that title and STYLE.md's prose" |
 | 161 | P4 | §6 (`/about`) | About, with its text in `components/pages/site-text.ts` (`ownerHandle()`, `repoUrl()`, `auditTrailUrl()`, `sourcesDocUrl()`, `dailyLine()`, `noEditionYet()`, `howItIsMade()`, `ABOUT_WHAT`, `DATA_CREDITS`). `ABOUT_WHAT` keeps §1's first four sentences and its last, with the metrics sentence folded into one clause: 79 words. "How it is made" takes its times and counts from `run.json`, and its Validate step names the retry: "a failing draft gets at most 2 repair rounds, and if it still fails, Claude writes one fresh draft with its own 2 rounds when there is time before 05:00 Taipei; if no draft passes, the data-only edition stands." (`repair_rounds`, `attempts_max`, `retry_cutoff`). The siblings read "ME Tracker" and "the Europe tracker". "Reporting an error" names the four fields the form reads (item id, edition date, what is wrong, one evidence link), says the run never reads free text and that a victim or attribution report withholds the item at once, and that the id is at the foot of each item (row 155) | §1's paragraph is about 150 words, §6 allows 80 (tested). `tests/no-europe-strings.test.ts` keeps the sibling's one-word name out of `app/`. `.github/ISSUE_TEMPLATE/correction.yml` reads four fields, where §6 said "item id, type and evidence link only". Review finding D: the Validate step said a draft still failing after its rounds leaves the data-only edition, but §8.2 opens a fresh attempt, with its own rounds, when there is time before the retry cutoff. Test: "/about: ABOUT_LINE verbatim with its link, the lines, the credits and the siblings", extended |
-| 162 | P4 | §7 (Accessibility, Page frame, Site tests) | Accessibility. Body text is 15px at line-height 1.6 (24px) and `.prose-serif` 17px, 18px from 48rem. Every block that holds a link sets `leading-[24px]` (ItemDetails rows, the sources list, region details, the Angle counter-point, the Taiwan Lens, Elsewhere, the Scoreboard source, the correction banner and list, the Fix-side strip, the card footer row), and the region rule list is spaced with `gap-1`; nothing is under 10px outside the chart svgs and `sr-only` text. The masthead tabs draw the 2px focus ring inset (`focus-visible:-outline-offset-4`), since the sideways-scrolling nav clips anything outside a tab, and the ink-filled active tab's ring is `var(--bg)` (`focus-visible:outline-bg`). The Accessibility tests (122 cases) render every sample page inside the real `app/layout.tsx`, with `usePathname()` set to its route and `next/font/google` mocked, and check §7's rules, no `target` attribute and `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling links; one case adds a `cross_link` to a copy of 14 Oct for the ↗ label | Review findings Q (lines that hold links were under 24px; without the fix 106 link lines fail the new test; the footer refs keep their row's 24px line) and P (the scrolling tab bar clipped the ring drawn outside each tab); integration item 2; foundation notes, item 16 (A.4 reads 17 to 18px). Tests: "every line that holds a link is at least 24px tall at 375px: the block's own size and leading, body text at 15px x 1.6" and "every tab draws its focus ring inset, so the scrolling nav cannot clip it; the ink-filled active tab's ring is the page colour" |
-| 163 | P4 | App. A.5, A.6, §7 (Accessibility) | The CSS and the colour check. `app/globals.css` copies the siblings' paper tokens exactly, in A.6's order. `scripts/color-check.ts` names its blocks on one line, `BLOCKS = [":root", 'html[data-look="night"]', ".night"]`: four scopes (each page look, and `.night` inside each), two after the pick, which deletes the middle entry (a test runs that case on today's file); `var()` resolves per level as the cascade does. `PAIRS` add `--ink` on `--bg-deep`, `--bg` on `--ink`, `--fg` on `--panel`, `--ink` on `--badge-mix` (14.33 paper, 11.25 dark), `--rule`, the chip borders and the Critical fill as non-text, and `--focus` on every surface; `EXEMPT` (7 entries) prints each with its ratio and reason; every custom property must be named by a pair, an exemption or `UNPAIRED` (the five parity tokens), else it fails. Output: 209 lines, 0 failed, 41 exempt; exit 0, 1 or 2; `--css FILE`. A.5 now says: the full-dark focus ring on the amber `#3A2E12` notice and sample-banner surface is 11.25:1, the 13.39 minimum holding on the dark neutral surfaces; the 12.5 colour-vision minimum is with the simulated colour rounded to 8-bit sRGB before CIEDE2000 (12.32 unrounded; paper's smallest 17.3, 17.22 unrounded); the no-blue rule exempts exactly full dark's near-neutrals `#E6EDF3` (hsl(208°, 35%, 93%)) and `#0B0F14` (hsl(213°, 29%, 6%)) by value (`NO_BLUE_NEUTRALS`), since HSL saturation runs high near white and black (chroma about 5% and 4%); and chart marks drawn by opacity (chart C's Anthropic layer, 2.09:1 on the night card) are not token pairs. No token changed | Tools lane: A.5's no-blue rule as written failed the spec's own full-dark tokens, "any dark surface at least 13.39" missed the amber surface, and 12.5 reproduces only when rounded (unrounded linear values give 12.32, the matrices on gamma-encoded RGB 15.17). The review judged chart C's 2.09:1 not a defect: WCAG 1.4.11's 3:1 covers only graphics required for understanding, and the data table, hover titles and direct label carry every value. Tests: `tests/color-check.test.ts` (every A.5 and A.3 ratio pinned to 2 decimals; `#9EC5F0` and `#E6EDF4` fail no-blue; the post-pick case) |
+| 162 | P4 | §7 (Accessibility, Page frame, Site tests) | Accessibility. Body text is 15px at line-height 1.6 (24px) and `.prose-serif` 17px, 18px from 48rem. Every block that holds a link sets `leading-[24px]` (ItemDetails rows, the sources list, region details, the Angle counter-point, the Taiwan Lens, Elsewhere, the Scoreboard source, the correction banner and list, the Fix-side strip, the card footer row), and the region rule list is spaced with `gap-1`; nothing is under 10px outside the chart svgs and `sr-only` text. The masthead tabs draw the 2px focus ring inset (`focus-visible:-outline-offset-4`), since the sideways-scrolling nav clips anything outside a tab, and the ink-filled active tab's ring is `var(--bg)` (`focus-visible:outline-bg`). The Accessibility tests (122 cases; row 174: 123) render every sample page inside the real `app/layout.tsx`, with `usePathname()` set to its route and `next/font/google` mocked, and check §7's rules, no `target` attribute and `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling links; one case adds a `cross_link` to a copy of 14 Oct for the ↗ label | Review findings Q (lines that hold links were under 24px; without the fix 106 link lines fail the new test; the footer refs keep their row's 24px line) and P (the scrolling tab bar clipped the ring drawn outside each tab); integration item 2; foundation notes, item 16 (A.4 reads 17 to 18px). Tests: "every line that holds a link is at least 24px tall at 375px: the block's own size and leading, body text at 15px x 1.6" and "every tab draws its focus ring inset, so the scrolling nav cannot clip it; the ink-filled active tab's ring is the page colour" |
+| 163 | P4 | App. A.5, A.6, §7 (Accessibility) | The CSS and the colour check (row 174: the pick left `BLOCKS = [":root", ".night"]` and deleted `NO_BLUE_NEUTRALS`; 107 lines, 17 exempt). `app/globals.css` copies the siblings' paper tokens exactly, in A.6's order. `scripts/color-check.ts` names its blocks on one line, `BLOCKS = [":root", 'html[data-look="night"]', ".night"]`: four scopes (each page look, and `.night` inside each), two after the pick, which deletes the middle entry (a test runs that case on today's file); `var()` resolves per level as the cascade does. `PAIRS` add `--ink` on `--bg-deep`, `--bg` on `--ink`, `--fg` on `--panel`, `--ink` on `--badge-mix` (14.33 paper, 11.25 dark), `--rule`, the chip borders and the Critical fill as non-text, and `--focus` on every surface; `EXEMPT` (7 entries) prints each with its ratio and reason; every custom property must be named by a pair, an exemption or `UNPAIRED` (the five parity tokens), else it fails. Output: 209 lines, 0 failed, 41 exempt; exit 0, 1 or 2; `--css FILE`. A.5 now says: the full-dark focus ring on the amber `#3A2E12` notice and sample-banner surface is 11.25:1, the 13.39 minimum holding on the dark neutral surfaces; the 12.5 colour-vision minimum is with the simulated colour rounded to 8-bit sRGB before CIEDE2000 (12.32 unrounded; paper's smallest 17.3, 17.22 unrounded); the no-blue rule exempts exactly full dark's near-neutrals `#E6EDF3` (hsl(208°, 35%, 93%)) and `#0B0F14` (hsl(213°, 29%, 6%)) by value (`NO_BLUE_NEUTRALS`), since HSL saturation runs high near white and black (chroma about 5% and 4%); and chart marks drawn by opacity (chart C's Anthropic layer, 2.09:1 on the night card) are not token pairs. No token changed | Tools lane: A.5's no-blue rule as written failed the spec's own full-dark tokens, "any dark surface at least 13.39" missed the amber surface, and 12.5 reproduces only when rounded (unrounded linear values give 12.32, the matrices on gamma-encoded RGB 15.17). The review judged chart C's 2.09:1 not a defect: WCAG 1.4.11's 3:1 covers only graphics required for understanding, and the data table, hover titles and direct label carry every value. Tests: `tests/color-check.test.ts` (every A.5 and A.3 ratio pinned to 2 decimals; `#9EC5F0` and `#E6EDF4` fail no-blue; the post-pick case) |
 | 164 | P4 | §3, §9.9 item 6, §10 P4 (item 3) | The screenshot script, `scripts/screenshots.mjs`: pages `index`, `brief-2026-10-14`, `archive` and `methodology` at 375 and 1280 px (viewport heights 812 and 800), into `<out>/<page>-<width>.png`, full page at device scale 2. At 375 it sets `isMobile` and `hasTouch`; every context has reduced motion, service workers blocked, locale en-US and time zone Asia/Taipei, and each shot waits for `networkidle` and `document.fonts.ready`, with the caret hidden and animations off. It polls `--base` every 0.5 s for `--wait` seconds (default 60) until it answers 200; every request to another origin is aborted and named in one line at the end; a page answering anything but 200 fails the run, and an uncaught page error fails it once every image is written (row 169). Exit 0 written, 1 setup missing, the site not answering or a page failing, 2 usage. `--playwright FILE` and `--channel NAME` (`none`: the browser `playwright-core` installed) serve the container; the setup messages name "SPEC §9.9 item 6" and the install line. The browser clock is not frozen, so the stale banner shows when the tree's newest edition is not today. The install and Appendix C's version stay Kobol steps | Tools lane: in the container both channels wrote all eight images of a test site and of the sample, and blocked an outside image; freezing the clock (`context.clock`, Playwright 1.45 or later) waits for Appendix C's version. Review finding R: the "no tools folder" case ran the CLI on the default `/Users/kobol/.cybertracker/tools`, so it would fail on Kobol once item 6 installs `playwright-core` there; it now passes `--playwright` to a folder that never exists and checks the default path's wording through `setupHint()`. Tests: `tests/screenshots.test.ts` (the script as a child process against fake `playwright-core` packages, no browser) |
 | 165 | P4 | §3, §7 (Untrusted text item 1, Security headers, Site tests), §8.1 | Package scripts, headers and tests. §8.1's phase sentence names P4's scripts (`dev`, `dev:sample`, `build`, `build:sample`, `build:empty`, `start`, `color:check`, and `check`'s last three steps); `calibrate` arrives with calibration, and the screenshot script has no package script. §3's tree lists `components/{layout,brief,charts,pages,ui}/`, `lib/record-links.ts`, `safeHref()` in `lib/urls.ts`, `tests/helpers/stale-cases.ts`, the five P4 test files and `next.config.ts`'s headers. `next.config.ts` exports `contentSecurityPolicy(env)` and `securityHeaders(env)`, so the Headers test checks production and development without changing `NODE_ENV`. The three lane test files are one `tests/site.test.tsx`, one `describe` per §7 bullet plus Routes, every lane case kept; Skipping stays in `tests/content.test.ts`, which reads §4.12's † rows from this file and checks each rule code against `RULES`' `dataOnly` flag, and Stale in `tests/stale.test.ts`. The Markdown importer check resolves every `import`, `export ... from` and `import()` specifier, relative or aliased, in either quote style, to a repo path. With `c8f294b` and these docs `npm run check` passes: 2,663 tests in 75 files, `color:check` 0 failed, `build:sample` 18 pages and `build:empty` 7, every route static | Integration items 1 and 6; foundation notes, items 13 and 18. Review finding S: the grep matched only double-quoted specifiers and a relative path from a `components/` subfolder, so a planted `"../../components/Markdown"` import and a single-quoted `'@/lib/markdown'` import passed it. Tests: "reads relative, aliased, single-quoted and dynamic specifiers as the same module" and "lib/markdown and components/Markdown are imported only by app/methodology/page.tsx" |
 | 166 | P4 | §0.1, §6 (Where content comes from), §7 (Security headers, Sources, chart conventions), §9.9, §10 P3, §10 P4 | The Verify results and the draft PR. §0.1's table and §10 P3 record PR #5's merge (2026-11-11, 23:48 Taipei, 15:48 UTC; `main` at `9ad5df3`; Codex round 3 at 23:17 Taipei on `f990fc2` found nothing). P4's PR #6 opens as a draft and stays one until the Kobol steps of §10 P4's status are done (`playwright-core` and its Appendix C version, both looks' screenshots from the dry-run tree, the KEV search link, a `[n]` link in iOS Safari and the Claude app's browser, the route summary on the dry-run tree), then is marked ready with an `@codex review` comment. Each Verify in P4 item the container checked says so and how: the route summary (sample in both looks, empty folder, `content/`: no `ƒ`; an empty `generateStaticParams()` builds under `dynamicParams = false`), the headers and CSP (a local `next start` in both looks: no violation or console error in Chrome, `curl -sI` shows the five headers, no `'unsafe-eval'`, no `X-Powered-By`), the axis text (9.43px in paper, 9.38px in night at 375px) and a `[n]` link (Chrome's mobile emulation: it opens `details#sources` and scrolls to `#src-s1`; a fragment link to an Also-today row scrolls to it and leaves it closed). Still open then (row 170 records the Kobol ones): the dry-run tree, Vercel production and preview and the Toolbar, the KEV link, iOS Safari and the Claude app, B.9's `siblings.me` and `site.url`, the screenshots and Appendix C | §0.1 item 4 opens a PR ready once the milestone passes, and P4's milestone needs Kobol, as P3's draft PR #5 did. The container's visual check (both looks of the sample, screenshots not committed) found one reading column (343px at 375, 720px at 1280), no horizontal page scroll, the fonts self-hosted and no layout defect; the cosmetic notes (the masthead's second line at 1280, the Aside beside a narrow column at 375, chart B's letters near "n too small") are for JL's look review |
@@ -362,6 +362,7 @@ rows are what review and building found.
 | 171 | P4 | §6 (`/items/[id]` Records), row 152 | The item page's "CISA KEV catalog" link is the catalog root, `KEV_CATALOG_URL`; `kevRecordUrl()` is gone. On Kobol (2026-11-12, with curl and in Chrome with JavaScript) `.../known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2021-44228` listed the whole catalog ("Showing 1 to 20 of 1779 results", the same first 20 as the root, newest first), the CVE only in the page's settings JSON: the parameter is ignored, so §6's fallback applies | §6's Verify in P4. Tests: Item page ("links cve.org, CISA's KEV catalog (the root: its search parameter is ignored), NVD and the GitHub advisory") |
 | 172 | P4 | §5.1 (ISO weeks), §7 (chart conventions: direct labels, Latest point, data tables; Site tests) | The latest point. The series end with the newest complete week, whose window ends on its Sunday, while the Gap's text and each chart's `aria-label` print the blocks (`flood`, `window.w26`), whose window ends on the cutoff, so on any edition whose cutoff is not a Sunday the end labels disagreed with the text above them: the 2026-10-14 dry run (cutoff Monday 12 Oct) showed chart A's 38,665 under a second line of 39,012, and chart B's 37% and "18.5 d" under a headline of 38% and 18 days. `latestPoint(weeks, scale, to)` (`components/charts/scale.ts`) places one more point at the last week's x plus k × step / 7 for a `to` k = 1 to 6 days after the last week's Sunday (null otherwise), with `week` the cutoff's Monday for the Source column; `xWithLatest()` maps index `weeks.length` to it. Chart A's total, kernel area and (when its last week has a value) year-ago line, and chart B rows 1's and 2's lines and bands, run on to it with the block's figures; the latest label and dot sit there; chart A's "a year earlier" anchors there too. The data tables open with a "To <cutoff>" row (`latestRowLabel()`; chart B's weekly KEV columns blank; Source by `sourceOf()`, now shared by the three charts). Hover titles stay one per week. The y tops take the latest values. `DirectLabel` starts a right-margin label at min(dot + 6, 400 − 7.2 × characters): at k = 5 or 6 (Sunday and Monday editions) a 7-character total such as "144,944" would end past the viewBox and be clipped; shorter labels keep their place. With an all-null series and a `window.w26` at or above `MIN_N` (the sample) rows 1 and 2 show only the latest point's dot and label | Kobol's screenshots (point b); the independent review of rows 171 to 173 (one P4 review finding: the clamp; the rest test gaps and wording). Tests: Charts ("the latest point (§7)": `latestPoint()` for k = 0 to 7 and an empty axis; chart A's and chart B's labels, dots, line ends, bands and first rows; chart A's "a year earlier" anchor; the y tops above the weeks' own; the To row's Source on a `live_from` in the cutoff's week; the label clamp; the Sunday, stale and early cutoffs; a year-ago line without a last value; `window.w26` below `MIN_N`), the sample as shipped in "an all-null series", and the data-table and "n too small" cases updated |
 | 173 | P4 | §7 (chart conventions, the chart table), row 157 | Chart B's 2023–24 values are keys on rows 1's and 2's HTML title lines, right-aligned (`ml-auto`, so a key that wraps under row 2's long name at 375px stays right) like row 3's "this week" label, which gains `ml-auto` too: a 16px dashed rule (`border-dashed border-muted`, `aria-hidden`) then "2023–24 37%" or "2023–24 21 d" (mono 12px 600 ink), shown when the reference line is drawn. They were labels inside the plot at its end, 10 units off the reference line, where the weekly line and its band crossed them at both widths. Chart A's "a year earlier" stays inside the plot, and `sideOf()` with it | Kobol's screenshots (point a); the container's check of a build with a real series (2026-11-12) showed the keys clear at 375 and 1280px. Tests: Charts ("chart B's 2023–24 values are keys on rows 1's and 2's title lines..."; no `<text>` holds "2023–24"; three `ml-auto` spans) |
+| 174 | P4 | §0.3, §3, §6 (Where content comes from, Content loading), §7 (Page frame, chart conventions, Site tests), §9.7, §10 P4, App. A (intro, A.1, A.2, A.3, A.5, A.6), rows 3, 151, 153, 162, 163 | JL's pick of the look: paper, on the decision card in PR #6's thread (2026-11-12, 08:39 Taipei, 00:39 UTC), from the side-by-side screenshots of both looks on the dry-run editions (row 170). The commit does what A.6's "After JL's pick" and "Paper wins" say. Deleted: the `html[data-look="night"]` block and the `html[data-look="night"] .night` panel border in `app/globals.css` (its header now says `color-check` parses `:root` and `.night`); the `data-look` attribute on `<html>` in `app/layout.tsx`; `siteLook()` and `themeColor()` in `lib/site.ts`, replaced by `export const THEME_COLOR = "#f3eee3"` (paper's `--bg`), which the layout's `viewport.themeColor` reads, so the site reads only `CT_CONTENT_DIR`; `CT_LOOK` and §9.7's row for it. Kept: the `.night` Gap panel (A.2), and `docs/screenshots/p4/night/` as the record of the comparison JL picked from; A.2 now records full dark as offered and not picked, its tokens left to git history at `e2621f8`, and A.3 loses its full-dark column. `scripts/color-check.ts`: `BLOCKS = [":root", ".night"]`, two scopes (the paper page and the Gap panel inside it); `NO_BLUE_NEUTRALS` is deleted and the no-blue check has no exemption list, since no `--sev-*` token takes a blue-hued value once full dark is gone (`.night` sets none, and paper's are warm hues or `#14161a` at 13% saturation); `EXEMPT`'s `--border` on `--bg` reason no longer names full dark's panel border. Output: 107 lines, 0 failed, 17 exempt (209 and 41 before the pick); the smallest colour-vision ΔE stays 12.5 (`:root .night`, `--ai` against `--muted`, tritanopia); the focus ring's minimums are 14.05 on paper surfaces (on `--bg-deep`) and 15.08 in the Gap panel (on its `--card` and `--bg-deep`, `#121821`), while A.5's 13.39 on full dark's neutrals (`#1A2330`) and 11.25 on its amber `#3A2E12` surface went with that look. `scripts/screenshots.mjs`'s header says P4's look pick used it. §10 P4's milestone now builds and shoots paper only, and its status names what is left before the merge (the preview of item 4 and Codex round 3) | JL's pick (§0.3, §10 P4 item 5); A.6 set out the commit for either look. Tests: `tests/color-check.test.ts` (the scopes: `BLOCKS` is `:root` and `.night`, giving `:root` and `:root .night`, and another look would add two; every A.5 and A.3 figure in those two scopes, the panel's focus on `--card` 15.08 among them; the focus ring at least 14.05 on paper and 15.08 in the panel; no `--sev-*` token blue and none exempt, 16 lines; the file reads the paper page and the Gap panel only and holds no `data-look`; the focus failure case on the panel's card; a blue-hued near-neutral fails with no exemption list, `#E6EDF3` and `#0B0F14` among them) and the Accessibility case "the paper look only (JL's pick, A.6)" in `tests/site.test.tsx` (no `data-look` on `<html>`, `viewport.themeColor` `#f3eee3`; the describe now has 123 cases) |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -533,7 +534,7 @@ CyberTracker/
 │   ├── run-inputs.ts              # The reads the P3 stages share (metricsFor(), firstSeenBefore())
 │   ├── html-text.ts               # htmlText(): a page's readable text, for snapshots and the link check (§4.12)
 │   ├── config.ts, content.ts      # Loads and checks config/; loadContent(): the content folder re-checked (§6)
-│   ├── site.ts, site-data.ts      # siteUrl(), contentDir(), isSampleData(), siteLook(); item pages, neighbours,
+│   ├── site.ts, site-data.ts      # siteUrl(), contentDir(), isSampleData(), THEME_COLOR; item pages, neighbours,
 │   │                              # corrections and the withheld set (§6)
 │   ├── record-links.ts            # P4: the item page's CVE, KEV, NVD and GitHub advisory links (§6)
 │   ├── page-text.ts, stale.ts, json-schema.ts  # Page strings (§7); stale-banner rule; agent JSON Schema from DraftBrief
@@ -3864,17 +3865,17 @@ runtime data fetching, no ISR, no `revalidate`, no middleware. Dynamic segments 
 `app/not-found.tsx`. In Next.js 16 `params` is a Promise and is awaited. `app/feed.xml/route.ts` has
 `export const dynamic = "force-static"`.
 
-**Where content comes from** (`contentDir()`, below). The site reads only `CT_CONTENT_DIR` and, in P4,
-`CT_LOOK`, never a secret; it never fetches content from a URL or an API and never writes to the folder.
+**Where content comes from** (`contentDir()`, below). The site reads only `CT_CONTENT_DIR`, never a
+secret; it never fetches content from a URL or an API and never writes to the folder.
 - **Production** builds from `main` read `content/` in Vercel's checkout, so each publish push deploys
   the new edition (§9.1). **Vercel Preview** sets `CT_CONTENT_DIR=fixtures/site-content` (§9.1): the
   sample, in paper.
 - **On Kobol,** `npm run dev:sample` serves the sample; `CT_CONTENT_DIR=<folder>` with `npm run dev` or
-  `next build` serves or builds any folder with `content/`'s layout (§3). P4 builds both looks
-  (`CT_LOOK=paper` and `night`) straight from P3's dry-run tree `logs/dry-run/tree` (§10 P3), with no
-  sample banner; nothing is ever copied into `content/`. JL picks the look from the P4 PR's side-by-side
-  screenshots of both looks on the dry-run editions; Claude then deletes the other look and the flag on
-  that PR (§10 P4).
+  `next build` serves or builds any folder with `content/`'s layout (§3). P4 built both looks (a
+  `CT_LOOK` flag chose paper or full dark) straight from P3's dry-run tree `logs/dry-run/tree` (§10 P3),
+  with no sample banner; nothing is ever copied into `content/`. JL picked paper from the P4 PR's
+  side-by-side screenshots of both looks on the dry-run editions (2026-11-12), and the same PR then
+  deleted the full-dark look and the flag (§10 P4, row 174).
 - **A failed build changes nothing.** A missing content folder throws `ContentError`, `next build` fails
   and Vercel keeps the previous deployment; one invalid file never fails the build. So the stale check
   runs in the browser (`StaleBanner`, §7).
@@ -3896,9 +3897,8 @@ export function siteUrl(): string;             // run.json site.url, trailing sl
 export function contentDir(): string;          // CT_CONTENT_DIR || run.json paths.content_dir ("content")
 export function isSampleData(dir = contentDir(), root = process.cwd()): boolean; // true only for a folder
 // under <root>/fixtures/ (never fixtures/ itself, content/, logs/dry-run/tree or a temporary copy)
-export function siteLook(): "paper" | "night"; // CT_LOOK === "night" ? "night" : "paper" (P4 only, Appendix A)
-export function themeColor(): string;          // "#f3eee3" paper, "#121821" night; here because Next.js refuses
-// other named exports from app/layout.tsx
+export const THEME_COLOR = "#f3eee3";          // the layout's themeColor, paper's --bg (JL's pick, Appendix A.6);
+// here because Next.js refuses other named exports from app/layout.tsx
 export function issueFormUrl(item?: { id: string; date: IsoDate }): string; // https://github.com/<run.json
 // repos.repo>/issues/new?template=correction.yml, + &item_id=<id>&edition_date=<date> (pre-fills the form)
 
@@ -4184,12 +4184,12 @@ are the defence. No `vercel.json`; `next/font` self-hosts fonts.
 
 `app/layout.tsx` (Europe's): Newsreader (normal, italic, `opsz`), IBM Plex Sans and Plex Mono (400 to
 700) via `next/font/google`, Latin subsets, `display: "swap"`; CJK through `:lang()` system stacks.
-`metadataBase: new URL(siteUrl())`; title default "CyberTracker: <tagline>", template "%s · CyberTracker";
-`description: SITE_TAGLINE`; RSS alternate "CyberTracker daily brief"; `robots` noindex in sample mode
-(always with `SampleBanner`, §6); `viewport.themeColor` from `themeColor()` (`lib/site.ts`): `#f3eee3`
-(paper) or `#121821` (night). `<html lang="en" data-look={siteLook()}>`; the skip link "Skip to the
-brief" to `#main` as `<body>`'s first child; `SampleBanner` in sample mode; then the column with
-`Masthead`, `<main id="main">`, `Footer`.
+`metadataBase: new URL(siteUrl())`; title default "CyberTracker: <tagline>", template "%s ·
+CyberTracker"; `description: SITE_TAGLINE`; RSS alternate "CyberTracker daily brief"; `robots` noindex in
+sample mode (always with `SampleBanner`, §6); `viewport.themeColor` is `THEME_COLOR` (`lib/site.ts`),
+paper's `#f3eee3`. `<html lang="en">`, with no look attribute (JL picked paper, Appendix A.6); the skip
+link "Skip to the brief" to `#main` as `<body>`'s first child; `SampleBanner` in sample mode; then the
+column with `Masthead`, `<main id="main">`, `Footer`.
 - **Masthead** (`components/layout/`, reads `run.json`): row 1 `TabBar variant="family"`; row 2 the
   wordmark "Cyber Tracker", `SITE_NAME` split before "Tracker" with "Cyber" in italic (Newsreader 600,
   23px, 28px from `md`) linking `/`, the tagline and "Daily before 08:00 Taipei · @8gara8" (`dailyLine()`,
@@ -4434,8 +4434,9 @@ as `chartLabel()`; none is counted, and none is in `lib/vocab.ts` or `lib/page-t
   with a faint gridline at that week's left edge. §5.1's `live_from` tick is a thin tick under the plot at
   the `live_from` week's left edge, drawn only when that week is on the axis and is not the first week.
 - Axis text 11 units mono muted (verify in P4: at least 9px at 375px; **checked in the container
-  (2026-11-12)** in Chrome at 375px: 9.43px in paper and 9.38px in night; the size follows from the
-  viewBox's scale alone, so Kobol's Chrome draws the same; it is the one exception to Accessibility's
+  (2026-11-12)** in Chrome at 375px: 9.43px in paper, the look that ships, and 9.38px in the full-dark
+  look JL did not pick; the size follows from the viewBox's scale alone, so Kobol's Chrome draws the
+  same; it is the one exception to Accessibility's
   10px floor); direct labels 12 units, 600, ink: the latest value in the right margin after a dot
   (`r = 2.5`), at the latest point when there is one (below), its text started at min(dot + 6, 400 −
   7.2 × characters) so a 7-character total late in the week still ends inside the viewBox (row 172),
@@ -4619,7 +4620,7 @@ frame; `next/font/google` is mocked, since its functions exist only under Next.j
   UNRATED and no AI chip in a full edition; a copy masked by URL under another id gets the withhold's
   banner on its card and page.
 - **Levels.** Every level renders pips and a word; `UNRATED` only in the data-only edition.
-- **Accessibility** (122 cases). Every sample page (`/`, the ten briefs, `/archive`,
+- **Accessibility** (123 cases). Every sample page (`/`, the ten briefs, `/archive`,
   `/items/cve-2026-108917`, `/methodology`, `/about`, a 404), rendered inside the real `app/layout.tsx`
   with `usePathname()` set to its route, has `<html lang="en">`, one `h1` and headings in order with no
   gaps, the landmarks (one `<header>` holding both tab `<nav>`s, `<main id="main">`, one `<footer>`, and
@@ -4629,7 +4630,8 @@ frame; `next/font/google` is mocked, since its functions exist only under Next.j
   holding "<n> of 4", region change glyphs `aria-hidden` with `changeWords()` in their hidden words, no
   `target` attribute, and `rel="noopener noreferrer"` on every absolute link but the `run.json` sibling
   links. Every tab draws its focus ring inset; every line that holds a link is at least 24px tall at
-  375px (the block's own size and leading, body text at 15px × 1.6).
+  375px (the block's own size and leading, body text at 15px × 1.6). The paper look only (JL's pick,
+  Appendix A.6): `/` has no `data-look` on `<html>`, and `viewport.themeColor` is `#f3eee3` (row 174).
 - **Charts.** Each renders `<svg role="img">`, a `<table>` and a `<title>` per week; an all-null series
   shows "n too small" and no band when there is no latest point or `window.w26` is below `MIN_N`, and
   with the sample's `window.w26` (157) and its Monday cutoff rows 1 and 2 show only the latest point's
@@ -6479,7 +6481,6 @@ None is secret. Defaults live in code or `config/run.json`; a variable only over
 | Variable | Default | Used by |
 |---|---|---|
 | `CT_CONTENT_DIR` | `content` (`run.json` `paths.content_dir`) | Site loaders, `validate:all`, scripts. Vercel Preview sets `fixtures/site-content`; `check` sets the fixture folders; P3's dry runs and P4's builds use `logs/dry-run/tree` (§10) |
-| `CT_LOOK` | `paper` | P4 only: `night` builds the full-dark look; removed with JL's pick (§6) |
 | `CT_CLAUDE_BIN` | `/Users/kobol/.cybertracker/cli/node_modules/.bin/claude` | `scripts/lib/agent.ts`; tests point it at `fixtures/agent/fake-claude.mjs` |
 | `CT_CLAUDE_CONFIG_DIR` | `/Users/kobol/.cybertracker/claude` | `scripts/lib/agent.ts` |
 | `CT_DEPLOY_WAIT_MS` | `budgets.deploy_wait_minutes` (8) in ms | The deploy check (§8.2); tests set `0` |
@@ -6890,14 +6891,14 @@ prompt or style changes the dry runs caused. **For JL:** the keychain step.
 ### P4: Site
 
 **Branch:** `p4-site`. **Builds on:** P3's dry-run tree. **Goal:** every page renders from the sample
-and the dry-run editions in the paper and full-dark looks, passes the accessibility checks, and deploys
-on the merge.
+and the dry-run editions in the paper look (JL's pick from the paper and full-dark looks P4 built, item
+5), passes the accessibility checks, and deploys on the merge.
 
 **Status on 2026-11-12:** ready for review on PR #6. Built and tested in the cloud container from
 2026-11-12 00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel lanes (brief, charts,
 pages, tools), their integration, then an independent review. Of its 39 findings 27 were confirmed and
 fixed, 25 in code with a test each and 2 in the spec (§5.8 and STYLE §14), and the check of those fixes
-added one more (`c8f294b`); §0.4 rows 150 to 173. In the container `npm run check` passes and every
+added one more (`c8f294b`); §0.4 rows 150 to 175. In the container `npm run check` passes and every
 route is static with the sample, the empty folder and the repo's `content/` (§6); the CSP, the headers,
 the axis text and a `[n]` link were checked in Chrome on a local build (§6, §7). The PR was a draft, an
 exception to §0.1 item 4 since the milestone needs Kobol, until JL marked it ready (07:36 Taipei,
@@ -6907,53 +6908,62 @@ at 08:00 to 08:07 Taipei (row 170, commit `59edb6e`): `playwright-core` 1.65.0 a
 3) and the KEV link check. The screenshots showed three defects, fixed in rows 171 (the KEV link is the
 catalog root), 172 (charts A's and B's end labels print the Gap text's figures) and 173 (chart B's
 2023–24 labels move to the row titles). The `[n]` check in iOS Safari and the Claude app's browser is
-JL's optional look (§7 Sources). Then Codex's last round, JL's pick of the look and the deletion of the
-other (item 5, Appendix A.6).
+JL's optional look (§7 Sources). JL picked paper on a decision card (2026-11-12, 08:39 Taipei, 00:39
+UTC), and a further commit deleted the full-dark look, `CT_LOOK`, `siteLook()` and the `data-look`
+attribute (item 5, Appendix A.6, row 174); B.9's `siblings.me` is checked (row 175). Still open before
+the merge: the PR's Vercel preview on the last commit (item 4: every route renders the sample with the
+sample banner and no CSP violation, and whether the Toolbar trips the CSP) and Codex's last round
+(round 3).
 
 1. `app/`, `components/` (`layout/`, `brief/`, `charts/`, `pages/`, `ui/` and `Markdown.tsx`, §3),
    `lib/{content,site,site-data,markdown,record-links,stale}.ts`, `lib/format.ts` (`rfc822()`) and
    `lib/page-text.ts` extended (P1 wrote them), `safeHref()` in `lib/urls.ts`, the CSP and headers in
-   `next.config.ts` (§6, §7), the `CT_LOOK` switch; `scripts/color-check.ts` (Appendix A.5);
-   `tests/site.test.tsx`, `tests/content.test.ts`, `tests/stale.test.ts`, `tests/color-check.test.ts` and
-   `tests/screenshots.test.ts` (§7).
+   `next.config.ts` (§6, §7), the `CT_LOOK` switch for the look pick (deleted with it, item 5);
+   `scripts/color-check.ts` (Appendix A.5); `tests/site.test.tsx`, `tests/content.test.ts`,
+   `tests/stale.test.ts`, `tests/color-check.test.ts` and `tests/screenshots.test.ts` (§7).
 2. `check` gains `color:check`, `build:sample`, `build:empty` (§9.2); the `dev`, `dev:sample`, `build`
    and `start` scripts (§8.1).
 3. `scripts/screenshots.mjs` drives Kobol's Chrome through `playwright-core` (§9.9) at 375 and 1280 px
    for `/`, `/brief/2026-10-14`, `/archive` and `/methodology` (`index`, `brief-2026-10-14`, `archive`,
-   `methodology`), both looks, into `docs/screenshots/p4/<look>/<page>-<width>.png` (P4 adds the `<look>/`
-   level to the template's path, §10), full page at device scale 2 (images 750 and 2560 px wide), after
-   `--base` answers 200 (it polls every 0.5 s for `--wait` seconds, default 60). At 375 it emulates a
-   phone (`isMobile`, `hasTouch`); every context has reduced motion, service workers blocked, locale
-   en-US and time zone Asia/Taipei, waits for `networkidle` and `document.fonts.ready`, and hides the
-   caret and animations. Every request to another origin is aborted and named in one line at the end; a
-   page answering anything but 200 fails the run (exit 1), so a tree without the 2026-10-14 edition fails
-   loudly; an uncaught page error fails it too, after every image is written (row 169). The browser clock
-   is real, so the stale banner shows on `/` when the tree's newest edition is not today. The builds read
-   P3's dry-run tree straight (`CT_CONTENT_DIR=logs/dry-run/tree`): it is not under `fixtures/`, so no
-   sample banner shows (§6), and `content/` is never touched.
+   `methodology`), both looks for the pick, into `docs/screenshots/p4/<look>/<page>-<width>.png` (P4 adds
+   the `<look>/` level to the template's path, §10), full page at device scale 2 (images 750 and 2560 px
+   wide), after `--base` answers 200 (it polls every 0.5 s for `--wait` seconds, default 60). At 375 it
+   emulates a phone (`isMobile`, `hasTouch`); every context has reduced motion, service workers blocked,
+   locale en-US and time zone Asia/Taipei, waits for `networkidle` and `document.fonts.ready`, and hides
+   the caret and animations. Every request to another origin is aborted and named in one line at the end;
+   a page answering anything but 200 fails the run (exit 1), so a tree without the 2026-10-14 edition
+   fails loudly; an uncaught page error fails it too, after every image is written (row 169). The browser
+   clock is real, so the stale banner shows on `/` when the tree's newest edition is not today. The
+   builds read P3's dry-run tree straight (`CT_CONTENT_DIR=logs/dry-run/tree`): it is not under
+   `fixtures/`, so no sample banner shows (§6), and `content/` is never touched.
 4. The PR's Vercel preview (§9.1); the Toolbar turned off only if it trips the CSP.
 5. JL picks the look from the PR's side-by-side screenshots; Claude deletes the other look and `CT_LOOK`
    in a further commit on this PR; the same commit updates Appendix A as A.6's "After JL's pick" says,
    trims §6's `siteLook()` (and its use in §7's page frame) and §9.7's `CT_LOOK` row, and adds the §0.4
-   row recording JL's pick.
+   row recording JL's pick. **Done:** JL picked paper (2026-11-12, 08:39 Taipei, 00:39 UTC), and that
+   commit deleted full dark (row 174); `docs/screenshots/p4/night/` stays as the record of the
+   comparison.
 
 ```
 export PATH=/opt/homebrew/bin:$PATH                                       # arm64 node, npm and npx (AGENTS rule 2)
 npm ci && npm run check                                                   # includes both builds and color:check
-for look in paper night; do CT_CONTENT_DIR=logs/dry-run/tree CT_LOOK=$look npx next build && (npx next start -p 3000 &) && node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/$look; pkill -f 'next start -p 3000'; done
+# Before the pick this ran once per look (for look in paper night; CT_LOOK=$look, --out .../p4/$look); paper only now
+CT_CONTENT_DIR=logs/dry-run/tree npx next build && (npx next start -p 3000 &) && node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/paper; pkill -f 'next start -p 3000'
 git status --short content                                                # nothing: content/ untouched
 ```
 
 **Done when:** the route summary marks every route static with the sample, empty and dry-run content;
-both looks' screenshots at both widths are committed and linked; the accessibility checks pass:
-`tests/site.test.tsx` asserts §7's Accessibility rules on every sample page (one `h1`, headings in order
-with no gaps, the landmarks, the skip link as the first focusable element, `aria-label`s on `↓` and `↗`
-links, hidden words on pips and change glyphs) alongside §7's "Site tests", and `color:check` passes on
-both token sets; `tests/stale.test.ts` passes, including a newest brief dated yesterday viewed at 08:01
-Taipei; the preview renders every route with the sample banner; the Kobol checks of the status above
-are recorded on the PR; JL has picked the look and the other is gone. After the merge Claude checks the first production deploy reached READY,
-the domain (§9.1), and `curl -sI https://cybertracker.vercel.app/` (200 and the five headers of §7), for
-the P5 PR. **For JL:** pick the look from the screenshots (paper is the default).
+both looks' screenshots at both widths are committed and linked (the record JL picked from); the
+accessibility checks pass: `tests/site.test.tsx` asserts §7's Accessibility rules on every sample page
+(one `h1`, headings in order with no gaps, the landmarks, the skip link as the first focusable element,
+`aria-label`s on `↓` and `↗` links, hidden words on pips and change glyphs) alongside §7's "Site tests",
+and `color:check` passes on the paper page and the Gap panel (on both looks' token sets before the pick);
+`tests/stale.test.ts` passes, including a newest brief dated yesterday viewed at 08:01 Taipei; the
+preview renders every route with the sample banner; the Kobol checks of the status above are recorded on
+the PR; JL has picked the look and the other is gone (paper, row 174). After the merge Claude checks the
+first production deploy reached READY, the domain (§9.1), and `curl -sI https://cybertracker.vercel.app/`
+(200 and the five headers of §7), for the P5 PR. **For JL:** pick the look from the screenshots (done:
+paper, 2026-11-12).
 
 ### P5: Supervised go-live
 
@@ -7159,19 +7169,17 @@ renders sections 6, 7, 8 and 14 by number (`STYLE_SECTIONS`, §6), and a test ch
 ## Appendix A. Design tokens
 
 `app/globals.css` holds every token. CyberTracker uses the siblings' "paper" family, AI violet as its
-single accent, and the Gap as the one dark "night desk" panel. P4 also builds a full-dark variant (A.2):
-JL picks paper or full dark from the P4 PR's side-by-side screenshots of both looks on the dry-run
-editions, and that PR then removes the other look and `CT_LOOK` as A.6 sets out (§10 P4, with a §0.4
-row).
+single accent, and the Gap as the one dark "night desk" panel. P4 also built a full-dark variant (A.2)
+for a side-by-side pick on the dry-run editions; JL picked paper (2026-11-12), and that PR then removed
+full dark and `CT_LOOK` as A.6 sets out (§10 P4, row 174).
 
 ### A.1 Tokens on paper
 
 Tokens are custom properties on `:root`; Tailwind 4 reads fonts from `@theme` and colours from
-`@theme inline` (`bg-panel` is `var(--card)`), so a scope that overrides tokens (`.night`,
-`html[data-look="night"]`) re-themes every utility and chart inside it. **Every scope redeclares the
-aliases** `--border`, `--muted`, `--fg` and `--panel` (a `var()` resolves where it is declared).
-Components use semantic utilities (`text-fg`, `text-soft`, `text-muted`, `bg-panel`, `border-line`,
-`border-rule`), never a raw hex value.
+`@theme inline` (`bg-panel` is `var(--card)`), so a scope that overrides tokens (`.night`) re-themes
+every utility and chart inside it. **Every scope redeclares the aliases** `--border`, `--muted`, `--fg` and
+`--panel` (a `var()` resolves where it is declared). Components use semantic utilities (`text-fg`,
+`text-soft`, `text-muted`, `bg-panel`, `border-line`, `border-rule`), never a raw hex value.
 
 ```css
 :root { /* paper: copied exactly from EuropeTracker's app/globals.css */
@@ -7196,7 +7204,7 @@ chrome is red (Dateline bar, drop cap, stamp, link hover, `[n]` refs), CyberTrac
 `a:hover { text-decoration-color: var(--ink); color: inherit; }`, `.dropcap::first-letter { color: var(--ink) }`.
 A test greps that no component uses `text-accent` or `border-accent`.
 
-### A.2 Night desk and the full-dark variant
+### A.2 Night desk
 
 The Gap panel is `<section id="gap" class="night">`. Gridlines use `#33424F` (1.73:1 on `#121821`), not
 the design's border `#1F2A37` (1.23:1), which would vanish.
@@ -7210,21 +7218,14 @@ the design's border `#1F2A37` (1.23:1), which would vanish.
 }
 ```
 
-Full dark (P4 only): `CT_LOOK=night` at build time (§6) sets `data-look="night"` on `<html>` and
-`themeColor` `#121821`, one step lighter than the Gap.
-
-```css
-html[data-look="night"] {
-  color-scheme: dark;
-  --bg: #121821; --bg-deep: #1A2330; --card: #1A2330; --ink: #E6EDF3; --ink-soft: #C3CCD6; --ink-mute: #8B98A5;
-  --rule: #E6EDF3; --rule-soft: #33424F; --border: #33424F; --muted: #8B98A5; --fg: #E6EDF3; --panel: #1A2330;
-  --badge-mix: #3A2E12; --badge-neutral: #1A2330; --sample-bg: #3A2E12; --sample-fg: #F3D9A4;
-  --ai: #A78BFA; --ai-on: #0B0F14; --focus: #E6EDF3;
-  --sev-critical-bg: #E6EDF3; --sev-critical-fg: #0B0F14; --sev-high-bg: #3A4757; --sev-high-fg: #E6EDF3;
-  --sev-high-border: #E6EDF3; --sev-elevated-border: #E6EDF3; --sev-elevated-fg: #E6EDF3; --sev-watch-fg: #8B98A5;
-}
-html[data-look="night"] .night { border: 1px solid #33424F; } /* the panel keeps #0B0F14 from .night */
-```
+The Gap panel is the only dark surface: the page is always paper. **Full dark was offered and not
+picked.** In P4 a build flag (`CT_LOOK=night`, §6) set `data-look="night"` on `<html>`, a
+`html[data-look="night"]` block re-themed the whole page one step lighter than the Gap (`--bg` `#121821`,
+`--card` `#1A2330`, an amber `#3A2E12` notice and banner surface, `themeColor` `#121821`) and a 1px
+`#33424F` border set the panel off from it. JL picked paper on 2026-11-12, and the blocks, the flag and
+the attribute are deleted (A.6, row 174). Full dark's tokens stay in git history (`app/globals.css` and
+this section at `e2621f8`) and its screenshots in `docs/screenshots/p4/night/`, the record of the
+comparison.
 
 ### A.3 Chips and glyphs
 
@@ -7232,18 +7233,21 @@ Severity is shown by treatment, never by hue alone; there is no blue in the seve
 Every severity, region and AI chip is square, mono, uppercase, `px-2 py-[3px]`, 12px,
 `tracking-[0.08em]`, and always holds the pips and the word.
 
-| Level | Treatment | Paper | Full dark |
-|---|---|---|---|
-| ●●●● CRITICAL | Filled ink chip | `--sev-critical-bg` #14161a, text #fbf8f0 (17.07:1) | #E6EDF3, text #0B0F14 (16.27:1) |
-| ●●●○ HIGH | Filled tinted chip with a 1px border | #c9bfa8, text #14161a (9.92:1), border #14161a | #3A4757, text #E6EDF3 (8.01:1), border #E6EDF3 |
-| ●●○○ ELEVATED | Outline chip | 1px #14161a border, ink text, no fill | 1px #E6EDF3 border, #E6EDF3 text |
-| ●○○○ WATCH | Grey text, no box | #6b6a62 (4.70:1 on paper) | #8B98A5 (6.05:1) |
-| Region levels | The same four treatments; BASELINE (●○○○) uses the Watch treatment | | |
-| LANDMARK, kind words, UNRATED | Grey text, no pips | as Watch | as Watch |
-| AI chip, confirmed or reported | Filled violet | `--ai` #6D28D9, text #fbf8f0 (6.69:1) | #A78BFA, text #0B0F14 (7.06:1) |
-| AI chip, claimed | Violet outline, violet text, then CLAIMED_CHIP in muted | #6D28D9 (6.14:1) | #A78BFA |
-| AI: unassessed | Grey outline, muted text | #6b6a62 | #8B98A5 |
-| Label chips (`Tag`) | Europe's neutral `Pill`: 11px mono, a 6px colour square, a 30% `color-mix` border; not the 12px severity-chip size above | `--badge-neutral`, muted text (4.37:1) | `#1A2330`, #8B98A5 |
+| Level | Treatment | Paper |
+|---|---|---|
+| ●●●● CRITICAL | Filled ink chip | `--sev-critical-bg` #14161a, text #fbf8f0 (17.07:1) |
+| ●●●○ HIGH | Filled tinted chip with a 1px border | #c9bfa8, text #14161a (9.92:1), border #14161a |
+| ●●○○ ELEVATED | Outline chip | 1px #14161a border, ink text, no fill |
+| ●○○○ WATCH | Grey text, no box | #6b6a62 (4.70:1 on paper) |
+| Region levels | The same four treatments; BASELINE (●○○○) uses the Watch treatment | |
+| LANDMARK, kind words, UNRATED | Grey text, no pips | as Watch |
+| AI chip, confirmed or reported | Filled violet | `--ai` #6D28D9, text #fbf8f0 (6.69:1) |
+| AI chip, claimed | Violet outline, violet text, then CLAIMED_CHIP in muted | #6D28D9 (6.14:1) |
+| AI: unassessed | Grey outline, muted text | #6b6a62 |
+| Label chips (`Tag`) | Europe's neutral `Pill`: 11px mono, a 6px colour square, a 30% `color-mix` border; not the 12px severity-chip size above | `--badge-neutral`, muted text (4.37:1) |
+
+Chips are drawn on paper only (A.5's chip pairs are page pairs); the table's full-dark column went with
+that look (A.2, row 174).
 
 **Glyphs**, the same on the site and in the chat edition (§8.8); accessible names use words (§7); pips
 are U+25CF (●) and U+25CB (○); no emoji anywhere. Severity (`SEVERITY_INFO`): `●●●● CRITICAL` ·
@@ -7282,12 +7286,11 @@ WCAG 2 ratios, computed 2026-11-07. Text needs 4.5:1, non-text 3:1.
   on `--bg-deep` (tab hover only, where the text is ink); mute on `--badge-neutral` 4.37 (`Tag` only:
   11px uppercase mono with a border and colour square, allowed 4.3); violet 6.14 / 6.69; card on violet
   (filled chip) 6.69; sample text `#7a4f08` on `#f3e3c6` 5.63.
-- **Dark:** `#E6EDF3` 16.27 on `#0B0F14`, 15.08 on `#121821`; `#C3CCD6` 11.83 / 10.97; `#8B98A5` 6.53 /
-  6.05 / 5.37 on `#1A2330`; violet `#A78BFA` 7.06 / 6.55 / 5.81; `#F3D9A4` on `#3A2E12` 9.67.
-- **Edition notice:** ink on `--badge-mix` 14.33 on paper; `#E6EDF3` on `#3A2E12` 11.25 in full dark.
-- **Focus:** ink on any paper surface at least 14.05 (on `--bg-deep`); `#E6EDF3` on any dark neutral
-  surface at least 13.39, and 11.25 on full dark's amber edition-notice and sample-banner surface
-  `#3A2E12` (still far over 3).
+- **The Gap panel (dark):** `#E6EDF3` 16.27 on `#0B0F14`, 15.08 on `#121821`; `#C3CCD6` 11.83 / 10.97;
+  `#8B98A5` 6.53 / 6.05; violet `#A78BFA` 7.06 / 6.55.
+- **Edition notice:** ink on `--badge-mix` 14.33 on paper.
+- **Focus:** ink on any paper surface at least 14.05 (on `--bg-deep`); `#E6EDF3` in the Gap panel at
+  least 15.08 (on its `--card` and `--bg-deep`, `#121821`).
   **Decorative, exempt:** gridlines `#c9bfa8` on card 1.72 and `#33424F` on `#121821` 1.73; the panel
   border `#1F2A37` on `#0B0F14` 1.32 (never a focus ring).
 - **Chart marks drawn by opacity** (chart C's Anthropic layer, `var(--ai)` at 0.4: 2.09 on the night
@@ -7296,12 +7299,12 @@ WCAG 2 ratios, computed 2026-11-07. Text needs 4.5:1, non-text 3:1.
   and data table give every value they show.
 
 `scripts/color-check.ts` (`npm run color:check`, in `npm run check` from P4; `--css FILE` reads another
-file) parses the blocks named on one line, `BLOCKS = [":root", 'html[data-look="night"]', ".night"]` (the
-P4 pick deletes the middle entry, A.6). Its scopes derive from it: each page look (`:root`, and
-`html[data-look="night"]` over `:root`) and `.night` inside each, so four scopes now and two after the
-pick. It resolves `var()` per scope as the cascade does (fallbacks and cycles handled), prints one line
-per pair and check (`ok`, `FAIL`, `exempt`) and a summary, and exits 0 on a pass, 1 on any failure or an
-unreadable file, 2 on a usage error; on 2026-11-12 it prints 209 lines, 0 failed and 41 exempt.
+file) parses the blocks named on one line, `BLOCKS = [":root", ".night"]` (JL's pick of paper deleted
+full dark's middle entry, A.6). Its scopes derive from it: the paper page (`:root`) and the Gap panel
+(`.night` inside it), two scopes. It resolves `var()` per scope as the cascade does (fallbacks and cycles
+handled), prints one line per pair and check (`ok`, `FAIL`, `exempt`) and a summary, and exits 0 on a
+pass, 1 on any failure or an unreadable file, 2 on a usage error; on 2026-11-12, after the pick, it
+prints 107 lines, 0 failed and 17 exempt.
 (1) **Contrast:** every pair in `PAIRS`, each with the scopes it applies to: the above, every chip
 foreground on its background (A.3), and `--ink` on `--bg-deep` (the siblings' tab-hover surface, a
 token the site keeps for parity and does not draw), `--bg` on `--ink` (the active tab), `--fg` on
@@ -7315,33 +7318,34 @@ a `#hex` colour named by a pair, an exemption or `UNPAIRED` (the five parity tok
 reason), else it fails. (2) **Colour vision:** per scope, `--ai` against `--ink`, `--ink-soft` and
 `--muted`, simulated for protanopia, deuteranopia and tritanopia (Machado et al. 2009, severity 1.0,
 linear RGB, the simulated colour rounded to 8-bit sRGB before the comparison, as a simulator shows it),
-CIEDE2000 ΔE at least 10 (`VISION_MIN_DE`; smallest on 2026-11-07: 12.5, night violet against muted,
-tritan, which is 12.32 unrounded; paper's smallest 17.3, 17.22 unrounded). (3) **No blue:** no
-`--sev-*` token has an HSL hue of 190° to 250° with saturation above 25%, except full dark's two
-near-neutrals, `#E6EDF3`
-(hsl(208°, 35%, 93%): the Critical fill, the High text and border, Elevated) and `#0B0F14` (hsl(213°,
-29%, 6%): the Critical text). HSL saturation runs high near white and black, and their chroma (maximum
-less minimum channel) is about 5% and 4%. `NO_BLUE_NEUTRALS` exempts exactly those two values, printed
-as exempt with that reason, so any other value in the range fails (`#9EC5F0` and `#E6EDF4` do in the
-tests); `#3A4757` (the High fill) passes at 20%, and paper passes the rule unchanged.
+CIEDE2000 ΔE at least 10 (`VISION_MIN_DE`; smallest on 2026-11-07: 12.5, the Gap panel's violet against
+muted, tritan, which is 12.32 unrounded; paper's smallest 17.3, 17.22 unrounded). (3) **No blue:** no
+`--sev-*` token has an HSL hue of 190° to 250° with saturation above 25%, and none is exempt. `.night`
+sets no `--sev-*` token, so both scopes read paper's: `#14161a` (hsl(220°, 13%, 9%)) is under 25%, and
+`#fbf8f0`, `#c9bfa8` and `#6b6a62` have warm hues. Any value in the range fails (`#9EC5F0`, `#E6EDF4` and the two former
+exemptions below do in the tests). Until the pick, full dark's near-neutrals `#E6EDF3` (hsl(208°, 35%, 93%))
+and `#0B0F14` (hsl(213°, 29%, 6%)), whose chroma is only about 5% and 4%, were exempt by value
+(`NO_BLUE_NEUTRALS`); the pick deleted them and the list (row 174).
 
 ### A.6 `app/globals.css` order
 
 `@import "tailwindcss"`; `@theme` (A.4) and `@theme inline` (Europe's colour map, unchanged); `:root`;
-`html[data-look="night"]` (until the P4 pick); `.night`; `html[data-look="night"] .night` (until the P4
-pick); `@layer base` (Europe's, with A.1's `a:hover` and §7's `:focus-visible`);
+`.night`; `@layer base` (Europe's, with A.1's `a:hover` and §7's `:focus-visible`);
 `@layer components` (Europe's `.tabular`, `.kicker`, `.display`, `.brief-h1`, `.prose-serif`, `.dropcap`
 in ink; `.pips { letter-spacing: 0.02em; }`); `* { border-radius: 0 !important; }`;
 `:target, [id] { scroll-margin-top: 1.5rem; }`; Europe's hidden `<summary>` marker rules; `:lang()` (A.4).
 
-**After JL's pick** (§10 P4 item 5). Either way the commit deletes the `html[data-look="night"]` and
+**After JL's pick** (§10 P4 item 5). **Paper won:** JL picked it on a decision card on 2026-11-12
+(08:39 Taipei, 00:39 UTC; row 174). Either way the commit was to delete the `html[data-look="night"]` and
 `html[data-look="night"] .night` blocks, `CT_LOOK`, `siteLook()` (§6) and the `data-look` attribute on
-`<html>`, and keeps the `.night` Gap scope (A.2); `color-check` then parses `:root` and `.night` only (the
-commit deletes `BLOCKS`' middle entry; a test already runs that case on today's file).
-- **Paper wins:** `:root` stays as A.1; `themeColor` is `#f3eee3`.
-- **Full dark wins:** the `html[data-look="night"]` declarations (`color-scheme: dark` included) replace
-  the matching paper values in `:root` (the parity tokens it does not set stay); the panel border
-  `1px solid #33424F` moves into `.night`; `themeColor` is `#121821`.
+`<html>`, and keep the `.night` Gap scope (A.2); `color-check` then parses `:root` and `.night` only
+(`BLOCKS` loses its middle entry). The commit did that, and also replaced `themeColor()` with the
+constant `THEME_COLOR` (§6) and deleted the no-blue exemption list `NO_BLUE_NEUTRALS` (A.5).
+- **Paper wins (taken):** `:root` stays as A.1; `themeColor` is `#f3eee3`.
+- **Full dark wins (not taken):** the `html[data-look="night"]` declarations (`color-scheme: dark`
+  included) would have replaced the matching paper values in `:root` (the parity tokens it does not set
+  staying); the panel border `1px solid #33424F` would have moved into `.night`; `themeColor` would have
+  been `#121821`.
 
 ---
 

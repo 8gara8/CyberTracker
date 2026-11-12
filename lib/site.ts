@@ -1,7 +1,7 @@
 // Site-wide settings (SPEC §6 "Content loading", §9.7), adapted from the fork's lib/site.ts. Names and
-// URLs come from config/run.json; the only variables read are CT_CONTENT_DIR and, in P4, CT_LOOK, never a
-// secret. run.json is imported as a module so the site bundles it; lib/config.ts parses the same file with
-// its schema (CONFIG_SCHEMA), and contentDir() cannot wait for loadConfig(), which needs isSampleData().
+// URLs come from config/run.json; the only variable read is CT_CONTENT_DIR, never a secret. run.json is
+// imported as a module so the site bundles it; lib/config.ts parses the same file with its schema
+// (CONFIG_SCHEMA), and contentDir() cannot wait for loadConfig(), which needs isSampleData().
 
 import path from "node:path";
 import run from "../config/run.json";
@@ -22,18 +22,8 @@ export function siteUrl(): string {
   return run.site.url.replace(/\/+$/, "");
 }
 
-/**
- * The look the site is built in (§6, Appendix A.2): CT_LOOK === "night" gives the full-dark variant, anything
- * else paper. Read at build time; P4 only, until JL's pick removes the other look and this function (A.6).
- */
-export function siteLook(): "paper" | "night" {
-  return process.env.CT_LOOK === "night" ? "night" : "paper";
-}
-
-/** The layout's themeColor for the look (§7 "Page frame", Appendix A.2): paper #f3eee3, full dark #121821. */
-export function themeColor(): string {
-  return siteLook() === "night" ? "#121821" : "#f3eee3";
-}
+/** The layout's themeColor (§7 "Page frame", Appendix A.6): the paper's --bg, JL's pick in P4. */
+export const THEME_COLOR = "#f3eee3";
 
 /** The content folder: CT_CONTENT_DIR, else run.json paths.content_dir ("content"), as given (relative to the repo root). */
 export function contentDir(): string {

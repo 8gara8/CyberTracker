@@ -3,7 +3,7 @@
 /* The siblings' "paper" design (SPEC Appendix A): cream paper, ink rules, square corners, Newsreader for
    display, IBM Plex Sans for text and IBM Plex Mono for labels and numbers. AI violet is the single accent
    and the Gap is the one dark "night desk" panel. Fonts come from next/font in app/layout.tsx. The order of
-   this file is A.6's; scripts/color-check.ts parses the :root, .night and html[data-look="night"] blocks. */
+   this file is A.6's; scripts/color-check.ts parses the :root and .night blocks. JL picked paper in P4. */
 
 @theme {
   --font-display: var(--font-newsreader), "Source Serif Pro", Georgia, serif;
@@ -41,17 +41,6 @@
   --sev-elevated-border: #14161a; --sev-elevated-fg: #14161a; --sev-watch-fg: #6b6a62;
 }
 
-/* Full dark (P4 only, until JL's pick): CT_LOOK=night at build time sets data-look="night" on <html>. */
-html[data-look="night"] {
-  color-scheme: dark;
-  --bg: #121821; --bg-deep: #1A2330; --card: #1A2330; --ink: #E6EDF3; --ink-soft: #C3CCD6; --ink-mute: #8B98A5;
-  --rule: #E6EDF3; --rule-soft: #33424F; --border: #33424F; --muted: #8B98A5; --fg: #E6EDF3; --panel: #1A2330;
-  --badge-mix: #3A2E12; --badge-neutral: #1A2330; --sample-bg: #3A2E12; --sample-fg: #F3D9A4;
-  --ai: #A78BFA; --ai-on: #0B0F14; --focus: #E6EDF3;
-  --sev-critical-bg: #E6EDF3; --sev-critical-fg: #0B0F14; --sev-high-bg: #3A4757; --sev-high-fg: #E6EDF3;
-  --sev-high-border: #E6EDF3; --sev-elevated-border: #E6EDF3; --sev-elevated-fg: #E6EDF3; --sev-watch-fg: #8B98A5;
-}
-
 /* The night desk: the Gap panel, <section id="gap" class="night">, the one dark surface on a paper page.
    Gridlines use #33424F (1.73:1 on #121821), not the design's border #1F2A37 (1.23:1). */
 .night {
@@ -60,8 +49,6 @@ html[data-look="night"] {
   --rule: #E6EDF3; --rule-soft: #1F2A37; --border: #33424F; --muted: #8B98A5; --fg: #E6EDF3; --panel: #121821;
   --ai: #A78BFA; --ai-on: #0B0F14; --focus: #E6EDF3;
 }
-
-html[data-look="night"] .night { border: 1px solid #33424F; } /* the panel keeps #0B0F14 from .night */
 
 /* Element defaults sit in the base layer and our classes in the components layer, so Tailwind's
    utilities (text-fg, no-underline, ...) can override them. */

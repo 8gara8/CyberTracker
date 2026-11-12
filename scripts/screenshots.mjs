@@ -1,9 +1,10 @@
-// SPEC §9.9 item 6 and §10 P4 item 3: full-page screenshots of a running build of the site, for the P4
-// PR's side-by-side look pick. playwright-core lives outside the repo, in /Users/kobol/.cybertracker/tools
-// (nothing is added to the project's dependencies), and drives Kobol's installed Google Chrome. Node's ES
-// module resolver ignores NODE_PATH, so the package is loaded with createRequire. Waits until --base answers
-// 200, then shoots each page of PAGES at each width of WIDTHS, full page at deviceScaleFactor 2, into
-// <out>/<page>-<width>.png. The browser reaches nothing but --base: every other request is aborted.
+// SPEC §9.9 item 6 and §10 P4 item 3: full-page screenshots of a running build of the site, for a PR's
+// visual check (P4's side-by-side look pick used them; JL picked paper). playwright-core lives outside
+// the repo, in /Users/kobol/.cybertracker/tools (nothing is added to the project's dependencies), and
+// drives Kobol's installed Google Chrome. Node's ES module resolver ignores NODE_PATH, so the package is
+// loaded with createRequire. Waits until --base answers 200, then shoots each page of PAGES at each width
+// of WIDTHS, full page at deviceScaleFactor 2, into <out>/<page>-<width>.png. The browser reaches nothing
+// but --base: every other request is aborted.
 //
 //   node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/paper
 //

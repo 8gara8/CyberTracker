@@ -1,12 +1,12 @@
-// The page frame (SPEC §7 "Page frame"): the siblings' layout with CyberTracker's fonts, metadata, look and
-// column. Owner: P4 foundation (S0); the pages lane fills the Masthead, Footer and banners it renders.
+// The page frame (SPEC §7 "Page frame"): the siblings' layout with CyberTracker's fonts, metadata, paper
+// theme colour and column. Owner: P4 foundation (S0); the pages lane fills the Masthead, Footer and banners it renders.
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import type { ReactNode } from "react";
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 import { SampleBanner } from "@/components/layout/SampleBanner";
-import { SITE_NAME, SITE_TAGLINE, contentDir, isSampleData, siteLook, siteUrl, themeColor } from "@/lib/site";
+import { SITE_NAME, SITE_TAGLINE, THEME_COLOR, contentDir, isSampleData, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const newsreader = Newsreader({ subsets: ["latin"], style: ["normal", "italic"], axes: ["opsz"], variable: "--font-newsreader", display: "swap" });
@@ -23,13 +23,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: themeColor(),
+  themeColor: THEME_COLOR,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const sample = isSampleData();
   return (
-    <html lang="en" data-look={siteLook()} className={`${newsreader.variable} ${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${newsreader.variable} ${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <a
           href="#main"

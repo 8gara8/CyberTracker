@@ -86,8 +86,8 @@ faster?
   static site (every route, the brief, the Gap charts, Methodology, About, the feed),
   `scripts/color-check.ts` and `scripts/screenshots.mjs`, built in the cloud container from 2026-11-12
   00:00 Taipei (2026-11-11 16:00 UTC): a foundation, four parallel lanes (brief, charts, pages, tools),
-  their integration, then an independent review. Of its 39 findings 27 were confirmed: 25 code fixes
-  with tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of those fixes added one more
+  their integration, then an independent review. Of its 39 findings 27 were confirmed: 25 code fixes with
+  tests and 2 spec rewordings (SPEC §5.8, STYLE §14); the check of those fixes added one more
   (`c8f294b`). STYLE §14's change leaves the drafting rule as it was, so a Kobol canary rerun
   (`agent:check -- --canary`) is optional. Codex round 1 found one P2 (row 169), round 2 nothing. The
   Kobol steps ran on 2026-11-12, 08:00 to 08:07 Taipei (row 170, commit `59edb6e`): `playwright-core`
@@ -97,23 +97,29 @@ faster?
   screenshots showed three defects, fixed in the container: the KEV link is the catalog root (row 171),
   charts A's and B's end labels now print the Gap text's figures through a latest point at the cutoff
   (row 172), and chart B's 2023–24 labels moved to the row titles (row 173). Spec changes: §0.4 rows 150
-  to 173. The `[n]` check on iOS is JL's optional look (WebKit opens the closed sources list from Safari
-  26.2). Waiting on: Codex round 3 (the last), then JL's pick of the look (a decision card in the thread;
-  paper recommended) and the deletion of the other look, `CT_LOOK` and `siteLook()` (Appendix A.6).
-  After the merge: rule 4's fast-forward on Kobol, remove the `p4-site` worktree, check the production
-  deploy, the domain and `curl -sI` (SPEC §10 P4's Done when).
+  to 175. The `[n]` check on iOS is JL's optional look (WebKit opens the closed sources list from Safari
+  26.2). JL picked the paper look on a decision card on 2026-11-12 at 08:39 Taipei (00:39 UTC), and a
+  further commit deleted full dark (SPEC Appendix A.6, row 174): the `html[data-look="night"]` blocks,
+  the `data-look` attribute, `CT_LOOK`, `siteLook()`, `themeColor()` (now the constant `THEME_COLOR`,
+  `#f3eee3`) and `NO_BLUE_NEUTRALS`; `color:check` reads `:root` and `.night` only (107 lines, 0 failed,
+  17 exempt), and `docs/screenshots/p4/night/` stays as the record of the comparison. B.9's `siblings.me`
+  is checked (row 175). Waiting on: the PR's Vercel preview on the last commit (SPEC §10 P4 item 4: every
+  route renders the sample with the sample banner and no CSP violation, and whether the Toolbar trips the
+  CSP) and Codex round 3 (the last). After the merge: rule 4's fast-forward on Kobol, remove the
+  `p4-site` worktree, check the production deploy, the domain and `curl -sI` (SPEC §10 P4's Done when).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
     Taipei, finished before Europe's 05:30 task (2026-11-08).
   - No alerts of any kind. Morning only, everything ready before 08:00 Taipei. No day count.
   - No separate China region (actor nexus instead).
-  - The paper look, with AI violet as the single accent and the Gap as the one dark panel.
+  - The paper look, with AI violet as the single accent and the Gap as the one dark panel (JL's pick
+    in P4 from the side-by-side screenshots, 2026-11-12; full dark is deleted).
   - One PR per phase, opened ready for review. Codex reviews, Claude fixes, JL merges. Claude never
     merges.
   - As few manual steps for JL as possible.
-- **Open defaults** (JL may override in a PR): the look (paper; chosen in P4), the Scoreboard seed
-  (approved in P5), the tagline ("The AI-era exploit and breach brief").
+- **Open defaults** (JL may override in a PR): the Scoreboard seed (approved in P5), the tagline ("The
+  AI-era exploit and breach brief"). The look is no longer open: JL picked paper in P4 on 2026-11-12.
 - **Phases:**
 
 | Phase | Branch | PR | State |
@@ -123,7 +129,7 @@ faster?
 | P1 Data contract, validator, chat renderer | `p1-contract` | #3 | Merged 2026-11-09, 17:19 Taipei (09:19 UTC) |
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
-| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; waiting on Codex round 3 and JL's pick of the look |
+| P4 Site | `p4-site` | #6 | Ready for review since 2026-11-12, 07:36 Taipei; Kobol steps done; JL picked paper (08:39 Taipei); waiting on the Vercel preview and Codex round 3 |
 | P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | | Not started |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
@@ -214,9 +220,9 @@ faster?
 | Agent sandbox | `npm run agent:check` runs the smoke tests; `-- --sandbox` adds the sandbox tests, `-- --canary` the planted-instruction test, `-- --all` all three, `-- --json` JSON instead of the table. Needs the keychain token; exit 0 every test passed, 1 a failure, 2 the CLI or token missing or a usage error (SPEC §8.12; from P3) |
 | Recover a morning | `docs/RUNBOOK.md`: every error code with its next step, where to look, the lock, `needs-review/`, token renewal (from P3) |
 | Preview the site | `npm run dev:sample`, or `npm run dev`; Vercel builds a preview of every pushed branch with the sample data (from P4) |
-| Build the site | `npm run build:sample` and `npm run build:empty` build it from `fixtures/site-content/` and `fixtures/empty-content/` (both are steps of `check`); `npm run build` reads `content/` or `CT_CONTENT_DIR`, then `npm run start` serves it; `CT_LOOK=night` builds full dark until JL's pick (SPEC §6, §9.7; from P4) |
+| Build the site | `npm run build:sample` and `npm run build:empty` build it from `fixtures/site-content/` and `fixtures/empty-content/` (both are steps of `check`); `npm run build` reads `content/` or `CT_CONTENT_DIR`, then `npm run start` serves it, always in the paper look (SPEC §6, §9.7; from P4) |
 | Colour check | `npm run color:check` checks every colour pair of `app/globals.css` against Appendix A.5 (`-- --css FILE` for another file); exit 0 passed, 1 a failure, 2 usage; a step of `check` (from P4) |
-| Screenshots | On Kobol, with the site served (`PATH=/opt/homebrew/bin:$PATH npm run start`, rule 2): `/opt/homebrew/bin/node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/p4/<look>` writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing (not 200, or an uncaught page error), 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
+| Screenshots | On Kobol, with the site served (`PATH=/opt/homebrew/bin:$PATH npm run start`, rule 2): `/opt/homebrew/bin/node scripts/screenshots.mjs --base http://localhost:3000 --out docs/screenshots/<phase>` (P4's are in `p4/paper/`, plus `p4/night/` as the record of the look pick) writes `<page>-<width>.png` for four pages at 375 and 1280 px; `--wait S`, `--playwright FILE`, `--channel NAME`; exit 0 written, 1 setup missing or a page failing (not 200, or an uncaught page error), 2 usage. Needs `playwright-core` in `~/.cybertracker/tools` (SPEC §9.9 item 6, §10 P4 item 3; from P4) |
 
 ## 7. Memory
 

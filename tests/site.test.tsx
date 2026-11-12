@@ -19,7 +19,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import nextConfig, { contentSecurityPolicy, securityHeaders } from "@/next.config";
-import RootLayout from "@/app/layout";
+import RootLayout, { viewport } from "@/app/layout";
 import HomePage, { generateMetadata as homeMetadata } from "@/app/page";
 import ArchivePage from "@/app/archive/page";
 import AboutPage from "@/app/about/page";
@@ -908,6 +908,12 @@ describe("Accessibility", () => {
   /** Elements a keyboard reaches, in document order. */
   const FOCUSABLE = "a[href], area[href], button:not([disabled]), input:not([type=hidden]), select, textarea, iframe, summary, [tabindex]:not([tabindex='-1']), [contenteditable]";
   const LEVEL_WORDS = /\b[1-4] of 4\b/;
+
+  it("the paper look only (JL's pick, A.6): no data-look on <html>, themeColor the paper's #f3eee3", async () => {
+    const $ = await pageAt("/");
+    expect($("html").attr("data-look")).toBeUndefined();
+    expect(viewport.themeColor).toBe("#f3eee3");
+  });
 
   it("covers every sample page: the briefs, the item pages and the fixed routes", () => {
     expect(ROUTES.filter((r) => r.startsWith("/brief/"))).toHaveLength(briefs.length);
