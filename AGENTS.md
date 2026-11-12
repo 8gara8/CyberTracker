@@ -129,8 +129,9 @@ faster?
   `restates` null (row 182), and a metric claim is now settled on its zone at its deadline (row 183;
   before, it was rescored on every later edition); `source-tiers.json` version 3 makes Verizon's breach
   report, which SB-07 is judged on, a tier 1 source (row 184). `routine/TASK.md` already matches SPEC
-  §11, so it is final as it is. Waiting on: JL's read of the six claims, and Codex round 2. After the
-  merge: the task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three
+  §11, so it is final as it is. Codex round 2 (on `ca349e5`) found one P2, fixed in `bca76f3`
+  (`verizon-dbir` covers the report's page only), and round 3 (on `bca76f3`, 15:25 Taipei, 07:25 UTC)
+  found nothing. Waiting on: JL's read of the six claims, and the merge. After the merge: the task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three
   supervised mornings.
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
@@ -155,7 +156,7 @@ faster?
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
 | P4 Site | `p4-site` | #6 | Merged 2026-11-12, 10:13 Taipei (02:13 UTC) |
-| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; waiting on JL's read of the claims and Codex round 2 |
+| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; Codex round 3 found nothing; waiting on JL's read of the claims and the merge |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI
