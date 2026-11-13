@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "editions": [
+    {
+      "date": "2026-11-13",
+      "edition": "data_only",
+      "published_at": "2026-11-13T09:51:31+08:00",
+      "item_count": 0,
+      "corrected": false
+    }
+  ],
+  "urls": {}
+}

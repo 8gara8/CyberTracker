@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-13",
+  "claims_version": 1,
+  "claims": [
+    {
+      "id": "SB-01",
+      "text": "AI-credited flaws reach CISA's exploited list no more often than other flaws.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": "SE-0001"
+    },
+    {
+      "id": "SB-02",
+      "text": "By the end of 2028, AI-powered malware is used in a ransomware attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": null
+    },
+    {
+      "id": "SB-03",
+      "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
+      "status": "open",
+      "zone": "support",
+      "reading": 446.8,
+      "reading_text": "+446.8%",
+      "reading_as_of": "2026-11-11",
+      "last_entry_id": "SE-0002"
+    },
+    {
+      "id": "SB-04",
+      "text": "AI flaw-finding keeps scaling beyond Anthropic: at the end of 2027 the 13-week count of AI-credited flaws excluding Anthropic is at least 450 (224 in the 13 weeks to 8 Nov 2026).",
+      "status": "open",
+      "zone": "between",
+      "reading": 377,
+      "reading_text": "377",
+      "reading_as_of": "2026-11-11",
+      "last_entry_id": "SE-0003"
+    },
+    {
+      "id": "SB-05",
+      "text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36).",
+      "status": "open",
+      "zone": "between",
+      "reading": 16,
+      "reading_text": "16 (80% range 12 to 20)",
+      "reading_as_of": "2026-11-11",
+      "last_entry_id": "SE-0004"
+    },
+    {
+      "id": "SB-06",
+      "text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": null
+    },
+    {
+      "id": "SB-07",
+      "text": "Unpatched holes get exploited more: Verizon's 2028 Data Breach Investigations Report puts exploited vulnerabilities above 31% of breaches with a known way in (2026 report: 31%).",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": null
+    },
+    {
+      "id": "SB-08",
+      "text": "Geopolitics turns AI flaw-finding into a state weapon: by the end of 2028 the US, UK, Japan, Taiwan, the EU or an EU state blames a foreign state for a new intrusion using AI to find or exploit flaws.",
+      "status": "open",
+      "zone": "no_reading",
+      "reading": null,
+      "reading_text": null,
+      "reading_as_of": null,
+      "last_entry_id": null
+    }
+  ],
+  "entries": [
+    {
+      "id": "SE-0001",
+      "date": "2026-11-13",
+      "claim_id": "SB-01",
+      "origin": "metric",
+      "direction": "neutral",
+      "summary": "First reading: the base-rate ratio has no value yet.",
+      "value": null,
+      "reported_value": null,
+      "quote": null,
+      "claim_type": null,
+      "source_url": null,
+      "metrics_ref": {
+        "file": "metrics/2026-11-13.json",
+        "path": "base_rate.ratio"
+      }
+    },
+    {
+      "id": "SE-0002",
+      "date": "2026-11-13",
+      "claim_id": "SB-03",
+      "origin": "metric",
+      "direction": "support",
+      "summary": "First reading: the 13-week count of new CVE records against 2023 to 2024 is +446.8%.",
+      "value": 446.8,
+      "reported_value": null,
+      "quote": null,
+      "claim_type": null,
+      "source_url": null,
+      "metrics_ref": {
+        "file": "metrics/2026-11-13.json",
+        "path": "flood.vs_reference_pct"
+      }
+    },
+    {
+      "id": "SE-0003",
+      "date": "2026-11-13",
+      "claim_id": "SB-04",
+      "origin": "metric",
+      "direction": "neutral",
+      "summary": "First reading: the 13-week count of AI-credited flaws excluding Anthropic is 377.",
+      "value": 377,
+      "reported_value": null,
+      "quote": null,
+      "claim_type": null,
+      "source_url": null,
+      "metrics_ref": {
+        "file": "metrics/2026-11-13.json",
+        "path": "ai_credited.w13.ex_anthropic"
+      }
+    },
+    {
+      "id": "SE-0004",
+      "date": "2026-11-13",
+      "claim_id": "SB-05",
+      "origin": "metric",
+      "direction": "neutral",
+      "summary": "First reading: the 26-week median days from disclosure to CISA's listing is 16 (80% range 12 to 20).",
+      "value": 16,
+      "reported_value": null,
+      "quote": null,
+      "claim_type": null,
+      "source_url": null,
+      "metrics_ref": {
+        "file": "metrics/2026-11-13.json",
+        "path": "window.w26.after_disclosure_median_days"
+      }
+    }
+  ]
+}

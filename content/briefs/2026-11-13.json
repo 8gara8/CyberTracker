@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-13",
+  "edition": "data_only",
+  "generated_at": "2026-11-13T09:50:26+08:00",
+  "published_at": "2026-11-13T09:51:31+08:00",
+  "data_only_published_at": "2026-11-13T09:51:31+08:00",
+  "late": true,
+  "data_cutoff_utc": "2026-11-11",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 0
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "36% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 16 days (2023–24: 21, faster). 167 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 46,811 new CVE records in 13 weeks, 5.5 times the 2023–24 pace (5.3 times excluding the Linux kernel). AI-credited: 707 in 13 weeks, 377 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-13.json",
+    "metrics_sha256": "e6d08ffba610a46decacfc331bd0d32318fcbeb6ad42cb04e44cba54a2bf7532",
+    "as_of": "2026-11-11"
+  },
+  "items": [],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 0,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 11 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 11 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [
+      {
+        "id": "SE-0001",
+        "date": "2026-11-13",
+        "claim_id": "SB-01",
+        "origin": "metric",
+        "direction": "neutral",
+        "summary": "First reading: the base-rate ratio has no value yet.",
+        "value": null,
+        "reported_value": null,
+        "quote": null,
+        "claim_type": null,
+        "source_url": null,
+        "metrics_ref": {
+          "file": "metrics/2026-11-13.json",
+          "path": "base_rate.ratio"
+        }
+      },
+      {
+        "id": "SE-0002",
+        "date": "2026-11-13",
+        "claim_id": "SB-03",
+        "origin": "metric",
+        "direction": "support",
+        "summary": "First reading: the 13-week count of new CVE records against 2023 to 2024 is +446.8%.",
+        "value": 446.8,
+        "reported_value": null,
+        "quote": null,
+        "claim_type": null,
+        "source_url": null,
+        "metrics_ref": {
+          "file": "metrics/2026-11-13.json",
+          "path": "flood.vs_reference_pct"
+        }
+      },
+      {
+        "id": "SE-0003",
+        "date": "2026-11-13",
+        "claim_id": "SB-04",
+        "origin": "metric",
+        "direction": "neutral",
+        "summary": "First reading: the 13-week count of AI-credited flaws excluding Anthropic is 377.",
+        "value": 377,
+        "reported_value": null,
+        "quote": null,
+        "claim_type": null,
+        "source_url": null,
+        "metrics_ref": {
+          "file": "metrics/2026-11-13.json",
+          "path": "ai_credited.w13.ex_anthropic"
+        }
+      },
+      {
+        "id": "SE-0004",
+        "date": "2026-11-13",
+        "claim_id": "SB-05",
+        "origin": "metric",
+        "direction": "neutral",
+        "summary": "First reading: the 26-week median days from disclosure to CISA's listing is 16 (80% range 12 to 20).",
+        "value": 16,
+        "reported_value": null,
+        "quote": null,
+        "claim_type": null,
+        "source_url": null,
+        "metrics_ref": {
+          "file": "metrics/2026-11-13.json",
+          "path": "window.w26.after_disclosure_median_days"
+        }
+      }
+    ],
+    "last": null
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-61511",
+      "score": 0.74266,
+      "delta_7d": 0.68659,
+      "percentile": 0.99495
+    },
+    {
+      "cve_id": "CVE-2026-75650",
+      "score": 0.99376,
+      "delta_7d": 0.64635,
+      "percentile": 0.9994
+    },
+    {
+      "cve_id": "CVE-2026-59310",
+      "score": 0.61668,
+      "delta_7d": 0.59103,
+      "percentile": 0.99183
+    },
+    {
+      "cve_id": "CVE-2026-4408",
+      "score": 0.46926,
+      "delta_7d": 0.44425,
+      "percentile": 0.98847
+    },
+    {
+      "cve_id": "CVE-2026-18556",
+      "score": 0.43884,
+      "delta_7d": 0.36002,
+      "percentile": 0.98767
+    }
+  ],
+  "feeds_stale": [],
+  "sources": [],
+  "computed": {
+    "word_count": 403,
+    "reading_minutes": 2,
+    "item_count": 0,
+    "ai_linked": {
+      "linked": 0,
+      "total": 0
+    },
+    "source_count": 0,
+    "publisher_count": 0
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10",
+  "updated_at": "2026-11-11",
   "finders_version": 2,
   "finders_sha256": "11ec6fdba9ed5b9980d4ebcae3e08f6791f286a6843b980a3a2d0b94a29409bb",
   "matches": [
@@ -11630,6 +11630,94 @@
       "Claude",
       "pattern",
       "2026-11-10"
+    ],
+    [
+      "CVE-2026-91150",
+      "2026-11-11",
+      "aisle",
+      "other",
+      "ai_system",
+      "cna.credits",
+      "AISLE",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-91151",
+      "2026-11-11",
+      "aisle",
+      "other",
+      "ai_system",
+      "cna.credits",
+      "AISLE",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-119618",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "ANT-2026-MAPKT6MZ",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-123862",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "Claude",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-123863",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "Claude",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-123864",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "Claude",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-123874",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "Claude",
+      "pattern",
+      "2026-11-11"
+    ],
+    [
+      "CVE-2026-123875",
+      "2026-11-11",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "Claude",
+      "pattern",
+      "2026-11-11"
     ]
   ]
 }

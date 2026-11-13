@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10",
+  "updated_at": "2026-11-11",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -1160,6 +1160,36 @@
       "2026-05-13",
       "cna.credits",
       "Palo Alto Networks thanks Harsh Jaiswal from Hacktron AI and our internal security research teams for discovering and reporting this issue."
+    ],
+    [
+      "CVE-2026-0326",
+      "2026-11-11",
+      "cna.credits",
+      "OpenAI"
+    ],
+    [
+      "CVE-2026-0327",
+      "2026-11-11",
+      "cna.credits",
+      "OpenAI"
+    ],
+    [
+      "CVE-2026-0328",
+      "2026-11-11",
+      "cna.credits",
+      "OpenAI"
+    ],
+    [
+      "CVE-2026-0329",
+      "2026-11-11",
+      "cna.credits",
+      "OpenAI"
+    ],
+    [
+      "CVE-2026-0331",
+      "2026-11-11",
+      "cna.credits",
+      "OpenAI"
     ],
     [
       "CVE-2026-0396",
@@ -6262,6 +6292,18 @@
       "This issue was discovered by AISLE Research and Found by AISLE in partnership with Red Hat."
     ],
     [
+      "CVE-2026-91150",
+      "2026-11-11",
+      "cna.credits",
+      "This issue was discovered by AISLE Research and Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-91151",
+      "2026-11-11",
+      "cna.credits",
+      "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
       "CVE-2026-91202",
       "2026-09-18",
       "cna.credits",
@@ -7738,6 +7780,12 @@
       "MopMonk-AI"
     ],
     [
+      "CVE-2026-106023",
+      "2026-11-11",
+      "cna.credits",
+      "Bartlomiej Dmitruk at striga.ai"
+    ],
+    [
       "CVE-2026-106512",
       "2026-10-06",
       "cna.credits",
@@ -8188,6 +8236,12 @@
       "OpenAI Codex Security - Khai Tran and Sylvie Mayer"
     ],
     [
+      "CVE-2026-111792",
+      "2026-11-11",
+      "cna.credits",
+      "MopMonk-AI"
+    ],
+    [
       "CVE-2026-111868",
       "2026-10-18",
       "cna.credits",
@@ -8500,6 +8554,12 @@
       "Claude Opus 5.5 (1M context)"
     ],
     [
+      "CVE-2026-116645",
+      "2026-11-11",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
       "CVE-2026-117876",
       "2026-10-27",
       "cna.credits",
@@ -8746,6 +8806,12 @@
       "OpenAI Codex Security (kylebot)"
     ],
     [
+      "CVE-2026-118368",
+      "2026-11-11",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
       "CVE-2026-119078",
       "2026-11-09",
       "cna.credits",
@@ -8768,6 +8834,12 @@
       "2026-11-09",
       "cna.credits",
       "Upstream acknowledges Ada Logics (Ada Logics) and Claude (Anthropic) as the original reporters."
+    ],
+    [
+      "CVE-2026-119618",
+      "2026-11-11",
+      "cna.credits",
+      "Anthropic's OSS Scanner, as vulnerability ANT-2026-MAPKT6MZ"
     ],
     [
       "CVE-2026-119776",
@@ -8870,6 +8942,42 @@
       "2026-11-06",
       "cna.credits",
       "Claude Opus 5"
+    ],
+    [
+      "CVE-2026-123829",
+      "2026-11-11",
+      "cna.credits",
+      "Trail of Bits (OpenAI)"
+    ],
+    [
+      "CVE-2026-123862",
+      "2026-11-11",
+      "cna.credits",
+      "Chris Rohlf in collaboration with Claude and Anthropic Research"
+    ],
+    [
+      "CVE-2026-123863",
+      "2026-11-11",
+      "cna.credits",
+      "Chris Rohlf in collaboration with Claude and Anthropic Research"
+    ],
+    [
+      "CVE-2026-123864",
+      "2026-11-11",
+      "cna.credits",
+      "Chris Rohlf in collaboration with Claude and Anthropic Research"
+    ],
+    [
+      "CVE-2026-123874",
+      "2026-11-11",
+      "cna.credits",
+      "Chris Rohlf in collaboration with Claude and Anthropic Research"
+    ],
+    [
+      "CVE-2026-123875",
+      "2026-11-11",
+      "cna.credits",
+      "Chris Rohlf in collaboration with Claude and Anthropic Research"
     ],
     [
       "CVE-2026-124077",
