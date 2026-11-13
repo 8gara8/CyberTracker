@@ -1,14 +1,48 @@
 {
   "schema_version": 1,
   "date": "2026-11-13",
-  "edition": "data_only",
-  "generated_at": "2026-11-13T09:50:26+08:00",
-  "published_at": "2026-11-13T09:51:31+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-13T10:12:00+08:00",
+  "published_at": "2026-11-13T09:56:39+08:00",
   "data_only_published_at": "2026-11-13T09:51:31+08:00",
   "late": true,
   "data_cutoff_utc": "2026-11-11",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "Maersk has confirmed data theft from a legacy system, while the WhiteArmor group claims 100GB.",
+      "item_ids": [
+        "inc-shipping-dk-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Attacks followed the public release of exploits for N-able's N-central remote management software, and Synology patched a critical flaw in DiskStation Manager.",
+      "item_ids": [
+        "cve-2026-125883",
+        "cve-2026-76954"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Taiwan's consular bureau says hackers took more than 70,000 passport photos.",
+      "item_ids": [
+        "inc-government-tw-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "36% of recently disclosed flaws on CISA's exploited list in the 26 weeks to 11 Nov were already exploited when disclosed.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-11",
+    "counterpoint": "Unit 42 says autonomous AI raises the volume and coverage of exploitation, but not its complexity. CISA's list also lags real exploitation.",
+    "counterpoint_source_ids": [
+      "s14"
+    ],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -25,14 +59,25 @@
       },
       {
         "code": "EU",
-        "level": "baseline",
-        "computed_level": "baseline",
+        "level": "elevated",
+        "computed_level": "elevated",
         "previous_level": null,
         "change": "new",
-        "rule_id": null,
-        "reason": "No rule fired.",
-        "item_ids": [],
-        "fired": [],
+        "rule_id": "serious-victim",
+        "reason": "Victim in Denmark: Maersk confirms data theft from a legacy system as WhiteArmor claims 100GB",
+        "item_ids": [
+          "inc-shipping-dk-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-shipping-dk-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
         "raised": null
       },
       {
@@ -61,7 +106,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 6
     },
     "signals": []
   },
@@ -73,30 +118,533 @@
     "metrics_sha256": "e6d08ffba610a46decacfc331bd0d32318fcbeb6ad42cb04e44cba54a2bf7532",
     "as_of": "2026-11-11"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "inc-shipping-dk-2026-11",
+      "kind": "breach",
+      "headline": "Maersk confirms data theft from a legacy system as WhiteArmor claims 100GB",
+      "summary": "Maersk has confirmed data theft from a legacy system, SecurityWeek and The Record report. The WhiteArmor ransomware group claims it took 100GB, and SecurityWeek reports an extortion attempt. Maersk has not confirmed the group's identity or what data was taken.",
+      "why_it_matters": "Old systems inherited through acquisitions remain a weak point, iThome reports.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Maersk",
+        "description": "a Danish shipping group",
+        "sector": "transport",
+        "country": "DK",
+        "impact": "Data stolen from a legacy system, Maersk confirms",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s1",
+          "s2"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2",
+        "s3"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-125883",
+      "kind": "critical_flaw",
+      "headline": "Attacks hit N-able N-central after exploits published; N-able yet to confirm",
+      "summary": "A researcher published exploits for N-central, N-able's remote management software. BleepingComputer reports at least 21 servers infected with a cryptocurrency miner, 19 running the latest update. N-able has not confirmed exploitation. A related XXE flaw affects versions before 26.4.1.",
+      "why_it_matters": "Remote management tools give attackers many customers at once, and exploitation followed disclosure within hours.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-125883"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-125883",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-10",
+          "source_id": "s7"
+        }
+      ],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4",
+        "s5",
+        "s6",
+        "s7"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": {
+        "id": "n-able",
+        "name": "N-able",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-125883",
+          "date_published": "2026-11-10",
+          "date_updated": "2026-11-12",
+          "assigner": "N-able",
+          "vendor": {
+            "id": "n-able",
+            "name": "N-able",
+            "country": "US"
+          },
+          "product": "N-central",
+          "title": "Multiple XXE Vulnerabilities",
+          "cvss": {
+            "score": 9.3,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:L/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00917,
+            "percentile": 0.6069,
+            "date": "2026-11-12"
+          },
+          "ssvc": {
+            "exploitation": "poc",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-11"
+          },
+          "kev": null,
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": "2026-11-10",
+          "patch": {
+            "date": "2026-11-10",
+            "basis": "vendor_advisory",
+            "source_url": "https://me.n-able.com/s/security-advisory/aArVy0000002ihhKAA/cve2026125883-multiple-xxe-vulnerabilities"
+          },
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-13T09:56:39+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-76954",
+      "kind": "critical_flaw",
+      "headline": "Synology patches critical DSM flaw CVE-2026-76954 in the Auth API",
+      "summary": "Synology's advisory rates an SQL injection in DiskStation Manager's Auth API Critical, CVSS 9.8, and lists updated builds for each supported line. It says no mitigation exists besides upgrading and makes no statement on exploitation.",
+      "why_it_matters": "A Taiwanese vendor's network storage product, reachable by remote attackers without credentials per the CVSS vector, is a priority to patch.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-76954"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-76954",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-10",
+          "source_id": "s8"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s8",
+        "s9"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": {
+        "id": "synology",
+        "name": "Synology",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-76954",
+          "date_published": "2026-11-12",
+          "date_updated": "2026-11-12",
+          "assigner": "synology",
+          "vendor": {
+            "id": "synology",
+            "name": "Synology",
+            "country": "TW"
+          },
+          "product": "DiskStation Manager (DSM)",
+          "title": "An improper neutralization of special elements used in an SQL command vulnerability in the Auth API in Synology DiskStation Manager (DSM) before 7.2.1-69057-13, 7.2.2-72806-10, 7.3.2-86009-5, and 7.4…",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00634,
+            "percentile": 0.50912,
+            "date": "2026-11-12"
+          },
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "Nguyễn Bá Nam Dũng (@greengrass19000) and Hà Thế Long (LongHT) from Viettel Cyber Security Research Lab (@vcslab)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": "2026-11-10",
+          "patch": {
+            "date": "2026-11-10",
+            "basis": "vendor_advisory",
+            "source_url": "https://synology.com/en-global/security/advisory/Synology_SA_26_19"
+          },
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-13T09:56:39+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-119618",
+      "kind": "critical_flaw",
+      "headline": "Apache HTTP Server mod_http2 RCE CVE-2026-119618 patched; Anthropic, Google credited",
+      "summary": "SecurityWeek reports a mod_http2 race condition could let unauthenticated attackers run code on servers with HTTP/2 enabled; a fix is out.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "ai_found",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s15",
+          "quote": "Apache Patches Critical HTTP Server RCE Found by Anthropic, Google",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-119618"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s15",
+        "s16",
+        "s17"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": {
+        "id": "apache",
+        "name": "Apache Software Foundation",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-119618",
+          "date_published": "2026-11-11",
+          "date_updated": "2026-11-12",
+          "assigner": "apache",
+          "vendor": {
+            "id": "apache",
+            "name": "Apache Software Foundation",
+            "country": "US"
+          },
+          "product": "Apache HTTP Server",
+          "title": "Apache HTTP Server: mod_http2: heap corruption and RCE in assign_headers",
+          "cvss": null,
+          "epss": {
+            "score": 0.00398,
+            "percentile": 0.34546,
+            "date": "2026-11-12"
+          },
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "Anthropic's OSS Scanner, as vulnerability ANT-2026-MAPKT6MZ",
+            "Anthony Weems and Simon Scannell of the Google Cloud Vulnerability Research"
+          ],
+          "ai_credit": {
+            "finder_id": "anthropic-claude",
+            "family": "anthropic",
+            "kind": "ai_system",
+            "field": "cna.credits",
+            "matched": "ANT-2026-MAPKT6MZ",
+            "rule": "pattern",
+            "finders_version": 2
+          },
+          "discovery_credit": "ai_autonomous",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-13T09:56:39+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": true,
+      "withheld": null
+    },
+    {
+      "id": "sc-screenconnect-extension-2026-11",
+      "kind": "supply_chain",
+      "headline": "Attackers abuse a ScreenConnect extension to breach customers, ConnectWise says",
+      "summary": "ConnectWise says abuse of a third-party extension led to breaches at ScreenConnect customers; The Record reports researchers saw intrusions at nearly 50 organisations.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s10",
+        "s11"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-government-tw-2026-11",
+      "kind": "breach",
+      "headline": "Taiwan consular bureau says over 70,000 passport photos were taken in website breach",
+      "summary": "BOCA says hackers obtained more than 70,000 passport photos, plus scanned authorisation letters and APEC travel card applications. Issued passports stay valid.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "TW"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Bureau of Consular Affairs, Taiwan Ministry of Foreign Affairs",
+        "description": "a Taiwanese government agency",
+        "sector": "government",
+        "country": "TW",
+        "impact": "More than 70,000 passport photos and other applicant files taken",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s12",
+          "s13"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12",
+        "s13"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "ai-linux-kernel-microsoft-2026-11",
+      "kind": "ai_capability",
+      "headline": "Microsoft says AI agents found 59 Linux kernel bugs reported upstream, 33 with CVEs",
+      "summary": "Microsoft says its MDASH AI system produced 59 upstream bug reports, 33 CVEs and 38 merged fixes; humans still validated the fixes.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_found",
+      "ai_role_secondary": null,
+      "ai_confidence": "claimed",
+      "ai_claimant": "Microsoft",
+      "ai_evidence": [
+        {
+          "source_id": "s18",
+          "quote": "59 upstream bug reports, 33 assigned CVEs, and 38 merged fixes",
+          "from_claimant": true
+        }
+      ],
+      "claim_type": "self_reported",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s18"
+      ],
+      "first_seen": "2026-11-13",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
-    "source_ids": [],
+    "analysis": "Taiwan's Ministry of Digital Affairs says nearly half of recent attacks on more than 10 Taiwanese firms involved AI, while the consular bureau breach exposed more than 70,000 passport photos. The ministry said some attacks used ARTEX, a security-testing tool, and cautioned that Hong Kong IP addresses do not show where attackers are. Synology, a Taiwanese vendor, patched a critical flaw. TSMC says a forum seller's staff records match a cloud provider's data, and it has no evidence its own systems were breached.",
+    "item_ids": [
+      "inc-government-tw-2026-11",
+      "cve-2026-76954"
+    ],
+    "source_ids": [
+      "s19",
+      "s21"
+    ],
     "rows": [
       {
         "row": "gov_infra",
-        "text": null,
-        "item_ids": [],
+        "text": "Consular bureau breach exposed more than 70,000 passport photos; BOCA says issued passports stay valid.",
+        "item_ids": [
+          "inc-government-tw-2026-11"
+        ],
         "source_ids": []
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
-        "source_ids": []
+        "text": "Synology patched a critical DSM flaw; D-Link's unsupported DIR-878 device has a public exploit reported in its CVE record.",
+        "item_ids": [
+          "cve-2026-76954"
+        ],
+        "source_ids": [
+          "s20"
+        ]
       },
       {
         "row": "chips_defence",
-        "text": null,
+        "text": "TSMC says a seller's staff records match a cloud provider's data, with no evidence its systems were breached. Unit 42's chip-sector campaign does not name Taiwan.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s21"
+        ]
       },
       {
         "row": "cables_telecom",
@@ -112,15 +660,20 @@
       },
       {
         "row": "china_axis",
-        "text": null,
+        "text": "MODA says some attacks used the ARTEX testing tool and cautions that Hong Kong IP addresses do not show where hackers are.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s19"
+        ]
       }
     ],
     "japan": {
-      "text": null,
+      "text": "Security NEXT reports that the Japan Chamber of Commerce's online exam system and Shiseido's skin-measurement service each disclosed leaks or possible leaks of personal data. Neither report names an actor.",
       "item_ids": [],
-      "source_ids": []
+      "source_ids": [
+        "s22",
+        "s23"
+      ]
     },
     "kev_lines": {
       "tw": {
@@ -219,50 +772,442 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99495
+      "title": "Citrix patches 28 memory flaws in NetScaler; CERT-EU flags one affecting every deployment",
+      "source_id": "s24"
     },
     {
-      "cve_id": "CVE-2026-75650",
-      "score": 0.99376,
-      "delta_7d": 0.64635,
-      "percentile": 0.9994
+      "title": "Chrome 157 and Firefox 160 updates fix 83 and 99 flaws",
+      "source_id": "s25"
     },
     {
-      "cve_id": "CVE-2026-59310",
-      "score": 0.61668,
-      "delta_7d": 0.59103,
-      "percentile": 0.99183
+      "title": "eMudhra revokes eight more CA certificates after private key mishap",
+      "source_id": "s26"
     },
     {
-      "cve_id": "CVE-2026-4408",
-      "score": 0.46926,
-      "delta_7d": 0.44425,
-      "percentile": 0.98847
-    },
-    {
-      "cve_id": "CVE-2026-18556",
-      "score": 0.43884,
-      "delta_7d": 0.36002,
-      "percentile": 0.98767
+      "title": "Taiwan university alumni email linked to bomb threats against 6,000 Italian schools",
+      "source_id": "s27"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
-  "sources": [],
-  "computed": {
-    "word_count": 403,
-    "reading_minutes": 2,
-    "item_count": 0,
-    "ai_linked": {
-      "linked": 0,
-      "total": 0
+  "sources": [
+    {
+      "id": "s1",
+      "title": "Maersk Confirms Data Theft Amid $5 Million Extortion Attempt",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/maersk-confirms-data-theft-amid-5-million-extortion-attempt",
+      "source_type": "press",
+      "published_at": "2026-11-12T16:38:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
     },
-    "source_count": 0,
-    "publisher_count": 0
+    {
+      "id": "s2",
+      "title": "Shipping giant Maersk says recent cyber incident affected legacy system",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/shipping-giant-maersk-says-recent-incident-affected-legacy-system",
+      "source_type": "press",
+      "published_at": "2026-11-13T02:28:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "航運巨擘馬士基證實資料外洩,傳遭勒索組織WhiteArmor索討500萬美元",
+      "title_en": "Shipping giant Maersk confirms data leak, reportedly pressed by ransomware group WhiteArmor for US$5 million",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180437",
+      "source_type": "press",
+      "published_at": "2026-11-12T11:15:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "New N-able \"4EverAble2Shell\" zero-day exploited hours after PoC released",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/new-n-able-4everable2shell-zero-day-exploited-hours-after-poc-released",
+      "source_type": "press",
+      "published_at": "2026-11-13T03:51:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "Hackers Target N-central Zero-Days as N-able Rushes Patches",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/hackers-target-n-central-zero-days-as-n-able-rushes-patches",
+      "source_type": "press",
+      "published_at": "2026-11-12T17:39:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "CVE-2026-125883: N-able N-central, Multiple XXE Vulnerabilities",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-125883",
+      "source_type": "cve_record",
+      "published_at": "2026-11-10",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "CVE-2026-125883 Multiple XXE Vulnerabilities",
+      "title_en": null,
+      "language": "en",
+      "outlet": "N-able",
+      "url": "https://me.n-able.com/s/security-advisory/aArVy0000002ihhKAA/cve2026125883-multiple-xxe-vulnerabilities",
+      "source_type": "vendor_advisory",
+      "published_at": null,
+      "publisher": "vendor:n-able",
+      "publisher_name": "N-able",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "Synology-SA-26:19 DSM",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Synology",
+      "url": "https://synology.com/en-global/security/advisory/Synology_SA_26_19",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-11-10T17:06:42+08:00",
+      "publisher": "vendor:synology",
+      "publisher_name": "Synology",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "CVE-2026-76954: Synology DiskStation Manager (DSM)",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-76954",
+      "source_type": "cve_record",
+      "published_at": "2026-11-12",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "ConnectWise investigates ScreenConnect breaches after reports of incidents at nearly 50 organizations",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/connectwise-screenconnect-breaches-third-party-tool",
+      "source_type": "press",
+      "published_at": "2026-11-13T00:16:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "Active ScreenConnect attacks breach MSPs, impact dozens of organizations",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/active-screenconnect-attacks-breach-msps-impact-dozens-of-organizations",
+      "source_type": "press",
+      "published_at": "2026-11-12T06:56:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "Passport validity unaffected by data breach of 70,000 headshots: BOCA",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan (CNA English)",
+      "url": "https://focustaiwan.tw/society/202611120013",
+      "source_type": "press",
+      "published_at": "2026-11-12T15:02:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "外交部領務局網站遭駭,逾7.2萬個護照大頭照外洩,另有授權書及ABTC資料遭取得",
+      "title_en": "Consular Affairs bureau website hacked, over 72,000 passport photos leaked, authorisation letters and ABTC data also taken",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180446",
+      "source_type": "press",
+      "published_at": "2026-11-12T14:53:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "Attackers Use Autonomous AI to Target Semiconductor, Defense and Civil Society Sectors",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Palo Alto Networks Unit 42",
+      "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks",
+      "source_type": "research",
+      "published_at": "2026-11-12T23:00:00+08:00",
+      "publisher": "unit42",
+      "publisher_name": "Unit 42",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "Apache Patches Critical HTTP Server RCE Found by Anthropic, Google",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/apache-patches-critical-http-server-rce-found-by-anthropic-google",
+      "source_type": "press",
+      "published_at": "2026-11-12T23:38:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "Apache HTTP Server patches critical HTTP/2 remote code execution flaw",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/apache-http-server-patches-critical-http-2-remote-code-execution-flaw",
+      "source_type": "press",
+      "published_at": "2026-11-13T03:12:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "Multiples vulnérabilités dans Apache HTTP Server (12 novembre 2026)",
+      "title_en": "Multiple vulnerabilities in Apache HTTP Server (12 November 2026)",
+      "language": "fr",
+      "outlet": "CERT-FR",
+      "url": "https://cert.cyber.gouv.fr/avis/CERTFR-2026-AVI-1500",
+      "source_type": "government",
+      "published_at": "2026-11-12T08:00:00+08:00",
+      "publisher": "anssi",
+      "publisher_name": "ANSSI and CERT-FR",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s18",
+      "title": "Lessons from 59 Linux Kernel Bug Reports",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Microsoft Security blog",
+      "url": "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports",
+      "source_type": "research",
+      "published_at": "2026-11-12T00:55:00+08:00",
+      "publisher": "microsoft-threat-intel",
+      "publisher_name": "Microsoft Threat Intelligence",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s19",
+      "title": "Nearly half of recent cyberattacks on Taiwan firms AI-linked: MODA",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan (CNA English)",
+      "url": "https://focustaiwan.tw/sci-tech/202611110020",
+      "source_type": "press",
+      "published_at": "2026-11-11T18:25:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s20",
+      "title": "CVE-2026-124560: D-Link DIR-878 HNAP prog.cgi GetCAPTCHAsetting heap-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-124560",
+      "source_type": "cve_record",
+      "published_at": "2026-11-09",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s21",
+      "title": "地下論壇有人聲稱兜售4.6萬筆台積電員工紀錄,台積電回應無證據顯示公司系統遭入侵",
+      "title_en": "Forum seller claims 46,000 TSMC employee records; TSMC says no evidence its systems were breached",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180450",
+      "source_type": "press",
+      "published_at": "2026-11-12T15:47:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s22",
+      "title": "試験管理システムで侵害、受験者情報流出の可能性 - 日商",
+      "title_en": "Exam management system breached, possible leak of examinee data - Japan Chamber of Commerce",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/192652",
+      "source_type": "press",
+      "published_at": "2026-11-12T22:21:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s23",
+      "title": "肌測定システムで個人情報や測定結果が流出 - 資生堂",
+      "title_en": "Personal data and measurement results leaked from skin-measurement system - Shiseido",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/192582",
+      "source_type": "press",
+      "published_at": "2026-11-12T19:03:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s24",
+      "title": "2026-020: Critical Vulnerabilities in Citrix NetScaler ADC and NetScaler Gateway",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CERT-EU",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-020",
+      "source_type": "government",
+      "published_at": "2026-11-13T01:20:00+08:00",
+      "publisher": "cert-eu",
+      "publisher_name": "CERT-EU",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s25",
+      "title": "Chrome, Firefox Updates Patch Over 180 Vulnerabilities",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/chrome-firefox-updates-patch-180-vulnerabilities",
+      "source_type": "press",
+      "published_at": "2026-11-12T21:42:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s26",
+      "title": "eMudhra revokes 8 more CA certificates after private key mishap",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/emudhra-revokes-8-more-ca-certificates-after-private-key-mishap",
+      "source_type": "press",
+      "published_at": "2026-11-12T05:27:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s27",
+      "title": "Taiwan university email linked to bomb threats against 6,000 Italian schools",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan (CNA English)",
+      "url": "https://focustaiwan.tw/society/202611120012",
+      "source_type": "press",
+      "published_at": "2026-11-12T14:39:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 1100,
+    "reading_minutes": 5,
+    "item_count": 7,
+    "ai_linked": {
+      "linked": 2,
+      "total": 7
+    },
+    "source_count": 27,
+    "publisher_count": 13
   }
 }

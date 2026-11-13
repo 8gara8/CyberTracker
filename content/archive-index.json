@@ -3,11 +3,235 @@
   "editions": [
     {
       "date": "2026-11-13",
-      "edition": "data_only",
-      "published_at": "2026-11-13T09:51:31+08:00",
-      "item_count": 0,
+      "edition": "full",
+      "published_at": "2026-11-13T09:56:39+08:00",
+      "item_count": 7,
       "corrected": false
     }
   ],
-  "urls": {}
+  "urls": {
+    "https://securityweek.com/maersk-confirms-data-theft-amid-5-million-extortion-attempt": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/inc-shipping-dk-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/shipping-giant-maersk-says-recent-incident-affected-legacy-system": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/inc-shipping-dk-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180437": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/inc-shipping-dk-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/new-n-able-4everable2shell-zero-day-exploited-hours-after-poc-released": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-125883"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/hackers-target-n-central-zero-days-as-n-able-rushes-patches": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-125883"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-125883": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-125883"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://me.n-able.com/s/security-advisory/aArVy0000002ihhKAA/cve2026125883-multiple-xxe-vulnerabilities": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-125883"
+      ],
+      "sha256": "2bc184f7f449f9a27f3a85f9d469b10859f33fcb31287ee9267a3b94bd36ae73",
+      "hashed_at": "2026-11-13T09:55:27+08:00",
+      "last_check": null
+    },
+    "https://synology.com/en-global/security/advisory/Synology_SA_26_19": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-76954"
+      ],
+      "sha256": "2f33820bb058195edca8cbeee1887efa003544c756bfb22514cfc2f6420c9c27",
+      "hashed_at": "2026-11-13T09:55:27+08:00",
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-76954": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-76954"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/connectwise-screenconnect-breaches-third-party-tool": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/sc-screenconnect-extension-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/active-screenconnect-attacks-breach-msps-impact-dozens-of-organizations": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/sc-screenconnect-extension-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://focustaiwan.tw/society/202611120013": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/inc-government-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180446": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/inc-government-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/apache-patches-critical-http-server-rce-found-by-anthropic-google": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-119618"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/apache-http-server-patches-critical-http-2-remote-code-execution-flaw": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-119618"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cert.cyber.gouv.fr/avis/CERTFR-2026-AVI-1500": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/cve-2026-119618"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports": {
+      "first_cited": "2026-11-13",
+      "item_ids": [
+        "2026-11-13/ai-linux-kernel-microsoft-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://focustaiwan.tw/sci-tech/202611110020": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-124560": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180450": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://security-next.com/192652": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://security-next.com/192582": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cert.europa.eu/publications/security-advisories/2026-020": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/chrome-firefox-updates-patch-180-vulnerabilities": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/emudhra-revokes-8-more-ca-certificates-after-private-key-mishap": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://focustaiwan.tw/society/202611120012": {
+      "first_cited": "2026-11-13",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    }
+  }
 }
