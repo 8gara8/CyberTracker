@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-11",
+  "updated_at": "2026-11-12",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -1832,6 +1832,12 @@
       "2026-04-22",
       "cna.credits",
       "Nicholas Carlini using Claude, Anthropic"
+    ],
+    [
+      "CVE-2026-6460",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Andrew Gierth, Alexander Lakhin, Francesco Verardi, Hcamael, Tomer Fichman, OpenAI Security Research Team, Mehmet Ince @mdisec, Bryan Green, Sumedh Pathak, Nicholas Carlini, Sergey Shinderuk, Yuxiao Guo, Nikhil Sontakke, Stephan Lipp, and Daniel Bakker for reporting this problem."
     ],
     [
       "CVE-2026-6479",
@@ -8530,6 +8536,114 @@
       "ZAST.AI (VulDB User)"
     ],
     [
+      "CVE-2026-116303",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Filip Janus and Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116306",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks OpenAI Codex Security, Bronson Yen, and Mehmet D. INCE for reporting this problem."
+    ],
+    [
+      "CVE-2026-116308",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116311",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Zsolt Parragi and Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116312",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Jacek Bylina, Timothy Ball, Jacob Robertson, Nigel Gott, and Claude and Ada Logics for reporting this problem."
+    ],
+    [
+      "CVE-2026-116313",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116315",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116316",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116317",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116318",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program, Sarath Kumar, and Nikolay Samokhvalov for reporting this problem."
+    ],
+    [
+      "CVE-2026-116319",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116320",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116321",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116322",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116323",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116325",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116326",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Dwij Mehta, Ngoc Trần, and Anthropic OSS program for reporting this problem."
+    ],
+    [
+      "CVE-2026-116333",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Claude and Ada Logics for reporting this problem."
+    ],
+    [
       "CVE-2026-116372",
       "2026-10-26",
       "cna.credits",
@@ -8812,6 +8926,18 @@
       "Fluid Attacks' AI SAST Scanner"
     ],
     [
+      "CVE-2026-118597",
+      "2026-11-12",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
+      "CVE-2026-118855",
+      "2026-11-12",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
       "CVE-2026-119078",
       "2026-11-09",
       "cna.credits",
@@ -8822,6 +8948,12 @@
       "2026-11-09",
       "cna.credits",
       "This issue was discovered by AISLE Research and Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-119275",
+      "2026-11-12",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
     ],
     [
       "CVE-2026-119378",
@@ -8846,6 +8978,30 @@
       "2026-11-04",
       "cna.credits",
       "Anthropic OSS-scanner (re-report, ANT-2026-N0E1INIV)"
+    ],
+    [
+      "CVE-2026-120033",
+      "2026-11-12",
+      "cna.credits",
+      "Anthropic OSS-scanner (re-report, ANT-2026-GSLEN9XB)"
+    ],
+    [
+      "CVE-2026-120150",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Claude and Ada Logics for reporting this problem."
+    ],
+    [
+      "CVE-2026-120151",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Claude and Ada Logics for reporting this problem."
+    ],
+    [
+      "CVE-2026-120153",
+      "2026-11-12",
+      "cna.credits",
+      "The PostgreSQL project thanks Anthropic OSS program, Sven Klemm, and Aaron chen for reporting this problem."
     ],
     [
       "CVE-2026-120244",

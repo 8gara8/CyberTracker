@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "edition": "data_only",
+  "generated_at": "2026-11-14T00:05:59+08:00",
+  "published_at": "2026-11-14T00:06:34+08:00",
+  "data_only_published_at": "2026-11-14T00:06:34+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-11-12",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Denmark: Maersk confirms data theft from a legacy system as WhiteArmor claims 100GB",
+        "item_ids": [
+          "inc-shipping-dk-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-shipping-dk-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 0
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "36% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 16 days (2023–24: 21, faster). 166 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 46,586 new CVE records in 13 weeks, 5.4 times the 2023–24 pace (5.2 times excluding the Linux kernel). AI-credited: 715 in 13 weeks, 369 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-14.json",
+    "metrics_sha256": "4e62e410f0e2d9d3370d70a9a3555a7f10f859bb1f0a30ade3c991dd4000569f",
+    "as_of": "2026-11-12"
+  },
+  "items": [],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 0,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 12 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 12 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0004",
+      "date": "2026-11-13",
+      "claim_id": "SB-05",
+      "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-61511",
+      "score": 0.74266,
+      "delta_7d": 0.68659,
+      "percentile": 0.99496
+    },
+    {
+      "cve_id": "CVE-2026-75650",
+      "score": 0.99376,
+      "delta_7d": 0.64635,
+      "percentile": 0.9994
+    },
+    {
+      "cve_id": "CVE-2026-59310",
+      "score": 0.61668,
+      "delta_7d": 0.59103,
+      "percentile": 0.99184
+    },
+    {
+      "cve_id": "CVE-2026-4408",
+      "score": 0.46926,
+      "delta_7d": 0.44425,
+      "percentile": 0.98848
+    },
+    {
+      "cve_id": "CVE-2026-18556",
+      "score": 0.43884,
+      "delta_7d": 0.36002,
+      "percentile": 0.98768
+    }
+  ],
+  "feeds_stale": [
+    {
+      "id": "cvelist",
+      "name": "CVE List V5 (CVEProject/cvelistV5)",
+      "status": "stale",
+      "newest": "2026-11-13T16:01:14Z",
+      "stale_since": "2026-11-14"
+    }
+  ],
+  "sources": [],
+  "computed": {
+    "word_count": 433,
+    "reading_minutes": 2,
+    "item_count": 0,
+    "ai_linked": {
+      "linked": 0,
+      "total": 0
+    },
+    "source_count": 0,
+    "publisher_count": 0
+  }
+}
