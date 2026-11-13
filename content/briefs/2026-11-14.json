@@ -1,14 +1,47 @@
 {
   "schema_version": 1,
   "date": "2026-11-14",
-  "edition": "data_only",
-  "generated_at": "2026-11-14T00:05:59+08:00",
-  "published_at": "2026-11-14T00:06:34+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-14T04:45:00+08:00",
+  "published_at": "2026-11-14T04:38:33+08:00",
   "data_only_published_at": "2026-11-14T00:06:34+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-12",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "CISA added a Check Point flaw to its exploited list after attackers used it in destructive attacks.",
+      "item_ids": [
+        "cve-2026-123039"
+      ],
+      "gap": false
+    },
+    {
+      "text": "A breach at Taiwanese e-commerce provider Cyberbiz has reached at least 13 listed companies.",
+      "item_ids": [
+        "sc-ecommerce-tw-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "A German military drone maker says an active cyberattack hit it, and reports point to a malicious software update.",
+      "item_ids": [
+        "sc-defence-de-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "36% of recently listed flaws were already exploited when disclosed, in the 26 weeks to 12 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-12",
+    "counterpoint": "Unit 42 says autonomous AI raises the volume and coverage of exploitation, but not its complexity; the flaws it saw exploited were already known.",
+    "counterpoint_source_ids": [
+      "s9"
+    ],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -30,8 +63,9 @@
         "previous_level": "elevated",
         "change": "same",
         "rule_id": "serious-victim",
-        "reason": "Victim in Denmark: Maersk confirms data theft from a legacy system as WhiteArmor claims 100GB",
+        "reason": "Victim in Germany: German military drone maker Quantum Systems confirms active cyberattack",
         "item_ids": [
+          "sc-defence-de-2026-11",
           "inc-shipping-dk-2026-11"
         ],
         "fired": [
@@ -39,6 +73,7 @@
             "rule_id": "serious-victim",
             "level": "elevated",
             "item_ids": [
+              "sc-defence-de-2026-11",
               "inc-shipping-dk-2026-11"
             ],
             "signal_ids": []
@@ -48,14 +83,33 @@
       },
       {
         "code": "TW",
-        "level": "baseline",
-        "computed_level": "baseline",
+        "level": "elevated",
+        "computed_level": "elevated",
         "previous_level": "baseline",
-        "change": "same",
-        "rule_id": null,
-        "reason": "No rule fired.",
-        "item_ids": [],
-        "fired": [],
+        "change": "up",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Taiwan: Cyberbiz breach spreads to at least 13 Taiwan-listed companies' online shops",
+        "item_ids": [
+          "sc-ecommerce-tw-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-ecommerce-tw-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-mobile-intercept-tw-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
         "raised": null
       },
       {
@@ -72,7 +126,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 2
     },
     "signals": []
   },
@@ -84,35 +138,579 @@
     "metrics_sha256": "4e62e410f0e2d9d3370d70a9a3555a7f10f859bb1f0a30ade3c991dd4000569f",
     "as_of": "2026-11-12"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "cve-2026-123039",
+      "kind": "exploited_flaw",
+      "headline": "Check Point Gaia flaw exploited since late October; CISA lists it",
+      "summary": "CISA added Check Point flaw CVE-2026-123039 to its exploited list on 13 Nov (US date). Check Point says it saw exploitation against a couple of dozen customers since late October. Attackers first used the PHP2Shell flaws, gained root, then deployed wiper malware.",
+      "why_it_matters": "Edge security gateways were exploited for weeks before a fix, and the end result was destruction rather than theft.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-123039"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-123039",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-13",
+          "source_id": "s1"
+        },
+        {
+          "cve_id": "CVE-2026-123039",
+          "kind": "exploited",
+          "basis": "news_reported",
+          "date": "2026-11-13",
+          "source_id": "s2"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2",
+        "s3"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": {
+        "id": null,
+        "name": "checkpoint",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-123039",
+          "date_published": "2026-11-12",
+          "date_updated": "2026-11-13",
+          "assigner": "checkpoint",
+          "vendor": {
+            "id": null,
+            "name": "checkpoint",
+            "country": null
+          },
+          "product": "Quantum Security Gateway",
+          "title": "Check Point Multiple Products Incorrect Permission Assignment for Critical Resource Vulnerability",
+          "cvss": {
+            "score": 7.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.01274,
+            "percentile": 0.70349,
+            "date": "2026-11-13"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-13"
+          },
+          "kev": {
+            "date_added": "2026-11-13",
+            "due_date": "2026-11-16",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.13"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-13",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-123039"
+            },
+            {
+              "date": "2026-11-13",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/13/cisa-adds-two-known-exploited-vulnerabilities-catalog"
+            },
+            {
+              "date": "2026-11-13",
+              "basis": "news_reported",
+              "source_url": "https://bleepingcomputer.com/news/security/check-point-patches-zero-day-that-lets-hackers-get-root-access"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-14T04:38:33+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "sc-ecommerce-tw-2026-11",
+      "kind": "supply_chain",
+      "headline": "Cyberbiz breach spreads to at least 13 Taiwan-listed companies' online shops",
+      "summary": "iThome reports a breach at Taiwanese e-commerce platform provider Cyberbiz has led at least 13 listed and emerging-board companies to disclose incidents. One client's parts shop reports personal data was accessed.",
+      "why_it_matters": "Taiwan's exposure runs through shared service providers, so one vendor's breach becomes many listed companies' disclosures at once.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Cyberbiz",
+        "description": "a Taiwanese e-commerce platform provider",
+        "sector": "technology",
+        "country": "TW",
+        "impact": "Customer order databases accessed; at least 13 client firms disclosed",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s4",
+          "s5"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4",
+        "s5"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "sc-defence-de-2026-11",
+      "kind": "supply_chain",
+      "headline": "German military drone maker Quantum Systems confirms active cyberattack",
+      "summary": "Quantum Systems, a German military drone maker, confirmed an active cyberattack that it detected in late October. Der Spiegel and the Financial Times, cited by BleepingComputer, say attackers pushed a malicious update through its QBase mission-planning software; reports say the German military grounded drones as a precaution.",
+      "why_it_matters": "A trusted software update to military drones is the supply chain risk defenders fear; no attacker has been named.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU"
+      ],
+      "topics": [
+        "defence_industry"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Quantum Systems",
+        "description": "a German military drone maker",
+        "sector": "defence",
+        "country": "DE",
+        "impact": "Update server reportedly compromised; drones reportedly grounded as precaution",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s6"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s6"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-125086",
+      "kind": "critical_flaw",
+      "headline": "D-Link M60 hard-coded credentials flaw has public exploit; no vendor advisory seen",
+      "summary": "CVE-2026-125086: D-Link M60 firmware 1.12.B01 has hard-coded credentials in its MQTT broker, and the record says a public exploit exists. Watch only until D-Link confirms.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-125086"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s14"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": {
+        "id": "d-link",
+        "name": "D-Link",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-125086",
+          "date_published": "2026-11-10",
+          "date_updated": "2026-11-13",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "d-link",
+            "name": "D-Link",
+            "country": "TW"
+          },
+          "product": "M60",
+          "title": "D-Link M60 emDaemon MQTT Broker mosquitto.conf system hard-coded credentials",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00606,
+            "percentile": 0.49564,
+            "date": "2026-11-13"
+          },
+          "ssvc": {
+            "exploitation": "poc",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-13"
+          },
+          "kev": null,
+          "credits": [
+            "BenSmith (VulDB User)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-14T04:38:33+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-government-jp-2026-11",
+      "kind": "breach",
+      "headline": "Osaka city says over 1 million email addresses exposed via contractor's mailing service",
+      "summary": "Osaka city says over 1 million email addresses were exposed when hackers accessed the Arara mailing service used by contractor TKC, The Record reports.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "JP"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "City of Osaka",
+        "description": "a Japanese city government",
+        "sector": "government",
+        "country": "JP",
+        "impact": "Over 1 million email addresses exposed via vendor",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s7"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s7"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "eco-disclosure-policy-2026-11",
+      "kind": "ecosystem",
+      "headline": "Project Zero says it is moving to fixed disclosure deadlines, citing LLM-speed attackers",
+      "summary": "Project Zero says LLMs speed attackers, so it adopts fixed disclosure deadlines: 90 days now, shortening to 30 days from January 2028.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": true,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "self_reported",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s10"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "camp-mobile-intercept-tw-2026-11",
+      "kind": "campaign",
+      "headline": "Enea says SilentAir intercepts calls and SMS from inside mobile networks, targeting Taiwan",
+      "summary": "Enea says SilentAir hijacked mobile network nodes to intercept calls and messages, with Taiwanese subscribers the primary targets.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [
+        "telecom"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s8"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "pol-malware-takedown-eu-2026-11",
+      "kind": "policy",
+      "headline": "Police seize 235 servers behind Gootloader, CastleRAT and StealC malware",
+      "summary": "Europol-led action seized 235 servers and 257 domains tied to Gootloader, CastleRAT and StealC; the DOJ says Gootloader fed at least 44 ransomware attacks.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "EU"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s11",
+        "s12"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "pol-spy-law-de-2026-11",
+      "kind": "policy",
+      "headline": "Germany's Bundestag passes law giving spy agencies hacking and sabotage powers",
+      "summary": "Germany's Bundestag passed, 308 votes to 190, a law giving spy agencies hacking and sabotage powers, The Record reports.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s13"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
-    "source_ids": [],
+    "analysis": "Taiwan's main exposure today runs through shared vendors: a breach at e-commerce provider Cyberbiz has reached at least 13 listed companies. Enea says SilentAir targeted mobile networks, with Taiwanese subscribers the primary targets. A D-Link M60 flaw with a public exploit stays on watch. A group called UNC6783 claims 102 GB from a Taiwanese state cybersecurity body, which says it reported an incident last July; the claim is unverified.",
+    "item_ids": [
+      "sc-ecommerce-tw-2026-11",
+      "camp-mobile-intercept-tw-2026-11",
+      "cve-2026-125086"
+    ],
+    "source_ids": [
+      "s15"
+    ],
     "rows": [
       {
         "row": "gov_infra",
-        "text": null,
+        "text": "A group called UNC6783 claims 102 GB from a Taiwanese state cybersecurity body; the body says it reported an incident last July. Unverified.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s15"
+        ]
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
+        "text": "D-Link M60 hard-coded credentials, with a public exploit per the CVE record; no D-Link advisory seen.",
+        "item_ids": [
+          "cve-2026-125086"
+        ],
         "source_ids": []
       },
       {
         "row": "chips_defence",
-        "text": null,
+        "text": "A Taiwanese semiconductor distributor reports staff names and work emails accessed. Unit 42's report on an AI-agent campaign lists 7 semiconductor targets and names none in Taiwan.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s16",
+          "s9"
+        ]
       },
       {
         "row": "cables_telecom",
-        "text": null,
-        "item_ids": [],
+        "text": "Enea says SilentAir intercepted calls and SMS from inside mobile networks, with Taiwanese subscribers the primary targets.",
+        "item_ids": [
+          "camp-mobile-intercept-tw-2026-11"
+        ],
         "source_ids": []
       },
       {
@@ -123,15 +721,21 @@
       },
       {
         "row": "china_axis",
-        "text": null,
+        "text": "Unit 42 reports a campaign using the Cairn AI framework against semiconductor, defence and civil-society targets; it names no Taiwanese victim.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s9"
+        ]
       }
     ],
     "japan": {
-      "text": null,
-      "item_ids": [],
-      "source_ids": []
+      "text": "Osaka city says over 1 million email addresses were exposed through a contractor's mailing service. Ryohin Keikaku, which runs Muji, says customer data from its app and online store may have leaked.",
+      "item_ids": [
+        "inc-government-jp-2026-11"
+      ],
+      "source_ids": [
+        "s17"
+      ]
     },
     "kev_lines": {
       "tw": {
@@ -166,58 +770,333 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99496
+      "title": "Citrix patches 28 memory flaws in NetScaler ADC and Gateway, CERT-EU says",
+      "source_id": "s18"
     },
     {
-      "cve_id": "CVE-2026-75650",
-      "score": 0.99376,
-      "delta_7d": 0.64635,
-      "percentile": 0.9994
+      "title": "Linux Foundation survey: 58% of teams say delivery outpaces security review",
+      "source_id": "s19"
     },
     {
-      "cve_id": "CVE-2026-59310",
-      "score": 0.61668,
-      "delta_7d": 0.59103,
-      "percentile": 0.99184
-    },
-    {
-      "cve_id": "CVE-2026-4408",
-      "score": 0.46926,
-      "delta_7d": 0.44425,
-      "percentile": 0.98848
-    },
-    {
-      "cve_id": "CVE-2026-18556",
-      "score": 0.43884,
-      "delta_7d": 0.36002,
-      "percentile": 0.98768
+      "title": "Trezor confirms crypto-stealing implants in three reseller-sold wallets",
+      "source_id": "s20"
     }
   ],
-  "feeds_stale": [
+  "epss_movers": [],
+  "feeds_stale": [],
+  "sources": [
     {
-      "id": "cvelist",
-      "name": "CVE List V5 (CVEProject/cvelistV5)",
-      "status": "stale",
-      "newest": "2026-11-13T16:01:14Z",
-      "stale_since": "2026-11-14"
+      "id": "s1",
+      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/13/cisa-adds-two-known-exploited-vulnerabilities-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-13T20:00:00+08:00",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "Check Point warns of zero-day flaw exploited for root access",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/check-point-patches-zero-day-that-lets-hackers-get-root-access",
+      "source_type": "press",
+      "published_at": "2026-11-13T18:44:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "PHP2Shell Exploited in Destructive Check Point Gateway Attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/php2shell-exploited-in-destructive-check-point-gateway-attacks",
+      "source_type": "press",
+      "published_at": "2026-11-13T15:39:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "【資安週報】1109~1113,Cyberbiz事件擴大、多家上市櫃公司接連公告,資安救火人力不足恐浮現",
+      "title_en": "Security weekly 9-13 Nov: Cyberbiz incident widens, listed companies announce in succession",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180500",
+      "source_type": "press",
+      "published_at": "2026-11-13T18:16:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "大金空調零件線上商城委外廠商發生資安事件,141筆訂單資料受波及、132筆個資遭未經授權存取",
+      "title_en": "Outsourced vendor of Daikin parts online shop hit: 141 orders affected, 132 with personal data accessed",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180482",
+      "source_type": "press",
+      "published_at": "2026-11-13T10:44:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "German military drone operations disrupted by cyberattack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/german-military-drone-operations-disrupted-by-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-14T01:31:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "City of Osaka warns of data breach impacting 1 million as Japan reels from dozens of cyber incidents",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/city-of-osaka-japan-email-data-breach",
+      "source_type": "press",
+      "published_at": "2026-11-14T03:43:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "SilentAir Hackers Intercept Calls, SMS From Inside Mobile Networks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/silentair-hackers-intercept-calls-sms-from-inside-mobile-networks",
+      "source_type": "press",
+      "published_at": "2026-11-13T20:20:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "Attackers Use Autonomous AI to Target Semiconductor, Defense and Civil Society Sectors",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Palo Alto Networks Unit 42",
+      "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks",
+      "source_type": "research",
+      "published_at": "2026-11-12T23:00:00+08:00",
+      "publisher": "unit42",
+      "publisher_name": "Unit 42",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "Policy and Disclosure: 2026 Edition",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Google Project Zero",
+      "url": "https://projectzero.google/2026/11/disclosure-policy.html",
+      "source_type": "research",
+      "published_at": "2026-11-13T16:00:00+08:00",
+      "publisher": "project-zero",
+      "publisher_name": "Google Project Zero",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "Law Enforcement Disrupts Gootloader, CastleRAT, and StealC Infrastructure",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/law-enforcement-disrupts-gootloader-castlerat-and-stealc-infrastructure",
+      "source_type": "press",
+      "published_at": "2026-11-13T18:48:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "DOJ: Gootloader used in at least 44 ransomware attacks costing $29 million since 2018",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/gootloader-ransomware-doj-details",
+      "source_type": "press",
+      "published_at": "2026-11-13T23:59:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "German parliament passes law giving spy agencies hacking, sabotage powers",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/german-parliament-passes-law-giving-spy-agencies-hacking-power",
+      "source_type": "press",
+      "published_at": "2026-11-14T00:32:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "CVE-2026-125086 D-Link M60 emDaemon MQTT Broker mosquitto.conf system hard-coded credentials",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-125086",
+      "source_type": "cve_record",
+      "published_at": "2026-11-10",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "駭客集團UNC6783聲稱入侵資安院竊得102 GB資料,資安院:去年7月已進行資安通報",
+      "title_en": "Hacking group UNC6783 claims 102 GB from cybersecurity institute; institute says it reported the incident last July",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180499",
+      "source_type": "press",
+      "published_at": "2026-11-13T16:59:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "大聯大發生資安事件,部分員工姓名與公務電子郵件遭未經授權存取",
+      "title_en": "Semiconductor distributor reports incident; some staff names and work emails accessed",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180487",
+      "source_type": "press",
+      "published_at": "2026-11-13T10:59:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "「無印良品」のアプリやネットストアで重なる侵害被害",
+      "title_en": "Repeated breaches hit Muji app and online store",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/192851",
+      "source_type": "press",
+      "published_at": "2026-11-13T22:13:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s18",
+      "title": "2026-020: Critical Vulnerabilities in Citrix NetScaler ADC and NetScaler Gateway",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CERT-EU",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-020",
+      "source_type": "government",
+      "published_at": "2026-11-13T01:20:00+08:00",
+      "publisher": "cert-eu",
+      "publisher_name": "CERT-EU",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s19",
+      "title": "Linux基金會調查揭軟體交付速度超過資安審查能力,近6成團隊跟不上",
+      "title_en": "Linux Foundation survey: software delivery outpaces security review, nearly 60% of teams cannot keep up",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180398",
+      "source_type": "press",
+      "published_at": "2026-11-13T08:00:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s20",
+      "title": "Trezor confirms crypto-stealing implants in three wallets, releases fix",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/cryptocurrency/trezor-confirms-crypto-stealing-implants-in-three-wallets-releases-fix",
+      "source_type": "press",
+      "published_at": "2026-11-14T03:38:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
     }
   ],
-  "sources": [],
   "computed": {
-    "word_count": 433,
-    "reading_minutes": 2,
-    "item_count": 0,
+    "word_count": 1200,
+    "reading_minutes": 6,
+    "item_count": 9,
     "ai_linked": {
       "linked": 0,
-      "total": 0
+      "total": 9
     },
-    "source_count": 0,
-    "publisher_count": 0
+    "source_count": 20,
+    "publisher_count": 10
   }
 }
