@@ -577,10 +577,10 @@
       "trigger": "retry",
       "attempt": 2,
       "started_at": "2026-11-14T00:12:27+08:00",
-      "finished_at": null,
-      "outcome": null,
-      "edition": null,
-      "error_code": null,
+      "finished_at": "2026-11-14T00:16:27+08:00",
+      "outcome": "published_data_only",
+      "edition": "data_only",
+      "error_code": "E_VALIDATION",
       "code_commit": "baa54141c65431358d8aaf943ed97894c7570e9b",
       "data_cutoff_utc": "2026-11-12",
       "data_only_published_at": null,
@@ -617,17 +617,17 @@
         },
         {
           "id": "draft",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-14T00:12:31+08:00",
+          "ended_at": "2026-11-14T00:15:04+08:00",
           "note": null
         },
         {
           "id": "validate",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
-          "note": null
+          "status": "failed",
+          "started_at": "2026-11-14T00:15:04+08:00",
+          "ended_at": "2026-11-14T00:16:22+08:00",
+          "note": "The draft still had 1 validation error after 4 repairs and 2 attempts."
         },
         {
           "id": "publish",
@@ -638,9 +638,9 @@
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-14T00:16:22+08:00",
+          "ended_at": "2026-11-14T00:16:23+08:00",
           "note": null
         },
         {
@@ -652,9 +652,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-14T00:16:22+08:00",
+          "ended_at": "2026-11-14T00:16:27+08:00",
           "note": null
         }
       ],
@@ -1093,13 +1093,16 @@
         }
       ],
       "budgets": {
-        "agent_seconds": 0,
-        "web_fetches": 0,
-        "web_searches": 0,
-        "repair_rounds": 0,
-        "tokens_in": null,
-        "tokens_out": null,
-        "usage": null,
+        "agent_seconds": 231,
+        "web_fetches": 6,
+        "web_searches": 1,
+        "repair_rounds": 2,
+        "tokens_in": 2177538,
+        "tokens_out": 27280,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0.01
+        },
         "safety_stops": 0
       },
       "candidates": {
@@ -1107,13 +1110,28 @@
         "kept": 40,
         "deep_read": 15
       },
-      "validation": null,
-      "soft_gates": null,
+      "validation": {
+        "errors": 1,
+        "warnings": 1,
+        "codes": [
+          "DATE_MISMATCH",
+          "SOURCE_ORPHAN"
+        ]
+      },
+      "soft_gates": {
+        "checked": 5,
+        "dropped": 1,
+        "by_code": {
+          "SNAP_NAME": 1,
+          "SNAP_NUMBER": 1,
+          "SNAP_QUOTE": 1
+        }
+      },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-14T00:16:23+08:00",
+        "shows_date": "2026-11-14",
+        "shows_edition": "data_only"
       },
       "recheck": {
         "from": "2026-10-31",
@@ -1121,7 +1139,13 @@
         "items_checked": 7,
         "flagged": []
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-14T00:16:27+08:00",
+        "checked": 27,
+        "ok": 25,
+        "unknown": 2,
+        "broken": []
+      }
     }
   ]
 }
