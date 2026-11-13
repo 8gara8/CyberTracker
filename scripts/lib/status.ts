@@ -27,6 +27,7 @@ export interface Notes {
   startedAfterHardStop(hhmm: string): string;
   alreadyPublished(hhmm: string): string;
   tooLate(hhmm: string): string;
+  tooEarly(hhmm: string): string;
   replaced(hhmm: string): string;
   floodStops(date: string): string;
   depsChanged: string;
@@ -97,6 +98,7 @@ export const NOTES: Notes = {
   startedAfterHardStop: STAGE_NOTES.startedAfterHardStop,
   alreadyPublished: STAGE_NOTES.alreadyPublished,
   tooLate: STAGE_NOTES.tooLate,
+  tooEarly: STAGE_NOTES.tooEarly,
   replaced: STAGE_NOTES.replaced,
   floodStops: STAGE_NOTES.floodStops,
   depsChanged: STAGE_NOTES.depsChanged,
@@ -158,6 +160,7 @@ export const CHAT_READ_NOTES: readonly RegExp[] = [
   /^Started after \d\d:\d\d: no editorial pass today\.$/,
   /^The full edition was already published at \d\d:\d\d\.$/,
   /^Too late: nothing is published after \d\d:\d\d\.$/,
+  /^Too early: the news window ends at \d\d:\d\d; start the run then\.$/,
   /^Replaced the \d\d:\d\d edition \(--force\)\.$/,
   /^Flood counts stop at \d{4}-\d{2}-\d{2}: run npm run backfill -- --catch-up --push\.$/,
   /^Dependencies changed since the last npm ci\.$/,

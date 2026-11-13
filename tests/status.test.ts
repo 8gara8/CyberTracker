@@ -102,6 +102,7 @@ describe("stage notes", () => {
   it("ST3 every note text ends with a full stop, fits one stage, has no em-dash and splits back to itself", () => {
     const texts = [
       NOTES.dataOnlyRequested, NOTES.startedAfterHardStop("05:30"), NOTES.alreadyPublished("05:07"), NOTES.tooLate("11:00"),
+      NOTES.tooEarly("04:30"),
       NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.restored, NOTES.restarted("abc1234"),
       NOTES.collectorFailed("timeout"), NOTES.collectorFailed("error"), NOTES.reusedMetrics(D), NOTES.dataOnlyUpSince("04:48"),
       NOTES.dataOnlyFailed, NOTES.intakeUnavailable, NOTES.reusedFrom("20261014-043702"), NOTES.dryRunValid(D),
@@ -142,13 +143,14 @@ describe("stage notes", () => {
   it("ST3 CHAT_READ_NOTES matches exactly the STAGE_NOTES texts, and NOTES reuses them", () => {
     const chatTexts = [
       STAGE_NOTES.dataOnlyRequested, STAGE_NOTES.startedAfterHardStop("05:30"), STAGE_NOTES.alreadyPublished("05:07"),
-      STAGE_NOTES.tooLate("11:00"), STAGE_NOTES.replaced("05:07"), STAGE_NOTES.floodStops("2026-10-12"), STAGE_NOTES.depsChanged,
-      STAGE_NOTES.notComposed, STAGE_NOTES.notValid,
+      STAGE_NOTES.tooLate("11:00"), STAGE_NOTES.tooEarly("04:30"), STAGE_NOTES.replaced("05:07"), STAGE_NOTES.floodStops("2026-10-12"),
+      STAGE_NOTES.depsChanged, STAGE_NOTES.notComposed, STAGE_NOTES.notValid,
     ];
     expect(chatTexts.map((t) => CHAT_READ_NOTES.filter((re) => re.test(t)).length)).toEqual(chatTexts.map(() => 1));
     expect(Object.keys(STAGE_NOTES)).toHaveLength(CHAT_READ_NOTES.length);
     expect([NOTES.dataOnlyRequested, NOTES.startedAfterHardStop("05:30"), NOTES.alreadyPublished("05:07"), NOTES.tooLate("11:00"),
-      NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.notComposed, NOTES.notValid]).toEqual(chatTexts);
+      NOTES.tooEarly("04:30"), NOTES.replaced("05:07"), NOTES.floodStops("2026-10-12"), NOTES.depsChanged, NOTES.notComposed,
+      NOTES.notValid]).toEqual(chatTexts);
     for (const t of [NOTES.restored, NOTES.staleLock("02:31"), NOTES.dataOnlyFailed, NOTES.notInDryRun, NOTES.pendingNotPushed]) {
       expect(CHAT_READ_NOTES.some((re) => re.test(t)), t).toBe(false);
     }
@@ -297,6 +299,15 @@ describe("stage notes", () => {
         expect(input).toMatchObject({ kind: "skipped", reason: "Too late: nothing is published after 11:00.", briefUrl: null });
         expect(render(input)).toContain("Too late: nothing is published after 11:00.");
       }
+    });
+
+    it("ST4 tooEarly is the skip reason (§0.4 row 185)", () => {
+      const rec = record({ start: "00:05", trigger: "manual" });
+      setStage(rec, "preflight", { status: "ok", note: NOTES.tooEarly("04:30") });
+      closeRecord(rec, { outcome: "skipped", errorCode: null, edition: null, late: false, finishedAt: at(D, "00:06") });
+      const input = chatInputFor({ date: D, brief: null, runs: [RunRecord.parse(rec)] });
+      expect(input).toMatchObject({ kind: "skipped", reason: "Too early: the news window ends at 04:30; start the run then.", briefUrl: null });
+      expect(render(input)).toContain(`**CyberTracker ${D} · skipped.** Too early: the news window ends at 04:30; start the run then.`);
     });
   });
 });

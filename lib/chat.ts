@@ -245,6 +245,8 @@ export const STAGE_NOTES = {
   /** preflight: a skip at step 6 (§8.2). */
   alreadyPublished: (hhmm: string) => `The full edition was already published at ${hhmm}.`,
   tooLate: (hhmm: string) => `Too late: nothing is published after ${hhmm}.`,
+  /** preflight: a skip at step 6, started more than 15 min before the news window ends (§8.2, §0.4 row 185). */
+  tooEarly: (hhmm: string) => `Too early: the news window ends at ${hhmm}; start the run then.`,
   /** publish: a --force run that replaced an edition. */
   replaced: (hhmm: string) => `Replaced the ${hhmm} edition (--force).`,
   /** metrics: §8.4's stdout line. */
@@ -262,6 +264,7 @@ const NOTE_RES = {
   startedAfterHardStop: /Started after \d\d:\d\d: no editorial pass today\./,
   alreadyPublished: /The full edition was already published at \d\d:\d\d\./,
   tooLate: /Too late: nothing is published after \d\d:\d\d\./,
+  tooEarly: /Too early: the news window ends at \d\d:\d\d; start the run then\./,
   replaced: /Replaced the (\d\d:\d\d) edition \(--force\)/i,
   floodStops: /Flood counts stop at (\d{4}-\d{2}-\d{2})/,
   depsChanged: /Dependencies changed since the last npm ci/,
@@ -469,7 +472,7 @@ export function chatInputFor(src: ChatSource): ChatInput {
   const notes = allStageNotes(runs);
 
   // Skipped: the outcome says so; a dry run that stopped at preflight step 6 carries the reason as a note.
-  const skipNote = NOTE_RES.alreadyPublished.exec(notes) ?? NOTE_RES.tooLate.exec(notes);
+  const skipNote = NOTE_RES.alreadyPublished.exec(notes) ?? NOTE_RES.tooLate.exec(notes) ?? NOTE_RES.tooEarly.exec(notes);
   if (last?.outcome === "skipped" || (dryRun && skipNote)) {
     let reason = skipNote?.[0] ?? null;
     if (!reason) {

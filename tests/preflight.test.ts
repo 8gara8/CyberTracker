@@ -78,7 +78,7 @@ describe("steps 1, 3 and the clock", () => {
       scheduleFor({ date: D, start: at(D, start), config, noDeadline: o.noDeadline ?? false, dryRun: o.dryRun ?? false });
     expect(s("04:37")).toEqual({
       hardStop: at(D, "05:30"), retryCutoff: at(D, "05:00"), publishUntil: at(D, "11:00"), staleAfter: at(D, "08:00"),
-      endLimit: at(D, "05:30"), watchdogAt: at(D, "05:32"),
+      endLimit: at(D, "05:30"), watchdogAt: at(D, "05:32"), windowEnd: at(D, "04:30"),
     });
     // --no-deadline at 08:30: hardStop 09:45, retryCutoff 08:55.
     expect(s("08:30", { noDeadline: true })).toMatchObject({ hardStop: at(D, "09:45"), retryCutoff: at(D, "08:55"), endLimit: at(D, "09:45"),
@@ -99,7 +99,7 @@ describe("steps 1, 3 and the clock", () => {
     expect(s("05:35", { dryRun: true })).toMatchObject({ endLimit: at(D, "05:30"), watchdogAt: at(D, "05:35") + 77 * MIN });
   });
 
-  it("PF3 clockRule: the E_CLOCK boundary at 08:00 Taipei on D-1, too late, after the hard stop", async () => {
+  it("PF3 clockRule: the E_CLOCK boundary at 08:00 Taipei on D-1, too early, too late, after the hard stop", async () => {
     const rule = (now: number, o: { dryRun?: boolean; noDeadline?: boolean; schedule?: Schedule } = {}) => clockRule({
       date: D, now, dryRun: o.dryRun ?? false, noDeadline: o.noDeadline ?? false,
       schedule: o.schedule ?? scheduleFor({ date: D, start: now, config, noDeadline: o.noDeadline ?? false, dryRun: o.dryRun ?? false }),
@@ -109,6 +109,16 @@ describe("steps 1, 3 and the clock", () => {
     const early = await failOf(() => rule(boundary - 1, { dryRun: true }));
     expect(early?.code).toBe("E_CLOCK");
     expect(rule(boundary, { dryRun: true })).toBe("normal");
+    // §0.4 row 185: more than 15 min before the news window ends (04:30) is too early, --no-deadline or
+    // not; from 04:15 the run is normal (daily.ts waits for 04:30); a dry run is never too early.
+    expect(rule(boundary)).toBe("too_early");
+    expect(rule(at(D, "00:05"))).toBe("too_early");
+    expect(rule(at(D, "00:05"), { noDeadline: true })).toBe("too_early");
+    expect(rule(at(D, "04:15") - 1)).toBe("too_early");
+    expect(rule(at(D, "04:15"))).toBe("normal");
+    expect(rule(at(D, "04:29"), { noDeadline: true })).toBe("normal");
+    expect(rule(at(D, "00:05"), { dryRun: true })).toBe("normal");
+    expect(scheduleFor({ date: D, start: at(D, "04:37"), config, noDeadline: false, dryRun: false }).windowEnd).toBe(at(D, "04:30"));
     expect(rule(at(D, "04:37"))).toBe("normal");
     expect(rule(at(D, "05:30"))).toBe("normal");
     expect(rule(at(D, "05:30") + 1)).toBe("after_hard_stop");
@@ -417,7 +427,7 @@ describe("steps 5 (dependencies), 6 and 7", () => {
 
   it("PF7 idempotency for every state", () => {
     const at10 = (date: string) => ({ contentDir: SITE_CONTENT, date });
-    const run = (date: string, clock: "normal" | "after_hard_stop" | "too_late", force = false) => idempotency({ ...at10(date), clock, force });
+    const run = (date: string, clock: "normal" | "after_hard_stop" | "too_late" | "too_early", force = false) => idempotency({ ...at10(date), clock, force });
     // None: a normal run, forced or not, after the hard stop too.
     for (const [clock, force] of [["normal", false], ["normal", true], ["after_hard_stop", false]] as const) {
       expect(run("2026-10-16", clock, force)).toEqual({ state: "new", existing: null, note: null });
@@ -449,6 +459,14 @@ describe("steps 5 (dependencies), 6 and 7", () => {
         expect(r.state, `${date} ${force}`).toBe("skip_late");
         expect(r.note).toBe("Too late: nothing is published after 11:00.");
         expect(r.existing?.date ?? null).toBe(date === "2026-10-16" ? null : date);
+      }
+    }
+    // Too early skips the same way, a data-only edition included (§0.4 row 185).
+    for (const date of ["2026-10-16", "2026-10-15", "2026-10-14"]) {
+      for (const force of [false, true]) {
+        const r = run(date, "too_early", force);
+        expect(r.state, `${date} ${force}`).toBe("skip_early");
+        expect(r.note).toBe("Too early: the news window ends at 04:30; start the run then.");
       }
     }
     // A brief that does not parse counts as none.

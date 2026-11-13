@@ -71,6 +71,8 @@ export interface Schedule {
   endLimit: number;
   /** §8.2 TIMEOUTS.watchdog */
   watchdogAt: number;
+  /** at(D, pack.window_end): the news window's end, before which no run drafts (§0.4 row 185). */
+  windowEnd: number;
 }
 
 /**
@@ -98,21 +100,26 @@ export function scheduleFor(o: { date: string; start: number; config: LoadedConf
   else if (!o.dryRun && afterStop) watchdogAt = until + P3_LIMITS.watchdogGraceMs;
   else if (o.dryRun && afterStop) watchdogAt = o.start + P3_LIMITS.noDeadlineMs + P3_LIMITS.watchdogGraceMs;
   else watchdogAt = hardStop + P3_LIMITS.watchdogGraceMs;
-  return { hardStop, retryCutoff, publishUntil, staleAfter: at(o.date, sch.stale_after), endLimit, watchdogAt };
+  return { hardStop, retryCutoff, publishUntil, staleAfter: at(o.date, sch.stale_after), endLimit, watchdogAt, windowEnd: at(o.date, o.config.run.pack.window_end) };
 }
 
-export type ClockState = "normal" | "after_hard_stop" | "too_late";
+export type ClockState = "normal" | "after_hard_stop" | "too_late" | "too_early";
 
 /**
  * Throws PreflightFail("E_CLOCK") when the cutoff day for D is incomplete: now before
- * `${D − 1}T00:00:00Z` (08:00 Taipei the day before, §5.1). Not a dry run and now past publishUntil:
- * too_late. Not a dry run, no --no-deadline and now past hardStop: after_hard_stop. Else normal.
+ * `${D − 1}T00:00:00Z` (08:00 Taipei the day before, §5.1). Not a dry run and now more than
+ * windowWaitMs (15 min) before the news window ends: too_early, --no-deadline or not (§0.4 row 185:
+ * the draft's generated_at must fall after the window's end, so such a run could publish only the
+ * data-only edition, and a full one then would cover less of the day). Not a dry run and now past
+ * publishUntil: too_late. Not a dry run, no --no-deadline and now past hardStop: after_hard_stop. Else
+ * normal; a normal start before the window's end waits for it (daily.ts, step 3).
  */
 export function clockRule(o: { date: string; now: number; dryRun: boolean; noDeadline: boolean; schedule: Schedule }): ClockState {
   const complete = Date.parse(`${addDays(o.date, -1)}T00:00:00Z`);
   if (o.now < complete) {
     throw new PreflightFail("E_CLOCK", `The cutoff day for ${o.date} is not complete before 08:00 Taipei on ${addDays(o.date, -1)}.`);
   }
+  if (!o.dryRun && o.now < o.schedule.windowEnd - P3_LIMITS.windowWaitMs) return "too_early";
   if (!o.dryRun && o.now > o.schedule.publishUntil) return "too_late";
   if (!o.dryRun && !o.noDeadline && o.now > o.schedule.hardStop) return "after_hard_stop";
   return "normal";
@@ -290,11 +297,12 @@ export function depsChanged(root: string): boolean {
   }
 }
 
-export type IdempotencyState = "new" | "resume" | "skip_published" | "skip_late" | "replace";
+export type IdempotencyState = "new" | "resume" | "skip_published" | "skip_late" | "skip_early" | "replace";
 
 /**
  * Step 6, on briefs/D.json as synced (`existing`, null when missing or invalid). Too late (clock
- * too_late) skips whatever is there, --force or not: skip_late with the tooLate note. Otherwise none:
+ * too_late) skips whatever is there, --force or not: skip_late with the tooLate note; too early (clock
+ * too_early) the same, skip_early with the tooEarly note (§0.4 row 185). Otherwise none:
  * new. A data-only edition: resume (the data_only stage's dataOnlyUpSince note is daily.ts's, at stage
  * 4; --force changes nothing). A full or partial one: skip_published with the alreadyPublished note
  * (its published_at); with --force, replace, but only while the clock is normal and the run drafts
@@ -305,6 +313,7 @@ export type IdempotencyState = "new" | "resume" | "skip_published" | "skip_late"
 export function idempotency(o: { contentDir: string; date: string; clock: ClockState; force: boolean; dataOnly?: boolean }): { state: IdempotencyState; existing: Brief | null; note: string | null } {
   const existing = readBrief(o.contentDir, o.date);
   if (o.clock === "too_late") return { state: "skip_late", existing, note: NOTES.tooLate(run.schedule.publish_until) };
+  if (o.clock === "too_early") return { state: "skip_early", existing, note: NOTES.tooEarly(run.pack.window_end) };
   if (!existing) return { state: "new", existing, note: null };
   if (existing.edition === "data_only") return { state: "resume", existing, note: null };
   if (o.force && o.clock === "normal" && !o.dataOnly) return { state: "replace", existing, note: null };

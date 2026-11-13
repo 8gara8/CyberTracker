@@ -434,6 +434,47 @@ describe("daily.ts end to end", () => {
     expectContentOnly(h);
   }, TIMEOUT);
 
+  it("D52 a start at 00:05 is too early: skipped with one status: commit, nothing published, --no-deadline too (§0.4 row 185)", async () => {
+    for (const extra of [[], ["--no-deadline"]]) {
+      const h = harness({ start: "00:05" });
+      okAgent(h);
+      expect(await run(h, ["--trigger", "manual", ...extra])).toBe(0);
+      const s = subjects(h);
+      expect(s).toHaveLength(1);
+      expect(s[0]).toMatch(new RegExp(`^status: ${D} · run \\d{8}-\\d{6} ended: skipped$`));
+      const r = statusOn(h)!.runs;
+      expect(r).toHaveLength(1);
+      expect(r[0]!.outcome).toBe("skipped");
+      expect(stageOf(r[0]!, "preflight").note).toBe("Too early: the news window ends at 04:30; start the run then.");
+      expect(h.agentCalls()).toEqual([]);
+      expect(briefOn(h)).toBeNull();
+      expect(summary(h)).toContain(`skipped.** Too early: the news window ends at 04:30; start the run then.`);
+      expect(h.waits()).toEqual([]);
+      expectContentOnly(h);
+    }
+  }, TIMEOUT);
+
+  it("D53 a start at 04:20 waits until 04:30, then publishes the full edition (§0.4 row 185)", async () => {
+    const h = harness({ start: "04:20" });
+    okAgent(h);
+    const waited: number[] = [];
+    const sleep = async (ms: number) => {
+      waited.push(ms);
+      h.clock.jump(ms);
+    };
+    expect(await run(h, ["--trigger", "schedule"], { sleep })).toBe(0);
+    expect(waited[0]).toBeGreaterThan(9 * MIN);
+    expect(waited[0]).toBeLessThanOrEqual(10 * MIN);
+    expect(dailyLog(h)).toContain("Waiting until 04:30, when the news window ends.");
+    const r = statusOn(h)!.runs;
+    expect(r).toHaveLength(1);
+    expect(r[0]!.outcome).toBe("published_full");
+    expect(briefOn(h)!.edition).toBe("full");
+    const full = JSON.parse(h.remoteFile(`content/briefs/${D}.json`)!) as { generated_at: string };
+    expect(Date.parse(full.generated_at)).toBeGreaterThanOrEqual(at(D, "04:30"));
+    expectContentOnly(h);
+  }, TIMEOUT);
+
   it("D10 D11 D12 a full edition already on GitHub skips the next run; --force replaces it; no data-only commit follows a full one", async () => {
     const h = harness();
     okAgent(h);

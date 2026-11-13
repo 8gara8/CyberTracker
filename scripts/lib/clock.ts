@@ -76,6 +76,8 @@ export const P3_LIMITS = {
   watchdogLateStartMs: 10 * MIN,
   noDeadlineMs: 75 * MIN,
   noDeadlineRetryGapMs: 50 * MIN,
+  /** A run that starts at most this long before the news window ends waits for it; earlier, it skips (§0.4 row 185). */
+  windowWaitMs: 15 * MIN,
   cliVersionMs: 30_000,
   keychainMs: 10_000,
   netProbeMs: 10_000,
