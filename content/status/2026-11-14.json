@@ -1721,8 +1721,8 @@
       "trigger": "retry",
       "attempt": 2,
       "started_at": "2026-11-14T04:34:08+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-14T04:39:20+08:00",
+      "outcome": "published_full",
       "edition": "full",
       "error_code": null,
       "code_commit": "e20393ce1dabffcb22c7c1e5b02b042179d860c3",
@@ -1777,14 +1777,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-14T04:38:32+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-14T04:38:38+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-14T04:38:38+08:00",
+          "ended_at": "2026-11-14T04:39:20+08:00",
           "note": null
         },
         {
@@ -1796,9 +1796,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-14T04:38:38+08:00",
+          "ended_at": "2026-11-14T04:38:43+08:00",
           "note": null
         }
       ],
@@ -2267,10 +2267,10 @@
         "by_code": {}
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-14T04:39:20+08:00",
+        "shows_date": "2026-11-14",
+        "shows_edition": "full"
       },
       "recheck": {
         "from": "2026-10-31",
@@ -2278,7 +2278,13 @@
         "items_checked": 7,
         "flagged": []
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-14T04:38:43+08:00",
+        "checked": 45,
+        "ok": 41,
+        "unknown": 4,
+        "broken": []
+      }
     }
   ]
 }

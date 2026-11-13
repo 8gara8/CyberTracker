@@ -333,8 +333,8 @@
       "hashed_at": null,
       "last_check": {
         "date": "2026-11-14",
-        "result": "ok",
-        "http": 200
+        "result": "unknown",
+        "http": 429
       }
     },
     "https://focustaiwan.tw/society/202611120012": {
@@ -353,9 +353,13 @@
       "item_ids": [
         "2026-11-14/cve-2026-123039"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "6d014f994c02c0c877c6829cf2287fe472143ea9f8bb4a26886ba1bf5ed90c13",
+      "hashed_at": "2026-11-14T04:38:38+08:00",
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://bleepingcomputer.com/news/security/check-point-patches-zero-day-that-lets-hackers-get-root-access": {
       "first_cited": "2026-11-14",
@@ -364,7 +368,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://securityweek.com/php2shell-exploited-in-destructive-check-point-gateway-attacks": {
       "first_cited": "2026-11-14",
@@ -373,7 +381,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180500": {
       "first_cited": "2026-11-14",
@@ -382,7 +394,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180482": {
       "first_cited": "2026-11-14",
@@ -391,7 +407,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://bleepingcomputer.com/news/security/german-military-drone-operations-disrupted-by-cyberattack": {
       "first_cited": "2026-11-14",
@@ -400,7 +420,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/city-of-osaka-japan-email-data-breach": {
       "first_cited": "2026-11-14",
@@ -409,7 +433,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://securityweek.com/silentair-hackers-intercept-calls-sms-from-inside-mobile-networks": {
       "first_cited": "2026-11-14",
@@ -418,16 +446,24 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://projectzero.google/2026/11/disclosure-policy.html": {
       "first_cited": "2026-11-14",
       "item_ids": [
         "2026-11-14/eco-disclosure-policy-2026-11"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "99e0ba171dee8eee236b060707d56d6290373784de85c794b25e0fbaa176b4cc",
+      "hashed_at": "2026-11-14T04:38:38+08:00",
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://securityweek.com/law-enforcement-disrupts-gootloader-castlerat-and-stealc-infrastructure": {
       "first_cited": "2026-11-14",
@@ -436,7 +472,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/gootloader-ransomware-doj-details": {
       "first_cited": "2026-11-14",
@@ -445,7 +485,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/german-parliament-passes-law-giving-spy-agencies-hacking-power": {
       "first_cited": "2026-11-14",
@@ -454,51 +498,79 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://cve.org/CVERecord?id=CVE-2026-125086": {
       "first_cited": "2026-11-14",
       "item_ids": [
         "2026-11-14/cve-2026-125086"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
+      "hashed_at": "2026-11-14T04:38:39+08:00",
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180499": {
       "first_cited": "2026-11-14",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180487": {
       "first_cited": "2026-11-14",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://security-next.com/192851": {
       "first_cited": "2026-11-14",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "unknown",
+        "http": null
+      }
     },
     "https://ithome.com.tw/news/180398": {
       "first_cited": "2026-11-14",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://bleepingcomputer.com/news/cryptocurrency/trezor-confirms-crypto-stealing-implants-in-three-wallets-releases-fix": {
       "first_cited": "2026-11-14",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-14",
+        "result": "ok",
+        "http": 200
+      }
     }
   }
 }
