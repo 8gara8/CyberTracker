@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "runs": [
+    {
+      "run_id": "20261114-000552",
+      "trigger": "schedule",
+      "attempt": 1,
+      "started_at": "2026-11-14T00:05:52+08:00",
+      "finished_at": null,
+      "outcome": null,
+      "edition": null,
+      "error_code": null,
+      "code_commit": "baa54141c65431358d8aaf943ed97894c7570e9b",
+      "data_cutoff_utc": "2026-11-12",
+      "data_only_published_at": null,
+      "full_published_at": null,
+      "late": false,
+      "stages": [
+        {
+          "id": "preflight",
+          "status": "ok",
+          "started_at": "2026-11-14T00:05:52+08:00",
+          "ended_at": "2026-11-14T00:05:56+08:00",
+          "note": null
+        },
+        {
+          "id": "collect",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "metrics",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "data_only",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "draft",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "validate",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "publish",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "deploy",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "recheck",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "links",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        }
+      ],
+      "feeds": [],
+      "budgets": {
+        "agent_seconds": 0,
+        "web_fetches": 0,
+        "web_searches": 0,
+        "repair_rounds": 0,
+        "tokens_in": null,
+        "tokens_out": null,
+        "usage": null,
+        "safety_stops": 0
+      },
+      "candidates": null,
+      "validation": null,
+      "soft_gates": null,
+      "deploy": {
+        "triggered": false,
+        "ready_at": null,
+        "shows_date": null,
+        "shows_edition": null
+      },
+      "recheck": null,
+      "links": null
+    }
+  ]
+}
