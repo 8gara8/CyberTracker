@@ -51,8 +51,10 @@ showing this edition". This is expected in P3 and is not a fault. Dry runs skip 
   stop it. Keep the command in `routine/TASK.md` exactly as approved.
 - **Changing the prompt:** after the PR merges, paste the new `routine/TASK.md` the same day into the
   task's Edit form, or into its `SKILL.md` under `~/.claude/scheduled-tasks/`, below the front matter.
-- **Run now** on the task page runs the morning job at once: it skips if today's full edition is
-  published, publishes a data-only edition at most after 05:30, and skips after 11:00.
+- **Run now** on the task page runs the morning job at once: before 04:15 it skips ("Too early: the news
+  window ends at 04:30; start the run then."), from 04:15 it waits for 04:30, it skips if today's full
+  edition is published, publishes a data-only edition at most after 05:30, and skips after 11:00. After
+  midnight the date is already the new day's, so Run now then is never a harmless test (SPEC §0.4 row 185).
 - **Needs** the Claude app open and Kobol awake, logged in and plugged in. If Kobol slept through 04:37,
   the app starts one catch-up run when it wakes.
 
@@ -155,7 +157,7 @@ never meet the morning run.
 | Job | Command |
 |---|---|
 | Rerun from the Claude app (from P5) | **Run now** on the task page |
-| Rerun a failed morning | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` (its own 75-minute limit, never past 11:00; start by 10:00 for a full attempt) |
+| Rerun a failed morning | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` (its own 75-minute limit, never past 11:00; start from 04:15, since earlier skips as too early, and by 10:00 for a full attempt) |
 | Replace today's full edition | add `--force` (never lets a data-only edition replace a full one, never overrides the clock rules or 11:00) |
 | Data-only edition only | add `--data-only` (no CLI, token or agent) |
 | Dry run of today | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --dry-run --no-deadline` (no git write, nothing under `content/`; publishes into `logs/dry-run/D/`) |

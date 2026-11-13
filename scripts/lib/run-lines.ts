@@ -87,6 +87,10 @@ export const LINES = {
   fullPublished(hhmm: string, sha7: string): string {
     return `Full edition published at ${hhmm} (${sha7}).`;
   },
+  /** "Waiting until HH:MM, when the news window ends." (preflight step 3, a start up to 15 min early; §0.4 row 185) */
+  waitingForWindow(hhmm: string): string {
+    return `Waiting until ${hhmm}, when the news window ends.`;
+  },
   /** "Restarting on the code synced from main (<sha7>)." */
   restarting(sha7: string): string {
     return `Restarting on the code synced from main (${sha7}).`;

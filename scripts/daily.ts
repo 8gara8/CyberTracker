@@ -62,7 +62,7 @@ import {
   checkCliAndToken, checkNetwork, checkPlatform, clockRule, depsChanged, idempotency, loadRunConfig, prepareGit, PreflightFail, scheduleFor,
   type ClockState, type IdempotencyState, type Schedule,
 } from "./preflight";
-import { PublishError, publishDataOnly, publishFull, publishStatus, publishWithholds, type PublishOptions, type Sleep, type StatusEvent } from "./publish";
+import { PublishError, publishDataOnly, publishFull, publishStatus, publishWithholds, realSleep, type PublishOptions, type Sleep, type StatusEvent } from "./publish";
 import { applyLinkResults, checkLinks, intakeDisputes, recheckItems, writeRecheckLog, type IntakeResult, type LinkResult, type LinksOutcome } from "./recheck";
 
 // ── Exports (plan §3.1) ──────────────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export interface Deps {
   restart?: (argv: string[]) => Promise<number>;
   /** Default process.arch (plan G5). */
   arch?: string;
-  /** Publish's push retry waits (2, 4 and 8 s); default a real timer, tests pass an instant one. */
+  /** Publish's push retry waits (2, 4 and 8 s) and the wait for the news window's end (§0.4 row 185); default a real timer, tests pass an instant one. */
   sleep?: Sleep;
 }
 
@@ -1022,6 +1022,13 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     watchdog.unref();
     line(LINES.first({ date: D, trigger: cliTrigger, dryRun, cutoffUtc: dataCutoffFor(D), hardStop: hhmm(sch.hardStop), retryCutoff: hhmm(sch.retryCutoff) }));
     clock = clockRule({ date: D, now: now(), dryRun, noDeadline, schedule: sch });
+    // A start at most 15 min before the news window ends waits for it, so the draft's generated_at can
+    // fall after the window (DATE_MISMATCH) and the pack covers the whole window; earlier is too_early,
+    // a skip at step 6 (§0.4 row 185). A dry run never waits.
+    if (clock === "normal" && !dryRun && now() < sch.windowEnd) {
+      line(LINES.waitingForWindow(hhmm(sch.windowEnd)));
+      await (deps.sleep ?? realSleep)(sch.windowEnd - now());
+    }
 
     // Step 4.
     await checkNetwork(fetchImpl);
@@ -1043,7 +1050,7 @@ export async function main(argv: string[] = process.argv.slice(2), deps: Deps = 
     const newRecord = () => newRunRecord({
       runId: runIdFor(start), trigger, attempt: 1, startedAt: start, codeCommit, dataCutoffUtc: dataCutoffFor(D),
     });
-    if (clock === "too_late" || idem.state === "skip_published" || idem.state === "skip_late") {
+    if (clock === "too_late" || clock === "too_early" || idem.state === "skip_published" || idem.state === "skip_late" || idem.state === "skip_early") {
       const rec = newRecord();
       setStage(rec, "preflight", { status: "ok", started: start, ended: now() });
       for (const n of [...preNotes, idem.note]) if (n) addNote(rec, "preflight", n);

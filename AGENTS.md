@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-12 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-14 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -114,7 +114,8 @@ faster?
   by another team), so `site.url` moved in P5. Kobol housekeeping is done: the main checkout
   fast-forwarded to `f9812ab` (`package-lock.json` unchanged, no `npm ci`) and the `p4-site` worktree
   removed.
-- **P5 on `p5-golive`, PR #7, opened ready for review on 2026-11-12:** item 1 of SPEC §10 P5, built in
+- **P5 on `p5-golive`, PR #7, merged by JL on 2026-11-12 at about 19:36 Taipei (11:36 UTC; `main` at
+  `98968aa`):** item 1 of SPEC §10 P5, built in
   the cloud container, with the Kobol steps in the worktree
   `/Users/kobol/Projects/CyberTracker-worktrees/p5-golive` (rule 4). The site address in `run.json` (row
   176); `regions.json` version 3 with `review_due` 2026-12-11 and the Taiwan election window, its polling
@@ -131,8 +132,20 @@ faster?
   report, which SB-07 is judged on, a tier 1 source (row 184). `routine/TASK.md` already matches SPEC
   §11, so it is final as it is. Codex round 2 (on `ca349e5`) found one P2, fixed in `bca76f3`
   (`verizon-dbir` covers the report's page only), and round 3 (on `bca76f3`, 15:25 Taipei, 07:25 UTC)
-  found nothing. Waiting on: JL's read of the six claims, and the merge. After the merge: the task created with JL present (SPEC §9.3; Run now gives `skipped`), then two or three
-  supervised mornings.
+  found nothing. The main checkout was fast-forwarded to `98968aa` the same evening (`package-lock.json`
+  unchanged).
+- **Go-live, 2026-11-13 and 14:** the task "CyberTracker morning" was created on 2026-11-13 at 09:22
+  Taipei from a Remote Control session: the scheduled-tasks tool sets no folder, so it took the session's
+  `/Users/kobol/Projects`, and JL set `/Users/kobol/Projects/CyberTracker` in the task's Edit form; the
+  Scheduled page lists tool-made tasks under "hidden tasks that Claude set up". The first brief was a
+  supervised manual run, published 2026-11-13 at 09:56 Taipei (7 items); its preflight note "Dependencies
+  changed since the last npm ci" came from a main checkout installed before P3's postinstall, fixed by one
+  `npm ci` on Kobol. JL's Run now at 00:05 on 2026-11-14, meant to approve the command, was past midnight
+  and so a real run for the 14th: it published the data-only edition only (`E_VALIDATION`, DATE_MISMATCH
+  on `generated_at`, which no time before 04:30 can pass). Fixed on `p5-fix-early-run` (row 185): before
+  04:15 a run skips as too early, from 04:15 it waits for 04:30. Saving the edit also moved the task's
+  time to 09:35; JL was asked to set 04:30 again. Next: two or three supervised mornings, then
+  `p5-report` (Appendix C timing; §9.3's creation steps as they really went).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -156,7 +169,7 @@ faster?
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
 | P4 Site | `p4-site` | #6 | Merged 2026-11-12, 10:13 Taipei (02:13 UTC) |
-| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7 | `p5-golive` ready for review since 2026-11-12; Codex round 3 found nothing; waiting on JL's read of the claims and the merge |
+| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7, #8 | `p5-golive` merged 2026-11-12, about 19:36 Taipei; first brief 2026-11-13; `p5-fix-early-run` (#8) ready for review |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI
@@ -229,7 +242,7 @@ faster?
 | Job | How |
 |---|---|
 | Daily brief | The scheduled task "CyberTracker morning" (04:30, starting about 04:37; prompt `routine/TASK.md`) runs `scripts/daily.sh`, which runs `scripts/daily.ts`, then replies with `logs/DATE.summary.md` (from P5) |
-| Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning (start by 10:00); add `--dry-run` to test, `--date D` for a past date (dry runs only), `--force` to replace today's full edition, `--data-only` to stop after the data-only edition, `--simulate-failure` to test the failure path. Never `npm run daily` for a real run: it is `tsx scripts/daily.ts`, kept for tests, and skips the fixed PATH, `TZ` and `caffeinate`. Exit 0 published, skipped or dry run, 1 failed, 2 usage, 3 data-only (SPEC §8.2; from P3) |
+| Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning (start from 04:15, since earlier skips as too early, and by 10:00); add `--dry-run` to test, `--date D` for a past date (dry runs only), `--force` to replace today's full edition, `--data-only` to stop after the data-only edition, `--simulate-failure` to test the failure path. Never `npm run daily` for a real run: it is `tsx scripts/daily.ts`, kept for tests, and skips the fixed PATH, `TZ` and `caffeinate`. Exit 0 published, skipped or dry run, 1 failed, 2 usage, 3 data-only (SPEC §8.2; from P3) |
 | Publish by hand | `PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D` publishes a valid `drafts/D.json` as the full edition, validated against the run's logs, before 11:00 (`E_PUBLISH`'s next step); `--data-only` the data-only edition, `--state` the staged backfill state, `--force` replaces a full edition, `--dry-run` writes into `logs/dry-run/D/`. Refused while `logs/.lock` is held, off arm64 and after 11:00; exit 0 published, 1 refused or failed, 2 usage (SPEC §8.7; from P3) |
 | Re-check and links | `npm run recheck -- --date D` runs dispute intake then the 14-day flags (`--intake` or `--flags` for one; `--json` prints the result) and writes `logs/D.recheck.json`; it reads GitHub and never withholds; `--dry-run` writes nothing. `npm run links -- --date D` runs the post-publish link check and prints the results, editing no archive index (SPEC §8.9, §8.11; from P3) |
 | Agent context | `npm run context -- --date D` writes `drafts/context.json` as the morning builds it (`--deadline HH:MM`, default now + 30 min; `--out FILE`); exit 0 written, 1 error, 2 usage (SPEC §8.5; from P3) |

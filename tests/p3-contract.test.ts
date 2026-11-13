@@ -74,6 +74,7 @@ describe("the P3 contract", () => {
       watchdogLateStartMs: 600_000,
       noDeadlineMs: 4_500_000,
       noDeadlineRetryGapMs: 3_000_000,
+      windowWaitMs: 900_000,
       cliVersionMs: 30_000,
       keychainMs: 10_000,
       netProbeMs: 10_000,
@@ -180,7 +181,7 @@ describe("the run-log lines (RL1)", () => {
       LINES.cli("2.1.316"),
       LINES.agent({ attempt: 1, exitCode: 0, timedOutMin: null, turns: 2, tools: { Read: 1 }, fetches: 0, budget: 40, isError: true }),
       LINES.noDraft(1), LINES.validation(1, 2, 2, 2), LINES.repair(1, 1, 1, 0, ["X"]), LINES.noRetry("cutoff", "05:00"),
-      LINES.dryRunComplete("2026-10-14"), LINES.fullPublished("05:12", "a1b2c3d"), LINES.restarting("a1b2c3d"),
+      LINES.dryRunComplete("2026-10-14"), LINES.fullPublished("05:12", "a1b2c3d"), LINES.waitingForWindow("04:30"), LINES.restarting("a1b2c3d"),
       LINES.watchdog("05:32"), LINES.notWithheld(["cve-2026-104935"]), LINES.runEnded("failed"),
     ];
     expect(Object.keys(LINES)).toHaveLength(lines.length);

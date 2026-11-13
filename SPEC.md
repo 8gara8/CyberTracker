@@ -373,6 +373,7 @@ rows are what review and building found.
 | 182 | P5 | §1 (item 4), §4.11 (Sample claims), §5.5 (List changes), §10 P5 (item 1), App. B.10 (JL's claims) | `config/claims.json` version 1 adds JL's six claims, `SB-03` to `SB-08` (`origin` jl, `opened` 2026-11-12, `restates` null). JL stated the theses in chat on 2026-11-12 and named no published passage, so B.10's verbatim quote does not apply; a quote from JL's book can be added later by PR. SB-03 tests that the Flood lasts, not that AI caused it: only 502 of the 45,599 records in its 13 weeks are AI-credited, and it opens in support (+432.6 on the 2026-11-10 metrics; 22% to 52% above the mean through 2025, first above 300 on 2026-09-14). SB-04 reads 224 today; AISLE holds 179 of the 226 non-Anthropic matches in `content/state/ai-credits.json`, so one firm's output can decide it, and a PR that changes `config/ai-finders.json` states its effect on SB-04's reading (`recomputeCredits()` rematches all history). SB-05 reads 17 (13 to 22); it measures CVE publication to CISA's listing, so it also measures how fast CISA confirms. SB-06 and SB-08 count only cases first public after 2026-11-12, so earlier cases an authority cites later do not hit; SB-06 excludes an attacker's own agent doing its job (that is SB-02's ground). SB-07 uses the 2026 DBIR's 31% as its line. JL's point that AI teaches people to code better has no claim: no metric measures code quality, and read on the Flood it would run against SB-03. The model JL named is in no text (rule 11) | JL's chat message of 2026-11-12. Drafted three ways (metric first, JL's words first, falsifiability first), judged, then checked by `validateConfig`, a run of `updateScoreboard` on the 2026-11-10 metrics and a sceptic's read. The 2026 DBIR's 31% checked on two summaries of the report. `tests/config.test.ts` checks ids, origins, judges, paths, dates and the script thresholds |
 | 183 | P5 | §4.9 (Status), `lib/apply.ts` | A metric claim is settled on its zone at the last edition on or before its deadline, the newest metric entry dated on or before it (`claimStatus`); after the deadline its stored zone and reading stay as they were and it gets no more metric entries. Before, every edition after the deadline scored that day's zone, so a claim could flip between hit and miss for years. A metric claim with no reading at its deadline is a miss unless a resolution voids it. A PR never moves a deadline that has passed (it sets a `resolution` instead): the frozen zone comes from the stored state and the status from the entries, which agree only while the deadline stays put | Found by row 182's check. `tests/apply.test.ts` C10: a reading that crosses a threshold after the deadline changes neither the status, the zone, the reading nor the entries |
 | 184 | P5 | App. B.3, App. B.10 (SB-07) | `config/source-tiers.json` version 3 (`updated` 2026-11-12) adds `verizon-dbir`, "Verizon Data Breach Investigations Report", tier 1 `research`, US, on the report's web page only: `verizon.com/business/resources/reports/dbir` and `verizon.com/business/resources/reports/dbir.html`. Codex round 2 narrowed it from the whole `reports` folder, which holds Verizon's other reports too. The yearly PDF sits under a folder whose name changes (2026: `resources/t85d/reports/`), so it stays tier 3 until a PR adds the 2028 PDF's path; the rest of verizon.com stays unlisted, tier 3. SB-07 is judged on that report, and SCOREBOARD_REF takes a quote only from a tier 1 or 2 source, so without it an entry could quote only press coverage, which words the 31% in different ways | Found by the review of row 182. `tests/config.test.ts` checks the publisher, the tier 1 counts and the version; a scratch run of `publisherFor()` gave tier 1 for both page paths and tier 3 for another report in the same folder, the 2026 PDF and verizon.com's news pages |
+| 185 | P5 | §8.2 (Clock rules, Preflight step 6, Stage notes, log lines, TIMEOUTS), §9.3 (Manual runs), `scripts/preflight.ts`, `scripts/daily.ts` | A non-dry run that starts more than 15 minutes before the news window ends (`at(D, pack.window_end)`, 04:30) is skipped at preflight step 6 with "Too early: the news window ends at 04:30; start the run then.", `--no-deadline` or not, `--force` or not, a data-only edition on GitHub included: one status commit, nothing published, exit 0. A start from 04:15 to 04:30 logs "Waiting until 04:30, when the news window ends." and waits for 04:30 before the network check and the git sync. A dry run never skips or waits. Before, a run started after midnight built the pack for the window ending at 04:30 and published the data-only edition, but no full edition could pass: DATE_MISMATCH wants `generated_at` between the window's end (04:30) and the run's deadline, and every time in the run came before 04:30, so the two repairs and the second attempt could not fix it and the run ended `published_data_only` with `E_VALIDATION`. A full edition at midnight would also have covered four and a half hours less of the day and stopped the 04:30 run as already published | Seen on Kobol: JL clicked Run now at 00:05 Taipei on 2026-11-14 to approve the task's command (§9.3 expected a skip after 11:00, but it was past midnight); run 20261114-000552 and its retry published the data-only edition only, `E_VALIDATION`, one error left, DATE_MISMATCH at `generated_at` with the window 04:30 to 00:37. The 04:30 run resumes such a data-only edition as before. `tests/preflight.test.ts` PF3 (the 04:15 boundary, `--no-deadline`, dry run) and PF7 (`skip_early` for every brief state, `--force` too), `tests/status.test.ts` ST3 and ST4 (the note is read back as the skip reason), `tests/daily.test.ts` D52 (00:05, with and without `--no-deadline`: one status commit, no agent, no brief) and D53 (04:20: one wait of about 10 minutes, then a full edition with `generated_at` after 04:30) |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -4854,16 +4855,22 @@ to code that measures `Date.now()` itself is converted with `realDeadline(now, l
 `metrics` 3 min; `snapshotRound` 3 min, never past `hardStop − 4 min`; `repair` 6 min via `repairBudget`;
 `agentMin` 10 min; `deployWait` `min(CT_DEPLOY_WAIT_MS, hardStop − now − 90 s)`, a GET every 20 s of at
 most 15 s; `links` 3 min, not started with under 6 min before `hardStop`; `dataOnlyPublish` 3 min, push
-included; `finalCommit` 60 s; `lockStale` 2 h; `watchdog` at `hardStop + 2 min` (`publishUntil + 2 min`
+included; `finalCommit` 60 s; `lockStale` 2 h; `windowWait` 15 min (a start that close before `windowEnd` waits
+for it; earlier is too early, §0.4 row 185); `watchdog` at `hardStop + 2 min` (`publishUntil + 2 min`
 for a run started after `hardStop`; start + 10 min for one started after `publishUntil`) writes the
 fallback summary and exits 1 (`unref()`ed).
 
 **Clock rules in preflight.** `--date` must be a real date, else `Invalid --date X`, exit 2. If ``now <
 Date.parse(`${addDays(D, −1)}T00:00:00Z`)`` (08:00 Taipei the day before), the cutoff day is incomplete:
 `E_CLOCK` (§5.1). A date other than `taipeiToday()` without `--dry-run`: `Publishing a date other than
-today needs --dry-run; past editions are never published.`, exit 2. Not a dry run and `now >
-publishUntil`: `skipped`, "Too late: nothing is published after 11:00." (at preflight step 6, so the
-record is still committed). Not a dry run, no `--no-deadline`, `now > hardStop`: draft, validate and
+today needs --dry-run; past editions are never published.`, exit 2. Not a dry run and `now <
+windowEnd − 15 min` (`windowEnd` is `at(D, pack.window_end)`, 04:30; `--no-deadline` or not):
+`skipped`, "Too early: the news window ends at 04:30; start the run then." (at preflight step 6, so the
+record is still committed): the draft's `generated_at` must fall after the window's end (DATE_MISMATCH),
+so an earlier run could publish only the data-only edition (§0.4 row 185). Not a dry run, a start from
+04:15 to 04:30: the run logs "Waiting until 04:30, when the news window ends." and waits for 04:30
+before step 4. Not a dry run and `now > publishUntil`: `skipped`, "Too late: nothing is published after
+11:00." (at preflight step 6, so the record is still committed). Not a dry run, no `--no-deadline`, `now > hardStop`: draft, validate and
 publish are `skipped`, "Started after 05:30: no editorial pass today."; other stages run, bounded by
 `publishUntil`.
 
@@ -4897,8 +4904,8 @@ publish are `skipped`, "Started after 05:30: no editorial pass today."; other st
    since the last npm ci" (repeated in the Notes line, §8.8) and the run goes on; never fatal (Claude
    fast-forwards the main checkout and runs `npm ci` after such a merge, §9.3). A failure at steps 1 to 5
    leaves no status record.
-6. **Too late, then idempotency**, on `content/briefs/D.json` as synced. Too late skips whatever GitHub
-   holds, `--force` or not. Otherwise: missing → normal run. `data_only` → resume: metrics reused, the
+6. **Too late or too early, then idempotency**, on `content/briefs/D.json` as synced. Too late and too
+   early skip whatever GitHub holds, `--force` or not. Otherwise: missing → normal run. `data_only` → resume: metrics reused, the
    data-only stage `skipped` ("Data-only edition already up since HH:MM."), the agent runs. `full` or
    `partial` → `skipped`, "The full edition was already published at HH:MM."; with `--force`, a full run
    whose data-only stage is `skipped` and whose full edition replaces the old one, only while the clock is
@@ -5140,7 +5147,7 @@ single note over 200 characters is cut to 199 and an ellipsis. HH:MM is Taipei.
 | preflight | "Commits left unpushed by an earlier run could not be pushed; the next run tries again." | `pushPending()` failed with a `PublishError` |
 | preflight | "Restarted on the code synced from main (<sha7>)." | The child of a restart |
 | preflight | "Dependencies changed since the last npm ci." (chat) | `node_modules/.ct-lock-sha` missing or stale |
-| preflight | "The full edition was already published at HH:MM." (chat) or "Too late: nothing is published after HH:MM." (chat) | Step 6 skips |
+| preflight | "The full edition was already published at HH:MM." (chat), "Too late: nothing is published after HH:MM." (chat) or "Too early: the news window ends at HH:MM; start the run then." (chat) | Step 6 skips |
 | preflight | That code's "What happened" sentence (`whatHappened()`) | Step 7's `E_CLI` or `E_AUTH`; the stage is `degraded` |
 | collect | "Collector failed (timeout\|error); continuing with an empty, degraded pack." | Stage 2 failed (also logged) |
 | metrics | "Reused metrics/D.json." | A committed metrics file |
@@ -5178,7 +5185,8 @@ validation and repair lines; "Attempt N: the soft pass dropped <parts>." with th
 item(s) (<ids>)", "the Angle" and "N Scoreboard entry (entries)", those present, joined by " and ";
 "Attempt N: the soft pass removed <paths>, left citing no item." with the removed Lead sentences' and
 raises' paths (`lead[2]`, `region_raises[0]`) joined by ", "; the three "No retry" lines; "Dry run complete: drafts/D.json is
-valid."; "Not withheld: <item ids>; no editorial pass today." (stage 5, §0.4 row 149); "Full edition published at HH:MM (<sha7>)."; "Restarting on the code synced from main
+valid."; "Not withheld: <item ids>; no editorial pass today." (stage 5, §0.4 row 149); "Full edition published at HH:MM (<sha7>)."; "Waiting until HH:MM, when the news window ends." (§0.4
+row 185); "Restarting on the code synced from main
 (<sha7>)."; "Watchdog: the run passed HH:MM; ending."; and "Run ended: <outcome>.". On stderr, with exit
 2 and no record: "CT_FIXTURE_FEEDS needs --dry-run." (without `--dry-run`, outside tests), the clock
 rules' two messages, and "--trigger takes schedule or manual, not X." or any other argument error, which
@@ -6348,8 +6356,8 @@ full list):
 
 | Job | Command |
 |---|---|
-| Rerun from the app | Run now: skips if today's full edition is published; after 05:30 a data-only edition at most; after 11:00 skips |
-| Rerun a failed morning | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`: its own limit, never past 11:00 (§8.2). Start by 10:00 for a full attempt |
+| Rerun from the app | Run now: skips before 04:15 (too early) and if today's full edition is published; from 04:15 it waits for 04:30; after 05:30 a data-only edition at most; after 11:00 skips |
+| Rerun a failed morning | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline`: its own limit, never past 11:00 (§8.2). Start from 04:15 (earlier skips as too early) and by 10:00 for a full attempt |
 | Dry run, failure path | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --dry-run --no-deadline`, plus `--simulate-failure` |
 
 **What can stop a morning.** The stale banner after 08:00 covers every case.
