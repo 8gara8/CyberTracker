@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-12",
-  "catalog_version": "2026.11.10",
+  "updated_at": "2026-11-13",
+  "catalog_version": "2026.11.13",
   "entries": [
     [
       "CVE-2010-5326",
@@ -10033,7 +10033,7 @@
       "CVE-2024-4978",
       "2024-05-29",
       "Justice AV Solutions",
-      "Viewer ",
+      "Viewer",
       "2024-05-23",
       "cisa-cg",
       "unknown"
@@ -10159,7 +10159,7 @@
       "CVE-2024-38080",
       "2024-07-09",
       "Microsoft",
-      "Windows ",
+      "Windows",
       "2024-07-09",
       "microsoft",
       "unknown"
@@ -10681,7 +10681,7 @@
       "CVE-2024-43047",
       "2024-10-08",
       "Qualcomm",
-      "Multiple Chipsets ",
+      "Multiple Chipsets",
       "2024-10-07",
       "qualcomm",
       "unknown"
@@ -10753,7 +10753,7 @@
       "CVE-2024-30088",
       "2024-10-15",
       "Microsoft",
-      "Windows ",
+      "Windows",
       "2024-06-11",
       "microsoft",
       "known"
@@ -11131,7 +11131,7 @@
       "CVE-2024-12356",
       "2024-12-19",
       "BeyondTrust",
-      "Privileged Remote Access (PRA) and Remote Support (RS) ",
+      "Privileged Remote Access (PRA) and Remote Support (RS)",
       "2024-12-17",
       "BT",
       "unknown"
@@ -13435,7 +13435,7 @@
       "CVE-2025-68645",
       "2026-01-22",
       "Synacor",
-      " Zimbra Collaboration Suite (ZCS)",
+      "Zimbra Collaboration Suite (ZCS)",
       "2025-12-22",
       "mitre",
       "unknown"
@@ -13543,7 +13543,7 @@
       "CVE-2025-64328",
       "2026-02-03",
       "Sangoma",
-      "FreePBX ",
+      "FreePBX",
       "2025-11-07",
       "GitHub_M",
       "unknown"
@@ -13849,7 +13849,7 @@
       "CVE-2026-1603",
       "2026-03-09",
       "Ivanti",
-      " Endpoint Manager (EPM)",
+      "Endpoint Manager (EPM)",
       "2026-02-10",
       "ivanti",
       "unknown"
@@ -14569,7 +14569,7 @@
       "CVE-2026-35273",
       "2026-06-12",
       "Oracle",
-      " PeopleSoft Enterprise PeopleTools",
+      "PeopleSoft Enterprise PeopleTools",
       "2026-06-11",
       "oracle",
       "known"
@@ -14596,7 +14596,7 @@
       "CVE-2026-48907",
       "2026-06-16",
       "Widget Factory",
-      "Joomla Content Editor ",
+      "Joomla Content Editor",
       "2026-06-05",
       "Joomla",
       "unknown"
@@ -14965,7 +14965,7 @@
       "CVE-2026-20349",
       "2026-08-11",
       "Cisco",
-      "Secure Firewall Adaptive Security Appliance (ASA) and Secure Firewall Threat Defense (FTD) ",
+      "Secure Firewall Adaptive Security Appliance (ASA) and Secure Firewall Threat Defense (FTD)",
       "2026-08-11",
       "cisco",
       "unknown"
@@ -14974,7 +14974,7 @@
       "CVE-2026-68820",
       "2026-08-11",
       "Microsoft",
-      "Windows Ancillary Function Driver for WinSock ",
+      "Windows Ancillary Function Driver for WinSock",
       "2026-08-11",
       "microsoft",
       "unknown"
@@ -15505,7 +15505,7 @@
       "CVE-2026-71362",
       "2026-09-24",
       "Adobe",
-      "Commerce and Magento ",
+      "Commerce and Magento",
       "2026-08-11",
       "adobe",
       "unknown"
@@ -16012,6 +16012,24 @@
       "Chromium",
       "2026-11-10",
       "Chrome",
+      "unknown"
+    ],
+    [
+      "CVE-2026-114713",
+      "2026-11-13",
+      "UnrealIRCd",
+      "UnrealIRCd",
+      "2026-11-08",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-123039",
+      "2026-11-13",
+      "Check Point",
+      "Multiple Products",
+      "2026-11-12",
+      "checkpoint",
       "unknown"
     ]
   ]

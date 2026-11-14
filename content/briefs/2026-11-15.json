@@ -1,0 +1,464 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-15",
+  "edition": "data_only",
+  "generated_at": "2026-11-15T04:30:48+08:00",
+  "published_at": "2026-11-15T04:31:22+08:00",
+  "data_only_published_at": "2026-11-15T04:31:22+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-11-13",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Germany: German military drone maker Quantum Systems confirms active cyberattack",
+        "item_ids": [
+          "sc-defence-de-2026-11",
+          "inc-shipping-dk-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-defence-de-2026-11",
+              "inc-shipping-dk-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Taiwan: Cyberbiz breach spreads to at least 13 Taiwan-listed companies' online shops",
+        "item_ids": [
+          "sc-ecommerce-tw-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-ecommerce-tw-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-mobile-intercept-tw-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 2
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "35% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 15.5 days (2023–24: 21, faster). 167 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 47,151 new CVE records in 13 weeks, 5.5 times the 2023–24 pace (5.3 times excluding the Linux kernel). AI-credited: 716 in 13 weeks, 369 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-15.json",
+    "metrics_sha256": "d77a26047a96b7f5c3bec6c7508ef726787e0bf3390ee76cc25643fd7712324a",
+    "as_of": "2026-11-13"
+  },
+  "items": [
+    {
+      "id": "cve-2026-123039",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-123039 in Check Point Multiple Products as exploited",
+      "summary": "CISA added CVE-2026-123039, a flaw in Check Point Multiple Products, to its list of exploited flaws on 13 Nov 2026 (US date). The CVE record was published on 12 Nov 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-123039"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-11-14",
+      "vendor": {
+        "id": "check-point",
+        "name": "Check Point",
+        "country": "IL"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-123039",
+          "date_published": "2026-11-12",
+          "date_updated": "2026-11-14",
+          "assigner": "checkpoint",
+          "vendor": {
+            "id": "check-point",
+            "name": "Check Point",
+            "country": "IL"
+          },
+          "product": "Multiple Products",
+          "title": "Check Point Multiple Products Incorrect Permission Assignment for Critical Resource Vulnerability",
+          "cvss": {
+            "score": 7.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.02191,
+            "percentile": 0.82739,
+            "date": "2026-11-14"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-13"
+          },
+          "kev": {
+            "date_added": "2026-11-13",
+            "due_date": "2026-11-16",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.13"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-13",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-123039"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-15T04:31:22+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-114713",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-114713 in UnrealIRCd UnrealIRCd as exploited",
+      "summary": "CISA added CVE-2026-114713, a flaw in UnrealIRCd UnrealIRCd, to its list of exploited flaws on 13 Nov 2026 (US date). The CVE record was published on 8 Nov 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-114713"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2"
+      ],
+      "first_seen": "2026-11-15",
+      "vendor": {
+        "id": null,
+        "name": "UnrealIRCd",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-114713",
+          "date_published": "2026-11-08",
+          "date_updated": "2026-11-14",
+          "assigner": "mitre",
+          "vendor": {
+            "id": null,
+            "name": "UnrealIRCd",
+            "country": null
+          },
+          "product": "UnrealIRCd",
+          "title": "UnrealIRCd Improper Neutralization of Delimiters Vulnerability",
+          "cvss": {
+            "score": 8.6,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:H/A:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00508,
+            "percentile": 0.43896,
+            "date": "2026-11-14"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-12"
+          },
+          "kev": {
+            "date_added": "2026-11-13",
+            "due_date": "2026-11-16",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.13"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-13",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-114713"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-15T04:31:22+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 0,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 13 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 13 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0004",
+      "date": "2026-11-13",
+      "claim_id": "SB-05",
+      "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-61511",
+      "score": 0.74266,
+      "delta_7d": 0.68659,
+      "percentile": 0.99496
+    },
+    {
+      "cve_id": "CVE-2026-4408",
+      "score": 0.46926,
+      "delta_7d": 0.44425,
+      "percentile": 0.98849
+    },
+    {
+      "cve_id": "CVE-2026-28318",
+      "score": 0.87267,
+      "delta_7d": 0.39266,
+      "percentile": 0.99756
+    },
+    {
+      "cve_id": "CVE-2026-18556",
+      "score": 0.43884,
+      "delta_7d": 0.36002,
+      "percentile": 0.98769
+    },
+    {
+      "cve_id": "CVE-2019-19492",
+      "score": 0.64894,
+      "delta_7d": 0.35446,
+      "percentile": 0.99261
+    }
+  ],
+  "feeds_stale": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE-2026-123039",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-123039",
+      "source_type": "cve_record",
+      "published_at": "2026-11-12",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "CVE-2026-114713",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-114713",
+      "source_type": "cve_record",
+      "published_at": "2026-11-08",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 538,
+    "reading_minutes": 3,
+    "item_count": 2,
+    "ai_linked": {
+      "linked": 0,
+      "total": 2
+    },
+    "source_count": 2,
+    "publisher_count": 1
+  }
+}

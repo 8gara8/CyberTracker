@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-12",
+  "updated_at": "2026-11-13",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -4672,6 +4672,18 @@
       "CodeAnt AI Security Research"
     ],
     [
+      "CVE-2026-71519",
+      "2026-11-13",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-71531",
+      "2026-11-13",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
       "CVE-2026-71885",
       "2026-10-03",
       "cna.credits",
@@ -9004,6 +9016,12 @@
       "The PostgreSQL project thanks Anthropic OSS program, Sven Klemm, and Aaron chen for reporting this problem."
     ],
     [
+      "CVE-2026-120221",
+      "2026-11-13",
+      "cna.credits",
+      "Anthropic OSS-scanner (re-report, ANT-2026-X4QI9LP4)"
+    ],
+    [
       "CVE-2026-120244",
       "2026-11-01",
       "cna.credits",
@@ -10088,6 +10106,12 @@
       "2026-11-10",
       "cna.credits",
       "Claude Opus 5 (1M context)"
+    ],
+    [
+      "CVE-2026-127084",
+      "2026-11-13",
+      "cna.credits",
+      "bugbunny.ai"
     ]
   ]
 }

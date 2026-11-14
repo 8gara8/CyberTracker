@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-12",
+  "updated_at": "2026-11-13",
   "finders_version": 2,
   "finders_sha256": "11ec6fdba9ed5b9980d4ebcae3e08f6791f286a6843b980a3a2d0b94a29409bb",
   "matches": [
@@ -11960,6 +11960,17 @@
       "Anthropic",
       "lab_context",
       "2026-11-12"
+    ],
+    [
+      "CVE-2026-120221",
+      "2026-11-13",
+      "anthropic-claude",
+      "anthropic",
+      "ai_system",
+      "cna.credits",
+      "ANT-2026-X4QI9LP4",
+      "pattern",
+      "2026-11-13"
     ]
   ]
 }
