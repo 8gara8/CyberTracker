@@ -9,12 +9,12 @@
       "started_at": "2026-11-15T04:30:41+08:00",
       "finished_at": null,
       "outcome": null,
-      "edition": "data_only",
+      "edition": "full",
       "error_code": null,
       "code_commit": "b9531397100ecb3247fbd91a4232907009067c4b",
       "data_cutoff_utc": "2026-11-13",
       "data_only_published_at": "2026-11-15T04:31:22+08:00",
-      "full_published_at": null,
+      "full_published_at": "2026-11-15T04:33:00+08:00",
       "late": false,
       "stages": [
         {
@@ -42,27 +42,27 @@
           "id": "data_only",
           "status": "ok",
           "started_at": "2026-11-15T04:31:21+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-15T04:31:26+08:00",
           "note": null
         },
         {
           "id": "draft",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-15T04:31:28+08:00",
+          "ended_at": "2026-11-15T04:32:53+08:00",
           "note": null
         },
         {
           "id": "validate",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-15T04:32:53+08:00",
+          "ended_at": "2026-11-15T04:32:59+08:00",
           "note": null
         },
         {
           "id": "publish",
-          "status": "skipped",
-          "started_at": null,
+          "status": "ok",
+          "started_at": "2026-11-15T04:32:59+08:00",
           "ended_at": null,
           "note": null
         },
@@ -75,9 +75,9 @@
         },
         {
           "id": "recheck",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-15T04:31:26+08:00",
+          "ended_at": "2026-11-15T04:31:28+08:00",
           "note": null
         },
         {
@@ -523,13 +523,16 @@
         }
       ],
       "budgets": {
-        "agent_seconds": 0,
-        "web_fetches": 0,
+        "agent_seconds": 91,
+        "web_fetches": 3,
         "web_searches": 0,
-        "repair_rounds": 0,
-        "tokens_in": null,
-        "tokens_out": null,
-        "usage": null,
+        "repair_rounds": 1,
+        "tokens_in": 687264,
+        "tokens_out": 11554,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0.08
+        },
         "safety_stops": 0
       },
       "candidates": {
@@ -537,15 +540,28 @@
         "kept": 40,
         "deep_read": 15
       },
-      "validation": null,
-      "soft_gates": null,
+      "validation": {
+        "errors": 0,
+        "warnings": 0,
+        "codes": []
+      },
+      "soft_gates": {
+        "checked": 4,
+        "dropped": 0,
+        "by_code": {}
+      },
       "deploy": {
         "triggered": false,
         "ready_at": null,
         "shows_date": null,
         "shows_edition": null
       },
-      "recheck": null,
+      "recheck": {
+        "from": "2026-11-01",
+        "to": "2026-11-14",
+        "items_checked": 16,
+        "flagged": []
+      },
       "links": null
     }
   ]

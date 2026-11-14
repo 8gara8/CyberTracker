@@ -1,26 +1,68 @@
 {
   "schema_version": 1,
   "date": "2026-11-15",
-  "edition": "data_only",
-  "generated_at": "2026-11-15T04:30:48+08:00",
-  "published_at": "2026-11-15T04:31:22+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-15T04:45:00+08:00",
+  "published_at": "2026-11-15T04:33:00+08:00",
   "data_only_published_at": "2026-11-15T04:31:22+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-13",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "CISA added an UnrealIRCd flaw to its exploited list.",
+      "item_ids": [
+        "cve-2026-114713"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Cursor says attackers used credentials stolen from an AI provider to push malicious copies of the Claude Code extension.",
+      "item_ids": [
+        "sc-ai-platform-us-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "The FBI says North Korea-linked actors stole more than $400 million in crypto through a scheme codenamed FaceStealer.",
+      "item_ids": [
+        "camp-crypto-theft-us-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "Already exploited when disclosed: 35% in the 26 weeks to 13 Nov. CISA's dates are a lagging proxy, and absence from its list proves nothing.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-13",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
         "code": "US",
-        "level": "baseline",
-        "computed_level": "baseline",
+        "level": "elevated",
+        "computed_level": "elevated",
         "previous_level": "baseline",
-        "change": "same",
-        "rule_id": null,
-        "reason": "No rule fired.",
-        "item_ids": [],
-        "fired": [],
+        "change": "up",
+        "rule_id": "campaign-target",
+        "reason": "Campaign naming the region: FBI says North Korea-tied FaceStealer scheme stole over $400 million in crypto",
+        "item_ids": [
+          "camp-crypto-theft-us-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-crypto-theft-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
         "raised": null
       },
       {
@@ -93,7 +135,7 @@
       }
     ],
     "global": {
-      "item_count": 2
+      "item_count": 4
     },
     "signals": []
   },
@@ -107,112 +149,14 @@
   },
   "items": [
     {
-      "id": "cve-2026-123039",
-      "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-123039 in Check Point Multiple Products as exploited",
-      "summary": "CISA added CVE-2026-123039, a flaw in Check Point Multiple Products, to its list of exploited flaws on 13 Nov 2026 (US date). The CVE record was published on 12 Nov 2026.",
-      "why_it_matters": null,
-      "severity": null,
-      "landmark": false,
-      "ai_role": "unassessed",
-      "ai_role_secondary": null,
-      "ai_confidence": null,
-      "ai_claimant": null,
-      "ai_evidence": [],
-      "claim_type": "government",
-      "regions": [
-        "GLOBAL"
-      ],
-      "topics": [],
-      "attribution": [],
-      "actor_nexus": null,
-      "incident": null,
-      "cve_ids": [
-        "CVE-2026-123039"
-      ],
-      "release_id": null,
-      "flaw_evidence": [],
-      "exploit_reported_in_sources": null,
-      "exposure": null,
-      "standing_story": null,
-      "source_ids": [
-        "s1"
-      ],
-      "first_seen": "2026-11-14",
-      "vendor": {
-        "id": "check-point",
-        "name": "Check Point",
-        "country": "IL"
-      },
-      "cves": [
-        {
-          "cve_id": "CVE-2026-123039",
-          "date_published": "2026-11-12",
-          "date_updated": "2026-11-14",
-          "assigner": "checkpoint",
-          "vendor": {
-            "id": "check-point",
-            "name": "Check Point",
-            "country": "IL"
-          },
-          "product": "Multiple Products",
-          "title": "Check Point Multiple Products Incorrect Permission Assignment for Critical Resource Vulnerability",
-          "cvss": {
-            "score": 7.8,
-            "version": "3.1",
-            "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
-            "scorer": "cna"
-          },
-          "epss": {
-            "score": 0.02191,
-            "percentile": 0.82739,
-            "date": "2026-11-14"
-          },
-          "ssvc": {
-            "exploitation": "active",
-            "automatable": "no",
-            "technical_impact": "total",
-            "date": "2026-11-13"
-          },
-          "kev": {
-            "date_added": "2026-11-13",
-            "due_date": "2026-11-16",
-            "ransomware": "unknown",
-            "catalog_version": "2026.11.13"
-          },
-          "credits": [],
-          "ai_credit": null,
-          "discovery_credit": "unknown",
-          "advisory_date": null,
-          "patch": null,
-          "exploitation_evidence": [
-            {
-              "date": "2026-11-13",
-              "basis": "kev_listed",
-              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-123039"
-            }
-          ],
-          "exploit_reference": false,
-          "vendor_confirmed": true,
-          "vendor_confirmed_by": "vendor_cna",
-          "ghsa_ids": [],
-          "captured_at": "2026-11-15T04:31:22+08:00"
-        }
-      ],
-      "release": null,
-      "public_exploit": "no",
-      "anthropic_disclosure": false,
-      "withheld": null
-    },
-    {
       "id": "cve-2026-114713",
       "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-114713 in UnrealIRCd UnrealIRCd as exploited",
-      "summary": "CISA added CVE-2026-114713, a flaw in UnrealIRCd UnrealIRCd, to its list of exploited flaws on 13 Nov 2026 (US date). The CVE record was published on 8 Nov 2026.",
-      "why_it_matters": null,
-      "severity": null,
+      "headline": "CISA lists UnrealIRCd command-injection flaw as exploited",
+      "summary": "CISA added an UnrealIRCd flaw to its exploited list on 13 Nov (US date). Any user on a network with two or more linked servers can inject server-to-server commands that run with server authority. CISA set 16 Nov as its remediation due date.",
+      "why_it_matters": "It is a fresh exploited flaw in open-source server software, and the sources seen give no detail on who is exploiting it.",
+      "severity": "high",
       "landmark": false,
-      "ai_role": "unassessed",
+      "ai_role": "none",
       "ai_role_secondary": null,
       "ai_confidence": null,
       "ai_claimant": null,
@@ -229,12 +173,22 @@
         "CVE-2026-114713"
       ],
       "release_id": null,
-      "flaw_evidence": [],
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-114713",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-13",
+          "source_id": "s1"
+        }
+      ],
       "exploit_reported_in_sources": null,
       "exposure": null,
       "standing_story": null,
       "source_ids": [
-        "s2"
+        "s1",
+        "s2",
+        "s3"
       ],
       "first_seen": "2026-11-15",
       "vendor": {
@@ -288,32 +242,213 @@
               "date": "2026-11-13",
               "basis": "kev_listed",
               "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-114713"
+            },
+            {
+              "date": "2026-11-13",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/13/cisa-adds-two-known-exploited-vulnerabilities-catalog"
             }
           ],
           "exploit_reference": false,
           "vendor_confirmed": false,
           "vendor_confirmed_by": null,
           "ghsa_ids": [],
-          "captured_at": "2026-11-15T04:31:22+08:00"
+          "captured_at": "2026-11-15T04:33:00+08:00"
         }
       ],
       "release": null,
       "public_exploit": "no",
       "anthropic_disclosure": false,
       "withheld": null
+    },
+    {
+      "id": "sc-ai-platform-us-2026-11",
+      "kind": "supply_chain",
+      "headline": "Cursor says stolen AI-provider key led to malicious Claude Code extension builds",
+      "summary": "Cursor confirmed attackers used an access key taken from AI provider Fireworks AI to reach its systems and publish a malicious Claude Code extension through its marketplace. BleepingComputer reports the breach began with credentials stolen from Fireworks AI.",
+      "why_it_matters": "Attackers are going after the credentials and traces that AI developer tools generate, not only the tools themselves.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_target",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s4",
+          "quote": "after stealing credentials from AI infrastructure provider Fireworks AI",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Cursor",
+        "description": "an AI code editor maker",
+        "sector": "technology",
+        "country": "US",
+        "impact": "Malicious extension builds published through its marketplace",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s4"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4"
+      ],
+      "first_seen": "2026-11-15",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": true,
+      "withheld": null
+    },
+    {
+      "id": "camp-crypto-theft-us-2026-11",
+      "kind": "campaign",
+      "headline": "FBI says North Korea-tied FaceStealer scheme stole over $400 million in crypto",
+      "summary": "The FBI says actors tied to North Korea stole more than $400 million in cryptocurrency over 18 months in a social engineering scheme codenamed FaceStealer. BleepingComputer reports the US government has disrupted the campaign. The Hacker News headline says it used deepfake video calls.",
+      "why_it_matters": "It is a government-attributed case of deepfakes driving large-scale theft, though the sources read here do not detail the AI tooling.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s6",
+          "quote": "FBI Says North Korean Hackers Stole Over $400 Million in Crypto Using Deepfake Video Calls",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "government",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [
+        "illicit_finance"
+      ],
+      "attribution": [
+        {
+          "attributed_by": "FBI",
+          "basis": "government",
+          "actor_name_as_used": "FaceStealer",
+          "sponsor_claimed": "North Korea",
+          "nexus": "dprk",
+          "confidence_text": null,
+          "confidence_level": "unstated",
+          "date": "2026-11-13",
+          "source_id": "s6"
+        }
+      ],
+      "actor_nexus": "dprk",
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s5",
+        "s6"
+      ],
+      "first_seen": "2026-11-15",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "ai-offensive-tool-us-2026-11",
+      "kind": "ai_capability",
+      "headline": "FBI flash alert: open-source Artex tool speeds intrusions with AI models",
+      "summary": "The FBI warns attackers use the open-source Artex tool with AI models to speed intrusions, some reaching privileged access in under three hours.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s7",
+          "quote": "significantly reduces the time required to chain attack techniques, with some intrusions progressing from initial targeting to privileged access in under three hours",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "government",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s7"
+      ],
+      "first_seen": "2026-11-15",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
     }
   ],
-  "actors_seen": [],
+  "actors_seen": [
+    {
+      "name": "FaceStealer",
+      "actor_id": null,
+      "nexus": "dprk",
+      "item_ids": [
+        "camp-crypto-theft-us-2026-11"
+      ],
+      "cross_link": null
+    }
+  ],
   "taiwan_lens": {
-    "analysis": "",
+    "analysis": "A hacking group claims, unverified, to have stolen data from a Taiwanese state cybersecurity body. No Taiwan-specific event cleared the bar for an item today.",
     "item_ids": [],
-    "source_ids": [],
+    "source_ids": [
+      "s8"
+    ],
     "rows": [
       {
         "row": "gov_infra",
-        "text": null,
+        "text": "A group calling itself UNC6783 claims 102 GB from a Taiwanese state cybersecurity body, unverified; the body says it reported an incident last July.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s8"
+        ]
       },
       {
         "row": "home_vendors",
@@ -384,63 +519,56 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99496
+      "title": "FAA says routine equipment upgrade grounded US flights, with zero evidence of AI involvement",
+      "source_id": "s9"
     },
     {
-      "cve_id": "CVE-2026-4408",
-      "score": 0.46926,
-      "delta_7d": 0.44425,
-      "percentile": 0.98849
-    },
-    {
-      "cve_id": "CVE-2026-28318",
-      "score": 0.87267,
-      "delta_7d": 0.39266,
-      "percentile": 0.99756
-    },
-    {
-      "cve_id": "CVE-2026-18556",
-      "score": 0.43884,
-      "delta_7d": 0.36002,
-      "percentile": 0.98769
-    },
-    {
-      "cve_id": "CVE-2019-19492",
-      "score": 0.64894,
-      "delta_7d": 0.35446,
-      "percentile": 0.99261
+      "title": "No signs of hacking in FAA ground stop as FBI reportedly probes a software update",
+      "source_id": "s10"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
   "sources": [
     {
       "id": "s1",
-      "title": "CVE-2026-123039",
+      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
       "title_en": null,
       "language": "en",
-      "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-123039",
-      "source_type": "cve_record",
-      "published_at": "2026-11-12",
-      "publisher": "cve-org",
-      "publisher_name": "CVE Program",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/13/cisa-adds-two-known-exploited-vulnerabilities-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-13T20:00:00+08:00",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
       "tier": 1,
       "state_label": null,
       "seen_as": "pack"
     },
     {
       "id": "s2",
+      "title": "Attackers Exploit UnrealIRCd Flaw That Enables Server-Level Command Injection",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/attackers-exploit-unrealircd-flaw-that.html",
+      "source_type": "press",
+      "published_at": "2026-11-14T20:38:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
       "title": "CVE-2026-114713",
       "title_en": null,
       "language": "en",
       "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-114713",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-114713",
       "source_type": "cve_record",
       "published_at": "2026-11-08",
       "publisher": "cve-org",
@@ -448,17 +576,122 @@
       "tier": 1,
       "state_label": null,
       "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "Cursor confirms security breach led to malicious Claude Code extension",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/cursor-confirms-security-breach-led-to-malicious-claude-code-extension",
+      "source_type": "press",
+      "published_at": "2026-11-15T01:27:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "US disrupts North Korean campaign behind $400 million crypto theft",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/us-disrupts-north-korean-campaign-behind-400-million-crypto-theft",
+      "source_type": "press",
+      "published_at": "2026-11-14T23:15:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "FBI Says North Korean Hackers Stole Over $400 Million in Crypto Using Deepfake Video Calls",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/fbi-says-north-korean-hackers-stole.html",
+      "source_type": "press",
+      "published_at": "2026-11-13T22:28:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "FBI flash alert says Artex tool automating cyberattacks at 'machine speed'",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/artex-ai-tool-fbi-flash-alert",
+      "source_type": "press",
+      "published_at": "2026-11-14T05:32:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "駭客集團UNC6783聲稱入侵資安院竊得102 GB資料,資安院:去年7月已進行資安通報",
+      "title_en": "Hacking group UNC6783 claims to have breached the National Institute of Cyber Security and stolen 102 GB; the institute says it reported an incident last July",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180499",
+      "source_type": "press",
+      "published_at": "2026-11-13T16:59:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "Transportation secretary blames 'routine' equipment upgrade for grounding flights nationwide",
+      "title_en": null,
+      "language": "en",
+      "outlet": "TechCrunch",
+      "url": "https://techcrunch.com/2026/11/14/transportation-secretary-blames-routine-equipment-upgrade-for-grounding-flights-nationwide",
+      "source_type": "press",
+      "published_at": "2026-11-15T01:45:00+08:00",
+      "publisher": "techcrunch",
+      "publisher_name": "TechCrunch",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "No Signs of Hacking in FAA Ground Stop as FBI Reportedly Probes Software Update",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/no-signs-of-hacking-in-faa-ground-stop-as-fbi-reportedly-probes-software-update",
+      "source_type": "press",
+      "published_at": "2026-11-14T16:40:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
     }
   ],
   "computed": {
-    "word_count": 538,
-    "reading_minutes": 3,
-    "item_count": 2,
+    "word_count": 837,
+    "reading_minutes": 4,
+    "item_count": 4,
     "ai_linked": {
-      "linked": 0,
-      "total": 2
+      "linked": 3,
+      "total": 4
     },
-    "source_count": 2,
-    "publisher_count": 1
+    "source_count": 10,
+    "publisher_count": 8
   }
 }

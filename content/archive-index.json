@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-15",
-      "edition": "data_only",
-      "published_at": "2026-11-15T04:31:22+08:00",
-      "item_count": 2,
+      "edition": "full",
+      "published_at": "2026-11-15T04:33:00+08:00",
+      "item_count": 4,
       "corrected": false
     },
     {
@@ -358,7 +358,8 @@
     "https://cisa.gov/news-events/alerts/2026/11/13/cisa-adds-two-known-exploited-vulnerabilities-catalog": {
       "first_cited": "2026-11-14",
       "item_ids": [
-        "2026-11-14/cve-2026-123039"
+        "2026-11-14/cve-2026-123039",
+        "2026-11-15/cve-2026-114713"
       ],
       "sha256": "6d014f994c02c0c877c6829cf2287fe472143ea9f8bb4a26886ba1bf5ed90c13",
       "hashed_at": "2026-11-14T04:38:38+08:00",
@@ -579,20 +580,70 @@
         "http": 200
       }
     },
-    "https://cve.org/CVERecord?id=CVE-2026-123039": {
-      "first_cited": "2026-11-15",
-      "item_ids": [
-        "2026-11-15/cve-2026-123039"
-      ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
-    },
     "https://cve.org/CVERecord?id=CVE-2026-114713": {
       "first_cited": "2026-11-15",
       "item_ids": [
         "2026-11-15/cve-2026-114713"
       ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/attackers-exploit-unrealircd-flaw-that.html": {
+      "first_cited": "2026-11-15",
+      "item_ids": [
+        "2026-11-15/cve-2026-114713"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/cursor-confirms-security-breach-led-to-malicious-claude-code-extension": {
+      "first_cited": "2026-11-15",
+      "item_ids": [
+        "2026-11-15/sc-ai-platform-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/us-disrupts-north-korean-campaign-behind-400-million-crypto-theft": {
+      "first_cited": "2026-11-15",
+      "item_ids": [
+        "2026-11-15/camp-crypto-theft-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/fbi-says-north-korean-hackers-stole.html": {
+      "first_cited": "2026-11-15",
+      "item_ids": [
+        "2026-11-15/camp-crypto-theft-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/artex-ai-tool-fbi-flash-alert": {
+      "first_cited": "2026-11-15",
+      "item_ids": [
+        "2026-11-15/ai-offensive-tool-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://techcrunch.com/2026/11/14/transportation-secretary-blames-routine-equipment-upgrade-for-grounding-flights-nationwide": {
+      "first_cited": "2026-11-15",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/no-signs-of-hacking-in-faa-ground-stop-as-fbi-reportedly-probes-software-update": {
+      "first_cited": "2026-11-15",
+      "item_ids": [],
       "sha256": null,
       "hashed_at": null,
       "last_check": null
