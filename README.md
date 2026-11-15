@@ -2,12 +2,11 @@
 
 Daily AI-era cyber threat brief: exploits, breaches and the AI shift across the US, Europe, Taiwan, Japan and global.
 
-Status: rebuilt for Kobol (SPEC.md v2.0, 2026-11-08); the build follows in phases P1 to P5 (SPEC.md §10).
-P1 (data contract, validator, chat edition) merged on 2026-11-09, P2 (feeds, metrics and the two-year
-backfill) on 2026-11-10 and P3 (the morning pipeline and its dry runs on Kobol) on 2026-11-11. P4 (the
-static site) is in review on PR #6: built and tested, its Kobol steps done, and JL picked the paper look
-on 2026-11-12 from the screenshots of both looks (in [docs/screenshots/p4](docs/screenshots/p4)); the
-preview check and Codex's last round are next.
+Status: live. The first brief was published on 2026-11-13, and the scheduled morning run on Kobol has
+published every day since, unattended from 2026-11-17 after three supervised mornings (14 to 16 November;
+[docs/reports/2026-11-16-p5-golive.md](docs/reports/2026-11-16-p5-golive.md)). The site is
+https://cybertracker-alpha.vercel.app. The build ran in phases P1 to P5 (SPEC.md §10); calibration
+follows about four weeks after go-live.
 
 - Design: [docs/DESIGN.md](docs/DESIGN.md) (approved v0.2, frozen)
 - Build spec: [SPEC.md](SPEC.md)
