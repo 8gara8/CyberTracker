@@ -7,8 +7,8 @@
       "trigger": "schedule",
       "attempt": 1,
       "started_at": "2026-11-16T04:31:19+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-16T04:34:30+08:00",
+      "outcome": "published_partial",
       "edition": "partial",
       "error_code": null,
       "code_commit": "3cde788969548538bb6f3dcb4c90259f3d9f4034",
@@ -63,14 +63,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-16T04:33:43+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-16T04:33:47+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:33:47+08:00",
+          "ended_at": "2026-11-16T04:34:30+08:00",
           "note": null
         },
         {
@@ -82,9 +82,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:33:47+08:00",
+          "ended_at": "2026-11-16T04:33:54+08:00",
           "note": null
         }
       ],
@@ -551,10 +551,10 @@
         "by_code": {}
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-16T04:34:30+08:00",
+        "shows_date": "2026-11-16",
+        "shows_edition": "partial"
       },
       "recheck": {
         "from": "2026-11-02",
@@ -570,7 +570,21 @@
           }
         ]
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-16T04:33:54+08:00",
+        "checked": 60,
+        "ok": 50,
+        "unknown": 9,
+        "broken": [
+          {
+            "url": "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports",
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "result": "changed",
+            "http": 200
+          }
+        ]
+      }
     }
   ]
 }
