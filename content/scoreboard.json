@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "as_of": "2026-11-15",
+  "as_of": "2026-11-16",
   "claims_version": 1,
   "claims": [
     {
@@ -28,9 +28,9 @@
       "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
       "status": "open",
       "zone": "support",
-      "reading": 450.8,
-      "reading_text": "+450.8%",
-      "reading_as_of": "2026-11-13",
+      "reading": 440.7,
+      "reading_text": "+440.7%",
+      "reading_as_of": "2026-11-14",
       "last_entry_id": "SE-0002"
     },
     {
@@ -40,7 +40,7 @@
       "zone": "between",
       "reading": 369,
       "reading_text": "369",
-      "reading_as_of": "2026-11-13",
+      "reading_as_of": "2026-11-14",
       "last_entry_id": "SE-0003"
     },
     {
@@ -50,7 +50,7 @@
       "zone": "between",
       "reading": 15.5,
       "reading_text": "15.5 (80% range 11 to 20)",
-      "reading_as_of": "2026-11-13",
+      "reading_as_of": "2026-11-14",
       "last_entry_id": "SE-0004"
     },
     {
