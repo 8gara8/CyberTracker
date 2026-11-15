@@ -9,12 +9,12 @@
       "started_at": "2026-11-16T04:31:19+08:00",
       "finished_at": null,
       "outcome": null,
-      "edition": "data_only",
+      "edition": "partial",
       "error_code": null,
       "code_commit": "3cde788969548538bb6f3dcb4c90259f3d9f4034",
       "data_cutoff_utc": "2026-11-14",
       "data_only_published_at": "2026-11-16T04:31:47+08:00",
-      "full_published_at": null,
+      "full_published_at": "2026-11-16T04:33:43+08:00",
       "late": false,
       "stages": [
         {
@@ -42,27 +42,27 @@
           "id": "data_only",
           "status": "ok",
           "started_at": "2026-11-16T04:31:46+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-16T04:31:50+08:00",
           "note": null
         },
         {
           "id": "draft",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:31:51+08:00",
+          "ended_at": "2026-11-16T04:33:38+08:00",
           "note": null
         },
         {
           "id": "validate",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:33:38+08:00",
+          "ended_at": "2026-11-16T04:33:43+08:00",
           "note": null
         },
         {
           "id": "publish",
-          "status": "skipped",
-          "started_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:33:43+08:00",
           "ended_at": null,
           "note": null
         },
@@ -75,9 +75,9 @@
         },
         {
           "id": "recheck",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-16T04:31:50+08:00",
+          "ended_at": "2026-11-16T04:31:51+08:00",
           "note": null
         },
         {
@@ -523,13 +523,16 @@
         }
       ],
       "budgets": {
-        "agent_seconds": 0,
-        "web_fetches": 0,
-        "web_searches": 0,
-        "repair_rounds": 0,
-        "tokens_in": null,
-        "tokens_out": null,
-        "usage": null,
+        "agent_seconds": 112,
+        "web_fetches": 3,
+        "web_searches": 1,
+        "repair_rounds": 1,
+        "tokens_in": 614145,
+        "tokens_out": 12883,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0.12
+        },
         "safety_stops": 0
       },
       "candidates": {
@@ -537,15 +540,36 @@
         "kept": 31,
         "deep_read": 15
       },
-      "validation": null,
-      "soft_gates": null,
+      "validation": {
+        "errors": 0,
+        "warnings": 0,
+        "codes": []
+      },
+      "soft_gates": {
+        "checked": 3,
+        "dropped": 0,
+        "by_code": {}
+      },
       "deploy": {
         "triggered": false,
         "ready_at": null,
         "shows_date": null,
         "shows_edition": null
       },
-      "recheck": null,
+      "recheck": {
+        "from": "2026-11-02",
+        "to": "2026-11-15",
+        "items_checked": 20,
+        "flagged": [
+          {
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "flag": "source_changed",
+            "detail": "s18 (tier 1) changed since it was cited.",
+            "correction_id": null
+          }
+        ]
+      },
       "links": null
     }
   ]

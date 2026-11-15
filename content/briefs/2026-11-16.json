@@ -1,14 +1,39 @@
 {
   "schema_version": 1,
   "date": "2026-11-16",
-  "edition": "data_only",
-  "generated_at": "2026-11-16T04:31:26+08:00",
-  "published_at": "2026-11-16T04:31:47+08:00",
+  "edition": "partial",
+  "generated_at": "2026-11-16T04:45:00+08:00",
+  "published_at": "2026-11-16T04:33:43+08:00",
   "data_only_published_at": "2026-11-16T04:31:47+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-14",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "TSMC says leaked employee data traces to a cloud provider, not its own systems.",
+      "item_ids": [
+        "inc-semiconductor-tw-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Public exploits are reported for flaws in DrayTek and D-Link routers, but no vendor has been seen confirming attacks.",
+      "item_ids": [
+        "cve-2026-129449",
+        "cve-2026-129353"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "CISA listed 35% of recently disclosed flaws as already exploited at disclosure, in the 26 weeks to 14 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-14",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -104,7 +129,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 2
     },
     "signals": []
   },
@@ -116,11 +141,466 @@
     "metrics_sha256": "fa1e585c412801eae536803c37d9c38ead8c8ff34b61f5f933af083f6dba37d4",
     "as_of": "2026-11-14"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "inc-semiconductor-tw-2026-11",
+      "kind": "breach",
+      "headline": "TSMC says leaked employee data matches records held by a cloud provider",
+      "summary": "BleepingComputer reports TSMC confirmed leaked employee data matched data held by a cloud service provider it uses. TSMC says it found no evidence its own systems were compromised. A forum seller claims a larger dataset; its scale is unverified.",
+      "why_it_matters": "A Taiwanese chip leader's exposure through a supplier shows third-party cloud risk, though the scale and the provider remain unconfirmed.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [
+        "semiconductor"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "TSMC",
+        "description": "a Taiwanese chipmaker",
+        "sector": "semiconductor",
+        "country": "TW",
+        "impact": "Employee personal data leaked online via a cloud provider",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s1"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-11-16",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-129449",
+      "kind": "critical_flaw",
+      "headline": "DrayTek Vigor2960: five router flaws have public exploits; firmware 1.5.1.7 listed as fix",
+      "summary": "Five CVE records describe remotely reachable flaws in DrayTek's Vigor2960 router, including command injection and path traversal, with public exploits reported. The records say firmware 1.5.1.7 addresses them. DrayTek has not been seen confirming them.",
+      "why_it_matters": "Public exploits for a Taiwanese vendor's internet-facing router raise the risk of attack, but no exploitation is confirmed.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-129449",
+        "CVE-2026-129450",
+        "CVE-2026-129451",
+        "CVE-2026-129452",
+        "CVE-2026-129453"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2",
+        "s3"
+      ],
+      "first_seen": "2026-11-16",
+      "vendor": {
+        "id": "draytek",
+        "name": "DrayTek",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-129449",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "draytek",
+            "name": "DrayTek",
+            "country": "TW"
+          },
+          "product": "Vigor2960",
+          "title": "DrayTek Vigor2960 mainfunction.cgi sub_14914 command injection",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "eqqie (VulDB User)",
+            "VulDB CNA Team"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129450",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "draytek",
+            "name": "DrayTek",
+            "country": "TW"
+          },
+          "product": "Vigor2960",
+          "title": "DrayTek Vigor2960 mainfunction.cgi sub_1E084 path traversal",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "eqqie (VulDB User)",
+            "VulDB CNA Team"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129451",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "draytek",
+            "name": "DrayTek",
+            "country": "TW"
+          },
+          "product": "Vigor2960",
+          "title": "DrayTek Vigor2960 mainfunction.cgi app_guest_export path traversal",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "eqqie (VulDB User)",
+            "VulDB CNA Team"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129452",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "draytek",
+            "name": "DrayTek",
+            "country": "TW"
+          },
+          "product": "Vigor2960",
+          "title": "DrayTek Vigor2960 mainfunction.cgi set_table command injection",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "eqqie (VulDB User)",
+            "VulDB CNA Team"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129453",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "draytek",
+            "name": "DrayTek",
+            "country": "TW"
+          },
+          "product": "Vigor2960",
+          "title": "DrayTek Vigor2960 File Existence Check mainfunction.cgi check_file_exist heap-based overflow",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "eqqie (VulDB User)",
+            "VulDB CNA Team"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-129353",
+      "kind": "critical_flaw",
+      "headline": "D-Link routers: three flaws rated critical in CVE records have public exploits",
+      "summary": "Three CVE records describe remote flaws in D-Link gear: stack overflows in the DIR-600L and hard-coded credentials in the DSL-6740C, each with a public exploit reported. No D-Link advisory has been seen.",
+      "why_it_matters": "More public exploits for older gear from a Taiwanese vendor; none is reported exploited.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-129353",
+        "CVE-2026-129354",
+        "CVE-2026-129444"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4",
+        "s5",
+        "s6"
+      ],
+      "first_seen": "2026-11-16",
+      "vendor": {
+        "id": "d-link",
+        "name": "D-Link",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-129353",
+          "date_published": "2026-11-14",
+          "date_updated": "2026-11-14",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "d-link",
+            "name": "D-Link",
+            "country": "TW"
+          },
+          "product": "DIR-600L",
+          "title": "D-Link DIR-600L authentication.cgi authenticationcgi_main stack-based overflow",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.01788,
+            "percentile": 0.78702,
+            "date": "2026-11-15"
+          },
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "ruanyi (VulDB User)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129354",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "d-link",
+            "name": "D-Link",
+            "country": "TW"
+          },
+          "product": "DIR-600L",
+          "title": "D-Link DIR-600L HNAP cgibin hnap_main stack-based overflow",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00869,
+            "percentile": 0.59343,
+            "date": "2026-11-15"
+          },
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "ruanyi (VulDB User)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129444",
+          "date_published": "2026-11-15",
+          "date_updated": "2026-11-15",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "d-link",
+            "name": "D-Link",
+            "country": "TW"
+          },
+          "product": "DSL-6740C",
+          "title": "D-Link DSL-6740C FTP Daemon ftpd_conf.php hard-coded credentials",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00606,
+            "percentile": 0.49583,
+            "date": "2026-11-15"
+          },
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "BenSmith (VulDB User)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-16T04:33:43+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
+    "analysis": "TSMC says leaked employee data traces to a cloud provider, not its own systems; the seller's claimed scale is unverified. DrayTek and D-Link router flaws with public exploits add Taiwanese-vendor exposure, with no confirmed exploitation.",
+    "item_ids": [
+      "inc-semiconductor-tw-2026-11",
+      "cve-2026-129449",
+      "cve-2026-129353"
+    ],
     "source_ids": [],
     "rows": [
       {
@@ -131,14 +611,19 @@
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
+        "text": "Public exploits are reported for DrayTek and D-Link router flaws; neither vendor has been seen confirming exploitation.",
+        "item_ids": [
+          "cve-2026-129449",
+          "cve-2026-129353"
+        ],
         "source_ids": []
       },
       {
         "row": "chips_defence",
-        "text": null,
-        "item_ids": [],
+        "text": "TSMC employee data leaked via a cloud provider, per BleepingComputer; TSMC says it found no evidence its systems were compromised.",
+        "item_ids": [
+          "inc-semiconductor-tw-2026-11"
+        ],
         "source_ids": []
       },
       {
@@ -196,41 +681,96 @@
       "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
     }
   },
-  "week_in_review": null,
+  "week_in_review": {
+    "text": "The week's data bears mainly on the flood question. New CVE records for the 13 weeks to 14 Nov stand at 46,292, 5.4 times the 2023–24 pace. On exploitation, the median from disclosure to CISA listing was 15.5 days over 26 weeks, against 21 in 2023–24, while the share already exploited at disclosure showed no clear change. Several incidents ran through supply links rather than new flaws: a stolen key at an AI-tool marketplace, a legacy system at a shipper, a Taiwanese e-commerce platform. Whether organisations patch more quickly is not publicly measurable day to day.",
+    "strongest_against": {
+      "text": "The FAA's nationwide ground stop was blamed on a routine equipment upgrade, and its administrator said there was zero evidence of anything AI-related, per TechCrunch.",
+      "claim_id": null,
+      "source_ids": [
+        "s7"
+      ]
+    },
+    "from": "2026-11-09",
+    "to": "2026-11-15",
+    "table": [
+      {
+        "claim_id": "SB-01",
+        "text": "AI-credited flaws reach CISA's exploited list no more often than other flaws.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-02",
+        "text": "By the end of 2028, AI-powered malware is used in a ransomware attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-03",
+        "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
+        "status": "open",
+        "zone": "support",
+        "reading_text": "+440.7%",
+        "reading_as_of": "2026-11-14"
+      },
+      {
+        "claim_id": "SB-04",
+        "text": "AI flaw-finding keeps scaling beyond Anthropic: at the end of 2027 the 13-week count of AI-credited flaws excluding Anthropic is at least 450 (224 in the 13 weeks to 8 Nov 2026).",
+        "status": "open",
+        "zone": "between",
+        "reading_text": "369",
+        "reading_as_of": "2026-11-14"
+      },
+      {
+        "claim_id": "SB-05",
+        "text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36).",
+        "status": "open",
+        "zone": "between",
+        "reading_text": "15.5 (80% range 11 to 20)",
+        "reading_as_of": "2026-11-14"
+      },
+      {
+        "claim_id": "SB-06",
+        "text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-07",
+        "text": "Unpatched holes get exploited more: Verizon's 2028 Data Breach Investigations Report puts exploited vulnerabilities above 31% of breaches with a known way in (2026 report: 31%).",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-08",
+        "text": "Geopolitics turns AI flaw-finding into a state weapon: by the end of 2028 the US, UK, Japan, Taiwan, the EU or an EU state blames a foreign state for a new intrusion using AI to find or exploit flaws.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      }
+    ]
+  },
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-6875",
-      "score": 0.78461,
-      "delta_7d": 0.77035,
-      "percentile": 0.99591
+      "title": "FBI warns AI penetration-testing tool ARTEX is used in attacks, BleepingComputer reports",
+      "source_id": "s8"
     },
     {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99496
-    },
-    {
-      "cve_id": "CVE-2026-4408",
-      "score": 0.46926,
-      "delta_7d": 0.44425,
-      "percentile": 0.9885
-    },
-    {
-      "cve_id": "CVE-2026-28318",
-      "score": 0.87267,
-      "delta_7d": 0.39266,
-      "percentile": 0.99756
-    },
-    {
-      "cve_id": "CVE-2026-18556",
-      "score": 0.43884,
-      "delta_7d": 0.36002,
-      "percentile": 0.9877
+      "title": "FAA ground stop blamed on routine equipment upgrade, not an attack",
+      "source_id": "s7"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [
     {
       "id": "cvelist",
@@ -240,16 +780,137 @@
       "stale_since": "2026-11-16"
     }
   ],
-  "sources": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "TSMC employee data breach linked to cloud provider",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/tsmc-employee-data-breach-linked-to-cloud-provider",
+      "source_type": "press",
+      "published_at": "2026-11-15T23:23:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "CVE-2026-129449 DrayTek Vigor2960 mainfunction.cgi sub_14914 command injection",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129449",
+      "source_type": "cve_record",
+      "published_at": "2026-11-15",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "CVE-2026-129453 DrayTek Vigor2960 check_file_exist heap-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129453",
+      "source_type": "cve_record",
+      "published_at": "2026-11-15",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "CVE-2026-129353 D-Link DIR-600L authentication.cgi stack-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129353",
+      "source_type": "cve_record",
+      "published_at": "2026-11-14",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "CVE-2026-129354 D-Link DIR-600L HNAP hnap_main stack-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129354",
+      "source_type": "cve_record",
+      "published_at": "2026-11-15",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "CVE-2026-129444 D-Link DSL-6740C FTP Daemon hard-coded credentials",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129444",
+      "source_type": "cve_record",
+      "published_at": "2026-11-15",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Transportation secretary blames 'routine' equipment upgrade for grounding flights nationwide",
+      "title_en": null,
+      "language": "en",
+      "outlet": "TechCrunch",
+      "url": "https://techcrunch.com/2026/11/14/transportation-secretary-blames-routine-equipment-upgrade-for-grounding-flights-nationwide",
+      "source_type": "press",
+      "published_at": "2026-11-15T01:45:00+08:00",
+      "publisher": "techcrunch",
+      "publisher_name": "TechCrunch",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "FBI warns ARTEX AI hacking tool is powering global cyberattacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/fbi-warns-artex-ai-hacking-tool-is-powering-global-cyberattacks",
+      "source_type": "press",
+      "published_at": "2026-11-16T02:29:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
   "computed": {
-    "word_count": 454,
-    "reading_minutes": 2,
-    "item_count": 0,
+    "word_count": 808,
+    "reading_minutes": 4,
+    "item_count": 3,
     "ai_linked": {
       "linked": 0,
-      "total": 0
+      "total": 3
     },
-    "source_count": 0,
-    "publisher_count": 0
+    "source_count": 8,
+    "publisher_count": 3
   }
 }

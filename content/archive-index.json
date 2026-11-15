@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-16",
-      "edition": "data_only",
-      "published_at": "2026-11-16T04:31:47+08:00",
-      "item_count": 0,
+      "edition": "partial",
+      "published_at": "2026-11-16T04:33:43+08:00",
+      "item_count": 3,
       "corrected": false
     },
     {
@@ -686,6 +686,67 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://bleepingcomputer.com/news/security/tsmc-employee-data-breach-linked-to-cloud-provider": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/inc-semiconductor-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129449": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/cve-2026-129449"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129453": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/cve-2026-129449"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129353": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/cve-2026-129353"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129354": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/cve-2026-129353"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129444": {
+      "first_cited": "2026-11-16",
+      "item_ids": [
+        "2026-11-16/cve-2026-129353"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/fbi-warns-artex-ai-hacking-tool-is-powering-global-cyberattacks": {
+      "first_cited": "2026-11-16",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }
