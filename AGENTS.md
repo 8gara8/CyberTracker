@@ -3,7 +3,7 @@
 > Internal AI working notes in a public repo: keep secrets, tokens, personal data and Kobol's security
 > details out. Never publish this file on the site.
 
-Last reviewed 2026-11-14 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
+Last reviewed 2026-11-16 · Folder: /Users/kobol/Projects/CyberTracker (Kobol) · Repo 8gara8/CyberTracker ·
 Claude project: Geo Tracker
 
 ## 1. Who and what
@@ -143,9 +143,19 @@ faster?
   `npm ci` on Kobol. JL's Run now at 00:05 on 2026-11-14, meant to approve the command, was past midnight
   and so a real run for the 14th: it published the data-only edition only (`E_VALIDATION`, DATE_MISMATCH
   on `generated_at`, which no time before 04:30 can pass). Fixed on `p5-fix-early-run` (row 185): before
-  04:15 a run skips as too early, from 04:15 it waits for 04:30. Saving the edit also moved the task's
-  time to 09:35; JL was asked to set 04:30 again. Next: two or three supervised mornings, then
-  `p5-report` (Appendix C timing; §9.3's creation steps as they really went).
+  04:15 a run skips as too early, from 04:15 it waits for 04:30. JL merged it (PR #8) on 2026-11-14 at
+  07:46 Taipei (`main` at `b953139`); the main checkout was fast-forwarded at 08:11 (`package-lock.json`
+  unchanged). Saving the edit had also moved the task's time to 09:35; JL set 04:30 again that night.
+- **Supervised mornings, 2026-11-14 to 16, and unattended from 2026-11-17:** the app starts the task on
+  time (`daily.ts` at 04:30:35, 04:30:41 and 04:31:19). The 14th resumed the midnight data-only edition
+  and published the full one at 04:38 (9 items; attempt 1 failed TOP3_WHY and WORDS_OVER, the retry
+  passed). The 15th published at 04:33 (4 items), and the 16th, the first Monday week in review, at 04:33
+  (3 items). The 16th's edition is partial: the CVE List zips read at 20:31 UTC reached only 19:00 UTC
+  (the 20:00 UTC hourly release was not out yet; the tag lookup worked). Every deploy was READY,
+  `validate:all` gave 0 errors, and each morning the app woke the task when `daily.sh` exited (3 to 11
+  minutes) and it replied with the summary alone. Report and calibration notes (the agent's guessed
+  `generated_at`, the CVE List timing, a weak `strongest_against`): `docs/reports/2026-11-16-p5-golive.md`,
+  PR `p5-report`. Next: calibration at `review_due` (2026-12-11).
 - **Decisions by JL (do not reopen):**
   - The name CyberTracker; one public repo for code and content (2026-11-08).
   - The morning run is a Claude desktop scheduled task on Kobol, "CyberTracker morning", at 04:30
@@ -157,6 +167,7 @@ faster?
   - One PR per phase, opened ready for review. Codex reviews, Claude fixes, JL merges. Claude never
     merges.
   - As few manual steps for JL as possible.
+  - The morning task's permission mode is JL's choice, set in its Edit form (2026-11-14).
 - **Open defaults** (JL may override in a PR): the Scoreboard seed (approved in P5), the tagline ("The
   AI-era exploit and breach brief"). The look is no longer open: JL picked paper in P4 on 2026-11-12.
 - **Phases:**
@@ -169,7 +180,7 @@ faster?
 | P2 Feeds, metrics, two-year backfill | `p2-feeds-metrics` | #4 | Merged 2026-11-10, 17:08 Taipei (09:08 UTC) |
 | P3 Morning pipeline and dry runs on Kobol | `p3-pipeline` | #5 | Merged 2026-11-11, 23:48 Taipei (15:48 UTC) |
 | P4 Site | `p4-site` | #6 | Merged 2026-11-12, 10:13 Taipei (02:13 UTC) |
-| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7, #8 | `p5-golive` merged 2026-11-12, about 19:36 Taipei; first brief 2026-11-13; `p5-fix-early-run` (#8) ready for review |
+| P5 Supervised go-live | `p5-golive`, then `p5-fix-<topic>` and `p5-report` | #7, #8, `p5-report` | `p5-golive` merged 2026-11-12, about 19:36 Taipei; first brief 2026-11-13; `p5-fix-early-run` (#8) merged 2026-11-14, 07:46 Taipei; three supervised mornings 2026-11-14 to 16; unattended from 2026-11-17; `p5-report` ready for review |
 | Calibration, about four weeks after go-live | `calibration` | | Not started |
 
 - **Kobol workspace (2026-11-08):** repo cloned at `/Users/kobol/Projects/CyberTracker`; Claude Code CLI
@@ -241,7 +252,7 @@ faster?
 
 | Job | How |
 |---|---|
-| Daily brief | The scheduled task "CyberTracker morning" (04:30, starting about 04:37; prompt `routine/TASK.md`) runs `scripts/daily.sh`, which runs `scripts/daily.ts`, then replies with `logs/DATE.summary.md` (from P5) |
+| Daily brief | The scheduled task "CyberTracker morning" (04:30, starting within about a minute; prompt `routine/TASK.md`) runs `scripts/daily.sh`, which runs `scripts/daily.ts`, then replies with `logs/DATE.summary.md` (from P5) |
 | Manual or test run | `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh --no-deadline` to rerun a failed morning (start from 04:15, since earlier skips as too early, and by 10:00); add `--dry-run` to test, `--date D` for a past date (dry runs only), `--force` to replace today's full edition, `--data-only` to stop after the data-only edition, `--simulate-failure` to test the failure path. Never `npm run daily` for a real run: it is `tsx scripts/daily.ts`, kept for tests, and skips the fixed PATH, `TZ` and `caffeinate`. Exit 0 published, skipped or dry run, 1 failed, 2 usage, 3 data-only (SPEC §8.2; from P3) |
 | Publish by hand | `PATH=/opt/homebrew/bin:$PATH npm run publish -- --date D` publishes a valid `drafts/D.json` as the full edition, validated against the run's logs, before 11:00 (`E_PUBLISH`'s next step); `--data-only` the data-only edition, `--state` the staged backfill state, `--force` replaces a full edition, `--dry-run` writes into `logs/dry-run/D/`. Refused while `logs/.lock` is held, off arm64 and after 11:00; exit 0 published, 1 refused or failed, 2 usage (SPEC §8.7; from P3) |
 | Re-check and links | `npm run recheck -- --date D` runs dispute intake then the 14-day flags (`--intake` or `--flags` for one; `--json` prints the result) and writes `logs/D.recheck.json`; it reads GitHub and never withholds; `--dry-run` writes nothing. `npm run links -- --date D` runs the post-publish link check and prints the results, editing no archive index (SPEC §8.9, §8.11; from P3) |

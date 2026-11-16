@@ -13,9 +13,9 @@ dry run (below).
 
 | Time | What happens |
 |---|---|
-| 04:30 | The Claude desktop app's scheduled task "CyberTracker morning" is due (cron `30 4 * * *`, 20:30 UTC the day before). The app starts it about 7 minutes late |
-| about 04:37 | The task runs `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh` in the background (prompt: `routine/TASK.md`) and waits for it to exit |
-| about 04:38 | Preflight: arm64 Node, the lock, config, network, git (sync with GitHub, restart on new code if a merge came in), the CLI and its token; the start record is pushed as `status: D · run <run_id> started` |
+| 04:30 | The Claude desktop app's scheduled task "CyberTracker morning" is due (cron `30 4 * * *`, 20:30 UTC the day before). The app starts it within about a minute (35 to 79 seconds late on 14 to 16 November) |
+| about 04:31 | The task runs `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh` in the background (prompt: `routine/TASK.md`) and waits for it to exit |
+| about 04:31 | Preflight: arm64 Node, the lock, config, network, git (sync with GitHub, restart on new code if a merge came in), the CLI and its token; the start record is pushed as `status: D · run <run_id> started` |
 | about 04:38 to 04:42 | Collect fetches every feed and builds the pack (`packs/D.json`, `packs/D.md`) |
 | about 04:42 | Metrics for D are computed and staged in `cache/staged/D/` |
 | about 04:45 (target 04:50) | The data-only edition is published: `brief: D · data-only edition` |
@@ -55,7 +55,7 @@ showing this edition". This is expected in P3 and is not a fault. Dry runs skip 
   window ends at 04:30; start the run then."), from 04:15 it waits for 04:30, it skips if today's full
   edition is published, publishes a data-only edition at most after 05:30, and skips after 11:00. After
   midnight the date is already the new day's, so Run now then is never a harmless test (SPEC §0.4 row 185).
-- **Needs** the Claude app open and Kobol awake, logged in and plugged in. If Kobol slept through 04:37,
+- **Needs** the Claude app open and Kobol awake, logged in and plugged in. If Kobol slept through 04:30,
   the app starts one catch-up run when it wakes.
 
 ## Where to look, and how to read it

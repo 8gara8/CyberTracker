@@ -374,6 +374,7 @@ rows are what review and building found.
 | 183 | P5 | §4.9 (Status), `lib/apply.ts` | A metric claim is settled on its zone at the last edition on or before its deadline, the newest metric entry dated on or before it (`claimStatus`); after the deadline its stored zone and reading stay as they were and it gets no more metric entries. Before, every edition after the deadline scored that day's zone, so a claim could flip between hit and miss for years. A metric claim with no reading at its deadline is a miss unless a resolution voids it. A PR never moves a deadline that has passed (it sets a `resolution` instead): the frozen zone comes from the stored state and the status from the entries, which agree only while the deadline stays put | Found by row 182's check. `tests/apply.test.ts` C10: a reading that crosses a threshold after the deadline changes neither the status, the zone, the reading nor the entries |
 | 184 | P5 | App. B.3, App. B.10 (SB-07) | `config/source-tiers.json` version 3 (`updated` 2026-11-12) adds `verizon-dbir`, "Verizon Data Breach Investigations Report", tier 1 `research`, US, on the report's web page only: `verizon.com/business/resources/reports/dbir` and `verizon.com/business/resources/reports/dbir.html`. Codex round 2 narrowed it from the whole `reports` folder, which holds Verizon's other reports too. The yearly PDF sits under a folder whose name changes (2026: `resources/t85d/reports/`), so it stays tier 3 until a PR adds the 2028 PDF's path; the rest of verizon.com stays unlisted, tier 3. SB-07 is judged on that report, and SCOREBOARD_REF takes a quote only from a tier 1 or 2 source, so without it an entry could quote only press coverage, which words the 31% in different ways | Found by the review of row 182. `tests/config.test.ts` checks the publisher, the tier 1 counts and the version; a scratch run of `publisherFor()` gave tier 1 for both page paths and tier 3 for another report in the same folder, the 2026 PDF and verizon.com's news pages |
 | 185 | P5 | §8.2 (Clock rules, Preflight step 6, Stage notes, log lines, TIMEOUTS), §9.3 (Manual runs), `scripts/preflight.ts`, `scripts/daily.ts` | A non-dry run that starts more than 15 minutes before the news window ends (`at(D, pack.window_end)`, 04:30) is skipped at preflight step 6 with "Too early: the news window ends at 04:30; start the run then.", `--no-deadline` or not, `--force` or not, a data-only edition on GitHub included: one status commit, nothing published, exit 0. A start from 04:15 to 04:30 logs "Waiting until 04:30, when the news window ends." and waits for 04:30 before the network check and the git sync. A dry run never skips or waits. Before, a run started after midnight built the pack for the window ending at 04:30 and published the data-only edition, but no full edition could pass: DATE_MISMATCH wants `generated_at` between the window's end (04:30) and the run's deadline, and every time in the run came before 04:30, so the two repairs and the second attempt could not fix it and the run ended `published_data_only` with `E_VALIDATION`. A full edition at midnight would also have covered four and a half hours less of the day and stopped the 04:30 run as already published | Seen on Kobol: JL clicked Run now at 00:05 Taipei on 2026-11-14 to approve the task's command (§9.3 expected a skip after 11:00, but it was past midnight); run 20261114-000552 and its retry published the data-only edition only, `E_VALIDATION`, one error left, DATE_MISMATCH at `generated_at` with the window 04:30 to 00:37. The 04:30 run resumes such a data-only edition as before. `tests/preflight.test.ts` PF3 (the 04:15 boundary, `--no-deadline`, dry run) and PF7 (`skip_early` for every brief state, `--force` too), `tests/status.test.ts` ST3 and ST4 (the note is read back as the skip reason), `tests/daily.test.ts` D52 (00:05, with and without `--no-deadline`: one status commit, no agent, no brief) and D53 (04:20: one wait of about 10 minutes, then a full edition with `generated_at` after 04:30) |
+| 186 | P5 | §0.4 (the lessons from Europe) and §1 (the start delay), §4.11 (`run.json` `start`), §5.1 (the time base), §8.2 (Clock rules, A normal morning), §9.3 (Creating it, Timing, The long wait, the what-can-stop row), §10 P5 (item 2, status), Appendix C (Claude app and scheduled tasks), `docs/RUNBOOK.md`, `docs/reports/2026-11-16-p5-golive.md` | The spec now says what P5 found. The app starts the task within about a minute (`daily.ts` at 04:30:35, 04:30:41 and 04:31:19 on 14 to 16 November), not about 7 minutes late as Europe's, so the "about 04:37" mentions go and the stage times are marked as P3's estimates. Creating the task: the scheduled-tasks tool sets no folder and no permission mode, so the task took the creating session's folder; JL sets the folder and the permission mode (JL's choice) in its Edit form, and saving the form can move the time (it moved to 09:35), so the time is checked after every save. Run now is a real run between midnight and 11:00, so it is done after 11:00 (item 2 now says so). The long wait is verified: the app woke the task when `daily.sh` exited after 3 to 11 minutes, and each reply was the summary alone. Item 4's report is `docs/reports/2026-11-16-p5-golive.md` | P5 go-live. Before, §9.3 assumed a session in the CyberTracker folder could create the task in that folder and that Run now would skip; on Kobol the task got `/Users/kobol/Projects`, JL set it up in the Edit form on 2026-11-14 at 00:05, and Run now past midnight published the data-only edition for the 14th (row 185). The start times are from the run records, the task runs from the app's run list read on Kobol on 2026-11-16 |
 
 **Lessons from ME Tracker and EuropeTracker that still shape the code**
 
@@ -392,7 +393,8 @@ rows are what review and building found.
   text, watch-window titles. Metrics use a stored data cutoff that a retry reuses; reruns give
   byte-identical output. The task starts one background command, ends its turn, waits to be woken and
   reads only with the Read tool: a pending permission prompt makes the app skip the next run. The app
-  starts a task about 7 minutes late, so every timeout is sized from the actual start (§9.3).
+  can start a task late (Europe's about 7 minutes; CyberTracker's within about a minute, Appendix C), so
+  every timeout is sized from the actual start (§9.3).
 
 ---
 
@@ -409,7 +411,7 @@ organisations actually patch faster cannot be measured publicly from day to day.
 and not a vulnerability database: it links out for everything else.
 
 A scheduled task in the Claude desktop app on Kobol runs `scripts/daily.sh` at 04:30 Taipei (20:30 UTC
-the day before; about 04:37 in practice). Scripts collect the feeds, compute the metrics and publish a
+the day before; it starts within about a minute). Scripts collect the feeds, compute the metrics and publish a
 data-only edition by about 04:50. A sandboxed headless Claude Code agent then selects and writes;
 scripts validate its draft (at most two repair rounds an attempt) and publish the full edition by about
 05:15. Each publish pushes `content/` to `main` and Vercel rebuilds the site. When the pipeline exits,
@@ -2069,8 +2071,8 @@ interface RunFile {
 }
 ```
 
-The task starts about 7 minutes after `start` (about 04:37 Taipei, 20:37 UTC); timeouts are sized from
-the actual start (§8.2, §9.3). Metric constants (window lengths, `MIN_N`, the reference period, the
+The task starts within about a minute of `start` (04:30:35 to 04:31:19 on the P5 mornings, Appendix C);
+timeouts are sized from the actual start (§8.2, §9.3). Metric constants (window lengths, `MIN_N`, the reference period, the
 Wilson z) stay in `lib/metrics/` (§5): changing one needs a spec change, not a config edit.
 
 ### 4.12 Validation rules
@@ -2945,7 +2947,7 @@ a conflict fixes both. Date helpers (`dataCutoffFor`, `addDays`, `daysBetween`, 
   / 86_400_000`, from the CVE record's UTC publication date to the KEV US date. Negative when CISA listed
   the flaw before its CVE record was published.
 - **Data cutoff.** `data_cutoff_utc = dataCutoffFor(date) = addDays(date, −2)`: the run starts at 04:30
-  Taipei (about 04:37), 20:30 UTC the day before, so the last complete UTC day is two days before the
+  Taipei, 20:30 UTC the day before, so the last complete UTC day is two days before the
   edition date. Fixed per edition date: a retry, a manual rerun and a backfill for that date all use it.
   Preflight refuses a run for `date` that starts before `addDays(date, −1)` 00:00 UTC (08:00 Taipei the
   day before) with `E_CLOCK` (§8.2). Nothing dated after the cutoff is counted in any windowed figure,
@@ -4831,7 +4833,7 @@ saved responses, so `lib/feeds/http.ts` never touches the network; exit 2 unless
 #### Clock rules, times and budgets
 
 From `config/run.json` (§4.11), read once. Every limit is computed from the clock, never from the
-scheduled time (the app starts the task about 7 minutes late, §9.3). The clock is `Deps.now`: every
+scheduled time (the app can start the task late, §9.3). The clock is `Deps.now`: every
 record time, limit and budget is measured on it, and `RunLog` stamps its lines with it. A deadline handed
 to code that measures `Date.now()` itself is converted with `realDeadline(now, logical)`
 (`scripts/lib/clock.ts`: `Date.now() + (logical − now())`): `runMetrics`, `recheckItems`,
@@ -4928,7 +4930,9 @@ publish are `skipped`, "Started after 05:30: no editorial pass today."; other st
 
 #### A normal morning
 
-The task starts at about 04:37 and `routine/TASK.md` starts `daily.sh` in the background (§9.3). Stages
+The task starts within about a minute of 04:30 and `routine/TASK.md` starts `daily.sh` in the background
+(§9.3; the stage times below are P3's estimates from a 04:37 start, and on the P5 mornings the full
+edition was up by 04:39). Stages
 run in this order (the status file lists them in `RUN_STAGES` order): 1 `preflight` (about 1 min, start
 record pushed), 2 `collect` (~04:38), 3 `metrics` (~04:42), 4 `data_only` (published ~04:45, target
 04:50), 5 `recheck`, 6 `draft` (~04:46, up to 30 min), 7 `validate` with repairs, 8 `publish` (~05:12,
@@ -6309,21 +6313,28 @@ force-pushes.
   nothing else and reads no web content (§9.5). Called with no arguments, `daily.sh` (§8.2) records
   `--trigger schedule`; it fixes PATH and `TZ`, holds off sleep with `caffeinate -i` and runs
   `scripts/daily.ts`.
-- **Creating it** (P5, JL present, after 11:00 Taipei so the first run publishes nothing): Claude
-  creates it with the scheduled-tasks tool from a session whose folder is
-  `/Users/kobol/Projects/CyberTracker` (the task does not exist yet, so the main checkout is still the
-  working folder), so the task takes that folder. A tool-made task starts in Manual permission mode:
-  JL clicks Run now and approves `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh` as "Always
-  allowed" (reading the summary inside the folder needs no approval). Expected: `skipped`, "Too late:
-  nothing is published after 11:00.", one status commit, the skipped chat edition as reply. Claude
-  confirms the saved `cwd` in
-  `~/Library/Application Support/Claude/claude-code-sessions/*/*/scheduled-tasks.json`. The Scheduled
-  page hides tasks Claude set up from a project: click Show beside "N hidden tasks that Claude set up...".
-- **Timing.** The app starts Europe's task a fixed 7 minutes late (about 05:37), so expect about 04:37
-  (Verify on the first supervised morning; record it in Appendix C). `daily.ts` sizes every timeout
+- **Creating it** (as done in P5, 2026-11-13 and 14; §0.4 row 186): Claude creates it with the
+  scheduled-tasks tool (title, prompt `routine/TASK.md`, cron `30 4 * * *`). The tool sets no folder and no
+  permission mode: the task takes the creating session's folder (in P5 `/Users/kobol/Projects`). JL then
+  opens the task's Edit form (the pencil on its page) and sets the folder to
+  `/Users/kobol/Projects/CyberTracker` and the permission mode, which is JL's choice (2026-11-14; not to be
+  reopened). Saving the form can change the task's time (in P5 it moved to 09:35), so check that it reads
+  04:30 after every save. JL clicks Run now and approves
+  `zsh /Users/kobol/Projects/CyberTracker/scripts/daily.sh` as "Always allowed" (reading the summary inside
+  the folder needs no approval). Run now is a real run, so do it after 11:00 Taipei, when it skips ("Too
+  late: nothing is published after 11:00.", one status commit, the skipped chat edition as reply). Between
+  midnight and 11:00 it runs that day's brief (before 04:15 it skips as too early, row 185). Claude confirms
+  the saved `cwd` and approved command in
+  `~/Library/Application Support/Claude/claude-code-sessions/*/*/scheduled-tasks.json`. The Scheduled page
+  hides tasks Claude set up from a project: click Show beside "N hidden tasks that Claude set up...". The
+  task shows only in the Claude app on Kobol, not on JL's other devices.
+- **Timing.** The app starts the task on time: on 14 to 16 November `daily.ts` began 35 to 79 seconds
+  after 04:30 (Appendix C), while Europe's task starts about 7 minutes late. `daily.ts` sizes every timeout
   from the actual start; the run ends by the 05:30 hard stop (watchdog 05:32), before Europe's starts.
 - **The long wait.** Europe's task was woken after a 7.5-minute command; this one runs up to about 55
-  minutes. Verify on the first supervised morning. If the app cannot wake it, the fallback is Europe's
+  minutes. Seen in P5 (row 186): the app woke the task each time `daily.sh` exited, after 3 to 11 minutes
+  (the longest the 2026-11-14 midnight run with its retry), and every reply was the summary alone. A run
+  near 55 minutes has not happened yet. If the app ever fails to wake it, the fallback is Europe's
   two-task split (start detached at 04:30, reply with the summary at 05:35), proposed in a PR for JL's
   decision, since §0.2 allows one task.
 - **The main checkout.** Until P5, Claude works in `/Users/kobol/Projects/CyberTracker`. From P5 on (once
@@ -6364,7 +6375,7 @@ full list):
 
 | Cause | What happens | Remedy |
 |---|---|---|
-| Kobol asleep, off or logged out, or the app closed | No run at 04:37; on waking the app starts one catch-up run (after 05:30 data-only at most, after 11:00 a skip) | Keep Kobol plugged in and awake with the app open |
+| Kobol asleep, off or logged out, or the app closed | No run at 04:30; on waking the app starts one catch-up run (after 05:30 data-only at most, after 11:00 a skip) | Keep Kobol plugged in and awake with the app open |
 | The previous run waits on a permission prompt | The app skips the run | Answer or stop it from History; keep `TASK.md`'s command exactly as approved (§11) |
 | Agent token missing, expired or revoked | `E_AUTH`; the data-only edition stands | JL renews it (§9.6); manual rerun |
 | Usage limit (shared with JL's sessions and Europe's and ME's runs) | `E_LIMIT`; data-only until the window resets; the Notes line warns from 80% (§8.8) | None automatic |
@@ -7007,6 +7018,11 @@ supervised mornings correctly, then the run goes unattended.
 **Status on 2026-11-12:** `p5-golive` (PR #7) holds item 1 (rows 176 to 184), JL's six claims
 included; `routine/TASK.md` already matches §11, so it is final as it stands.
 
+**Status on 2026-11-16:** items 1 to 3 done. JL merged PR #7 on 2026-11-12. The task was created on
+2026-11-13 and set up on the 14th (§9.3, row 186). The first brief was a supervised manual run on the
+13th, and the scheduled task then ran three supervised mornings, 14 to 16 November, with one fix
+(`p5-fix-early-run`, PR #8, row 185). Item 4 is `p5-report`: `docs/reports/2026-11-16-p5-golive.md`.
+
 1. `p5-golive`: `config/claims.json` seed, version 1: Claude drafts 4 to 6 of JL's predictions and the
    two rival claims (Appendix B), each with its thresholds and, where one is published, its verbatim
    quote and source (row 182).
@@ -7020,7 +7036,8 @@ included; `routine/TASK.md` already matches §11, so it is final as it stands.
    cutoff within its limit (§8.4): with no brief in `content/` yet, it also re-joins
    `content/state/kev-index.json` from the newest catalog, so the first edition's "new since the last
    edition" starts at go-live, not at the P2 cutoff (§5.3, §8.4).
-2. After the merge, the task is created with JL present (§9.3); Run now gives `skipped`.
+2. After the merge, the task is created with JL present (§9.3); Run now after 11:00 gives `skipped`
+   (before 11:00 it is a real run, row 186).
 3. Two or three supervised mornings from the next day. After each, Claude runs the milestone and JL reads
    the reply in the app. Fixes go in `p5-fix-<topic>` PRs under the same rules. JL may stop after two;
    §0.4 records it. Each `p5-fix-<topic>` PR, and later the calibration PR, proves itself with
@@ -7470,7 +7487,7 @@ on Kobol in the Foundation session; "Europe" facts come from EuropeTracker's App
 | Git and `gh` | `/usr/bin/git`; `gh` 2.103.3 at `/opt/homebrew/bin/gh`, logged in as 8gara8 (keyring; scopes include `repo` and `workflow`) | Login: Kobol 2026-11-08; version and scopes: Europe |
 | Repo | `/Users/kobol/Projects/CyberTracker`, cloned 2026-11-08 (never under `~/Documents`: iCloud conflict copies). Repo-level git identity 8gara8 with GitHub's noreply address | Kobol 2026-11-08 |
 | Claude CLIs and token | JL's `~/.local/bin/claude` v2.1.78, x86_64 under Rosetta: never use. The agent's: 2.1.316 arm64 (Europe's pinned version) under `/Users/kobol/.cybertracker/cli` (binary `node_modules/.bin/claude`); config dir `/Users/kobol/.cybertracker/claude`, mode 700 (§9.4). Its token: login keychain, service `cybertracker-claude-oauth`, absent until JL creates it in P3 (§9.6) | JL's: Europe. The agent's: installed Kobol 2026-11-08; its `--help` flags against §9.4's list in P3. The token: P3 |
-| Claude app and scheduled tasks (never touch the others) | App 4.23118.0. Tasks: Europe tracker morning `30 5 * * *` (05:30, 21:30 UTC; starts about 05:37, may run until 06:55), ME tracker morning `0 7 * * *` (07:00, 23:00 UTC, from `/Users/kobol/Projects/MEtracker`), one unrelated weekly task; CyberTracker's will be `30 4 * * *`. The app starts a task about 7 minutes after its time: 04:30 (20:30 UTC) runs about 04:37. A pending permission prompt makes it skip the next run. Europe's spec also lists a nightly job at 03:00 and the AYW product scan, Mondays about 06:30 (another folder; shares only Claude usage) | Kobol 2026-11-08; the delay and the skip: Europe; CyberTracker's delay recorded after the P5 mornings |
+| Claude app and scheduled tasks (never touch the others) | App 4.23118.0. Tasks: Europe tracker morning `30 5 * * *` (05:30, 21:30 UTC; starts about 05:37, may run until 06:55), ME tracker morning `0 7 * * *` (07:00, 23:00 UTC, from `/Users/kobol/Projects/MEtracker`), one unrelated weekly task; CyberTracker morning `30 4 * * *` (04:30, 20:30 UTC), folder `/Users/kobol/Projects/CyberTracker`, created 2026-11-13. The app starts Europe's task about 7 minutes after its time, but CyberTracker's on time: `daily.ts` began at 04:30:35, 04:30:41 and 04:31:19 on 14 to 16 November. A pending permission prompt makes it skip the next run. Europe's spec also lists a nightly job at 03:00 and the AYW product scan, Mondays about 06:30 (another folder; shares only Claude usage) | Kobol 2026-11-08; the delay and the skip: Europe; CyberTracker's start: its run records, 2026-11-14 to 16 (P5) |
 | Network | Reachable from Kobol on 2026-11-07: CISA KEV, NVD (keyless is fine at our volume), FIRST EPSS, GitHub advisories, ENISA EUVD, JVN, JPCERT, TWCERT (the Chinese RSS works; the English one redirects), the CVE.org API, CISA vulnrichment. On 2026-11-09 (about 18:40 Taipei, 10:40 UTC) Kobol read every registry URL once: the changes are §0.4 row 39; EPSS answers at epss.empiricalsecurity.com (score date 2026-11-08); NVD takes `pubStartDate`/`pubEndDate` with milliseconds and no zone letter; `deltaLog.json` was 36.9 MB in 27.15 s; GitHub's REST `/advisories` without a token returned credits for 81 of the 100 newest advisories, as logins, with a limit of 60 requests an hour (§5.5). P2 session 1's `sources:check` (22:15 to 22:50 Taipei): run 1 timed out six small feeds, `exchange-tpex` among them, while the large downloads ran (59 s, 25 of 36 ok), run 2 took 14 s (31 of 36 ok; §8.10); no HTTP 429 from raw.githubusercontent.com. The cisa.gov KEV URL answers from Kobol too (byte-identical to the mirror). The final `sources:check` (P2 session 2, 2026-11-10 about 01:40 Taipei): 61 s, 36 of 37 entries ok, no priority-1 problem, no HTTP 429; the one row not ok was `google-security` (stale since 2026-04-23: the blog moved to blog.google/security, whose RSS answered 200 with 20 items; §0.4 row 64) | Kobol 2026-11-07, 2026-11-09 and 2026-11-10 (P2 session 2) |
 | Disk for the CVE List | At least 10 GiB free where `cache/cvelistV5` lives (`statfs`; P2's sessions keep it in the worktree's `cache/`). On 2026-11-07 the clone was 4.6 GB and 420,941 record files. The cloud container on 2026-11-09 (Linux, Node 22, a fresh clone of `67c39b1`): 4.9 GB on disk by `du` (about 4.6 GiB), 420,941 record files (401,800 PUBLISHED, 19,141 REJECTED, 119,879 credit strings), 02:17 to clone, 00:07 to read with four workers on just-written files and 00:26 on a rerun that reused the clone; `--fixtures --check-reference` took 2 min 30 s in all, the rerun 34 s. Kobol, P2 session 2a (2026-11-09, 23:18 to 23:27 Taipei, a fresh clone of `67c39b1`): "Clone 67c39b1 (2026-11-07 17:28:47 UTC): 06:24, 4.9 GB on disk." (`du -sh` 4.5G: the printed figure is decimal), 420,941 records read in 00:16 with 4 workers (401,800 published, 19,141 rejected, 119,879 credit strings), `--check-reference` 405.6 s wall time, almost all of it the clone; the `--fixtures` rerun reused the clone (00:02) and left `fixtures/reference/` byte-identical on macOS with Node 26. Session 2 (2026-11-10) moved the same clone to `658a966` in place: "Clone 658a966 (2026-11-09 17:38:36 UTC): 06:02, 5.2 GB on disk." (`du -sh` 4.8G), 421,502 records read in 00:16 (402,359 published, 19,143 rejected, 120,586 credit strings); the build took 384.5 s, its rerun 22.7 s; collect for 2026-11-10 23.1 s. The Linux rebuild of that run in the container read the records in 00:06 to 00:14 and took 18 s | Container 2026-11-09 and 2026-11-10; Kobol 2026-11-09 and 2026-11-10 (P2 sessions 2a and 2) |
 | Browser for screenshots | Kobol's Google Chrome 157.0.8103.50, driven by `playwright-core` 1.65.0 installed under `/Users/kobol/.cybertracker/tools` (§9.9); `screenshots.mjs` wrote both looks' 16 images with it | Kobol 2026-11-12 (P4) |
