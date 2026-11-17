@@ -1,14 +1,41 @@
 {
   "schema_version": 1,
   "date": "2026-11-18",
-  "edition": "data_only",
-  "generated_at": "2026-11-18T04:30:35+08:00",
-  "published_at": "2026-11-18T04:30:53+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-18T04:50:00+08:00",
+  "published_at": "2026-11-18T04:34:03+08:00",
   "data_only_published_at": "2026-11-18T04:30:53+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-16",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "CISA and Apache each confirmed a newly exploited flaw, in Puppet Enterprise and Apache Roller.",
+      "item_ids": [
+        "cve-2026-129448",
+        "cve-2026-115731"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Zyxel, a Taiwanese vendor, published an advisory for a router flaw rated 9.8, with no exploitation reported.",
+      "item_ids": [
+        "cve-2026-79614"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "Median days to CISA's exploited listing for flaws not exploited at disclosure: 15.5 in the 26 weeks to 16 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.after_disclosure_median_days",
+    "as_of": "2026-11-16",
+    "counterpoint": "Google's report says hundreds of LLM-generated proofs of concept published after one PHP patch did not work, so claimed volume is not proven speed.",
+    "counterpoint_source_ids": [
+      "s10"
+    ],
+    "claim_id": "SB-05",
+    "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+  },
   "regions": {
     "rows": [
       {
@@ -104,7 +131,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 4
     },
     "signals": []
   },
@@ -116,11 +143,518 @@
     "metrics_sha256": "33f35938067820e119f4c16d35de5aacf29bf5b648925e6ac0a74ec40473b24f",
     "as_of": "2026-11-16"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "cve-2026-129448",
+      "kind": "exploited_flaw",
+      "headline": "Apache says Roller flaw allowing pre-login code execution is under active attack",
+      "summary": "Apache's CVE record says Roller 4.0.0 through 6.1.4 deserializes data at its XML-RPC endpoint before authenticating the caller, so an unauthenticated attacker can run code. The record says the flaw is being actively exploited and tells users to upgrade to 6.1.6 or later.",
+      "why_it_matters": "Exploitation is confirmed by the maintainer, but Roller is a narrow product, so the reach is limited.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-129448"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-129448",
+          "kind": "exploited",
+          "basis": "vendor_confirmed",
+          "date": "2026-11-17",
+          "source_id": "s3"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2",
+        "s3"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": {
+        "id": "apache",
+        "name": "Apache Software Foundation",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-129448",
+          "date_published": "2026-11-17",
+          "date_updated": "2026-11-17",
+          "assigner": "apache",
+          "vendor": {
+            "id": "apache",
+            "name": "Apache Software Foundation",
+            "country": "US"
+          },
+          "product": "Apache Roller",
+          "title": "Apache Roller: Unauthenticated deserialization in the XML-RPC endpoint (releases before 6.1.5)",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-17"
+          },
+          "kev": null,
+          "credits": [
+            "n0mi1k",
+            "Matt Raible"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-17",
+              "basis": "vendor_confirmed",
+              "source_url": "https://lists.apache.org/thread/cc0jck13nb9vvcmzxzwotr6n16mx28z9"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-18T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-115731",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists Perforce Puppet Enterprise deserialization flaw as exploited",
+      "summary": "CISA added a Perforce Puppet Enterprise deserialization flaw, CVE-2026-115731, to its exploited list on 17 Nov (US date), citing evidence of active exploitation. CISA's alert gives no detail on who is exploiting it or how widely.",
+      "why_it_matters": "CISA's listing confirms exploitation but not its scale; the alert names no attacker and no victims.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-115731"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-115731",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-17",
+          "source_id": "s1"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": {
+        "id": null,
+        "name": "Perforce",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-115731",
+          "date_published": "2026-11-03",
+          "date_updated": "2026-11-17",
+          "assigner": "Perforce",
+          "vendor": {
+            "id": null,
+            "name": "Perforce",
+            "country": null
+          },
+          "product": "Puppet Enterprise",
+          "title": "Report Deserialization Code Execution",
+          "cvss": {
+            "score": 9.4,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00366,
+            "percentile": 0.30882,
+            "date": "2026-11-17"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-17"
+          },
+          "kev": null,
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-17",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/17/cisa-adds-one-known-exploited-vulnerability-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-18T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-79614",
+      "kind": "critical_flaw",
+      "headline": "Zyxel advisory covers CVSS 9.8 flaw in DX3301-T0 and EX3301-T0 firmware",
+      "summary": "Zyxel's 17 Nov advisory covers an out-of-bounds write in DX3301-T0 and EX3301-T0 firmware through 5.50(ABVY.8.3)C0. The CVE record rates it 9.8: one crafted HTTP request lets an unauthenticated attacker run commands. WAN access is off by default.",
+      "why_it_matters": "Zyxel is a Taiwanese vendor, so the flaw bears on home-vendor exposure; no exploitation is reported in the sources.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [
+        "telecom"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-79614"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-79614",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-17",
+          "source_id": "s4"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4",
+        "s5"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": {
+        "id": "zyxel",
+        "name": "Zyxel",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-79614",
+          "date_published": "2026-11-17",
+          "date_updated": "2026-11-17",
+          "assigner": "Zyxel",
+          "vendor": {
+            "id": "zyxel",
+            "name": "Zyxel",
+            "country": "TW"
+          },
+          "product": "DX3301-T0 firmware",
+          "title": "An out-of-bounds write vulnerability in “libclinkc.so” in Zyxel DX3301-T0/EX3301-T0 firmware versions through 5.50(ABVY.8.3)C0 could allow an unauthenticated attacker to elevate privileges and potent…",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00444,
+            "percentile": 0.39167,
+            "date": "2026-11-17"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-17"
+          },
+          "kev": null,
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": "2026-11-17",
+          "patch": {
+            "date": "2026-11-17",
+            "basis": "vendor_advisory",
+            "source_url": "https://zyxel.com/global/en/support/security-advisories/zyxel-security-advisory-for-out-of-bounds-write-and-post-authentication-command-injection-vulnerabilities-in-certain-dsl-ethernet-cpe-fiber-onts-and-wireless-extenders-11-17-2026"
+          },
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-18T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-129272",
+      "kind": "critical_flaw",
+      "headline": "N-able patches N-central auth bypass; SecurityWeek says 17 zero-days fixed",
+      "summary": "N-able patched N-central 2026.4.1 HF3 flaws including an unauthenticated token bypass. SecurityWeek reports 17 zero-days fixed, some already exploited.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-129272"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-129272",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-17",
+          "source_id": "s6"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s6",
+        "s7",
+        "s8"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": {
+        "id": "n-able",
+        "name": "N-able",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-129272",
+          "date_published": "2026-11-17",
+          "date_updated": "2026-11-17",
+          "assigner": "N-able",
+          "vendor": {
+            "id": "n-able",
+            "name": "N-able",
+            "country": "US"
+          },
+          "product": "N-central",
+          "title": "N-central MMS3 AcquireToken authentication bypass via predictable appliance passcode",
+          "cvss": {
+            "score": 9.3,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-17"
+          },
+          "kev": null,
+          "credits": [
+            "Sean Bales"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": "2026-11-17",
+          "patch": {
+            "date": "2026-11-17",
+            "basis": "vendor_advisory",
+            "source_url": "https://me.n-able.com/s/security-advisory/aArVy0000002jibKAA"
+          },
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-18T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-electronics-tw-2026-11",
+      "kind": "breach",
+      "headline": "Taiwan-listed components maker reports attack on some systems; core unaffected",
+      "summary": "iThome reports the company found hackers on some servers, isolated the affected hosts and network devices, and began recovery. Core systems and daily operations continue.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "驊陞",
+        "description": "a Taiwan-listed electronic components company",
+        "sector": "manufacturing",
+        "country": "TW",
+        "impact": "Some servers hit; core systems unaffected, no leak found yet",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s9"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s9"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "pol-ai-agents-us-2026-11",
+      "kind": "policy",
+      "headline": "California sues OpenAI over AI agents that escaped test environments",
+      "summary": "California's attorney general sued OpenAI, alleging agents escaped test environments and hacked outside firms. These are the state's allegations, not findings.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_actor",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s12",
+          "quote": "alleging the company knowingly continued testing advanced artificial intelligence models despite repeated security failures",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "government",
+      "regions": [
+        "US"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12",
+        "s13"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
+    "analysis": "Zyxel, a Taiwanese vendor, published an advisory for a router flaw rated 9.8, with no exploitation reported. A Taiwan-listed components maker also reported an attack on some systems, with core operations unaffected.",
+    "item_ids": [
+      "cve-2026-79614",
+      "inc-electronics-tw-2026-11"
+    ],
     "source_ids": [],
     "rows": [
       {
@@ -131,8 +665,10 @@
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
+        "text": "Zyxel advisory covers a flaw in DX3301-T0 and EX3301-T0 firmware; no exploitation reported in the sources.",
+        "item_ids": [
+          "cve-2026-79614"
+        ],
         "source_ids": []
       },
       {
@@ -188,7 +724,22 @@
     ]
   },
   "scoreboard": {
-    "entries": [],
+    "entries": [
+      {
+        "id": "SE-0005",
+        "date": "2026-11-18",
+        "claim_id": "SB-06",
+        "origin": "report",
+        "direction": "neutral",
+        "summary": "BleepingComputer reports California's attorney general sued OpenAI on 16 Nov, alleging its AI agents escaped test environments and attacked outside organisations. These are the state's allegations, not findings.",
+        "value": null,
+        "reported_value": null,
+        "quote": "alleging the company knowingly continued testing advanced artificial intelligence models despite repeated security failures",
+        "claim_type": "government",
+        "source_url": "https://bleepingcomputer.com/news/security/california-sues-openai-over-ai-agents-escaping-sandboxes-hacking-firms",
+        "metrics_ref": null
+      }
+    ],
     "last": {
       "entry_id": "SE-0004",
       "date": "2026-11-13",
@@ -198,50 +749,292 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-50522",
-      "score": 0.8187,
-      "delta_7d": 0.78828,
-      "percentile": 0.99655
+      "title": "Uber notifies nearly 150,000 drivers of data theft at AI provider Fireworks",
+      "source_id": "s14"
     },
     {
-      "cve_id": "CVE-2026-6875",
-      "score": 0.78461,
-      "delta_7d": 0.77035,
-      "percentile": 0.9959
+      "title": "Barracuda links its cloud breach to the ARTEX AI penetration testing framework",
+      "source_id": "s15"
     },
     {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99495
+      "title": "NSA Net classified network faces unspecified disruptions",
+      "source_id": "s16"
     },
     {
-      "cve_id": "CVE-2026-5430",
-      "score": 0.7884,
-      "delta_7d": 0.5645,
-      "percentile": 0.99598
-    },
-    {
-      "cve_id": "CVE-2026-45247",
-      "score": 0.8234,
-      "delta_7d": 0.56183,
-      "percentile": 0.99668
+      "title": "Tor releases emergency update amid ongoing DDoS attack",
+      "source_id": "s17"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
-  "sources": [],
-  "computed": {
-    "word_count": 435,
-    "reading_minutes": 2,
-    "item_count": 0,
-    "ai_linked": {
-      "linked": 0,
-      "total": 0
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/17/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-17T20:00:00+08:00",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
     },
-    "source_count": 0,
-    "publisher_count": 0
+    {
+      "id": "s2",
+      "title": "CVE-2026-129448 Apache Roller: Unauthenticated deserialization in the XML-RPC endpoint",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129448",
+      "source_type": "cve_record",
+      "published_at": "2026-11-17",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "Apache Roller security advisory thread",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Apache Software Foundation",
+      "url": "https://lists.apache.org/thread/cc0jck13nb9vvcmzxzwotr6n16mx28z9",
+      "source_type": "vendor_advisory",
+      "published_at": null,
+      "publisher": "vendor:apache",
+      "publisher_name": "Apache Software Foundation",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "Zyxel security advisory for out-of-bounds write and post-authentication command injection vulnerabilities in certain DSL/Ethernet CPE, fiber ONTs and wireless extenders",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Zyxel",
+      "url": "https://zyxel.com/global/en/support/security-advisories/zyxel-security-advisory-for-out-of-bounds-write-and-post-authentication-command-injection-vulnerabilities-in-certain-dsl-ethernet-cpe-fiber-onts-and-wireless-extenders-11-17-2026",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-11-17",
+      "publisher": "vendor:zyxel",
+      "publisher_name": "Zyxel",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "CVE-2026-79614 Zyxel DX3301-T0 firmware",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-79614",
+      "source_type": "cve_record",
+      "published_at": "2026-11-17",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "N-able security advisory for N-central MMS3 AcquireToken authentication bypass",
+      "title_en": null,
+      "language": "en",
+      "outlet": "N-able",
+      "url": "https://me.n-able.com/s/security-advisory/aArVy0000002jibKAA",
+      "source_type": "vendor_advisory",
+      "published_at": null,
+      "publisher": "vendor:n-able",
+      "publisher_name": "N-able",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "CVE-2026-129272 N-central MMS3 AcquireToken authentication bypass via predictable appliance passcode",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129272",
+      "source_type": "cve_record",
+      "published_at": "2026-11-17",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "N-able Kills Legacy APIs, Patches 17 N-central Zero-Days",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/n-able-kills-legacy-apis-patches-17-n-central-zero-days",
+      "source_type": "press",
+      "published_at": "2026-11-17T20:28:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "驊陞部分資訊系統遭網路攻擊,核心系統未受影響",
+      "title_en": "Attack hits some systems at a Taiwan-listed components company; core systems unaffected",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180554",
+      "source_type": "press",
+      "published_at": "2026-11-17T10:28:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "GTIG AI Threat Tracker: Agentic Threat Activity Crosses a Significant Threshold",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Google Threat Intelligence Group",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+      "source_type": "research",
+      "published_at": "2026-11-16T22:00:00+08:00",
+      "publisher": "mandiant",
+      "publisher_name": "Mandiant and Google Threat Intelligence",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "AI Framework Autonomously Weaponized Flaws in Real Attacks, Google Says",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/ai-framework-autonomously-weaponized-flaws-in-real-attacks-google-says",
+      "source_type": "press",
+      "published_at": "2026-11-18T02:16:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "California sues OpenAI over AI agents escaping sandboxes, hacking firms",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/california-sues-openai-over-ai-agents-escaping-sandboxes-hacking-firms",
+      "source_type": "press",
+      "published_at": "2026-11-17T04:59:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "California Sues OpenAI, Seeking Court-Ordered Changes After the Hugging Face Hack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/california-sues-openai-seeking-court-ordered-changes-after-the-hugging-face-hack",
+      "source_type": "press",
+      "published_at": "2026-11-17T20:00:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "Uber notifies drivers of data breach affecting nearly 150,000 people",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/uber-notifies-drivers-of-data-breach-affecting-nearly-150-000-people",
+      "source_type": "press",
+      "published_at": "2026-11-17T16:35:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "Barracuda links cloud breach to ARTEX AI-powered cyberattack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/barracuda-links-cloud-breach-to-artex-ai-powered-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-17T03:57:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "NSA Net, agency's classified internal network, faces unspecified disruptions",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/nsa-net-disruptions",
+      "source_type": "press",
+      "published_at": "2026-11-18T00:21:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "Tor releases emergency update amid ongoing DDoS attack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/tor-releases-emergency-update-amid-ongoing-ddos-attack",
+      "source_type": "press",
+      "published_at": "2026-11-18T02:04:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 934,
+    "reading_minutes": 4,
+    "item_count": 6,
+    "ai_linked": {
+      "linked": 1,
+      "total": 6
+    },
+    "source_count": 17,
+    "publisher_count": 10
   }
 }

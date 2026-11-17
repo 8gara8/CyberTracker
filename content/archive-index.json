@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-18",
-      "edition": "data_only",
-      "published_at": "2026-11-18T04:30:53+08:00",
-      "item_count": 0,
+      "edition": "full",
+      "published_at": "2026-11-18T04:34:03+08:00",
+      "item_count": 6,
       "corrected": false
     },
     {
@@ -782,6 +782,147 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://cisa.gov/news-events/alerts/2026/11/17/cisa-adds-one-known-exploited-vulnerability-catalog": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-115731"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129448": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-129448"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://lists.apache.org/thread/cc0jck13nb9vvcmzxzwotr6n16mx28z9": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-129448"
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "hashed_at": "2026-11-18T04:34:02+08:00",
+      "last_check": null
+    },
+    "https://zyxel.com/global/en/support/security-advisories/zyxel-security-advisory-for-out-of-bounds-write-and-post-authentication-command-injection-vulnerabilities-in-certain-dsl-ethernet-cpe-fiber-onts-and-wireless-extenders-11-17-2026": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-79614"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-79614": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-79614"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://me.n-able.com/s/security-advisory/aArVy0000002jibKAA": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-129272"
+      ],
+      "sha256": "2bc184f7f449f9a27f3a85f9d469b10859f33fcb31287ee9267a3b94bd36ae73",
+      "hashed_at": "2026-11-18T04:33:46+08:00",
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129272": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-129272"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/n-able-kills-legacy-apis-patches-17-n-central-zero-days": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/cve-2026-129272"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180554": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/inc-electronics-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/ai-framework-autonomously-weaponized-flaws-in-real-attacks-google-says": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/california-sues-openai-over-ai-agents-escaping-sandboxes-hacking-firms": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/pol-ai-agents-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/california-sues-openai-seeking-court-ordered-changes-after-the-hugging-face-hack": {
+      "first_cited": "2026-11-18",
+      "item_ids": [
+        "2026-11-18/pol-ai-agents-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/uber-notifies-drivers-of-data-breach-affecting-nearly-150-000-people": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/barracuda-links-cloud-breach-to-artex-ai-powered-cyberattack": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/nsa-net-disruptions": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/tor-releases-emergency-update-amid-ongoing-ddos-attack": {
+      "first_cited": "2026-11-18",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }

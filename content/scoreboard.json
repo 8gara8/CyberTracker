@@ -61,7 +61,7 @@
       "reading": null,
       "reading_text": null,
       "reading_as_of": null,
-      "last_entry_id": null
+      "last_entry_id": "SE-0005"
     },
     {
       "id": "SB-07",
@@ -152,6 +152,20 @@
         "file": "metrics/2026-11-13.json",
         "path": "window.w26.after_disclosure_median_days"
       }
+    },
+    {
+      "id": "SE-0005",
+      "date": "2026-11-18",
+      "claim_id": "SB-06",
+      "origin": "report",
+      "direction": "neutral",
+      "summary": "BleepingComputer reports California's attorney general sued OpenAI on 16 Nov, alleging its AI agents escaped test environments and attacked outside organisations. These are the state's allegations, not findings.",
+      "value": null,
+      "reported_value": null,
+      "quote": "alleging the company knowingly continued testing advanced artificial intelligence models despite repeated security failures",
+      "claim_type": "government",
+      "source_url": "https://bleepingcomputer.com/news/security/california-sues-openai-over-ai-agents-escaping-sandboxes-hacking-firms",
+      "metrics_ref": null
     }
   ]
 }
