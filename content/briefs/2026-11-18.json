@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-18",
+  "edition": "data_only",
+  "generated_at": "2026-11-18T04:30:35+08:00",
+  "published_at": "2026-11-18T04:30:53+08:00",
+  "data_only_published_at": "2026-11-18T04:30:53+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-11-16",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": "campaign-target",
+        "reason": "Campaign naming the region: FBI says North Korea-tied FaceStealer scheme stole over $400 million in crypto",
+        "item_ids": [
+          "camp-crypto-theft-us-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-crypto-theft-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Germany: German military drone maker Quantum Systems confirms active cyberattack",
+        "item_ids": [
+          "sc-defence-de-2026-11",
+          "inc-shipping-dk-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-defence-de-2026-11",
+              "inc-shipping-dk-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Taiwan: Cyberbiz breach spreads to at least 13 Taiwan-listed companies' online shops",
+        "item_ids": [
+          "sc-ecommerce-tw-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-ecommerce-tw-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-mobile-intercept-tw-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": null,
+        "change": "new",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 0
+    },
+    "signals": []
+  },
+  "gap": {
+    "headline": "35% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 15.5 days (2023–24: 21, faster). 167 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 46,312 new CVE records in 13 weeks, 5.4 times the 2023–24 pace (5.3 times excluding the Linux kernel). AI-credited: 731 in 13 weeks, 371 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-18.json",
+    "metrics_sha256": "33f35938067820e119f4c16d35de5aacf29bf5b648925e6ac0a74ec40473b24f",
+    "as_of": "2026-11-16"
+  },
+  "items": [],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 0,
+        "d90_n": 1,
+        "text": "KEV additions for Taiwanese vendors: 0 in 30 days, 1 in 90, to 16 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 16 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0004",
+      "date": "2026-11-13",
+      "claim_id": "SB-05",
+      "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-50522",
+      "score": 0.8187,
+      "delta_7d": 0.78828,
+      "percentile": 0.99655
+    },
+    {
+      "cve_id": "CVE-2026-6875",
+      "score": 0.78461,
+      "delta_7d": 0.77035,
+      "percentile": 0.9959
+    },
+    {
+      "cve_id": "CVE-2026-61511",
+      "score": 0.74266,
+      "delta_7d": 0.68659,
+      "percentile": 0.99495
+    },
+    {
+      "cve_id": "CVE-2026-5430",
+      "score": 0.7884,
+      "delta_7d": 0.5645,
+      "percentile": 0.99598
+    },
+    {
+      "cve_id": "CVE-2026-45247",
+      "score": 0.8234,
+      "delta_7d": 0.56183,
+      "percentile": 0.99668
+    }
+  ],
+  "feeds_stale": [],
+  "sources": [],
+  "computed": {
+    "word_count": 435,
+    "reading_minutes": 2,
+    "item_count": 0,
+    "ai_linked": {
+      "linked": 0,
+      "total": 0
+    },
+    "source_count": 0,
+    "publisher_count": 0
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-14",
+  "updated_at": "2026-11-16",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -5518,6 +5518,12 @@
       "This issue was discovered by Found by AISLE in partnership with Red Hat."
     ],
     [
+      "CVE-2026-84443",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
       "CVE-2026-84747",
       "2026-10-21",
       "cna.credits",
@@ -7216,6 +7222,36 @@
       "Claude Security"
     ],
     [
+      "CVE-2026-97892",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-97894",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-97999",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-98100",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-100101",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
       "CVE-2026-100227",
       "2026-10-09",
       "cna.credits",
@@ -7310,6 +7346,30 @@
       "2026-10-15",
       "cna.credits",
       "Yuxiang Yang, Yizhou Zhao, Ao Wang, Xuewei Feng, Qi Li, and Ke Xu from Tsinghua University using GLM-5.1 from Z.ai"
+    ],
+    [
+      "CVE-2026-101352",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-101929",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-101930",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
+      "CVE-2026-101933",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
     ],
     [
       "CVE-2026-102010",
@@ -7550,6 +7610,12 @@
       "2026-10-30",
       "cna.credits",
       "This issue was discovered by Found by AISLE in partnership with Red Hat."
+    ],
+    [
+      "CVE-2026-104007",
+      "2026-11-16",
+      "cna.credits",
+      "sudi from Hacktron AI Research Team"
     ],
     [
       "CVE-2026-104029",
@@ -7822,6 +7888,12 @@
       "Claude Opus 4.8"
     ],
     [
+      "CVE-2026-106535",
+      "2026-11-16",
+      "cna.credits",
+      "Claude, found by Anthropic using agents to study the security of open-source projects"
+    ],
+    [
       "CVE-2026-107121",
       "2026-10-07",
       "cna.credits",
@@ -7946,6 +8018,12 @@
       "2026-10-12",
       "cna.credits",
       "Red Hat would like to thank Calif.io [email] in collaboration with Anthropic for reporting this issue."
+    ],
+    [
+      "CVE-2026-108169",
+      "2026-11-16",
+      "cna.credits",
+      "parameter.ai"
     ],
     [
       "CVE-2026-108771",
@@ -10112,6 +10190,36 @@
       "2026-11-13",
       "cna.credits",
       "bugbunny.ai"
+    ],
+    [
+      "CVE-2026-129320",
+      "2026-11-16",
+      "cna.credits",
+      "The ASF LLM-based security scan"
+    ],
+    [
+      "CVE-2026-129347",
+      "2026-11-16",
+      "cna.credits",
+      "The ASF, found using LLM security scan, validated and reported by Apache Shiro"
+    ],
+    [
+      "CVE-2026-129703",
+      "2026-11-16",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-129703",
+      "2026-11-16",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-129706",
+      "2026-11-16",
+      "cna.credits",
+      "Claude Opus 5.5"
     ]
   ]
 }
