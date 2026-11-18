@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-19",
-      "edition": "data_only",
-      "published_at": "2026-11-19T04:30:54+08:00",
-      "item_count": 1,
+      "edition": "full",
+      "published_at": "2026-11-19T04:34:08+08:00",
+      "item_count": 7,
       "corrected": false
     },
     {
@@ -999,11 +999,138 @@
         "http": 200
       }
     },
-    "https://cve.org/CVERecord?id=CVE-2026-115731": {
+    "https://unit42.paloaltonetworks.com/optimjack-supply-chain-attack": {
       "first_cited": "2026-11-19",
       "item_ids": [
-        "2026-11-19/cve-2026-115731"
+        "2026-11-19/sc-web-platform-global-2026-11"
       ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180588": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/sc-web-platform-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/japan-takes-fugaku-supercomputer-offlline-after-cyberattack": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/inc-research-jp-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://security-next.com/192952": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/inc-research-jp-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180610": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/inc-research-jp-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/microsofts-agent-framework-pypi-package-compromised-to-steal-credentials": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/sc-ai-framework-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/microsoft-agent-framework-releases-poisoned-with-credential-stealer": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/sc-ai-framework-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cloud.google.com/blog/topics/threat-intelligence/cold-relic-a-case-study-in-impersonation-and-compromise": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/camp-espionage-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/russia-cyber-espionage-google": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/camp-espionage-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180615": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/inc-ecommerce-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180564": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/ai-embedded-stacks-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/ai-cyber-white-house": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/pol-ai-defence-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cert.europa.eu/publications/security-advisories/2026-022": {
+      "first_cited": "2026-11-19",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cert.europa.eu/publications/security-advisories/2026-021": {
+      "first_cited": "2026-11-19",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://focustaiwan.tw/politics/202611180014": {
+      "first_cited": "2026-11-19",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180607": {
+      "first_cited": "2026-11-19",
+      "item_ids": [],
       "sha256": null,
       "hashed_at": null,
       "last_check": null

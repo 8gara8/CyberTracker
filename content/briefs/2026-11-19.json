@@ -1,14 +1,45 @@
 {
   "schema_version": 1,
   "date": "2026-11-19",
-  "edition": "data_only",
-  "generated_at": "2026-11-19T04:30:34+08:00",
-  "published_at": "2026-11-19T04:30:54+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-19T04:48:00+08:00",
+  "published_at": "2026-11-19T04:34:08+08:00",
   "data_only_published_at": "2026-11-19T04:30:54+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-17",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "A supply-chain attack on the Optimizely web platform put malicious code on many organisations' sites, Unit 42 says.",
+      "item_ids": [
+        "sc-web-platform-global-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Japan's RIKEN took the Fugaku supercomputer offline after an intrusion that exposed data on up to 4,597 users.",
+      "item_ids": [
+        "inc-research-jp-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Mandiant says the COLD RELIC group used one victim's stolen data to phish a second US organisation.",
+      "item_ids": [
+        "camp-espionage-us-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "CISA confirmed exploitation after a median of 15 days for flaws not already exploited at disclosure, 26 weeks to 17 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.after_disclosure_median_days",
+    "as_of": "2026-11-17",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": "SB-05",
+    "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+  },
   "regions": {
     "rows": [
       {
@@ -18,8 +49,9 @@
         "previous_level": "elevated",
         "change": "same",
         "rule_id": "campaign-target",
-        "reason": "Campaign naming the region: FBI says North Korea-tied FaceStealer scheme stole over $400 million in crypto",
+        "reason": "Campaign naming the region: Mandiant: COLD RELIC used stolen cloud data to impersonate staff at a second US…",
         "item_ids": [
+          "camp-espionage-us-2026-11",
           "camp-crypto-theft-us-2026-11"
         ],
         "fired": [
@@ -27,6 +59,7 @@
             "rule_id": "campaign-target",
             "level": "elevated",
             "item_ids": [
+              "camp-espionage-us-2026-11",
               "camp-crypto-theft-us-2026-11"
             ],
             "signal_ids": []
@@ -59,6 +92,14 @@
             "item_ids": [
               "sc-defence-de-2026-11",
               "inc-shipping-dk-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11"
             ],
             "signal_ids": []
           }
@@ -98,19 +139,30 @@
       },
       {
         "code": "JP",
-        "level": "baseline",
-        "computed_level": "baseline",
+        "level": "elevated",
+        "computed_level": "elevated",
         "previous_level": "baseline",
-        "change": "same",
-        "rule_id": null,
-        "reason": "No rule fired.",
-        "item_ids": [],
-        "fired": [],
+        "change": "up",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Japan: RIKEN takes Fugaku offline after intrusion exposed user data",
+        "item_ids": [
+          "inc-research-jp-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-research-jp-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
         "raised": null
       }
     ],
     "global": {
-      "item_count": 1
+      "item_count": 3
     },
     "signals": [
       {
@@ -150,19 +202,210 @@
   },
   "items": [
     {
-      "id": "cve-2026-115731",
-      "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-115731 in Perforce Puppet Enterprise as exploited",
-      "summary": "CISA added CVE-2026-115731, a flaw in Perforce Puppet Enterprise, to its list of exploited flaws on 17 Nov 2026 (US date). The CVE record was published on 3 Nov 2026.",
-      "why_it_matters": null,
-      "severity": null,
+      "id": "sc-web-platform-global-2026-11",
+      "kind": "supply_chain",
+      "headline": "Optimizely flaw put malicious script on many organisations' sites, Unit 42 says",
+      "summary": "Unit 42 says an attacker exploited a flaw in Optimizely's Web Experimentation platform on 16 Nov to inject script into customer accounts. The code swapped crypto wallet addresses, skimmed card details and tried to deliver iPhone exploit kits. Optimizely fixed the flaw and removed the code on 17 Nov.",
+      "why_it_matters": "One vendor flaw reached many sites at once, so third-party scripts widen exposure whatever each site's own patching looks like.",
+      "severity": "high",
       "landmark": false,
-      "ai_role": "unassessed",
+      "ai_role": "none",
       "ai_role_secondary": null,
       "ai_confidence": null,
       "ai_claimant": null,
       "ai_evidence": [],
-      "claim_type": "government",
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [
+        "illicit_finance"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-research-jp-2026-11",
+      "kind": "breach",
+      "headline": "RIKEN takes Fugaku offline after intrusion exposed user data",
+      "summary": "BleepingComputer reports the intruder was active between 10 and 13 Nov, reached internal servers through the public status dashboard and planted malware aimed at user data. Exposed items include names, email addresses and stored SSH keys. RIKEN has not attributed the attack.",
+      "why_it_matters": "Stolen access keys were used to probe other systems, though RIKEN found no further unauthorised access.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "JP"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "RIKEN",
+        "description": "a Japanese national research institute",
+        "sector": "other",
+        "country": "JP",
+        "impact": "Fugaku offline; data on up to 4,597 users exposed",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s3",
+          "s5"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s3",
+        "s4",
+        "s5"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "sc-ai-framework-us-2026-11",
+      "kind": "supply_chain",
+      "headline": "Microsoft's Agent Framework PyPI package carried a credential stealer in two versions",
+      "summary": "SecurityWeek reports versions 1.26.1 and 1.26.2 of the agent-framework package on PyPI steal Azure, Azure DevOps and GitHub Actions credentials when Python starts. BleepingComputer says attackers compromised Microsoft's official package. It is not yet known how many developers installed them.",
+      "why_it_matters": "Credential theft from developer tooling gives attackers cloud access without exploiting any flaw.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s6",
+        "s7"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-ecommerce-tw-2026-11",
+      "kind": "breach",
+      "headline": "Taiwan-listed equipment maker says its online shop was hit by automated attack",
+      "summary": "iThome reports a Taiwan-listed equipment maker's filing says its online shop was breached by automated attacks, with suspected data leaks. The site was shut.",
+      "why_it_matters": "It follows the Cyberbiz case that reached Taiwan-listed companies' shops.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Tatung",
+        "description": "a Taiwan-listed electrical equipment maker",
+        "sector": "retail",
+        "country": "TW",
+        "impact": "Online shop closed; suspected personal data leak",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s10"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s10"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "ai-embedded-stacks-global-2026-11",
+      "kind": "ai_capability",
+      "headline": "Forescout says AI models found new flaws in embedded network stacks in 90 hours",
+      "summary": "Forescout used off-the-shelf AI models on embedded network stacks, iThome reports; 52% of the new flaws were rated critical or high.",
+      "why_it_matters": "Self-reported by the vendor; the source gives no CVE ids.",
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_found",
+      "ai_role_secondary": null,
+      "ai_confidence": "claimed",
+      "ai_claimant": "Forescout",
+      "ai_evidence": [
+        {
+          "source_id": "s11",
+          "quote": "網路安全業者Forescout利用現成AI模型搭配分析工具,針對10套嵌入式TCP/IP協定堆疊進行研究",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "self_reported",
       "regions": [
         "GLOBAL"
       ],
@@ -170,95 +413,147 @@
       "attribution": [],
       "actor_nexus": null,
       "incident": null,
-      "cve_ids": [
-        "CVE-2026-115731"
-      ],
+      "cve_ids": [],
       "release_id": null,
       "flaw_evidence": [],
       "exploit_reported_in_sources": null,
       "exposure": null,
       "standing_story": null,
       "source_ids": [
-        "s1"
+        "s11"
       ],
-      "first_seen": "2026-11-18",
-      "vendor": {
-        "id": null,
-        "name": "Perforce",
-        "country": null
-      },
-      "cves": [
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "camp-espionage-us-2026-11",
+      "kind": "campaign",
+      "headline": "Mandiant: COLD RELIC used stolen cloud data to impersonate staff at a second US victim",
+      "summary": "Google's Mandiant and threat intelligence group say COLD RELIC, formerly COLDRIVER, impersonated an employee of a hacked US organisation to phish a second one.",
+      "why_it_matters": "One compromise seeded the next, with stolen contacts used as pretexts.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "EU"
+      ],
+      "topics": [
+        "government",
+        "defence_industry"
+      ],
+      "attribution": [
         {
-          "cve_id": "CVE-2026-115731",
-          "date_published": "2026-11-03",
-          "date_updated": "2026-11-18",
-          "assigner": "Perforce",
-          "vendor": {
-            "id": null,
-            "name": "Perforce",
-            "country": null
-          },
-          "product": "Puppet Enterprise",
-          "title": "Perforce Puppet Enterprise Deserialization of Untrusted Data Vulnerability",
-          "cvss": {
-            "score": 9.4,
-            "version": "4.0",
-            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
-            "scorer": "cna"
-          },
-          "epss": {
-            "score": 0.00691,
-            "percentile": 0.53546,
-            "date": "2026-11-18"
-          },
-          "ssvc": {
-            "exploitation": "active",
-            "automatable": "no",
-            "technical_impact": "total",
-            "date": "2026-11-17"
-          },
-          "kev": {
-            "date_added": "2026-11-17",
-            "due_date": "2026-12-01",
-            "ransomware": "unknown",
-            "catalog_version": "2026.11.17"
-          },
-          "credits": [],
-          "ai_credit": null,
-          "discovery_credit": "unknown",
-          "advisory_date": null,
-          "patch": null,
-          "exploitation_evidence": [
-            {
-              "date": "2026-11-17",
-              "basis": "kev_listed",
-              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-115731"
-            }
-          ],
-          "exploit_reference": false,
-          "vendor_confirmed": false,
-          "vendor_confirmed_by": null,
-          "ghsa_ids": [],
-          "captured_at": "2026-11-19T04:30:54+08:00"
+          "attributed_by": "Mandiant and Google Threat Intelligence Group",
+          "basis": "vendor",
+          "actor_name_as_used": "COLD RELIC",
+          "sponsor_claimed": null,
+          "nexus": "unknown",
+          "confidence_text": null,
+          "confidence_level": "unstated",
+          "date": "2026-11-17",
+          "source_id": "s8"
         }
       ],
+      "actor_nexus": "unknown",
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s8",
+        "s9"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
       "release": null,
-      "public_exploit": "no",
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "pol-ai-defence-us-2026-11",
+      "kind": "policy",
+      "headline": "US senators urge White House to build defensive AI cyber systems",
+      "summary": "A bipartisan Senate pair urged the White House to launch a national effort against AI-enabled cyber threats, The Record reports.",
+      "why_it_matters": "It is a request, not a law or funded programme.",
+      "severity": null,
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "US"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12"
+      ],
+      "first_seen": "2026-11-19",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
       "anthropic_disclosure": false,
       "withheld": null
     }
   ],
-  "actors_seen": [],
+  "actors_seen": [
+    {
+      "name": "COLD RELIC",
+      "actor_id": null,
+      "nexus": "unknown",
+      "item_ids": [
+        "camp-espionage-us-2026-11"
+      ],
+      "cross_link": null
+    }
+  ],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
-    "source_ids": [],
+    "analysis": "Taiwan's HSBC website is on the reported list of sites that served malicious code in the Optimizely attack. Tatung also reported an attack on its online shop. Taiwan's Cabinet told ministries to tighten oversight of breach notifications, Focus Taiwan reports.",
+    "item_ids": [
+      "sc-web-platform-global-2026-11",
+      "inc-ecommerce-tw-2026-11"
+    ],
+    "source_ids": [
+      "s15"
+    ],
     "rows": [
       {
         "row": "gov_infra",
-        "text": null,
+        "text": "The Administration for Cyber Security's October report describes a government platform's account-recovery flaw that let attackers add 34 abnormal accounts; follow-on actions were blocked, iThome reports.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s16"
+        ]
       },
       {
         "row": "home_vendors",
@@ -292,8 +587,10 @@
       }
     ],
     "japan": {
-      "text": null,
-      "item_ids": [],
+      "text": "RIKEN took the Fugaku supercomputer offline after an intrusion that exposed data on up to 4,597 users; no attacker has been named.",
+      "item_ids": [
+        "inc-research-jp-2026-11"
+      ],
       "source_ids": []
     },
     "kev_lines": {
@@ -329,66 +626,269 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-50522",
-      "score": 0.8187,
-      "delta_7d": 0.78828,
-      "percentile": 0.99656
+      "title": "CERT-EU: five NGINX flaws allow unauthenticated code execution; fixes published 18 Nov",
+      "source_id": "s13"
     },
     {
-      "cve_id": "CVE-2026-6875",
-      "score": 0.78461,
-      "delta_7d": 0.77035,
-      "percentile": 0.99591
-    },
-    {
-      "cve_id": "CVE-2026-61511",
-      "score": 0.74266,
-      "delta_7d": 0.68659,
-      "percentile": 0.99497
-    },
-    {
-      "cve_id": "CVE-2021-3199",
-      "score": 0.88139,
-      "delta_7d": 0.57895,
-      "percentile": 0.99771
-    },
-    {
-      "cve_id": "CVE-2026-5430",
-      "score": 0.7884,
-      "delta_7d": 0.5645,
-      "percentile": 0.99599
+      "title": "CERT-EU rates the Java4Shell flaw in OpenJDK high severity; fixes released 17 Nov",
+      "source_id": "s14"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
   "sources": [
     {
       "id": "s1",
-      "title": "CVE-2026-115731",
+      "title": "Borrowed Code, Real Consequences: What OPTIMJACK Teaches Us",
       "title_en": null,
       "language": "en",
-      "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-115731",
-      "source_type": "cve_record",
-      "published_at": "2026-11-03",
-      "publisher": "cve-org",
-      "publisher_name": "CVE Program",
+      "outlet": "Palo Alto Networks Unit 42",
+      "url": "https://unit42.paloaltonetworks.com/optimjack-supply-chain-attack",
+      "source_type": "research",
+      "published_at": "2026-11-18T04:43:00+08:00",
+      "publisher": "unit42",
+      "publisher_name": "Unit 42",
       "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "Optimizely供應鏈攻擊波及BBC、GitLab、IKEA等178個組織網站,匯豐臺灣也名列其中",
+      "title_en": "Optimizely supply chain attack reaches 178 organisations' sites, HSBC Taiwan also listed",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180588",
+      "source_type": "press",
+      "published_at": "2026-11-18T10:05:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "Japan takes Fugaku supercomputer offlline after cyberattack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/japan-takes-fugaku-supercomputer-offlline-after-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-18T04:51:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "理研「富岳」で侵害 - 窃取情報で他システムへの攻撃試行も",
+      "title_en": "Breach at RIKEN's Fugaku; stolen information also used to try attacks on other systems",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/192952",
+      "source_type": "press",
+      "published_at": "2026-11-18T22:24:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "日本理研系統被駭,外洩註冊用戶個資、憑證,迫使超級電腦Fugaku暫停運作",
+      "title_en": "RIKEN systems hacked, user data and credentials exposed, forcing Fugaku supercomputer to pause",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180610",
+      "source_type": "press",
+      "published_at": "2026-11-18T14:27:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "Microsoft's Agent Framework PyPI package compromised to steal credentials",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/microsofts-agent-framework-pypi-package-compromised-to-steal-credentials",
+      "source_type": "press",
+      "published_at": "2026-11-19T00:58:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Microsoft Agent Framework Releases Poisoned With Credential Stealer",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/microsoft-agent-framework-releases-poisoned-with-credential-stealer",
+      "source_type": "press",
+      "published_at": "2026-11-18T19:05:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "COLD RELIC: A Case Study in Impersonation and Compromise",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Google Threat Intelligence blog",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/cold-relic-a-case-study-in-impersonation-and-compromise",
+      "source_type": "research",
+      "published_at": "2026-11-17T22:00:00+08:00",
+      "publisher": "mandiant",
+      "publisher_name": "Mandiant and Google Threat Intelligence",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "Russian cyber-espionage group used stolen cloud data to hack into organizations, Google says",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/russia-cyber-espionage-google",
+      "source_type": "press",
+      "published_at": "2026-11-18T23:15:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "大同購物網站e同購遭自動化攻擊入侵,疑似個資外洩",
+      "title_en": "Tatung's online shop breached by automated attack, personal data suspected leaked",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180615",
+      "source_type": "press",
+      "published_at": "2026-11-18T15:27:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "AI加速嵌入式設備漏洞挖掘,研究人員90小時找出66項TCP/IP協定堆疊新漏洞",
+      "title_en": "AI speeds embedded device flaw hunting; researchers find 66 new TCP/IP stack flaws in 90 hours",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180564",
+      "source_type": "press",
+      "published_at": "2026-11-18T08:00:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "Lawmakers call on White House to develop defensive AI cyber systems",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/ai-cyber-white-house",
+      "source_type": "press",
+      "published_at": "2026-11-19T03:00:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "2026-022: Critical vulnerabilities in Nginx",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CERT-EU",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-022",
+      "source_type": "government",
+      "published_at": "2026-11-19T01:30:00+08:00",
+      "publisher": "cert-eu",
+      "publisher_name": "CERT-EU",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "2026-021: High Severity Vulnerability in Java SE and OpenJDK",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CERT-EU",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-021",
+      "source_type": "government",
+      "published_at": "2026-11-18T17:11:00+08:00",
+      "publisher": "cert-eu",
+      "publisher_name": "CERT-EU",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "Cabinet urges caution, calls for oversight of data breach notifications",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan",
+      "url": "https://focustaiwan.tw/politics/202611180014",
+      "source_type": "press",
+      "published_at": "2026-11-18T14:57:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "資安署揭露某機關平臺忘記帳號功能存在身分驗證漏洞,而被新增34組異常帳號",
+      "title_en": "Administration for Cyber Security discloses agency platform's forgot-account flaw; 34 abnormal accounts added",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180607",
+      "source_type": "press",
+      "published_at": "2026-11-18T12:36:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
       "state_label": null,
       "seen_as": "pack"
     }
   ],
   "computed": {
-    "word_count": 512,
-    "reading_minutes": 3,
-    "item_count": 1,
+    "word_count": 1050,
+    "reading_minutes": 5,
+    "item_count": 7,
     "ai_linked": {
-      "linked": 0,
-      "total": 1
+      "linked": 1,
+      "total": 7
     },
-    "source_count": 1,
-    "publisher_count": 1
+    "source_count": 16,
+    "publisher_count": 9
   }
 }
