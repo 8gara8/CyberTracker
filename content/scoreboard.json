@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "as_of": "2026-11-18",
+  "as_of": "2026-11-19",
   "claims_version": 1,
   "claims": [
     {
@@ -28,9 +28,9 @@
       "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
       "status": "open",
       "zone": "support",
-      "reading": 441,
-      "reading_text": "+441%",
-      "reading_as_of": "2026-11-16",
+      "reading": 439.3,
+      "reading_text": "+439.3%",
+      "reading_as_of": "2026-11-17",
       "last_entry_id": "SE-0002"
     },
     {
@@ -40,7 +40,7 @@
       "zone": "between",
       "reading": 371,
       "reading_text": "371",
-      "reading_as_of": "2026-11-16",
+      "reading_as_of": "2026-11-17",
       "last_entry_id": "SE-0003"
     },
     {
@@ -48,9 +48,9 @@
       "text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36).",
       "status": "open",
       "zone": "between",
-      "reading": 15.5,
-      "reading_text": "15.5 (80% range 11 to 20)",
-      "reading_as_of": "2026-11-16",
+      "reading": 15,
+      "reading_text": "15 (80% range 12 to 20)",
+      "reading_as_of": "2026-11-17",
       "last_entry_id": "SE-0004"
     },
     {

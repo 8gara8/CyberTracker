@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-16",
+  "updated_at": "2026-11-17",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -5068,6 +5068,12 @@
       "Joshua Rogers (AISLE Research)"
     ],
     [
+      "CVE-2026-77224",
+      "2026-11-17",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
       "CVE-2026-77226",
       "2026-10-05",
       "cna.credits",
@@ -7088,12 +7094,6 @@
       "2026-09-23",
       "cna.credits",
       "Red Hat would like to thank Paul Bottinelli (Trail of Bits in collaboration with OpenAI) for reporting this issue."
-    ],
-    [
-      "CVE-2026-96447",
-      "2026-11-06",
-      "cna.credits",
-      "Red Hat would like to thank Bruno Oliveira of IBM in collaboration with OpenAI for reporting this issue."
     ],
     [
       "CVE-2026-96453",
@@ -10202,6 +10202,24 @@
       "2026-11-16",
       "cna.credits",
       "The ASF, found using LLM security scan, validated and reported by Apache Shiro"
+    ],
+    [
+      "CVE-2026-129510",
+      "2026-11-17",
+      "cna.credits",
+      "Anthropic OSS Scanner"
+    ],
+    [
+      "CVE-2026-129511",
+      "2026-11-17",
+      "cna.credits",
+      "Anthropic OSS Scanner"
+    ],
+    [
+      "CVE-2026-129512",
+      "2026-11-17",
+      "cna.credits",
+      "Anthropic OSS Scanner"
     ],
     [
       "CVE-2026-129703",

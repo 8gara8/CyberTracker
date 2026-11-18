@@ -2,6 +2,13 @@
   "schema_version": 1,
   "editions": [
     {
+      "date": "2026-11-19",
+      "edition": "data_only",
+      "published_at": "2026-11-19T04:30:54+08:00",
+      "item_count": 1,
+      "corrected": false
+    },
+    {
       "date": "2026-11-18",
       "edition": "full",
       "published_at": "2026-11-18T04:34:03+08:00",
@@ -991,6 +998,15 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-115731": {
+      "first_cited": "2026-11-19",
+      "item_ids": [
+        "2026-11-19/cve-2026-115731"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }

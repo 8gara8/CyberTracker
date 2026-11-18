@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-16",
-  "catalog_version": "2026.11.13",
+  "updated_at": "2026-11-17",
+  "catalog_version": "2026.11.17",
   "entries": [
     [
       "CVE-2010-5326",
@@ -11004,7 +11004,7 @@
     [
       "CVE-2023-28461",
       "2024-11-25",
-      "Array Networks ",
+      "Array Networks",
       "AG/vxAG ArrayOS",
       "2023-03-15",
       "mitre",
@@ -11436,7 +11436,7 @@
     [
       "CVE-2024-57727",
       "2025-02-13",
-      "SimpleHelp ",
+      "SimpleHelp",
       "SimpleHelp",
       "2025-01-15",
       "mitre",
@@ -13227,7 +13227,7 @@
     [
       "CVE-2025-66644",
       "2025-12-08",
-      "Array Networks ",
+      "Array Networks",
       "ArrayOS AG",
       "2025-12-05",
       "mitre",
@@ -14226,7 +14226,7 @@
     [
       "CVE-2024-57726",
       "2026-04-24",
-      "SimpleHelp ",
+      "SimpleHelp",
       "SimpleHelp",
       "2025-01-15",
       "mitre",
@@ -14235,7 +14235,7 @@
     [
       "CVE-2024-57728",
       "2026-04-24",
-      "SimpleHelp ",
+      "SimpleHelp",
       "SimpleHelp",
       "2025-01-15",
       "mitre",
@@ -14667,7 +14667,7 @@
     [
       "CVE-2026-48558",
       "2026-06-29",
-      "SimpleHelp ",
+      "SimpleHelp",
       "SimpleHelp",
       "2026-06-12",
       "VulnCheck",
@@ -16030,6 +16030,15 @@
       "Multiple Products",
       "2026-11-12",
       "checkpoint",
+      "unknown"
+    ],
+    [
+      "CVE-2026-115731",
+      "2026-11-17",
+      "Perforce",
+      "Puppet Enterprise",
+      "2026-11-03",
+      "Perforce",
       "unknown"
     ]
   ]
