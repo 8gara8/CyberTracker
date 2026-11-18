@@ -7,8 +7,8 @@
       "trigger": "schedule",
       "attempt": 1,
       "started_at": "2026-11-19T04:30:27+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-19T04:34:54+08:00",
+      "outcome": "published_full",
       "edition": "full",
       "error_code": null,
       "code_commit": "866dc9d29ad0f1f6cc98e276639778c97858983f",
@@ -63,14 +63,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-19T04:34:08+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-19T04:34:11+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-19T04:34:11+08:00",
+          "ended_at": "2026-11-19T04:34:54+08:00",
           "note": null
         },
         {
@@ -82,9 +82,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-19T04:34:11+08:00",
+          "ended_at": "2026-11-19T04:34:21+08:00",
           "note": null
         }
       ],
@@ -551,10 +551,10 @@
         "by_code": {}
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-19T04:34:54+08:00",
+        "shows_date": "2026-11-19",
+        "shows_edition": "full"
       },
       "recheck": {
         "from": "2026-11-05",
@@ -570,7 +570,35 @@
           }
         ]
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-19T04:34:21+08:00",
+        "checked": 93,
+        "ok": 72,
+        "unknown": 18,
+        "broken": [
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+            "item_id": "angle",
+            "edition_date": "2026-11-18",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks",
+            "item_id": "angle",
+            "edition_date": "2026-11-14",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports",
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "result": "changed",
+            "http": 200
+          }
+        ]
+      }
     }
   ]
 }
