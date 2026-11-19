@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-20",
-      "edition": "data_only",
-      "published_at": "2026-11-20T04:30:53+08:00",
-      "item_count": 4,
+      "edition": "full",
+      "published_at": "2026-11-20T04:34:03+08:00",
+      "item_count": 8,
       "corrected": false
     },
     {
@@ -1164,7 +1164,9 @@
     },
     "https://cert.europa.eu/publications/security-advisories/2026-022": {
       "first_cited": "2026-11-19",
-      "item_ids": [],
+      "item_ids": [
+        "2026-11-20/cve-2026-123007"
+      ],
       "sha256": "3d407fbfb976eccfc65fdd1f46132b5d48cafc1ce919ab40ecbbf07fde1ebaea",
       "hashed_at": "2026-11-19T04:34:13+08:00",
       "last_check": {
@@ -1238,6 +1240,150 @@
       "item_ids": [
         "2026-11-20/cve-2024-10441"
       ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2024-10441",
+        "2026-11-20/cve-2026-40217",
+        "2026-11-20/cve-2026-90436",
+        "2026-11-20/cve-2026-90817"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://synology.com/en-global/security/advisory/Synology_SA_24_20": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2024-10441"
+      ],
+      "sha256": "ad7f12406292f00c954b01660a7acba687223abb204310b1d9541aa80cccfa62",
+      "hashed_at": "2026-11-20T04:33:42+08:00",
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/cisa-warns-of-4-exploited-flaws-linked.html": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-40217"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/critical-apache-roller-axis-vulnerabilities-exploited-in-attacks": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-90436"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-123890"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/newly-patched-vmware-vcenter-flaw-exploited-as-zero-day-by-chinese-apt": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-123890"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-123890": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-123890"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/european-commission-confirms-cyberattack-using-ai": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/inc-government-eu-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/f5-patches-critical-nginx2root-flaws-as-poc-exploits-go-public": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-123007"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ipa.go.jp/security/security-alert/2026/alert20261119.html": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-123007"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180662": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/inc-transport-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-132143": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180640": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180648": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/ukraine-ransomware-arrests-cyber": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/data-breach-impacts-40-irish-credit-unions-in-reported-it-provider-hack": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bsi.bund.de/DE/Service-Navi/Presse/Pressemitteilungen/Presse2026/261119_Lagebericht.html": {
+      "first_cited": "2026-11-20",
+      "item_ids": [],
       "sha256": null,
       "hashed_at": null,
       "last_check": null

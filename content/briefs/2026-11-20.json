@@ -1,14 +1,51 @@
 {
   "schema_version": 1,
   "date": "2026-11-20",
-  "edition": "data_only",
-  "generated_at": "2026-11-20T04:30:35+08:00",
-  "published_at": "2026-11-20T04:30:53+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-20T04:45:00+08:00",
+  "published_at": "2026-11-20T04:34:03+08:00",
   "data_only_published_at": "2026-11-20T04:30:53+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-18",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "CISA added four exploited flaws to its list, including one in Synology's DiskStation Manager.",
+      "item_ids": [
+        "cve-2024-10441",
+        "cve-2026-40217",
+        "cve-2026-90436",
+        "cve-2026-90817"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Google says a group it tracks as ARMORY CASTLE exploited a VMware vCenter flaw before a patch existed.",
+      "item_ids": [
+        "cve-2026-123890"
+      ],
+      "gap": false
+    },
+    {
+      "text": "The European Commission said it was hit by an attack that reportedly used the open-source AI platform ARTEX.",
+      "item_ids": [
+        "inc-government-eu-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "34% of recently disclosed flaws on CISA's list in the 26 weeks to 18 Nov were already exploited at disclosure.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-18",
+    "counterpoint": "Today's Synology listing covers a flaw patched long ago, so CISA's listing date is a lagging proxy for exploitation, not its start.",
+    "counterpoint_source_ids": [
+      "s3",
+      "s1"
+    ],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -130,7 +167,7 @@
       }
     ],
     "global": {
-      "item_count": 3
+      "item_count": 6
     },
     "signals": [
       {
@@ -182,20 +219,21 @@
   },
   "items": [
     {
-      "id": "cve-2026-90817",
+      "id": "cve-2024-10441",
       "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-90817 in Vanderbilt University Research Electronic Data Capture (REDCa",
-      "summary": "CISA added CVE-2026-90817, a flaw in Vanderbilt University Research Electronic Data Capture (REDCap), to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 20 Sep 2026.",
-      "why_it_matters": null,
-      "severity": null,
+      "headline": "CISA lists Synology DiskStation Manager code-execution flaw as exploited",
+      "summary": "CISA added a Synology DiskStation Manager remote code execution flaw to its exploited list on 18 Nov (US date), saying it acted on evidence of active exploitation. Synology, a Taiwanese vendor, published fixes in an earlier advisory. That advisory does not mention attacks.",
+      "why_it_matters": "An old patched flaw reaching CISA's list now shows why the listing date lags real exploitation.",
+      "severity": "high",
       "landmark": false,
-      "ai_role": "unassessed",
+      "ai_role": "none",
       "ai_role_secondary": null,
       "ai_confidence": null,
       "ai_claimant": null,
       "ai_evidence": [],
       "claim_type": "government",
       "regions": [
+        "TW",
         "GLOBAL"
       ],
       "topics": [],
@@ -203,35 +241,52 @@
       "actor_nexus": null,
       "incident": null,
       "cve_ids": [
-        "CVE-2026-90817"
+        "CVE-2024-10441"
       ],
       "release_id": null,
-      "flaw_evidence": [],
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2024-10441",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-18",
+          "source_id": "s1"
+        },
+        {
+          "cve_id": "CVE-2024-10441",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2024-11-05",
+          "source_id": "s3"
+        }
+      ],
       "exploit_reported_in_sources": null,
       "exposure": null,
       "standing_story": null,
       "source_ids": [
-        "s1"
+        "s1",
+        "s2",
+        "s3"
       ],
       "first_seen": "2026-11-20",
       "vendor": {
-        "id": null,
-        "name": "Vanderbilt University",
-        "country": null
+        "id": "synology",
+        "name": "Synology",
+        "country": "TW"
       },
       "cves": [
         {
-          "cve_id": "CVE-2026-90817",
-          "date_published": "2026-09-20",
+          "cve_id": "CVE-2024-10441",
+          "date_published": "2025-03-19",
           "date_updated": "2026-11-19",
-          "assigner": "Securifera",
+          "assigner": "synology",
           "vendor": {
-            "id": null,
-            "name": "Vanderbilt University",
-            "country": null
+            "id": "synology",
+            "name": "Synology",
+            "country": "TW"
           },
-          "product": "Research Electronic Data Capture (REDCap)",
-          "title": "Vanderbilt University Research Electronic Data Capture (REDCap) Code Injection Vulnerability",
+          "product": "DiskStation Manager (DSM)",
+          "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
           "cvss": {
             "score": 9.8,
             "version": "3.1",
@@ -239,8 +294,8 @@
             "scorer": "cna"
           },
           "epss": {
-            "score": 0.25187,
-            "percentile": 0.97974,
+            "score": 0.0215,
+            "percentile": 0.82512,
             "date": "2026-11-19"
           },
           "ssvc": {
@@ -256,24 +311,152 @@
             "catalog_version": "2026.11.18"
           },
           "credits": [
-            "Ryan Wincey (@rwincey, Securifera)"
+            "Ryan Emmons (@the_emmons)"
           ],
           "ai_credit": null,
           "discovery_credit": "human",
+          "advisory_date": "2024-11-05",
+          "patch": {
+            "date": "2024-11-05",
+            "basis": "vendor_advisory",
+            "source_url": "https://synology.com/en-global/security/advisory/Synology_SA_24_20"
+          },
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-18",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2024-10441"
+            },
+            {
+              "date": "2026-11-18",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-40217",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists BerriAI LiteLLM AI-gateway flaw as exploited",
+      "summary": "CISA listed a flaw in BerriAI's LiteLLM, an AI model gateway, as exploited on 18 Nov (US date). Its record describes remote code execution through a code-testing endpoint. The Hacker News ties the four new listings to ransomware, cryptomining and LLMjacking attacks.",
+      "why_it_matters": "A gateway that fronts many models makes AI infrastructure itself an exploited target.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "ai_target",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s4",
+          "quote": "CISA Warns of 4 Exploited Flaws Linked to Ransomware, Cryptomining, and LLMjacking Attacks",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-40217"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-40217",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-18",
+          "source_id": "s1"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s4",
+        "s5"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "berriai",
+        "name": "BerriAI",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-40217",
+          "date_published": "2026-04-10",
+          "date_updated": "2026-11-19",
+          "assigner": "mitre",
+          "vendor": {
+            "id": "berriai",
+            "name": "BerriAI",
+            "country": "US"
+          },
+          "product": "LiteLLM",
+          "title": "BerriAI LiteLLM Unprotected Alternate Channel Vulnerability",
+          "cvss": {
+            "score": 8.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.61911,
+            "percentile": 0.99193,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": {
+            "date_added": "2026-11-18",
+            "due_date": "2026-12-02",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.18"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
           "advisory_date": null,
           "patch": null,
           "exploitation_evidence": [
             {
               "date": "2026-11-18",
               "basis": "kev_listed",
-              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-90817"
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-40217"
+            },
+            {
+              "date": "2026-11-18",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog"
             }
           ],
           "exploit_reference": false,
           "vendor_confirmed": false,
           "vendor_confirmed_by": null,
           "ghsa_ids": [],
-          "captured_at": "2026-11-20T04:30:53+08:00"
+          "captured_at": "2026-11-20T04:34:03+08:00"
         }
       ],
       "release": null,
@@ -284,12 +467,12 @@
     {
       "id": "cve-2026-90436",
       "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-90436 in Apache Axis as exploited",
-      "summary": "CISA added CVE-2026-90436, a flaw in Apache Axis, to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 6 Nov 2026.",
-      "why_it_matters": null,
-      "severity": null,
+      "headline": "CISA lists Apache Axis unsafe-reflection flaw as exploited",
+      "summary": "CISA listed an Apache Axis flaw on 18 Nov (US date). Its record says an unauthenticated attacker can run code through a crafted SOAP fault message, and notes the product could be end of life. SecurityWeek reports attacks on Confluence Data Center through an Axis flaw.",
+      "why_it_matters": "Unsupported components cannot simply be patched, so end-of-life code limits how quickly defenders can close exploited holes.",
+      "severity": "high",
       "landmark": false,
-      "ai_role": "unassessed",
+      "ai_role": "none",
       "ai_role_secondary": null,
       "ai_confidence": null,
       "ai_claimant": null,
@@ -306,12 +489,22 @@
         "CVE-2026-90436"
       ],
       "release_id": null,
-      "flaw_evidence": [],
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-90436",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-18",
+          "source_id": "s1"
+        }
+      ],
       "exploit_reported_in_sources": null,
       "exposure": null,
       "standing_story": null,
       "source_ids": [
-        "s2"
+        "s1",
+        "s6",
+        "s7"
       ],
       "first_seen": "2026-11-20",
       "vendor": {
@@ -367,13 +560,18 @@
               "date": "2026-11-18",
               "basis": "kev_listed",
               "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-90436"
+            },
+            {
+              "date": "2026-11-18",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog"
             }
           ],
           "exploit_reference": false,
           "vendor_confirmed": true,
           "vendor_confirmed_by": "vendor_cna",
           "ghsa_ids": [],
-          "captured_at": "2026-11-20T04:30:53+08:00"
+          "captured_at": "2026-11-20T04:34:03+08:00"
         }
       ],
       "release": null,
@@ -382,14 +580,14 @@
       "withheld": null
     },
     {
-      "id": "cve-2026-40217",
+      "id": "cve-2026-90817",
       "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2026-40217 in BerriAI LiteLLM as exploited",
-      "summary": "CISA added CVE-2026-40217, a flaw in BerriAI LiteLLM, to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 10 Apr 2026.",
+      "headline": "CISA lists REDCap code-injection flaw as exploited",
+      "summary": "CISA lists a REDCap code-injection flaw as exploited. Per its record, an unauthenticated attacker needs a valid public survey hash.",
       "why_it_matters": null,
-      "severity": null,
+      "severity": "high",
       "landmark": false,
-      "ai_role": "unassessed",
+      "ai_role": "none",
       "ai_role_secondary": null,
       "ai_confidence": null,
       "ai_claimant": null,
@@ -403,133 +601,44 @@
       "actor_nexus": null,
       "incident": null,
       "cve_ids": [
-        "CVE-2026-40217"
+        "CVE-2026-90817"
       ],
       "release_id": null,
-      "flaw_evidence": [],
-      "exploit_reported_in_sources": null,
-      "exposure": null,
-      "standing_story": null,
-      "source_ids": [
-        "s3"
-      ],
-      "first_seen": "2026-11-20",
-      "vendor": {
-        "id": "berriai",
-        "name": "BerriAI",
-        "country": "US"
-      },
-      "cves": [
+      "flaw_evidence": [
         {
-          "cve_id": "CVE-2026-40217",
-          "date_published": "2026-04-10",
-          "date_updated": "2026-11-19",
-          "assigner": "mitre",
-          "vendor": {
-            "id": "berriai",
-            "name": "BerriAI",
-            "country": "US"
-          },
-          "product": "LiteLLM",
-          "title": "BerriAI LiteLLM Unprotected Alternate Channel Vulnerability",
-          "cvss": {
-            "score": 8.8,
-            "version": "3.1",
-            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
-            "scorer": "cna"
-          },
-          "epss": {
-            "score": 0.61911,
-            "percentile": 0.99193,
-            "date": "2026-11-19"
-          },
-          "ssvc": {
-            "exploitation": "active",
-            "automatable": "no",
-            "technical_impact": "total",
-            "date": "2026-11-19"
-          },
-          "kev": {
-            "date_added": "2026-11-18",
-            "due_date": "2026-12-02",
-            "ransomware": "unknown",
-            "catalog_version": "2026.11.18"
-          },
-          "credits": [],
-          "ai_credit": null,
-          "discovery_credit": "unknown",
-          "advisory_date": null,
-          "patch": null,
-          "exploitation_evidence": [
-            {
-              "date": "2026-11-18",
-              "basis": "kev_listed",
-              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-40217"
-            }
-          ],
-          "exploit_reference": false,
-          "vendor_confirmed": false,
-          "vendor_confirmed_by": null,
-          "ghsa_ids": [],
-          "captured_at": "2026-11-20T04:30:53+08:00"
+          "cve_id": "CVE-2026-90817",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-18",
+          "source_id": "s1"
         }
       ],
-      "release": null,
-      "public_exploit": "no",
-      "anthropic_disclosure": false,
-      "withheld": null
-    },
-    {
-      "id": "cve-2024-10441",
-      "kind": "exploited_flaw",
-      "headline": "CISA lists CVE-2024-10441 in Synology DiskStation Manager (DSM) as exploited",
-      "summary": "CISA added CVE-2024-10441, a flaw in Synology DiskStation Manager (DSM), to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 19 Mar 2025.",
-      "why_it_matters": null,
-      "severity": null,
-      "landmark": false,
-      "ai_role": "unassessed",
-      "ai_role_secondary": null,
-      "ai_confidence": null,
-      "ai_claimant": null,
-      "ai_evidence": [],
-      "claim_type": "government",
-      "regions": [
-        "TW"
-      ],
-      "topics": [],
-      "attribution": [],
-      "actor_nexus": null,
-      "incident": null,
-      "cve_ids": [
-        "CVE-2024-10441"
-      ],
-      "release_id": null,
-      "flaw_evidence": [],
       "exploit_reported_in_sources": null,
       "exposure": null,
       "standing_story": null,
       "source_ids": [
-        "s4"
+        "s1",
+        "s8"
       ],
       "first_seen": "2026-11-20",
       "vendor": {
-        "id": "synology",
-        "name": "Synology",
-        "country": "TW"
+        "id": null,
+        "name": "Vanderbilt University",
+        "country": null
       },
       "cves": [
         {
-          "cve_id": "CVE-2024-10441",
-          "date_published": "2025-03-19",
+          "cve_id": "CVE-2026-90817",
+          "date_published": "2026-09-20",
           "date_updated": "2026-11-19",
-          "assigner": "synology",
+          "assigner": "Securifera",
           "vendor": {
-            "id": "synology",
-            "name": "Synology",
-            "country": "TW"
+            "id": null,
+            "name": "Vanderbilt University",
+            "country": null
           },
-          "product": "DiskStation Manager (DSM)",
-          "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+          "product": "Research Electronic Data Capture (REDCap)",
+          "title": "Vanderbilt University Research Electronic Data Capture (REDCap) Code Injection Vulnerability",
           "cvss": {
             "score": 9.8,
             "version": "3.1",
@@ -537,8 +646,8 @@
             "scorer": "cna"
           },
           "epss": {
-            "score": 0.0215,
-            "percentile": 0.82512,
+            "score": 0.25187,
+            "percentile": 0.97974,
             "date": "2026-11-19"
           },
           "ssvc": {
@@ -554,7 +663,7 @@
             "catalog_version": "2026.11.18"
           },
           "credits": [
-            "Ryan Emmons (@the_emmons)"
+            "Ryan Wincey (@rwincey, Securifera)"
           ],
           "ai_credit": null,
           "discovery_credit": "human",
@@ -564,26 +673,407 @@
             {
               "date": "2026-11-18",
               "basis": "kev_listed",
-              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2024-10441"
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-90817"
+            },
+            {
+              "date": "2026-11-18",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog"
             }
           ],
           "exploit_reference": false,
-          "vendor_confirmed": true,
-          "vendor_confirmed_by": "vendor_cna",
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
           "ghsa_ids": [],
-          "captured_at": "2026-11-20T04:30:53+08:00"
+          "captured_at": "2026-11-20T04:34:03+08:00"
         }
       ],
       "release": null,
       "public_exploit": "no",
       "anthropic_disclosure": false,
       "withheld": null
+    },
+    {
+      "id": "cve-2026-123890",
+      "kind": "critical_flaw",
+      "headline": "Google says VMware vCenter flaw was exploited as a zero-day; vendor page not seen",
+      "summary": "Google says ARMORY CASTLE exploited a vCenter authentication bypass from early September, before disclosure. Watch: no VMware advisory seen.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [
+        {
+          "attributed_by": "Google Threat Intelligence Group",
+          "basis": "vendor",
+          "actor_name_as_used": "ARMORY CASTLE",
+          "sponsor_claimed": null,
+          "nexus": "unknown",
+          "confidence_text": "suspected PRC-nexus",
+          "confidence_level": "low",
+          "date": "2026-11-19",
+          "source_id": "s9"
+        }
+      ],
+      "actor_nexus": "unknown",
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-123890"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-123890",
+          "kind": "exploited",
+          "basis": "news_reported",
+          "date": "2026-11-20",
+          "source_id": "s10"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s9",
+        "s10",
+        "s11"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "vmware",
+        "name": "VMware",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-123890",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-19",
+          "assigner": "vmware",
+          "vendor": {
+            "id": "vmware",
+            "name": "VMware",
+            "country": "US"
+          },
+          "product": "VMware vCenter",
+          "title": "vCenter authentication-bypass vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": null,
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-20",
+              "basis": "news_reported",
+              "source_url": "https://securityweek.com/newly-patched-vmware-vcenter-flaw-exploited-as-zero-day-by-chinese-apt"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-123007",
+      "kind": "critical_flaw",
+      "headline": "F5 patches five NGINX remote code execution flaws; proofs of concept reported public",
+      "summary": "CERT-EU says F5 fixed five NGINX flaws allowing unauthenticated remote code execution; SecurityWeek reports public proofs of concept. Watch: no F5 advisory seen.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU",
+        "JP",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-123007",
+        "CVE-2026-123633"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s13",
+        "s14",
+        "s15"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "f5",
+        "name": "F5",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-123007",
+          "date_published": "2026-11-18",
+          "date_updated": "2026-11-19",
+          "assigner": "f5",
+          "vendor": {
+            "id": "f5",
+            "name": "F5",
+            "country": "US"
+          },
+          "product": "NGINX Plus",
+          "title": "NGINX ngx_http_v2_module vulnerability",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:H/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.06358,
+            "percentile": 0.9379,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-18"
+          },
+          "kev": null,
+          "credits": [
+            "F5 acknowledges Rapid7 Senior Principal Researcher Stephen Fewer for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges Tomer Schwartz at Wiz Research, for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges Xint.io for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges Ikotas Labs, Inc. (@ikotas00 using GPT-6 Astra) for bringing this issue to our attention and following the highest standards of coordinated disclosure."
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:34:03+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-123633",
+          "date_published": "2026-11-18",
+          "date_updated": "2026-11-19",
+          "assigner": "f5",
+          "vendor": {
+            "id": "f5",
+            "name": "F5",
+            "country": "US"
+          },
+          "product": "NGINX Open Source",
+          "title": "NGINX ngx_http_v2_module vulnerability",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:H/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.06532,
+            "percentile": 0.9393,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-18"
+          },
+          "kev": null,
+          "credits": [
+            "F5 acknowledges Albert Ebb Metnir (metnir.com), for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges Nir Ohfeld at Wiz Research, for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges Xint.io for bringing this issue to our attention and following the highest standards of coordinated disclosure.",
+            "F5 acknowledges memN0ps (Palo Alto Networks Unit 42) for bringing this issue to our attention and following the highest standards of coordinated disclosure."
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:34:03+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-government-eu-2026-11",
+      "kind": "breach",
+      "headline": "European Commission says it was hit by an attack that reportedly used AI tooling",
+      "summary": "A spokesperson confirmed an October attack, The Record reports. Personnel systems were down over 10 days; Politico says CERT-EU identified ARTEX. No group named.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s12",
+          "quote": "CERT-EU had identified the attackers’ use of ARTEX, an open-source AI hacking platform",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "EU"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "European Commission",
+        "description": "an EU institution",
+        "sector": "government",
+        "country": null,
+        "impact": "Personnel systems disrupted for more than 10 days.",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s12"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-transport-tw-2026-11",
+      "kind": "breach",
+      "headline": "Taiwan taxi-fleet operator's subsidiary reports unauthorised access to customer data",
+      "summary": "iThome reports a Taiwan-listed taxi-fleet operator's subsidiary was accessed without authorisation; some customer data may be taken. Scope unknown.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": null,
+        "description": "a Taiwan-listed taxi-fleet operator's subsidiary",
+        "sector": "transport",
+        "country": "TW",
+        "impact": "Some customer and staff data accessed, possibly extracted.",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s16"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s16"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
     }
   ],
-  "actors_seen": [],
+  "actors_seen": [
+    {
+      "name": "ARMORY CASTLE",
+      "actor_id": null,
+      "nexus": "unknown",
+      "item_ids": [
+        "cve-2026-123890"
+      ],
+      "cross_link": null
+    }
+  ],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
+    "analysis": "Synology, a Taiwanese vendor, has a NAS flaw on CISA's exploited list. A Taiwan-listed taxi-fleet operator also reported unauthorised access at a subsidiary.",
+    "item_ids": [
+      "cve-2024-10441",
+      "inc-transport-tw-2026-11"
+    ],
     "source_ids": [],
     "rows": [
       {
@@ -594,9 +1084,13 @@
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
-        "source_ids": []
+        "text": "Synology's flaw is today's home-vendor exploited-list addition. DrayTek's Vigor2960 router also gained further CVE records rated critical by its CNA.",
+        "item_ids": [
+          "cve-2024-10441"
+        ],
+        "source_ids": [
+          "s17"
+        ]
       },
       {
         "row": "chips_defence",
@@ -624,9 +1118,12 @@
       }
     ],
     "japan": {
-      "text": null,
+      "text": "iThome reports a breach of PLAID's KARTE marketing platform has reached dozens of Japanese firms; it puts DHC's affected records at 19.11 million.",
       "item_ids": [],
-      "source_ids": []
+      "source_ids": [
+        "s18",
+        "s19"
+      ]
     },
     "kev_lines": {
       "tw": {
@@ -661,65 +1158,47 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-50522",
-      "score": 0.8187,
-      "delta_7d": 0.78828,
-      "percentile": 0.99656
+      "title": "Ukraine arrests four suspected members of a ransomware network tied to $40 million in extortion",
+      "source_id": "s20"
     },
     {
-      "cve_id": "CVE-2026-6875",
-      "score": 0.78461,
-      "delta_7d": 0.77035,
-      "percentile": 0.99592
+      "title": "Irish credit unions affected after reported hack of IT provider Wellington IT",
+      "source_id": "s21"
     },
     {
-      "cve_id": "CVE-2021-3199",
-      "score": 0.88139,
-      "delta_7d": 0.57895,
-      "percentile": 0.9977
-    },
-    {
-      "cve_id": "CVE-2026-5430",
-      "score": 0.7884,
-      "delta_7d": 0.5645,
-      "percentile": 0.99599
-    },
-    {
-      "cve_id": "CVE-2026-45247",
-      "score": 0.8234,
-      "delta_7d": 0.56183,
-      "percentile": 0.99669
+      "title": "BSI annual report calls Germany's cyber situation tense to critical",
+      "source_id": "s22"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
   "sources": [
     {
       "id": "s1",
-      "title": "CVE-2026-90817",
+      "title": "CISA Adds Four Known Exploited Vulnerabilities to Catalog",
       "title_en": null,
       "language": "en",
-      "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-90817",
-      "source_type": "cve_record",
-      "published_at": "2026-09-20",
-      "publisher": "cve-org",
-      "publisher_name": "CVE Program",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/18/cisa-adds-four-known-exploited-vulnerabilities-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-18",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
       "tier": 1,
       "state_label": null,
       "seen_as": "pack"
     },
     {
       "id": "s2",
-      "title": "CVE-2026-90436",
+      "title": "CVE-2024-10441",
       "title_en": null,
       "language": "en",
       "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-90436",
+      "url": "https://cve.org/CVERecord?id=CVE-2024-10441",
       "source_type": "cve_record",
-      "published_at": "2026-11-06",
+      "published_at": null,
       "publisher": "cve-org",
       "publisher_name": "CVE Program",
       "tier": 1,
@@ -728,13 +1207,43 @@
     },
     {
       "id": "s3",
+      "title": "Synology-SA-24:20 DSM",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Synology",
+      "url": "https://synology.com/en-global/security/advisory/Synology_SA_24_20",
+      "source_type": "vendor_advisory",
+      "published_at": "2024-11-05",
+      "publisher": "vendor:synology",
+      "publisher_name": "Synology",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "CISA Warns of 4 Exploited Flaws Linked to Ransomware, Cryptomining, and LLMjacking Attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/cisa-warns-of-4-exploited-flaws-linked.html",
+      "source_type": "press",
+      "published_at": "2026-11-19T16:00:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
       "title": "CVE-2026-40217",
       "title_en": null,
       "language": "en",
       "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2026-40217",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-40217",
       "source_type": "cve_record",
-      "published_at": "2026-04-10",
+      "published_at": null,
       "publisher": "cve-org",
       "publisher_name": "CVE Program",
       "tier": 1,
@@ -742,30 +1251,270 @@
       "seen_as": "pack"
     },
     {
-      "id": "s4",
-      "title": "CVE-2024-10441",
+      "id": "s6",
+      "title": "CVE-2026-90436",
       "title_en": null,
       "language": "en",
       "outlet": "CVE Program",
-      "url": "https://www.cve.org/CVERecord?id=CVE-2024-10441",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-90436",
       "source_type": "cve_record",
-      "published_at": "2025-03-19",
+      "published_at": null,
       "publisher": "cve-org",
       "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Critical Apache Roller, Axis Vulnerabilities Exploited in Attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/critical-apache-roller-axis-vulnerabilities-exploited-in-attacks",
+      "source_type": "press",
+      "published_at": "2026-11-19T20:13:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "CVE-2026-90817",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-90817",
+      "source_type": "cve_record",
+      "published_at": null,
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "ARMORY CASTLE Exploits vSphere",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Google Threat Intelligence Group",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere",
+      "source_type": "research",
+      "published_at": "2026-11-19T22:00:00+08:00",
+      "publisher": "mandiant",
+      "publisher_name": "Mandiant and Google Threat Intelligence",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "Newly Patched VMware vCenter Flaw Exploited as Zero-Day by Chinese APT",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/newly-patched-vmware-vcenter-flaw-exploited-as-zero-day-by-chinese-apt",
+      "source_type": "press",
+      "published_at": "2026-11-20T03:21:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "CVE-2026-123890",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-123890",
+      "source_type": "cve_record",
+      "published_at": null,
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "European Commission confirms cyberattack, says hackers used AI tool",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/european-commission-confirms-cyberattack-using-ai",
+      "source_type": "press",
+      "published_at": "2026-11-19T23:15:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "2026-022: Critical vulnerabilities in Nginx",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CERT-EU",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-022",
+      "source_type": "government",
+      "published_at": "2026-11-19T01:30:00+08:00",
+      "publisher": "cert-eu",
+      "publisher_name": "CERT-EU",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "F5 Patches Critical NGINX2Root Flaws as PoC Exploits Go Public",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/f5-patches-critical-nginx2root-flaws-as-poc-exploits-go-public",
+      "source_type": "press",
+      "published_at": "2026-11-19T18:26:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "NGINXの複数の脆弱性対策について(CVE-2026-123007、CVE-2026-123633等)",
+      "title_en": "Countermeasures for multiple NGINX vulnerabilities (CVE-2026-123007, CVE-2026-123633 and others)",
+      "language": "ja",
+      "outlet": "IPA",
+      "url": "https://ipa.go.jp/security/security-alert/2026/alert20261119.html",
+      "source_type": "government",
+      "published_at": "2026-11-18T23:00:00+08:00",
+      "publisher": "ipa",
+      "publisher_name": "IPA",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "大車隊子公司全球商務科技遭未經授權存取,部分客戶及會員資料外洩",
+      "title_en": "Subsidiary of Taiwan Taxi operator accessed without authorisation; some customer and member data exposed",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180662",
+      "source_type": "press",
+      "published_at": "2026-11-19T17:11:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "DrayTek Vigor2960 Backup mainfunction.cgi doWebBackup stack-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-132143",
+      "source_type": "cve_record",
+      "published_at": null,
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s18",
+      "title": "JINS、三菱UFJ銀行等數十家日本企業陸續發布資安事件公告,皆因第三方行銷科技業者PLAID旗下KARTE平臺遭駭",
+      "title_en": "JINS, MUFG Bank and dozens of Japanese firms announce incidents tied to breach of PLAID's KARTE platform",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180640",
+      "source_type": "press",
+      "published_at": "2026-11-19T11:17:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s19",
+      "title": "日本藥妝業者DHC因第三方行銷分析平臺被駭,外洩用戶個資1,911萬筆",
+      "title_en": "Japan's DHC: 19.11 million user records exposed via breached third-party marketing platform",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome",
+      "url": "https://ithome.com.tw/news/180648",
+      "source_type": "press",
+      "published_at": "2026-11-19T12:57:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s20",
+      "title": "Ukraine exposes ransomware network extorting US oil, healthcare firms",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/ukraine-ransomware-arrests-cyber",
+      "source_type": "press",
+      "published_at": "2026-11-19T21:30:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s21",
+      "title": "Data breach impacts 40 Irish credit unions in reported IT provider hack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/data-breach-impacts-40-irish-credit-unions-in-reported-it-provider-hack",
+      "source_type": "press",
+      "published_at": "2026-11-19T03:39:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s22",
+      "title": "BSI-Jahreslagebericht: Cybersicherheitslage in Deutschland ist angespannt bis kritisch",
+      "title_en": "BSI annual report: Germany's cyber security situation is tense to critical",
+      "language": "de",
+      "outlet": "BSI",
+      "url": "https://bsi.bund.de/DE/Service-Navi/Presse/Pressemitteilungen/Presse2026/261119_Lagebericht.html",
+      "source_type": "government",
+      "published_at": "2026-11-19T17:00:00+08:00",
+      "publisher": "bsi",
+      "publisher_name": "BSI",
       "tier": 1,
       "state_label": null,
       "seen_as": "pack"
     }
   ],
   "computed": {
-    "word_count": 710,
-    "reading_minutes": 3,
-    "item_count": 4,
+    "word_count": 1152,
+    "reading_minutes": 5,
+    "item_count": 8,
     "ai_linked": {
-      "linked": 0,
-      "total": 4
+      "linked": 2,
+      "total": 8
     },
-    "source_count": 4,
-    "publisher_count": 1
+    "source_count": 22,
+    "publisher_count": 12
   }
 }
