@@ -2,6 +2,13 @@
   "schema_version": 1,
   "editions": [
     {
+      "date": "2026-11-20",
+      "edition": "data_only",
+      "published_at": "2026-11-20T04:30:53+08:00",
+      "item_count": 4,
+      "corrected": false
+    },
+    {
       "date": "2026-11-19",
       "edition": "full",
       "published_at": "2026-11-19T04:34:08+08:00",
@@ -1198,6 +1205,42 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-90817": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-90817"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-90436": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-90436"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-40217": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2026-40217"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2024-10441": {
+      "first_cited": "2026-11-20",
+      "item_ids": [
+        "2026-11-20/cve-2024-10441"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }

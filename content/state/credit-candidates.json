@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17",
+  "updated_at": "2026-11-18",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -6163,13 +6163,13 @@
       "CVE-2026-89422",
       "2026-09-22",
       "cna.credits",
-      "Milad Nasr / Anthropic"
+      "Luna Tong / Anthropic"
     ],
     [
       "CVE-2026-89422",
       "2026-09-22",
       "cna.credits",
-      "Luna Tong / Anthropic"
+      "Milad Nasr / Anthropic"
     ],
     [
       "CVE-2026-90441",
@@ -9190,6 +9190,12 @@
       "Anthropic's OSS Scanner, as vulnerabilities ANT-2026-0GXXE91V and ANT-2026-31ZIEY85"
     ],
     [
+      "CVE-2026-123640",
+      "2026-11-18",
+      "cna.credits",
+      "F5 acknowledges Vivek Parikh of BreachX Zero Day Labs using Typhon AI Mil v2 for bringing this issue to our attention and following the highest standards of coordinated disclosure."
+    ],
+    [
       "CVE-2026-123660",
       "2026-11-06",
       "cna.credits",
@@ -10186,6 +10192,18 @@
       "Claude Opus 5 (1M context)"
     ],
     [
+      "CVE-2026-127039",
+      "2026-11-18",
+      "cna.credits",
+      "Joshua Rogers of AISLE Research Team"
+    ],
+    [
+      "CVE-2026-127040",
+      "2026-11-18",
+      "cna.credits",
+      "Joshua Rogers of AISLE Research Team"
+    ],
+    [
       "CVE-2026-127084",
       "2026-11-13",
       "cna.credits",
@@ -10202,6 +10220,12 @@
       "2026-11-16",
       "cna.credits",
       "The ASF, found using LLM security scan, validated and reported by Apache Shiro"
+    ],
+    [
+      "CVE-2026-129509",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Security Scans"
     ],
     [
       "CVE-2026-129510",
@@ -10236,6 +10260,96 @@
     [
       "CVE-2026-129706",
       "2026-11-16",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-130762",
+      "2026-11-18",
+      "cna.credits",
+      "neo-ai-engineer"
+    ],
+    [
+      "CVE-2026-132069",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5 (1M context)"
+    ],
+    [
+      "CVE-2026-132144",
+      "2026-11-18",
+      "cna.credits",
+      "Francois-Xavier Stellamans from the NATO Cyber Security Centre with OpenAI Daybreak support (using GPT5.6-Cyber)"
+    ],
+    [
+      "CVE-2026-132144",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132636",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132637",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132641",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132642",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132642",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132643",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132643",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132644",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132644",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132645",
+      "2026-11-18",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-132645",
+      "2026-11-18",
       "cna.credits",
       "Claude Opus 5.5"
     ]

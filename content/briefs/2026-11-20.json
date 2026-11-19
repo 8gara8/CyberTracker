@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-20",
+  "edition": "data_only",
+  "generated_at": "2026-11-20T04:30:35+08:00",
+  "published_at": "2026-11-20T04:30:53+08:00",
+  "data_only_published_at": "2026-11-20T04:30:53+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-11-18",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "campaign-target",
+        "reason": "Campaign naming the region: Mandiant: COLD RELIC used stolen cloud data to impersonate staff at a second US…",
+        "item_ids": [
+          "camp-espionage-us-2026-11",
+          "camp-crypto-theft-us-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11",
+              "camp-crypto-theft-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "high",
+        "change": "same",
+        "rule_id": "agency-alert",
+        "reason": "ANSSI and CERT-FR emergency alert: Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "item_ids": [],
+        "fired": [
+          {
+            "rule_id": "agency-alert",
+            "level": "high",
+            "item_ids": [],
+            "signal_ids": [
+              "sig-20261119-1",
+              "sig-20261119-2"
+            ]
+          },
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-defence-de-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Taiwan: Cyberbiz breach spreads to at least 13 Taiwan-listed companies' online shops",
+        "item_ids": [
+          "sc-ecommerce-tw-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "sc-ecommerce-tw-2026-11"
+            ],
+            "signal_ids": []
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-mobile-intercept-tw-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "serious-victim",
+        "reason": "Victim in Japan: RIKEN takes Fugaku offline after intrusion exposed user data",
+        "item_ids": [
+          "inc-research-jp-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-research-jp-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 3
+    },
+    "signals": [
+      {
+        "id": "sig-20261119-1",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-016",
+        "title": "Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-114938"
+        ]
+      },
+      {
+        "id": "sig-20261119-2",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-017",
+        "title": "Multiples vulnérabilités dans F5 NGINX (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-123633",
+          "CVE-2026-123007"
+        ]
+      },
+      {
+        "id": "sig-20261120-1",
+        "type": "home_vendor_kev",
+        "region": "TW",
+        "date": "2026-11-18",
+        "publisher": "cisa-kev",
+        "url": "https://www.cve.org/CVERecord?id=CVE-2024-10441",
+        "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+        "cve_ids": [
+          "CVE-2024-10441"
+        ]
+      }
+    ]
+  },
+  "gap": {
+    "headline": "34% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 15.5 days (2023–24: 21, faster). 169 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 46,211 new CVE records in 13 weeks, 5.4 times the 2023–24 pace (5.3 times excluding the Linux kernel). AI-credited: 718 in 13 weeks, 348 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-20.json",
+    "metrics_sha256": "6e34d7d4231fa7bac861d7ceb5f48e6598ca2990ed33bd0e78fc6a66ee29584f",
+    "as_of": "2026-11-18"
+  },
+  "items": [
+    {
+      "id": "cve-2026-90817",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-90817 in Vanderbilt University Research Electronic Data Capture (REDCa",
+      "summary": "CISA added CVE-2026-90817, a flaw in Vanderbilt University Research Electronic Data Capture (REDCap), to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 20 Sep 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-90817"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": null,
+        "name": "Vanderbilt University",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-90817",
+          "date_published": "2026-09-20",
+          "date_updated": "2026-11-19",
+          "assigner": "Securifera",
+          "vendor": {
+            "id": null,
+            "name": "Vanderbilt University",
+            "country": null
+          },
+          "product": "Research Electronic Data Capture (REDCap)",
+          "title": "Vanderbilt University Research Electronic Data Capture (REDCap) Code Injection Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.25187,
+            "percentile": 0.97974,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": {
+            "date_added": "2026-11-18",
+            "due_date": "2026-11-21",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.18"
+          },
+          "credits": [
+            "Ryan Wincey (@rwincey, Securifera)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-18",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-90817"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:30:53+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-90436",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-90436 in Apache Axis as exploited",
+      "summary": "CISA added CVE-2026-90436, a flaw in Apache Axis, to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 6 Nov 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-90436"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "apache",
+        "name": "Apache Software Foundation",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-90436",
+          "date_published": "2026-11-06",
+          "date_updated": "2026-11-19",
+          "assigner": "apache",
+          "vendor": {
+            "id": "apache",
+            "name": "Apache Software Foundation",
+            "country": "US"
+          },
+          "product": "Axis",
+          "title": "Apache Axis Unsafe Reflection Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cisa_adp"
+          },
+          "epss": {
+            "score": 0.01773,
+            "percentile": 0.7866,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-17"
+          },
+          "kev": {
+            "date_added": "2026-11-18",
+            "due_date": "2026-11-21",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.18"
+          },
+          "credits": [
+            "José Apari-Pantigozo from OKIOK"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-18",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-90436"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:30:53+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-40217",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2026-40217 in BerriAI LiteLLM as exploited",
+      "summary": "CISA added CVE-2026-40217, a flaw in BerriAI LiteLLM, to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 10 Apr 2026.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-40217"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s3"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "berriai",
+        "name": "BerriAI",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-40217",
+          "date_published": "2026-04-10",
+          "date_updated": "2026-11-19",
+          "assigner": "mitre",
+          "vendor": {
+            "id": "berriai",
+            "name": "BerriAI",
+            "country": "US"
+          },
+          "product": "LiteLLM",
+          "title": "BerriAI LiteLLM Unprotected Alternate Channel Vulnerability",
+          "cvss": {
+            "score": 8.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.61911,
+            "percentile": 0.99193,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": {
+            "date_added": "2026-11-18",
+            "due_date": "2026-12-02",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.18"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-18",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-40217"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:30:53+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2024-10441",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists CVE-2024-10441 in Synology DiskStation Manager (DSM) as exploited",
+      "summary": "CISA added CVE-2024-10441, a flaw in Synology DiskStation Manager (DSM), to its list of exploited flaws on 18 Nov 2026 (US date). The CVE record was published on 19 Mar 2025.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "unassessed",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2024-10441"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "synology",
+        "name": "Synology",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2024-10441",
+          "date_published": "2025-03-19",
+          "date_updated": "2026-11-19",
+          "assigner": "synology",
+          "vendor": {
+            "id": "synology",
+            "name": "Synology",
+            "country": "TW"
+          },
+          "product": "DiskStation Manager (DSM)",
+          "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.0215,
+            "percentile": 0.82512,
+            "date": "2026-11-19"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": {
+            "date_added": "2026-11-18",
+            "due_date": "2026-11-21",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.18"
+          },
+          "credits": [
+            "Ryan Emmons (@the_emmons)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-18",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2024-10441"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-20T04:30:53+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 2,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 2 in 90, to 18 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 18 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0005",
+      "date": "2026-11-18",
+      "claim_id": "SB-06",
+      "claim_text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-50522",
+      "score": 0.8187,
+      "delta_7d": 0.78828,
+      "percentile": 0.99656
+    },
+    {
+      "cve_id": "CVE-2026-6875",
+      "score": 0.78461,
+      "delta_7d": 0.77035,
+      "percentile": 0.99592
+    },
+    {
+      "cve_id": "CVE-2021-3199",
+      "score": 0.88139,
+      "delta_7d": 0.57895,
+      "percentile": 0.9977
+    },
+    {
+      "cve_id": "CVE-2026-5430",
+      "score": 0.7884,
+      "delta_7d": 0.5645,
+      "percentile": 0.99599
+    },
+    {
+      "cve_id": "CVE-2026-45247",
+      "score": 0.8234,
+      "delta_7d": 0.56183,
+      "percentile": 0.99669
+    }
+  ],
+  "feeds_stale": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CVE-2026-90817",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-90817",
+      "source_type": "cve_record",
+      "published_at": "2026-09-20",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "CVE-2026-90436",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-90436",
+      "source_type": "cve_record",
+      "published_at": "2026-11-06",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "CVE-2026-40217",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2026-40217",
+      "source_type": "cve_record",
+      "published_at": "2026-04-10",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "CVE-2024-10441",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://www.cve.org/CVERecord?id=CVE-2024-10441",
+      "source_type": "cve_record",
+      "published_at": "2025-03-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 710,
+    "reading_minutes": 3,
+    "item_count": 4,
+    "ai_linked": {
+      "linked": 0,
+      "total": 4
+    },
+    "source_count": 4,
+    "publisher_count": 1
+  }
+}

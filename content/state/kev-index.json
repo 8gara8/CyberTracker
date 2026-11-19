@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17",
-  "catalog_version": "2026.11.17",
+  "updated_at": "2026-11-18",
+  "catalog_version": "2026.11.18",
   "entries": [
     [
       "CVE-2010-5326",
@@ -16039,6 +16039,42 @@
       "Puppet Enterprise",
       "2026-11-03",
       "Perforce",
+      "unknown"
+    ],
+    [
+      "CVE-2024-10441",
+      "2026-11-18",
+      "Synology",
+      "DiskStation Manager (DSM)",
+      "2025-03-19",
+      "synology",
+      "unknown"
+    ],
+    [
+      "CVE-2026-40217",
+      "2026-11-18",
+      "BerriAI",
+      "LiteLLM",
+      "2026-04-10",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-90436",
+      "2026-11-18",
+      "Apache",
+      "Axis",
+      "2026-11-06",
+      "apache",
+      "unknown"
+    ],
+    [
+      "CVE-2026-90817",
+      "2026-11-18",
+      "Vanderbilt University",
+      "Research Electronic Data Capture (REDCap)",
+      "2026-09-20",
+      "Securifera",
       "unknown"
     ]
   ]
