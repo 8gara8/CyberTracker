@@ -7,8 +7,8 @@
       "trigger": "schedule",
       "attempt": 1,
       "started_at": "2026-11-20T04:30:28+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-20T04:34:51+08:00",
+      "outcome": "published_full",
       "edition": "full",
       "error_code": null,
       "code_commit": "8c5cc484c89dbf81bc30e6aca29b6b65d44b4fa5",
@@ -63,14 +63,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-20T04:34:02+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-20T04:34:08+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-20T04:34:08+08:00",
+          "ended_at": "2026-11-20T04:34:51+08:00",
           "note": null
         },
         {
@@ -82,9 +82,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-20T04:34:08+08:00",
+          "ended_at": "2026-11-20T04:34:20+08:00",
           "note": null
         }
       ],
@@ -551,10 +551,10 @@
         "by_code": {}
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-20T04:34:51+08:00",
+        "shows_date": "2026-11-20",
+        "shows_edition": "full"
       },
       "recheck": {
         "from": "2026-11-06",
@@ -570,7 +570,49 @@
           }
         ]
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-20T04:34:20+08:00",
+        "checked": 114,
+        "ok": 92,
+        "unknown": 17,
+        "broken": [
+          {
+            "url": "https://ipa.go.jp/security/security-alert/2026/alert20261119.html",
+            "item_id": "cve-2026-123007",
+            "edition_date": "2026-11-20",
+            "result": "broken",
+            "http": null
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/cold-relic-a-case-study-in-impersonation-and-compromise",
+            "item_id": "camp-espionage-us-2026-11",
+            "edition_date": "2026-11-19",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+            "item_id": "angle",
+            "edition_date": "2026-11-18",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks",
+            "item_id": "angle",
+            "edition_date": "2026-11-14",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports",
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "result": "changed",
+            "http": 200
+          }
+        ]
+      }
     }
   ]
 }
