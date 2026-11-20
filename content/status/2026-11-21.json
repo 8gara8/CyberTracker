@@ -7,10 +7,10 @@
       "trigger": "schedule",
       "attempt": 1,
       "started_at": "2026-11-21T04:30:45+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-21T04:34:35+08:00",
+      "outcome": "failed",
       "edition": null,
-      "error_code": null,
+      "error_code": "E_VALIDATION",
       "code_commit": "6ca5db97fe593294a86d455443e6c3e5cddae909",
       "data_cutoff_utc": "2026-11-19",
       "data_only_published_at": null,
@@ -26,24 +26,610 @@
         },
         {
           "id": "collect",
+          "status": "ok",
+          "started_at": "2026-11-21T04:30:52+08:00",
+          "ended_at": "2026-11-21T04:31:08+08:00",
+          "note": null
+        },
+        {
+          "id": "metrics",
+          "status": "degraded",
+          "started_at": "2026-11-21T04:31:08+08:00",
+          "ended_at": "2026-11-21T04:31:10+08:00",
+          "note": "Shown with older data: fix_side."
+        },
+        {
+          "id": "data_only",
+          "status": "failed",
+          "started_at": "2026-11-21T04:31:10+08:00",
+          "ended_at": "2026-11-21T04:31:13+08:00",
+          "note": "Data-only edition not published."
+        },
+        {
+          "id": "draft",
+          "status": "ok",
+          "started_at": "2026-11-21T04:31:14+08:00",
+          "ended_at": "2026-11-21T04:33:40+08:00",
+          "note": null
+        },
+        {
+          "id": "validate",
+          "status": "failed",
+          "started_at": "2026-11-21T04:33:40+08:00",
+          "ended_at": "2026-11-21T04:34:35+08:00",
+          "note": "The draft still had 1 validation error after 2 repairs and 1 attempt."
+        },
+        {
+          "id": "publish",
           "status": "skipped",
           "started_at": null,
           "ended_at": null,
           "note": null
+        },
+        {
+          "id": "deploy",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        },
+        {
+          "id": "recheck",
+          "status": "ok",
+          "started_at": "2026-11-21T04:31:13+08:00",
+          "ended_at": "2026-11-21T04:31:14+08:00",
+          "note": null
+        },
+        {
+          "id": "links",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": null
+        }
+      ],
+      "feeds": [
+        {
+          "id": "kev",
+          "status": "ok",
+          "newest": "2026-11-20T17:48:39Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 4,
+          "note": null
+        },
+        {
+          "id": "cvelist",
+          "status": "ok",
+          "newest": "2026-11-20T20:26:16Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 71,
+          "note": null
+        },
+        {
+          "id": "epss",
+          "status": "ok",
+          "newest": "2026-11-20T12:03:05Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 21,
+          "note": null
+        },
+        {
+          "id": "ghsa",
+          "status": "ok",
+          "newest": "2026-11-20",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 52,
+          "note": null
+        },
+        {
+          "id": "nvd",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": "Skipped: every kept candidate has a CNA or CISA-ADP score."
+        },
+        {
+          "id": "myjvn",
+          "status": "ok",
+          "newest": "2026-11-19T07:12:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "anthropic-cvd",
+          "status": "ok",
+          "newest": "2026-11-02",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "exchange-tw",
+          "status": "ok",
+          "newest": "2026-11-19T14:59:14Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "exchange-tpex",
+          "status": "ok",
+          "newest": "2026-11-19T11:27:04Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "therecord",
+          "status": "ok",
+          "newest": "2026-11-20T19:32:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "bleepingcomputer",
+          "status": "ok",
+          "newest": "2026-11-20T18:51:43Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "securityweek",
+          "status": "ok",
+          "newest": "2026-11-20T16:01:02Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "krebs",
+          "status": "ok",
+          "newest": "2026-11-18T02:52:04Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "thehackernews",
+          "status": "ok",
+          "newest": "2026-11-20T17:57:20Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "techcrunch-security",
+          "status": "ok",
+          "newest": "2026-11-20T15:46:07Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cisa-advisories",
+          "status": "ok",
+          "newest": "2026-10-19T19:18:07Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cisa-alerts",
+          "status": "ok",
+          "newest": "2026-11-20T12:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "gtig",
+          "status": "ok",
+          "newest": "2026-11-19T14:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "msft-security",
+          "status": "ok",
+          "newest": "2026-11-20T17:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "unit42",
+          "status": "ok",
+          "newest": "2026-11-17T20:43:14Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "volexity",
+          "status": "ok",
+          "newest": "2026-10-16T18:27:25Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "project-zero",
+          "status": "ok",
+          "newest": "2026-11-13T08:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "google-security",
+          "status": "ok",
+          "newest": "2026-11-19T17:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "openai-news",
+          "status": "ok",
+          "newest": "2026-11-20T10:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "ncsc-uk",
+          "status": "ok",
+          "newest": "2026-11-17T12:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cert-eu",
+          "status": "ok",
+          "newest": "2026-11-18T17:30:42Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "bsi",
+          "status": "ok",
+          "newest": "2026-11-19T09:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cert-fr",
+          "status": "ok",
+          "newest": "2026-11-20T00:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "twcert-tvn",
+          "status": "ok",
+          "newest": "2026-11-20T02:36:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 1,
+          "note": null
+        },
+        {
+          "id": "focustaiwan",
+          "status": "ok",
+          "newest": "2026-11-20T13:08:21Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "taipeitimes",
+          "status": "ok",
+          "newest": "2026-11-21T00:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cna",
+          "status": "ok",
+          "newest": "2026-11-20T14:52:19Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "ithome-security",
+          "status": "ok",
+          "newest": "2026-11-20T10:42:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "jpcert",
+          "status": "ok",
+          "newest": "2026-11-20T04:40:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 1,
+          "note": null
+        },
+        {
+          "id": "ipa",
+          "status": "ok",
+          "newest": "2026-11-19T15:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "security-next",
+          "status": "ok",
+          "newest": "2026-11-20T15:01:45Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "nhk",
+          "status": "ok",
+          "newest": "2026-11-20T20:26:38Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "q-reuters",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-ap",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-anthropic-red",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-enisa",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-acs-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-mjib-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nsb-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nco-jp",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-npa-jp",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nikkei",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-prc-state",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        }
+      ],
+      "budgets": {
+        "agent_seconds": 198,
+        "web_fetches": 6,
+        "web_searches": 0,
+        "repair_rounds": 2,
+        "tokens_in": 2036566,
+        "tokens_out": 25493,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0
+        },
+        "safety_stops": 0
+      },
+      "candidates": {
+        "ranked": 470,
+        "kept": 40,
+        "deep_read": 15
+      },
+      "validation": {
+        "errors": 1,
+        "warnings": 0,
+        "codes": [
+          "SEVERITY_KIND"
+        ]
+      },
+      "soft_gates": {
+        "checked": 6,
+        "dropped": 0,
+        "by_code": {}
+      },
+      "deploy": {
+        "triggered": false,
+        "ready_at": null,
+        "shows_date": null,
+        "shows_edition": null
+      },
+      "recheck": {
+        "from": "2026-11-07",
+        "to": "2026-11-20",
+        "items_checked": 44,
+        "flagged": [
+          {
+            "item_id": "cve-2026-123007",
+            "edition_date": "2026-11-20",
+            "flag": "source_missing",
+            "detail": "s15 could not be reached on 2026-11-20.",
+            "correction_id": null
+          },
+          {
+            "item_id": "camp-espionage-us-2026-11",
+            "edition_date": "2026-11-19",
+            "flag": "source_changed",
+            "detail": "s8 (tier 1) changed since it was cited.",
+            "correction_id": null
+          },
+          {
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "flag": "source_changed",
+            "detail": "s18 (tier 1) changed since it was cited.",
+            "correction_id": null
+          }
+        ]
+      },
+      "links": null
+    },
+    {
+      "run_id": "20261121-043435",
+      "trigger": "retry",
+      "attempt": 2,
+      "started_at": "2026-11-21T04:34:35+08:00",
+      "finished_at": null,
+      "outcome": null,
+      "edition": null,
+      "error_code": null,
+      "code_commit": "6ca5db97fe593294a86d455443e6c3e5cddae909",
+      "data_cutoff_utc": "2026-11-19",
+      "data_only_published_at": null,
+      "full_published_at": null,
+      "late": false,
+      "stages": [
+        {
+          "id": "preflight",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": "Reused from run 20261121-043045."
+        },
+        {
+          "id": "collect",
+          "status": "skipped",
+          "started_at": null,
+          "ended_at": null,
+          "note": "Reused from run 20261121-043045."
         },
         {
           "id": "metrics",
           "status": "skipped",
           "started_at": null,
           "ended_at": null,
-          "note": null
+          "note": "Reused from run 20261121-043045."
         },
         {
           "id": "data_only",
           "status": "skipped",
           "started_at": null,
           "ended_at": null,
-          "note": null
+          "note": "Reused from run 20261121-043045."
         },
         {
           "id": "draft",
@@ -78,7 +664,7 @@
           "status": "skipped",
           "started_at": null,
           "ended_at": null,
-          "note": null
+          "note": "Reused from run 20261121-043045."
         },
         {
           "id": "links",
@@ -88,7 +674,440 @@
           "note": null
         }
       ],
-      "feeds": [],
+      "feeds": [
+        {
+          "id": "kev",
+          "status": "ok",
+          "newest": "2026-11-20T17:48:39Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 4,
+          "note": null
+        },
+        {
+          "id": "cvelist",
+          "status": "ok",
+          "newest": "2026-11-20T20:26:16Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 71,
+          "note": null
+        },
+        {
+          "id": "epss",
+          "status": "ok",
+          "newest": "2026-11-20T12:03:05Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 21,
+          "note": null
+        },
+        {
+          "id": "ghsa",
+          "status": "ok",
+          "newest": "2026-11-20",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 52,
+          "note": null
+        },
+        {
+          "id": "nvd",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": "Skipped: every kept candidate has a CNA or CISA-ADP score."
+        },
+        {
+          "id": "myjvn",
+          "status": "ok",
+          "newest": "2026-11-19T07:12:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "anthropic-cvd",
+          "status": "ok",
+          "newest": "2026-11-02",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "exchange-tw",
+          "status": "ok",
+          "newest": "2026-11-19T14:59:14Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "exchange-tpex",
+          "status": "ok",
+          "newest": "2026-11-19T11:27:04Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "therecord",
+          "status": "ok",
+          "newest": "2026-11-20T19:32:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "bleepingcomputer",
+          "status": "ok",
+          "newest": "2026-11-20T18:51:43Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "securityweek",
+          "status": "ok",
+          "newest": "2026-11-20T16:01:02Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "krebs",
+          "status": "ok",
+          "newest": "2026-11-18T02:52:04Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "thehackernews",
+          "status": "ok",
+          "newest": "2026-11-20T17:57:20Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "techcrunch-security",
+          "status": "ok",
+          "newest": "2026-11-20T15:46:07Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cisa-advisories",
+          "status": "ok",
+          "newest": "2026-10-19T19:18:07Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cisa-alerts",
+          "status": "ok",
+          "newest": "2026-11-20T12:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "gtig",
+          "status": "ok",
+          "newest": "2026-11-19T14:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "msft-security",
+          "status": "ok",
+          "newest": "2026-11-20T17:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "unit42",
+          "status": "ok",
+          "newest": "2026-11-17T20:43:14Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "volexity",
+          "status": "ok",
+          "newest": "2026-10-16T18:27:25Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "project-zero",
+          "status": "ok",
+          "newest": "2026-11-13T08:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "google-security",
+          "status": "ok",
+          "newest": "2026-11-19T17:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "openai-news",
+          "status": "ok",
+          "newest": "2026-11-20T10:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "ncsc-uk",
+          "status": "ok",
+          "newest": "2026-11-17T12:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cert-eu",
+          "status": "ok",
+          "newest": "2026-11-18T17:30:42Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "bsi",
+          "status": "ok",
+          "newest": "2026-11-19T09:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cert-fr",
+          "status": "ok",
+          "newest": "2026-11-20T00:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "twcert-tvn",
+          "status": "ok",
+          "newest": "2026-11-20T02:36:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 1,
+          "note": null
+        },
+        {
+          "id": "focustaiwan",
+          "status": "ok",
+          "newest": "2026-11-20T13:08:21Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "taipeitimes",
+          "status": "ok",
+          "newest": "2026-11-21T00:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "cna",
+          "status": "ok",
+          "newest": "2026-11-20T14:52:19Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "ithome-security",
+          "status": "ok",
+          "newest": "2026-11-20T10:42:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "jpcert",
+          "status": "ok",
+          "newest": "2026-11-20T04:40:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 1,
+          "note": null
+        },
+        {
+          "id": "ipa",
+          "status": "ok",
+          "newest": "2026-11-19T15:00:00Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "security-next",
+          "status": "ok",
+          "newest": "2026-11-20T15:01:45Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "nhk",
+          "status": "ok",
+          "newest": "2026-11-20T20:26:38Z",
+          "checked_at": "2026-11-21T04:30:52+08:00",
+          "stale_since": null,
+          "records": 0,
+          "note": null
+        },
+        {
+          "id": "q-reuters",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-ap",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-anthropic-red",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-enisa",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-acs-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-mjib-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nsb-tw",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nco-jp",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-npa-jp",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-nikkei",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        },
+        {
+          "id": "q-prc-state",
+          "status": "skipped",
+          "newest": null,
+          "checked_at": "2026-11-21T04:31:08+08:00",
+          "stale_since": null,
+          "records": null,
+          "note": null
+        }
+      ],
       "budgets": {
         "agent_seconds": 0,
         "web_fetches": 0,
@@ -99,7 +1118,11 @@
         "usage": null,
         "safety_stops": 0
       },
-      "candidates": null,
+      "candidates": {
+        "ranked": 470,
+        "kept": 40,
+        "deep_read": 15
+      },
       "validation": null,
       "soft_gates": null,
       "deploy": {
@@ -108,7 +1131,34 @@
         "shows_date": null,
         "shows_edition": null
       },
-      "recheck": null,
+      "recheck": {
+        "from": "2026-11-07",
+        "to": "2026-11-20",
+        "items_checked": 44,
+        "flagged": [
+          {
+            "item_id": "cve-2026-123007",
+            "edition_date": "2026-11-20",
+            "flag": "source_missing",
+            "detail": "s15 could not be reached on 2026-11-20.",
+            "correction_id": null
+          },
+          {
+            "item_id": "camp-espionage-us-2026-11",
+            "edition_date": "2026-11-19",
+            "flag": "source_changed",
+            "detail": "s8 (tier 1) changed since it was cited.",
+            "correction_id": null
+          },
+          {
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "flag": "source_changed",
+            "detail": "s18 (tier 1) changed since it was cited.",
+            "correction_id": null
+          }
+        ]
+      },
       "links": null
     }
   ]
