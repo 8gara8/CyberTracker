@@ -2,6 +2,13 @@
   "schema_version": 1,
   "editions": [
     {
+      "date": "2026-11-21",
+      "edition": "full",
+      "published_at": "2026-11-21T04:37:21+08:00",
+      "item_count": 5,
+      "corrected": false
+    },
+    {
       "date": "2026-11-20",
       "edition": "full",
       "published_at": "2026-11-20T04:34:03+08:00",
@@ -813,7 +820,8 @@
     "https://cve.org/CVERecord?id=CVE-2026-129448": {
       "first_cited": "2026-11-18",
       "item_ids": [
-        "2026-11-18/cve-2026-129448"
+        "2026-11-18/cve-2026-129448",
+        "2026-11-21/cve-2026-129448"
       ],
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-18T04:34:09+08:00",
@@ -826,7 +834,8 @@
     "https://lists.apache.org/thread/cc0jck13nb9vvcmzxzwotr6n16mx28z9": {
       "first_cited": "2026-11-18",
       "item_ids": [
-        "2026-11-18/cve-2026-129448"
+        "2026-11-18/cve-2026-129448",
+        "2026-11-21/cve-2026-129448"
       ],
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "hashed_at": "2026-11-18T04:34:02+08:00",
@@ -1318,7 +1327,8 @@
     "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere": {
       "first_cited": "2026-11-20",
       "item_ids": [
-        "2026-11-20/cve-2026-123890"
+        "2026-11-20/cve-2026-123890",
+        "2026-11-21/cve-2026-123890"
       ],
       "sha256": "61fef1cd6108043429ab338a89791f3553c30ffe77ebd3a1cc21e6493d7f62f6",
       "hashed_at": "2026-11-20T04:34:09+08:00",
@@ -1344,7 +1354,8 @@
     "https://cve.org/CVERecord?id=CVE-2026-123890": {
       "first_cited": "2026-11-20",
       "item_ids": [
-        "2026-11-20/cve-2026-123890"
+        "2026-11-20/cve-2026-123890",
+        "2026-11-21/cve-2026-123890"
       ],
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
@@ -1471,6 +1482,116 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-76466",
+        "2026-11-21/cve-2026-129448",
+        "2026-11-21/cve-2025-42884",
+        "2026-11-21/cve-2026-123890"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-123890"
+      ],
+      "sha256": "c550d0e3b465cf01ffb15fc7c9336f04b6e9121345c5286e728f8ddfdde34d8c",
+      "hashed_at": "2026-11-21T04:33:41+08:00",
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/vmware-patches-vcenter-zero-day-exploited-in-attacks-since-september": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-123890"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-vcs-static-cred-hr7EWZ8t": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-76466"
+      ],
+      "sha256": "405d4d504ec214b4d9aa2cdd2a88d6234fe0b6a5f354d741e28e5170f922b786",
+      "hashed_at": "2026-11-21T04:33:42+08:00",
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/hackers-exploit-critical-cisco.html": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-76466"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-76466": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2026-76466"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2025-42884": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/cve-2025-42884"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/bell-canada-says-agentic-hacker-stole-enterprise-customer-data": {
+      "first_cited": "2026-11-21",
+      "item_ids": [
+        "2026-11-21/inc-telecom-ca-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/amazon-research-cairn-ai-university-attacks-possible-zero-day": {
+      "first_cited": "2026-11-21",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/hackers-use-autonomous-ai-tool-cairn-to-find-zero-day-take-over-server": {
+      "first_cited": "2026-11-21",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/ruby-patches-ruby2shell-vulnerability-that-could-lead-to-rce": {
+      "first_cited": "2026-11-21",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/php-patches-seven-critical-rce-vulnerabilities": {
+      "first_cited": "2026-11-21",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/sean-cairncross-out-as-national-cyber-director": {
+      "first_cited": "2026-11-21",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }

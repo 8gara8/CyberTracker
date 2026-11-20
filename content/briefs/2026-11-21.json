@@ -1,0 +1,1141 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-21",
+  "edition": "full",
+  "generated_at": "2026-11-21T04:45:00+08:00",
+  "published_at": "2026-11-21T04:37:21+08:00",
+  "data_only_published_at": null,
+  "late": false,
+  "data_cutoff_utc": "2026-11-19",
+  "lead": [
+    {
+      "text": "CISA added four exploited flaws to its list on 20 Nov (US date), in VMware vCenter, Cisco Expressway, Apache Roller and SAP NetWeaver.",
+      "item_ids": [
+        "cve-2026-123890",
+        "cve-2026-76466",
+        "cve-2026-129448",
+        "cve-2025-42884"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Google says a group it tracks as ARMORY CASTLE used the vCenter flaw from early September, before Broadcom's patch.",
+      "item_ids": [
+        "cve-2026-123890"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Bell Canada said an agentic attacker stole enterprise customer data.",
+      "item_ids": [
+        "inc-telecom-ca-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "34% of recently disclosed flaws CISA listed in the 26 weeks to 19 Nov were already exploited when disclosed.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-19",
+    "counterpoint": "CISA's listing date is a lagging proxy, not first exploitation. Google says the vCenter attacks began in early September, before the 19 Nov disclosure.",
+    "counterpoint_source_ids": [
+      "s2"
+    ],
+    "claim_id": null,
+    "claim_text": null
+  },
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "campaign-target",
+        "reason": "Campaign naming the region: Mandiant: COLD RELIC used stolen cloud data to impersonate staff at a second US…",
+        "item_ids": [
+          "camp-espionage-us-2026-11",
+          "camp-crypto-theft-us-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11",
+              "camp-crypto-theft-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "high",
+        "change": "same",
+        "rule_id": "agency-alert",
+        "reason": "ANSSI and CERT-FR emergency alert: Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "item_ids": [],
+        "fired": [
+          {
+            "rule_id": "agency-alert",
+            "level": "high",
+            "item_ids": [],
+            "signal_ids": [
+              "sig-20261119-1",
+              "sig-20261119-2"
+            ]
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "elevated",
+        "change": "down",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "elevated",
+        "change": "up",
+        "rule_id": "agency-alert",
+        "reason": "JPCERT/CC emergency alert: 注意喚起: PHPにおける複数の脆弱性(CVE-2026-109618、CVE-2026-109619)に関する注意喚起 (更新)",
+        "item_ids": [],
+        "fired": [
+          {
+            "rule_id": "agency-alert",
+            "level": "high",
+            "item_ids": [],
+            "signal_ids": [
+              "sig-20261121-1"
+            ]
+          },
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-research-jp-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 5
+    },
+    "signals": [
+      {
+        "id": "sig-20261119-1",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-016",
+        "title": "Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-114938"
+        ]
+      },
+      {
+        "id": "sig-20261119-2",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-017",
+        "title": "Multiples vulnérabilités dans F5 NGINX (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-123633",
+          "CVE-2026-123007"
+        ]
+      },
+      {
+        "id": "sig-20261120-1",
+        "type": "home_vendor_kev",
+        "region": "TW",
+        "date": "2026-11-18",
+        "publisher": "cisa-kev",
+        "url": "https://www.cve.org/CVERecord?id=CVE-2024-10441",
+        "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+        "cve_ids": [
+          "CVE-2024-10441"
+        ]
+      },
+      {
+        "id": "sig-20261121-1",
+        "type": "agency_alert",
+        "region": "JP",
+        "date": "2026-11-20",
+        "publisher": "jpcert",
+        "url": "https://jpcert.or.jp/at/2026/at260033.html",
+        "title": "注意喚起: PHPにおける複数の脆弱性(CVE-2026-109618、CVE-2026-109619)に関する注意喚起 (更新)",
+        "cve_ids": [
+          "CVE-2026-109618",
+          "CVE-2026-109619"
+        ]
+      }
+    ]
+  },
+  "gap": {
+    "headline": "34% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 15 days (2023–24: 21, faster). 167 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 46,765 new CVE records in 13 weeks, 5.5 times the 2023–24 pace (5.3 times excluding the Linux kernel). AI-credited: 723 in 13 weeks, 344 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-21.json",
+    "metrics_sha256": "ddbfca07541e6a59a490461b80017f56bf0331a23df7ff01abcef083578705ba",
+    "as_of": "2026-11-19"
+  },
+  "items": [
+    {
+      "id": "cve-2026-76466",
+      "kind": "exploited_flaw",
+      "headline": "Cisco Expressway hard-coded credential flaw added to CISA exploited list",
+      "summary": "Cisco's advisory dated 21 Oct rates the Expressway flaw CVSS 9.8. CISA listed it on 20 Nov (US date). The Hacker News reports attackers breached an organisation after a public proof of concept appeared.",
+      "why_it_matters": "Public exploit code and confirmed attacks followed an advisory that said Cisco knew of no malicious use.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-76466"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-76466",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-20",
+          "source_id": "s1"
+        },
+        {
+          "cve_id": "CVE-2026-76466",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-10-21",
+          "source_id": "s6"
+        }
+      ],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s6",
+        "s7",
+        "s8"
+      ],
+      "first_seen": "2026-11-21",
+      "vendor": {
+        "id": "cisco",
+        "name": "Cisco",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-76466",
+          "date_published": "2026-10-21",
+          "date_updated": "2026-11-20",
+          "assigner": "cisco",
+          "vendor": {
+            "id": "cisco",
+            "name": "Cisco",
+            "country": "US"
+          },
+          "product": "Expressway Series",
+          "title": "Cisco Expressway Series Use of Hard-coded Credentials Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00417,
+            "percentile": 0.36836,
+            "date": "2026-11-20"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-20"
+          },
+          "kev": {
+            "date_added": "2026-11-20",
+            "due_date": "2026-11-23",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.20"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": "2026-10-21",
+          "patch": {
+            "date": "2026-10-21",
+            "basis": "vendor_advisory",
+            "source_url": "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-vcs-static-cred-hr7EWZ8t"
+          },
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-20",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-76466"
+            },
+            {
+              "date": "2026-11-20",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-21T04:37:21+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-129448",
+      "kind": "exploited_flaw",
+      "headline": "Apache Roller pre-login deserialization flaw joins CISA exploited list",
+      "summary": "Apache's notice covers unauthenticated deserialization in Roller's XML-RPC endpoint, affecting releases before 6.1.5; the CVE record gives CVSS 9.8. CISA listed it on 20 Nov (US date). Our 18 Nov item relied on Apache's own warning.",
+      "why_it_matters": "Pre-login code execution plus CISA confirmation leaves unpatched Roller servers an easy target.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-129448"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-129448",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-20",
+          "source_id": "s1"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s9",
+        "s10"
+      ],
+      "first_seen": "2026-11-18",
+      "vendor": {
+        "id": "apache",
+        "name": "Apache Software Foundation",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-129448",
+          "date_published": "2026-11-17",
+          "date_updated": "2026-11-20",
+          "assigner": "apache",
+          "vendor": {
+            "id": "apache",
+            "name": "Apache Software Foundation",
+            "country": "US"
+          },
+          "product": "Roller",
+          "title": "Apache Roller Deserialization of Untrusted Data Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.01191,
+            "percentile": 0.68723,
+            "date": "2026-11-20"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-20"
+          },
+          "kev": {
+            "date_added": "2026-11-20",
+            "due_date": "2026-11-23",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.20"
+          },
+          "credits": [
+            "n0mi1k",
+            "Matt Raible"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-20",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-129448"
+            },
+            {
+              "date": "2026-11-20",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-21T04:37:21+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2025-42884",
+      "kind": "exploited_flaw",
+      "headline": "CISA lists SAP NetWeaver injection flaw as exploited",
+      "summary": "CISA listed the SAP NetWeaver Enterprise Portal injection flaw on 20 Nov (US date). SAP's own CVE record gives CVSS 6.5 and dates from 11 Nov 2025.",
+      "why_it_matters": "An older flaw newly confirmed as exploited.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2025-42884"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2025-42884",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-20",
+          "source_id": "s1"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s11"
+      ],
+      "first_seen": "2026-11-21",
+      "vendor": {
+        "id": "sap",
+        "name": "SAP",
+        "country": "DE"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2025-42884",
+          "date_published": "2025-11-11",
+          "date_updated": "2026-11-20",
+          "assigner": "sap",
+          "vendor": {
+            "id": "sap",
+            "name": "SAP",
+            "country": "DE"
+          },
+          "product": "NetWeaver",
+          "title": "SAP NetWeaver Improper Neutralization of Special Elements in Data Query Logic Vulnerability",
+          "cvss": {
+            "score": 6.5,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00276,
+            "percentile": 0.2048,
+            "date": "2026-11-20"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "partial",
+            "date": "2026-11-20"
+          },
+          "kev": {
+            "date_added": "2026-11-20",
+            "due_date": "2026-11-23",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.20"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-20",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-42884"
+            },
+            {
+              "date": "2026-11-20",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-21T04:37:21+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-123890",
+      "kind": "critical_flaw",
+      "headline": "VMware vCenter auth bypass exploited as zero-day; CISA lists it",
+      "summary": "Broadcom patched a CVSS 9.8 vCenter auth bypass on 19 Nov. Google says ARMORY CASTLE exploited it from early September.",
+      "why_it_matters": "Patching is the only fix, and exploitation began before disclosure.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [
+        {
+          "attributed_by": "Google Threat Intelligence Group and Mandiant",
+          "basis": "vendor",
+          "actor_name_as_used": "ARMORY CASTLE",
+          "sponsor_claimed": null,
+          "nexus": "unknown",
+          "confidence_text": null,
+          "confidence_level": "unstated",
+          "date": "2026-11-20",
+          "source_id": "s2"
+        }
+      ],
+      "actor_nexus": "unknown",
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-123890"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-123890",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-20",
+          "source_id": "s1"
+        },
+        {
+          "cve_id": "CVE-2026-123890",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-19",
+          "source_id": "s3"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5"
+      ],
+      "first_seen": "2026-11-20",
+      "vendor": {
+        "id": "broadcom",
+        "name": "Broadcom",
+        "country": "US"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-123890",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-20",
+          "assigner": "vmware",
+          "vendor": {
+            "id": "broadcom",
+            "name": "Broadcom",
+            "country": "US"
+          },
+          "product": "VMware vCenter",
+          "title": "VMWare vCenter Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00843,
+            "percentile": 0.58845,
+            "date": "2026-11-20"
+          },
+          "ssvc": {
+            "exploitation": "active",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-20"
+          },
+          "kev": {
+            "date_added": "2026-11-20",
+            "due_date": "2026-11-23",
+            "ransomware": "unknown",
+            "catalog_version": "2026.11.20"
+          },
+          "credits": [],
+          "ai_credit": null,
+          "discovery_credit": "unknown",
+          "advisory_date": "2026-11-19",
+          "patch": {
+            "date": "2026-11-19",
+            "basis": "vendor_advisory",
+            "source_url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495"
+          },
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-20",
+              "basis": "kev_listed",
+              "source_url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-123890"
+            },
+            {
+              "date": "2026-11-20",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_advisory",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-21T04:37:21+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-telecom-ca-2026-11",
+      "kind": "breach",
+      "headline": "Bell Canada says an 'agentic' attacker stole enterprise customer data",
+      "summary": "Bell Canada says an agentic threat actor breached it on 17 Nov and took enterprise customer data from a provisioning system. Attribution is unknown.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s12",
+          "quote": "agentic threat actor",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [
+        "telecom"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Bell Canada",
+        "description": "a Canadian telecom operator",
+        "sector": "telecom",
+        "country": "CA",
+        "impact": "Enterprise customer contact and ticket data stolen",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s12"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12"
+      ],
+      "first_seen": "2026-11-21",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
+  "actors_seen": [
+    {
+      "name": "ARMORY CASTLE",
+      "actor_id": null,
+      "nexus": "unknown",
+      "item_ids": [
+        "cve-2026-123890"
+      ],
+      "cross_link": null
+    }
+  ],
+  "taiwan_lens": {
+    "analysis": "No fresh Taiwan-relevant development today; the rows below still apply.",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 2,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 2 in 90, to 19 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 19 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0005",
+      "date": "2026-11-18",
+      "claim_id": "SB-06",
+      "claim_text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [
+    {
+      "title": "Ruby patches heap overflow that could lead to remote code execution",
+      "source_id": "s15"
+    },
+    {
+      "title": "PHP patches seven critical remote code execution flaws",
+      "source_id": "s16"
+    },
+    {
+      "title": "US national cyber director Cairncross out; Pentagon CIO named acting",
+      "source_id": "s17"
+    }
+  ],
+  "epss_movers": [],
+  "feeds_stale": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CISA Adds Four Known Exploited Vulnerabilities to Catalog",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/20/cisa-adds-four-known-exploited-vulnerabilities-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-20",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "ARMORY CASTLE Exploits vSphere",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Google Threat Intelligence Group",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere",
+      "source_type": "research",
+      "published_at": "2026-11-19T22:00:00+08:00",
+      "publisher": "mandiant",
+      "publisher_name": "Mandiant and Google Threat Intelligence",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "Broadcom security advisory 39495 (VMSA-2026-0009)",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Broadcom",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-11-19",
+      "publisher": "vendor:broadcom",
+      "publisher_name": "Broadcom",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "VMware patches vCenter zero-day exploited in attacks since September",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/vmware-patches-vcenter-zero-day-exploited-in-attacks-since-september",
+      "source_type": "press",
+      "published_at": "2026-11-20T08:26:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "CVE-2026-123890",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-123890",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "Cisco Expressway Series Remote Code Execution Vulnerability (cisco-sa-vcs-static-cred-hr7EWZ8t)",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Cisco",
+      "url": "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-vcs-static-cred-hr7EWZ8t",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-10-21T16:00:00Z",
+      "publisher": "vendor:cisco",
+      "publisher_name": "Cisco",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Hackers Exploit Critical Cisco Expressway Flaw, Breach Four Devices and Reach Internal Network",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/hackers-exploit-critical-cisco.html",
+      "source_type": "press",
+      "published_at": "2026-11-20T18:32:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "CVE-2026-76466",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-76466",
+      "source_type": "cve_record",
+      "published_at": "2026-10-21",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "CVE-2026-129448",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129448",
+      "source_type": "cve_record",
+      "published_at": "2026-11-17",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "Apache Roller security announcement",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Apache Software Foundation",
+      "url": "https://lists.apache.org/thread/cc0jck13nb9vvcmzxzwotr6n16mx28z9",
+      "source_type": "vendor_advisory",
+      "published_at": null,
+      "publisher": "vendor:apache",
+      "publisher_name": "Apache Software Foundation",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "CVE-2025-42884",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2025-42884",
+      "source_type": "cve_record",
+      "published_at": "2025-11-11",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "Bell Canada says 'agentic' hacker stole enterprise customer data",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/bell-canada-says-agentic-hacker-stole-enterprise-customer-data",
+      "source_type": "press",
+      "published_at": "2026-11-21T02:51:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "Amazon says Chinese hackers used Cairn AI tool to discover apparent zero-day during attack on university",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/amazon-research-cairn-ai-university-attacks-possible-zero-day",
+      "source_type": "press",
+      "published_at": "2026-11-21T01:30:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "Hackers use autonomous AI tool Cairn to find zero-day, take over server",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/hackers-use-autonomous-ai-tool-cairn-to-find-zero-day-take-over-server",
+      "source_type": "press",
+      "published_at": "2026-11-21T01:30:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "Ruby Patches Ruby2Shell Vulnerability That Could Lead to RCE",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/ruby-patches-ruby2shell-vulnerability-that-could-lead-to-rce",
+      "source_type": "press",
+      "published_at": "2026-11-20T18:34:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "PHP Patches Seven Critical RCE Vulnerabilities",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/php-patches-seven-critical-rce-vulnerabilities",
+      "source_type": "press",
+      "published_at": "2026-11-19T23:54:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "Cyber Director Cairncross out as White House resets cyber leadership",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/sean-cairncross-out-as-national-cyber-director",
+      "source_type": "press",
+      "published_at": "2026-11-20T22:30:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 903,
+    "reading_minutes": 4,
+    "item_count": 5,
+    "ai_linked": {
+      "linked": 1,
+      "total": 5
+    },
+    "source_count": 17,
+    "publisher_count": 10
+  }
+}

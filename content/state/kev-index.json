@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-18",
-  "catalog_version": "2026.11.18",
+  "updated_at": "2026-11-19",
+  "catalog_version": "2026.11.20",
   "entries": [
     [
       "CVE-2010-5326",
@@ -16075,6 +16075,42 @@
       "Research Electronic Data Capture (REDCap)",
       "2026-09-20",
       "Securifera",
+      "unknown"
+    ],
+    [
+      "CVE-2025-42884",
+      "2026-11-20",
+      "SAP",
+      "NetWeaver",
+      "2025-11-11",
+      "sap",
+      "unknown"
+    ],
+    [
+      "CVE-2026-76466",
+      "2026-11-20",
+      "Cisco",
+      "Expressway Series",
+      "2026-10-21",
+      "cisco",
+      "unknown"
+    ],
+    [
+      "CVE-2026-123890",
+      "2026-11-20",
+      "Broadcom",
+      "VMware vCenter",
+      "2026-11-19",
+      "vmware",
+      "unknown"
+    ],
+    [
+      "CVE-2026-129448",
+      "2026-11-20",
+      "Apache",
+      "Roller",
+      "2026-11-17",
+      "apache",
       "unknown"
     ]
   ]

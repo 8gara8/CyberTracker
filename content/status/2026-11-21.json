@@ -595,12 +595,12 @@
       "started_at": "2026-11-21T04:34:35+08:00",
       "finished_at": null,
       "outcome": null,
-      "edition": null,
+      "edition": "full",
       "error_code": null,
       "code_commit": "6ca5db97fe593294a86d455443e6c3e5cddae909",
       "data_cutoff_utc": "2026-11-19",
       "data_only_published_at": null,
-      "full_published_at": null,
+      "full_published_at": "2026-11-21T04:37:21+08:00",
       "late": false,
       "stages": [
         {
@@ -633,22 +633,22 @@
         },
         {
           "id": "draft",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-21T04:34:38+08:00",
+          "ended_at": "2026-11-21T04:36:34+08:00",
           "note": null
         },
         {
           "id": "validate",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-21T04:36:34+08:00",
+          "ended_at": "2026-11-21T04:37:20+08:00",
           "note": null
         },
         {
           "id": "publish",
-          "status": "skipped",
-          "started_at": null,
+          "status": "ok",
+          "started_at": "2026-11-21T04:37:20+08:00",
           "ended_at": null,
           "note": null
         },
@@ -1109,13 +1109,16 @@
         }
       ],
       "budgets": {
-        "agent_seconds": 0,
-        "web_fetches": 0,
+        "agent_seconds": 159,
+        "web_fetches": 7,
         "web_searches": 0,
-        "repair_rounds": 0,
-        "tokens_in": null,
-        "tokens_out": null,
-        "usage": null,
+        "repair_rounds": 2,
+        "tokens_in": 1503679,
+        "tokens_out": 22058,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0
+        },
         "safety_stops": 0
       },
       "candidates": {
@@ -1123,8 +1126,20 @@
         "kept": 40,
         "deep_read": 15
       },
-      "validation": null,
-      "soft_gates": null,
+      "validation": {
+        "errors": 0,
+        "warnings": 2,
+        "codes": [
+          "SOURCE_ORPHAN"
+        ]
+      },
+      "soft_gates": {
+        "checked": 6,
+        "dropped": 1,
+        "by_code": {
+          "SNAP_QUOTE": 1
+        }
+      },
       "deploy": {
         "triggered": false,
         "ready_at": null,
