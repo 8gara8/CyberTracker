@@ -7,8 +7,8 @@
       "trigger": "schedule",
       "attempt": 1,
       "started_at": "2026-11-22T04:30:38+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-22T04:34:32+08:00",
+      "outcome": "published_full",
       "edition": "full",
       "error_code": null,
       "code_commit": "b4641f9649dd5c5d2be86a55ddf35cce0206ba38",
@@ -63,14 +63,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-22T04:33:44+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-22T04:33:49+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-22T04:33:49+08:00",
+          "ended_at": "2026-11-22T04:34:32+08:00",
           "note": null
         },
         {
@@ -82,9 +82,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-22T04:33:49+08:00",
+          "ended_at": "2026-11-22T04:34:03+08:00",
           "note": null
         }
       ],
@@ -555,10 +555,10 @@
         }
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-22T04:34:32+08:00",
+        "shows_date": "2026-11-22",
+        "shows_edition": "full"
       },
       "recheck": {
         "from": "2026-11-08",
@@ -602,7 +602,70 @@
           }
         ]
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-22T04:34:03+08:00",
+        "checked": 141,
+        "ok": 106,
+        "unknown": 27,
+        "broken": [
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere",
+            "item_id": "cve-2026-123890",
+            "edition_date": "2026-11-21",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://ipa.go.jp/security/security-alert/2026/alert20261119.html",
+            "item_id": "cve-2026-123007",
+            "edition_date": "2026-11-20",
+            "result": "broken",
+            "http": null
+          },
+          {
+            "url": "https://bsi.bund.de/DE/Service-Navi/Presse/Pressemitteilungen/Presse2026/261119_Lagebericht.html",
+            "item_id": "elsewhere",
+            "edition_date": "2026-11-20",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/cold-relic-a-case-study-in-impersonation-and-compromise",
+            "item_id": "camp-espionage-us-2026-11",
+            "edition_date": "2026-11-19",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+            "item_id": "angle",
+            "edition_date": "2026-11-18",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks",
+            "item_id": "angle",
+            "edition_date": "2026-11-14",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://synology.com/en-global/security/advisory/Synology_SA_26_19",
+            "item_id": "cve-2026-76954",
+            "edition_date": "2026-11-13",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports",
+            "item_id": "ai-linux-kernel-microsoft-2026-11",
+            "edition_date": "2026-11-13",
+            "result": "changed",
+            "http": 200
+          }
+        ]
+      }
     }
   ]
 }
