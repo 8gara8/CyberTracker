@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-22",
+  "edition": "data_only",
+  "generated_at": "2026-11-22T04:30:45+08:00",
+  "published_at": "2026-11-22T04:31:24+08:00",
+  "data_only_published_at": "2026-11-22T04:31:24+08:00",
+  "late": false,
+  "data_cutoff_utc": "2026-11-20",
+  "lead": [],
+  "angle": null,
+  "regions": {
+    "rows": [
+      {
+        "code": "US",
+        "level": "elevated",
+        "computed_level": "elevated",
+        "previous_level": "elevated",
+        "change": "same",
+        "rule_id": "campaign-target",
+        "reason": "Campaign naming the region: Mandiant: COLD RELIC used stolen cloud data to impersonate staff at a second US…",
+        "item_ids": [
+          "camp-espionage-us-2026-11"
+        ],
+        "fired": [
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "EU",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "high",
+        "change": "same",
+        "rule_id": "agency-alert",
+        "reason": "ANSSI and CERT-FR emergency alert: Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "item_ids": [],
+        "fired": [
+          {
+            "rule_id": "agency-alert",
+            "level": "high",
+            "item_ids": [],
+            "signal_ids": [
+              "sig-20261119-1",
+              "sig-20261119-2"
+            ]
+          },
+          {
+            "rule_id": "campaign-target",
+            "level": "elevated",
+            "item_ids": [
+              "camp-espionage-us-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      },
+      {
+        "code": "TW",
+        "level": "baseline",
+        "computed_level": "baseline",
+        "previous_level": "baseline",
+        "change": "same",
+        "rule_id": null,
+        "reason": "No rule fired.",
+        "item_ids": [],
+        "fired": [],
+        "raised": null
+      },
+      {
+        "code": "JP",
+        "level": "high",
+        "computed_level": "high",
+        "previous_level": "high",
+        "change": "same",
+        "rule_id": "agency-alert",
+        "reason": "JPCERT/CC emergency alert: 注意喚起: PHPにおける複数の脆弱性(CVE-2026-109618、CVE-2026-109619)に関する注意喚起 (更新)",
+        "item_ids": [],
+        "fired": [
+          {
+            "rule_id": "agency-alert",
+            "level": "high",
+            "item_ids": [],
+            "signal_ids": [
+              "sig-20261121-1"
+            ]
+          },
+          {
+            "rule_id": "serious-victim",
+            "level": "elevated",
+            "item_ids": [
+              "inc-research-jp-2026-11"
+            ],
+            "signal_ids": []
+          }
+        ],
+        "raised": null
+      }
+    ],
+    "global": {
+      "item_count": 0
+    },
+    "signals": [
+      {
+        "id": "sig-20261119-1",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-016",
+        "title": "Vulnérabilité dans Oracle Java SE (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-114938"
+        ]
+      },
+      {
+        "id": "sig-20261119-2",
+        "type": "agency_alert",
+        "region": "EU",
+        "date": "2026-11-18",
+        "publisher": "anssi",
+        "url": "https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-017",
+        "title": "Multiples vulnérabilités dans F5 NGINX (18 novembre 2026)",
+        "cve_ids": [
+          "CVE-2026-123633",
+          "CVE-2026-123007"
+        ]
+      },
+      {
+        "id": "sig-20261120-1",
+        "type": "home_vendor_kev",
+        "region": "TW",
+        "date": "2026-11-18",
+        "publisher": "cisa-kev",
+        "url": "https://www.cve.org/CVERecord?id=CVE-2024-10441",
+        "title": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+        "cve_ids": [
+          "CVE-2024-10441"
+        ]
+      },
+      {
+        "id": "sig-20261121-1",
+        "type": "agency_alert",
+        "region": "JP",
+        "date": "2026-11-20",
+        "publisher": "jpcert",
+        "url": "https://jpcert.or.jp/at/2026/at260033.html",
+        "title": "注意喚起: PHPにおける複数の脆弱性(CVE-2026-109618、CVE-2026-109619)に関する注意喚起 (更新)",
+        "cve_ids": [
+          "CVE-2026-109618",
+          "CVE-2026-109619"
+        ]
+      }
+    ]
+  },
+  "gap": {
+    "headline": "34% of recently disclosed flaws on CISA's exploited list were already being exploited when disclosed (2023–24: 37%, no clear change). For the rest, CISA confirmed exploitation after a median 15.5 days (2023–24: 21, faster). 169 such flaws were listed in 26 weeks, more than twice the 2023–24 pace (all CISA listings: 2.0 times).",
+    "second_line": "Flood: 47,274 new CVE records in 13 weeks, 5.5 times the 2023–24 pace (5.4 times excluding the Linux kernel). AI-credited: 734 in 13 weeks, 351 excluding Anthropic (a lower bound).",
+    "status": "ok",
+    "metrics_file": "metrics/2026-11-22.json",
+    "metrics_sha256": "552fcd35ba7173698690193a86a959546cd1a8da94db3257fe9587c9c6212da0",
+    "as_of": "2026-11-20"
+  },
+  "items": [],
+  "actors_seen": [],
+  "taiwan_lens": {
+    "analysis": "",
+    "item_ids": [],
+    "source_ids": [],
+    "rows": [
+      {
+        "row": "gov_infra",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "home_vendors",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "chips_defence",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "cables_telecom",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "influence_ops",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      },
+      {
+        "row": "china_axis",
+        "text": null,
+        "item_ids": [],
+        "source_ids": []
+      }
+    ],
+    "japan": {
+      "text": null,
+      "item_ids": [],
+      "source_ids": []
+    },
+    "kev_lines": {
+      "tw": {
+        "d30_n": 1,
+        "d90_n": 2,
+        "text": "KEV additions for Taiwanese vendors: 1 in 30 days, 2 in 90, to 20 Nov (US date)."
+      },
+      "jp": {
+        "d30_n": 0,
+        "d90_n": 0,
+        "text": "KEV additions for Japanese vendors: 0 in 30 days, 0 in 90, to 20 Nov (US date)."
+      }
+    },
+    "kev_note": "Absence from CISA's list does not mean not exploited.",
+    "watch_windows": [
+      {
+        "id": "taiwan-local-elections-2026",
+        "title": "Taiwan local elections, 28 November 2026",
+        "start": "2026-11-08",
+        "end": "2026-12-05"
+      }
+    ]
+  },
+  "scoreboard": {
+    "entries": [],
+    "last": {
+      "entry_id": "SE-0005",
+      "date": "2026-11-18",
+      "claim_id": "SB-06",
+      "claim_text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent."
+    }
+  },
+  "week_in_review": null,
+  "corrections": [],
+  "elsewhere": [],
+  "epss_movers": [
+    {
+      "cve_id": "CVE-2026-98432",
+      "score": 0.8213,
+      "delta_7d": 0.81353,
+      "percentile": 0.99664
+    },
+    {
+      "cve_id": "CVE-2026-50522",
+      "score": 0.8187,
+      "delta_7d": 0.78828,
+      "percentile": 0.99657
+    },
+    {
+      "cve_id": "CVE-2026-6875",
+      "score": 0.78461,
+      "delta_7d": 0.77035,
+      "percentile": 0.99592
+    },
+    {
+      "cve_id": "CVE-2026-123158",
+      "score": 0.8768,
+      "delta_7d": 0.6878,
+      "percentile": 0.99764
+    },
+    {
+      "cve_id": "CVE-2026-116606",
+      "score": 0.7452,
+      "delta_7d": 0.63573,
+      "percentile": 0.99506
+    }
+  ],
+  "feeds_stale": [],
+  "sources": [],
+  "computed": {
+    "word_count": 452,
+    "reading_minutes": 2,
+    "item_count": 0,
+    "ai_linked": {
+      "linked": 0,
+      "total": 0
+    },
+    "source_count": 0,
+    "publisher_count": 0
+  }
+}

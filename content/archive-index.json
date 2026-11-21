@@ -2,6 +2,13 @@
   "schema_version": 1,
   "editions": [
     {
+      "date": "2026-11-22",
+      "edition": "data_only",
+      "published_at": "2026-11-22T04:31:24+08:00",
+      "item_count": 0,
+      "corrected": false
+    },
+    {
       "date": "2026-11-21",
       "edition": "full",
       "published_at": "2026-11-21T04:37:21+08:00",

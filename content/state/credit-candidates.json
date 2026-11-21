@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-19",
+  "updated_at": "2026-11-20",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -10294,6 +10294,66 @@
       "Claude Opus 5.5"
     ],
     [
+      "CVE-2026-130441",
+      "2026-11-20",
+      "cna.credits",
+      "Khaled Suliman of AISLE Research"
+    ],
+    [
+      "CVE-2026-130454",
+      "2026-11-20",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-130455",
+      "2026-11-20",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-130456",
+      "2026-11-20",
+      "cna.credits",
+      "Claude and Ada Logics"
+    ],
+    [
+      "CVE-2026-130459",
+      "2026-11-20",
+      "cna.credits",
+      "Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)"
+    ],
+    [
+      "CVE-2026-130461",
+      "2026-11-20",
+      "cna.credits",
+      "Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)"
+    ],
+    [
+      "CVE-2026-130463",
+      "2026-11-20",
+      "cna.credits",
+      "Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)"
+    ],
+    [
+      "CVE-2026-130465",
+      "2026-11-20",
+      "cna.credits",
+      "Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)"
+    ],
+    [
+      "CVE-2026-130466",
+      "2026-11-20",
+      "cna.credits",
+      "Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)"
+    ],
+    [
+      "CVE-2026-130468",
+      "2026-11-20",
+      "cna.credits",
+      "Discovered independently by Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern) and Jaish Smael"
+    ],
+    [
       "CVE-2026-130762",
       "2026-11-18",
       "cna.credits",
@@ -10450,6 +10510,24 @@
       "Claude Opus 5.5"
     ],
     [
+      "CVE-2026-133224",
+      "2026-11-20",
+      "cna.credits",
+      "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
+    ],
+    [
+      "CVE-2026-133225",
+      "2026-11-20",
+      "cna.credits",
+      "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
+    ],
+    [
+      "CVE-2026-133226",
+      "2026-11-20",
+      "cna.credits",
+      "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
+    ],
+    [
       "CVE-2026-133244",
       "2026-11-19",
       "cna.credits",
@@ -10466,6 +10544,18 @@
       "2026-11-19",
       "cna.credits",
       "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
+    ],
+    [
+      "CVE-2026-133611",
+      "2026-11-20",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-133624",
+      "2026-11-20",
+      "cna.credits",
+      "Khaled Suliman of AISLE Research"
     ]
   ]
 }
