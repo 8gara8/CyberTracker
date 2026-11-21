@@ -1,14 +1,38 @@
 {
   "schema_version": 1,
   "date": "2026-11-22",
-  "edition": "data_only",
-  "generated_at": "2026-11-22T04:30:45+08:00",
-  "published_at": "2026-11-22T04:31:24+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-22T04:45:00+08:00",
+  "published_at": "2026-11-22T04:33:45+08:00",
   "data_only_published_at": "2026-11-22T04:31:24+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-20",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "Microsoft says attackers used a flaw in its Entra Connect Health service to read administrator email addresses and tenant settings.",
+      "item_ids": [
+        "inc-technology-us-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "N-able says an intruder reached a server behind its Mail Assure service, which caused a worldwide outage.",
+      "item_ids": [
+        "inc-technology-global-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "34% of recently disclosed flaws on CISA's list were already exploited at disclosure in the 26 weeks to 20 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-20",
+    "counterpoint": "none found",
+    "counterpoint_source_ids": [],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -107,7 +131,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 3
     },
     "signals": [
       {
@@ -170,12 +194,255 @@
     "metrics_sha256": "552fcd35ba7173698690193a86a959546cd1a8da94db3257fe9587c9c6212da0",
     "as_of": "2026-11-20"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "inc-technology-us-2026-11",
+      "kind": "breach",
+      "headline": "Microsoft says attackers exploited a flaw in Entra Connect Health to read tenant data",
+      "summary": "Microsoft says attackers exploited a flaw in Entra Connect Health, reading administrator email addresses and tenant configuration data. A server-side fix was deployed on 19 Nov and customers were notified on 20 Nov. Microsoft has not said how many tenants were hit or who was behind it.",
+      "why_it_matters": "A cloud identity service leaked contact data that suits phishing of administrators, even though no passwords were exposed.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Microsoft",
+        "description": "a US cloud identity service provider",
+        "sector": "technology",
+        "country": "US",
+        "impact": "Attackers read admin emails and tenant configuration metadata; no passwords exposed.",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s1"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1"
+      ],
+      "first_seen": "2026-11-22",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-technology-global-2026-11",
+      "kind": "breach",
+      "headline": "N-able says a breached server caused a worldwide Mail Assure outage",
+      "summary": "N-able first blamed a worldwide outage on configuration problems, then said an intruder reached a server in its Hosted Cloud environment. Mail Assure and SpamExperts services were hit. It says it has no evidence customer data was compromised, and email flow and filtering continued.",
+      "why_it_matters": "Security tools sold through service providers are a shared point of failure, and this is separate from N-able's N-central flaws.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "N-able",
+        "description": "a managed-service software vendor",
+        "sector": "technology",
+        "country": null,
+        "impact": "Hosted email security services down worldwide; no evidence customer data compromised.",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s2",
+          "s3"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2",
+        "s3"
+      ],
+      "first_seen": "2026-11-22",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-133993",
+      "kind": "critical_flaw",
+      "headline": "D-Link DIR-600L router flaw has a public exploit, CVE record says; no vendor advisory seen",
+      "summary": "A CVE record describes a stack overflow in the gena.cgi handler of D-Link's DIR-600L router, reachable remotely, and says an exploit is public. The record, not D-Link, makes the claim, and no vendor advisory was seen.",
+      "why_it_matters": "Home routers from a Taiwanese vendor with public exploits are cheap targets, though nothing here shows exploitation.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-133993"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": true,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4"
+      ],
+      "first_seen": "2026-11-22",
+      "vendor": {
+        "id": "d-link",
+        "name": "D-Link",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-133993",
+          "date_published": "2026-11-21",
+          "date_updated": "2026-11-21",
+          "assigner": "VulDB",
+          "vendor": {
+            "id": "d-link",
+            "name": "D-Link",
+            "country": "TW"
+          },
+          "product": "DIR-600L",
+          "title": "D-Link DIR-600L GENA Subscription gena.cgi FUN_0040efb0 stack-based overflow",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:P",
+            "scorer": "cna"
+          },
+          "epss": null,
+          "ssvc": null,
+          "kev": null,
+          "credits": [
+            "ruanyi (VulDB User)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": true,
+          "vendor_confirmed": false,
+          "vendor_confirmed_by": null,
+          "ghsa_ids": [],
+          "captured_at": "2026-11-22T04:33:45+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "yes",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-government-us-2026-11",
+      "kind": "breach",
+      "headline": "FBI's National Crime Information Center reportedly breached; FBI has not confirmed",
+      "summary": "CNN reported, and BleepingComputer relayed, that attackers breached the FBI's National Crime Information Center. The FBI has not confirmed it.",
+      "why_it_matters": null,
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "FBI",
+        "description": "a US federal law enforcement database",
+        "sector": "government",
+        "country": "US",
+        "impact": "Reported intrusion into the crime database; scope and data unknown.",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s5",
+          "s6"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s5",
+        "s6"
+      ],
+      "first_seen": "2026-11-22",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
-    "source_ids": [],
+    "analysis": "Taiwan's cyber agency urged fast NGINX upgrades, and a router flaw from Taiwanese vendor D-Link has a public exploit. The agency's alert follows F5's earlier NGINX fixes, which the brief covered on 20 Nov. No Taiwan-specific attack surfaced in today's sources.",
+    "item_ids": [
+      "cve-2026-133993"
+    ],
+    "source_ids": [
+      "s10"
+    ],
     "rows": [
       {
         "row": "gov_infra",
@@ -185,8 +452,10 @@
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
+        "text": "A CVE record says a D-Link DIR-600L flaw has a public exploit. No vendor advisory or exploitation report was seen.",
+        "item_ids": [
+          "cve-2026-133993"
+        ],
         "source_ids": []
       },
       {
@@ -215,9 +484,12 @@
       }
     ],
     "japan": {
-      "text": null,
+      "text": "Waseda University said part of its user data leaked from a personal-data system, and Gunosy said personal data leaked after unauthorised access to cloud and business tools.",
       "item_ids": [],
-      "source_ids": []
+      "source_ids": [
+        "s11",
+        "s12"
+      ]
     },
     "kev_lines": {
       "tw": {
@@ -252,50 +524,258 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-98432",
-      "score": 0.8213,
-      "delta_7d": 0.81353,
-      "percentile": 0.99664
+      "title": "F5 releases out-of-band hotfixes for five critical BIG-IP flaws; none flagged as exploited",
+      "source_id": "s13"
     },
     {
-      "cve_id": "CVE-2026-50522",
-      "score": 0.8187,
-      "delta_7d": 0.78828,
-      "percentile": 0.99657
+      "title": "SonicWall tells Gen 6 firewall owners to retire devices that will get no security patches",
+      "source_id": "s14"
     },
     {
-      "cve_id": "CVE-2026-6875",
-      "score": 0.78461,
-      "delta_7d": 0.77035,
-      "percentile": 0.99592
-    },
-    {
-      "cve_id": "CVE-2026-123158",
-      "score": 0.8768,
-      "delta_7d": 0.6878,
-      "percentile": 0.99764
-    },
-    {
-      "cve_id": "CVE-2026-116606",
-      "score": 0.7452,
-      "delta_7d": 0.63573,
-      "percentile": 0.99506
+      "title": "GnuPG warns of a critical GPGME flaw triggered by malicious OpenPGP keys",
+      "source_id": "s15"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
-  "sources": [],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "Microsoft Entra Connect Health flaw exploited to steal tenant data",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/microsoft-entra-connect-health-flaw-exploited-to-steal-tenant-data",
+      "source_type": "press",
+      "published_at": "2026-11-22T02:01:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s2",
+      "title": "N-able says recent security breach led to major service outage",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/microsoft/n-able-says-recent-security-breach-led-to-major-service-outage",
+      "source_type": "press",
+      "published_at": "2026-11-20T21:18:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "N-able Blames Service Disruption on Cyberattack",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/n-able-blames-service-disruption-on-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-20T17:08:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "CVE-2026-133993 D-Link DIR-600L GENA Subscription gena.cgi stack-based overflow",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-133993",
+      "source_type": "cve_record",
+      "published_at": "2026-11-21",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "FBI reportedly hacked again, this time targeting nationwide police database",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/fbi-reportedly-hacked-again-this-time-targeting-nationwide-police-database",
+      "source_type": "press",
+      "published_at": "2026-11-21T22:26:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "Trump says reported FBI database hack is 'not good'",
+      "title_en": null,
+      "language": "en",
+      "outlet": "TechCrunch",
+      "url": "https://techcrunch.com/2026/11/21/trump-says-reported-fbi-database-hack-is-not-good",
+      "source_type": "press",
+      "published_at": "2026-11-22T02:44:00+08:00",
+      "publisher": "techcrunch",
+      "publisher_name": "TechCrunch",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Amazon says Chinese hackers used Cairn AI tool to discover apparent zero-day during attack on university",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/amazon-research-cairn-ai-university-attacks-possible-zero-day",
+      "source_type": "press",
+      "published_at": "2026-11-21T01:30:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "CVE-2026-133968 monailabel directory traversal with remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-133968",
+      "source_type": "cve_record",
+      "published_at": "2026-11-20",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "Amazon: China-Linked Hackers' AI Agents Exploited Medical Software Zero-Day",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/amazon-china-linked-hackers-ai-agents-exploited-medical-software-zero-day",
+      "source_type": "press",
+      "published_at": "2026-11-21T20:08:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "NGINX釋重大安全更新 資安署籲儘速升級防範入侵",
+      "title_en": "NGINX issues major security update; cyber agency urges prompt upgrade",
+      "language": "zh-Hant-TW",
+      "outlet": "中央社",
+      "url": "https://cna.com.tw/news/ait/202611210071.aspx",
+      "source_type": "press",
+      "published_at": "2026-11-21T11:51:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "個人情報管理システムが侵害、脆弱性対応中に判明 - 早稲田大",
+      "title_en": "Personal-data system breached, found during vulnerability response - Waseda University",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/192578",
+      "source_type": "press",
+      "published_at": "2026-11-20T23:01:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "クラウド環境や業務ツールに不正アクセス、個人情報流出 - Gunosy",
+      "title_en": "Unauthorised access to cloud and business tools, personal data leaked - Gunosy",
+      "language": "ja",
+      "outlet": "Security NEXT",
+      "url": "https://security-next.com/193094",
+      "source_type": "press",
+      "published_at": "2026-11-20T19:21:00+08:00",
+      "publisher": "security-next",
+      "publisher_name": "Security NEXT",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "F5 releases emergency patches for critical BIG-IP RCE flaws",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/f5-releases-emergency-patches-for-critical-big-ip-rce-flaws",
+      "source_type": "press",
+      "published_at": "2026-11-20T18:57:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "SonicWall Warns Gen 6 Firewalls Won't Get Security Patches, Even for Critical Flaws",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/sonicwall-warns-gen-6-firewalls-wont.html",
+      "source_type": "press",
+      "published_at": "2026-11-20T18:38:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "GnuPG Warns Critical GPGME Flaw Could Expose App Data via Malicious OpenPGP Keys",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/gnupg-warns-critical-gpgme-flaw-could.html",
+      "source_type": "press",
+      "published_at": "2026-11-21T19:05:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
   "computed": {
-    "word_count": 452,
-    "reading_minutes": 2,
-    "item_count": 0,
+    "word_count": 893,
+    "reading_minutes": 4,
+    "item_count": 4,
     "ai_linked": {
       "linked": 0,
-      "total": 0
+      "total": 4
     },
-    "source_count": 0,
-    "publisher_count": 0
+    "source_count": 15,
+    "publisher_count": 8
   }
 }

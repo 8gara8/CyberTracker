@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-22",
-      "edition": "data_only",
-      "published_at": "2026-11-22T04:31:24+08:00",
-      "item_count": 0,
+      "edition": "full",
+      "published_at": "2026-11-22T04:33:45+08:00",
+      "item_count": 4,
       "corrected": false
     },
     {
@@ -1651,6 +1651,116 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://bleepingcomputer.com/news/security/microsoft-entra-connect-health-flaw-exploited-to-steal-tenant-data": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/inc-technology-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/microsoft/n-able-says-recent-security-breach-led-to-major-service-outage": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/inc-technology-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/n-able-blames-service-disruption-on-cyberattack": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/inc-technology-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-133993": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/cve-2026-133993"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/fbi-reportedly-hacked-again-this-time-targeting-nationwide-police-database": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/inc-government-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://techcrunch.com/2026/11/21/trump-says-reported-fbi-database-hack-is-not-good": {
+      "first_cited": "2026-11-22",
+      "item_ids": [
+        "2026-11-22/inc-government-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-133968": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/amazon-china-linked-hackers-ai-agents-exploited-medical-software-zero-day": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cna.com.tw/news/ait/202611210071.aspx": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://security-next.com/192578": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://security-next.com/193094": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/f5-releases-emergency-patches-for-critical-big-ip-rce-flaws": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/sonicwall-warns-gen-6-firewalls-wont.html": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/gnupg-warns-critical-gpgme-flaw-could.html": {
+      "first_cited": "2026-11-22",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }
