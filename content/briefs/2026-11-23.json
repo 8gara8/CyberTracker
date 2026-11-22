@@ -1,14 +1,55 @@
 {
   "schema_version": 1,
   "date": "2026-11-23",
-  "edition": "data_only",
-  "generated_at": "2026-11-23T04:30:37+08:00",
-  "published_at": "2026-11-23T04:30:54+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-23T04:45:00+08:00",
+  "published_at": "2026-11-23T04:33:47+08:00",
   "data_only_published_at": "2026-11-23T04:30:54+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-21",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "GL.iNet says attackers exploited a flaw in its cloud management service to install malware on customers' routers and KVM devices.",
+      "item_ids": [
+        "inc-networking-global-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "PHP's maintainers patched four critical-rated flaws, led by a session-handling bug that can lead to remote code execution.",
+      "item_ids": [
+        "cve-2026-115560"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Cleverbridge and Rackspace each disclosed breaches, one of payment card data and one of cloud credentials.",
+      "item_ids": [
+        "inc-ecommerce-global-2026-11",
+        "inc-cloud-us-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "Amazon says AI agents found and exploited a zero-day in medical imaging software, a claim that so far rests on Amazon alone.",
+      "item_ids": [
+        "camp-ai-agents-global-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "34% of newly disclosed flaws CISA listed were already exploited at disclosure, in the 26 weeks to 21 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.at_disclosure_share",
+    "as_of": "2026-11-21",
+    "counterpoint": "None of the sources seen reports exploitation of this week's critical PHP flaws, and CISA's listing date only lags real attacks.",
+    "counterpoint_source_ids": [
+      "s7"
+    ],
+    "claim_id": null,
+    "claim_text": null
+  },
   "regions": {
     "rows": [
       {
@@ -107,7 +148,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 4
     },
     "signals": [
       {
@@ -170,12 +211,507 @@
     "metrics_sha256": "64a708e29632f055aec3cd1fe59716a860bb32a6a3880db19517b474af28568a",
     "as_of": "2026-11-21"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "inc-networking-global-2026-11",
+      "kind": "breach",
+      "headline": "GL.iNet says attackers used a cloud flaw to install malware on routers and KVMs",
+      "summary": "GL.iNet confirmed that an unauthorised party exploited a flaw in its cloud remote-management service to install malware on customers' routers and KVM devices. It says it fixed the cloud flaw and blocked the access path. It has not said how many customers were hit.",
+      "why_it_matters": "A vendor-run cloud console became the way in, and the cloud fix does not remove malware already installed.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": null,
+        "description": "owners of routers and KVMs on a vendor's cloud service",
+        "sector": "technology",
+        "country": null,
+        "impact": "Malware installed on customers' routers and KVMs via cloud service",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s3"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": {
+        "text": "researchers RemoteToHome found suspicious activity on 152 of 183 routers they checked, BleepingComputer reports",
+        "source_id": "s3"
+      },
+      "standing_story": null,
+      "source_ids": [
+        "s3"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-115560",
+      "kind": "critical_flaw",
+      "headline": "PHP patches four critical-rated flaws; session bug can lead to code execution",
+      "summary": "PHP's maintainers patched four critical-rated flaws on 19 Nov in versions 8.2.36, 8.3.37, 8.4.28 and 8.5.13. The lead one, CVE-2026-115560, rated CVSS 9.2 by PHP, can let uploaded session data reach PHP's unserializer and lead to code execution. No source seen reports exploitation.",
+      "why_it_matters": "PHP runs much of the web, and code execution needs an application with a usable gadget chain, so exposure varies.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-115560",
+        "CVE-2026-126714",
+        "CVE-2026-129289",
+        "CVE-2026-129474"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": {
+        "id": "php",
+        "name": "PHP",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-115560",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-22",
+          "assigner": "php",
+          "vendor": {
+            "id": "php",
+            "name": "PHP",
+            "country": null
+          },
+          "product": "PHP",
+          "title": "Session serializer mismatch can lead to remote code execution",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.73107,
+            "percentile": 0.99467,
+            "date": "2026-11-22"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": null,
+          "credits": [
+            "Dvir Sasson (ZEST Security)",
+            "Frédéric Le Roch",
+            "Carlos Perez (Lazarus Technology)",
+            "HarukaKaya",
+            "nvr0x5",
+            "Katika Mohaseen",
+            "Jackson Tai",
+            "Crain",
+            "Ilija Tovilo",
+            "Arnaud Le Blanc"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-23T04:33:47+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-126714",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-22",
+          "assigner": "php",
+          "vendor": {
+            "id": "php",
+            "name": "PHP",
+            "country": null
+          },
+          "product": "PHP",
+          "title": "Partially overwritten session files can lead to remote code execution",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.13297,
+            "percentile": 0.96489,
+            "date": "2026-11-22"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-20"
+          },
+          "kev": null,
+          "credits": [
+            "Leo Lin",
+            "Asahi",
+            "Ilija Tovilo",
+            "Arnaud Le Blanc"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-23T04:33:47+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129289",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-22",
+          "assigner": "php",
+          "vendor": {
+            "id": "php",
+            "name": "PHP",
+            "country": null
+          },
+          "product": "PHP",
+          "title": "PHP-FPM request smuggling through an unread HTTP request body",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.16163,
+            "percentile": 0.97012,
+            "date": "2026-11-22"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-20"
+          },
+          "kev": null,
+          "credits": [
+            "Stephan Lipp (Ada Logics / Anthropic)",
+            "David Korczynski (Ada Logics / Anthropic)",
+            "Aviral Srivastava",
+            "Jakub Zelenka",
+            "Ondřej Surý",
+            "Arnaud Le Blanc"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-23T04:33:47+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-129474",
+          "date_published": "2026-11-19",
+          "date_updated": "2026-11-22",
+          "assigner": "php",
+          "vendor": {
+            "id": "php",
+            "name": "PHP",
+            "country": null
+          },
+          "product": "PHP",
+          "title": "Use-after-free in magic method backtraces can lead to remote code execution",
+          "cvss": {
+            "score": 9.2,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.09341,
+            "percentile": 0.95511,
+            "date": "2026-11-22"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "no",
+            "technical_impact": "total",
+            "date": "2026-11-19"
+          },
+          "kev": null,
+          "credits": [
+            "Adam Korcz (Ada Logics / Anthropic)",
+            "Arnaud Le Blanc",
+            "Jakub Zelenka"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-23T04:33:47+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-ecommerce-global-2026-11",
+      "kind": "breach",
+      "headline": "Cleverbridge says hackers copied payment card data from its platform",
+      "summary": "Cleverbridge told customers a third party copied payment card data from its platform; BleepingComputer reports it includes card numbers, expiry dates and CVV codes. It detected the activity on 4 Nov and began notifying customers on 20 Nov. The number affected is undisclosed.",
+      "why_it_matters": "CVV codes enable card fraud, and the platform handles sales for many software vendors, so the affected pool is unclear.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [
+        "illicit_finance"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Cleverbridge",
+        "description": "an e-commerce payments platform",
+        "sector": "retail",
+        "country": null,
+        "impact": "Card numbers, expiry dates and CVV codes copied",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s4"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s4"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-cloud-us-2026-11",
+      "kind": "breach",
+      "headline": "Rackspace says leaked credentials let an intruder into its Spot cloud platform",
+      "summary": "Rackspace says an unauthorised party used leaked credentials to reach Rackspace Spot on 17 Nov; customers must rotate Kubernetes secrets and API tokens.",
+      "why_it_matters": "Secrets stored in clusters could be read; the number of affected customers is not disclosed.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "Rackspace",
+        "description": "a cloud hosting provider",
+        "sector": "technology",
+        "country": "US",
+        "impact": "Kubernetes secrets in some customer clusters reachable",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s5"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s5"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "camp-ai-agents-global-2026-11",
+      "kind": "campaign",
+      "headline": "Amazon says AI agents found and exploited a zero-day in MONAI Label",
+      "summary": "Amazon says autonomous AI agents found and exploited an unknown flaw in MONAI Label, a medical imaging server, gaining root on a university server.",
+      "why_it_matters": "Self-reported by Amazon; the actor's sponsor is not established in the sources seen, so none is named here.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": "ai_found",
+      "ai_confidence": "claimed",
+      "ai_claimant": "Amazon Threat Intelligence",
+      "ai_evidence": [
+        {
+          "source_id": "s2",
+          "quote": "Suspected China-linked hackers used autonomous AI agents to find a previously unknown flaw in MONAI Label",
+          "from_claimant": false
+        },
+        {
+          "source_id": "s1",
+          "quote": "A threat actor used autonomous Cairn AI agents to discover and exploit a critical MONAI Label vulnerability.",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "self_reported",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s1",
+        "s2"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "pol-cyber-director-us-2026-11",
+      "kind": "policy",
+      "headline": "Trump taps Kirsten Davies as National Cyber Director",
+      "summary": "President Trump tapped Kirsten Davies as National Cyber Director; the White House says she will drive an America First cyber strategy.",
+      "why_it_matters": "It names the intended head of White House cyber policy; the source gives no confirmation timetable.",
+      "severity": null,
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "government",
+      "regions": [
+        "US"
+      ],
+      "topics": [
+        "government"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s11"
+      ],
+      "first_seen": "2026-11-23",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
+    "analysis": "Taiwan's 28 November local elections are the live watch window, but no source in this window reports an election-linked attack. Taiwan's domestic banks told CNA they are using AI to detect suspicious activity and system weaknesses.",
     "item_ids": [],
-    "source_ids": [],
+    "source_ids": [
+      "s12"
+    ],
     "rows": [
       {
         "row": "gov_infra",
@@ -250,52 +786,360 @@
       "claim_text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent."
     }
   },
-  "week_in_review": null,
+  "week_in_review": {
+    "text": "The week mixed exploited-flaw news with AI claims. CISA added flaws in Cisco Expressway, Apache Roller, SAP NetWeaver and VMware vCenter to its exploited list, the last as a zero-day. Microsoft and Forescout each said AI models found new flaws. The measured picture was steady: the 26-week median days from disclosure to CISA listing was 15.5, with an 80% range of 12 to 20, against 21 in 2023–24.",
+    "strongest_against": {
+      "text": "The share of CISA-listed flaws already exploited at disclosure was 34% in the 26 weeks to 21 Nov, against 37% in 2023–24, with no clear change; this week's PHP flaws show no exploitation.",
+      "claim_id": "SB-05",
+      "source_ids": [
+        "s7"
+      ]
+    },
+    "from": "2026-11-16",
+    "to": "2026-11-22",
+    "table": [
+      {
+        "claim_id": "SB-01",
+        "text": "AI-credited flaws reach CISA's exploited list no more often than other flaws.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-02",
+        "text": "By the end of 2028, AI-powered malware is used in a ransomware attack on UK critical national infrastructure, as the UK government or the NCSC publicly confirms.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-03",
+        "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
+        "status": "open",
+        "zone": "support",
+        "reading_text": "+453.4%",
+        "reading_as_of": "2026-11-21"
+      },
+      {
+        "claim_id": "SB-04",
+        "text": "AI flaw-finding keeps scaling beyond Anthropic: at the end of 2027 the 13-week count of AI-credited flaws excluding Anthropic is at least 450 (224 in the 13 weeks to 8 Nov 2026).",
+        "status": "open",
+        "zone": "between",
+        "reading_text": "351",
+        "reading_as_of": "2026-11-21"
+      },
+      {
+        "claim_id": "SB-05",
+        "text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36).",
+        "status": "open",
+        "zone": "between",
+        "reading_text": "15.5 (80% range 12 to 20)",
+        "reading_as_of": "2026-11-21"
+      },
+      {
+        "claim_id": "SB-06",
+        "text": "AI agents prove hard to control: by the end of 2028 an authority in the US, UK, EU, Japan or Taiwan reports a new case of an AI agent causing a breach without its owner's consent.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-07",
+        "text": "Unpatched holes get exploited more: Verizon's 2028 Data Breach Investigations Report puts exploited vulnerabilities above 31% of breaches with a known way in (2026 report: 31%).",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      },
+      {
+        "claim_id": "SB-08",
+        "text": "Geopolitics turns AI flaw-finding into a state weapon: by the end of 2028 the US, UK, Japan, Taiwan, the EU or an EU state blames a foreign state for a new intrusion using AI to find or exploit flaws.",
+        "status": "open",
+        "zone": "no_reading",
+        "reading_text": null,
+        "reading_as_of": null
+      }
+    ]
+  },
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-98432",
-      "score": 0.8213,
-      "delta_7d": 0.81353,
-      "percentile": 0.99664
+      "title": "Signal restricts mobile screenshots to keep AI assistants from reading private chats",
+      "source_id": "s13"
     },
     {
-      "cve_id": "CVE-2026-50522",
-      "score": 0.8187,
-      "delta_7d": 0.78828,
-      "percentile": 0.99657
+      "title": "BADBOX botnet returns to ad fraud with 40 billion daily ad requests",
+      "source_id": "s14"
     },
     {
-      "cve_id": "CVE-2026-123158",
-      "score": 0.95538,
-      "delta_7d": 0.76638,
-      "percentile": 0.99871
+      "title": "OpenRouter drops three AI providers after Dragos reports months of prompt theft",
+      "source_id": "s15"
     },
     {
-      "cve_id": "CVE-2026-116606",
-      "score": 0.7452,
-      "delta_7d": 0.63573,
-      "percentile": 0.99506
+      "title": "GnuPG warns of a critical GPGME flaw triggered by malicious OpenPGP keys",
+      "source_id": "s16"
     },
     {
-      "cve_id": "CVE-2026-40217",
-      "score": 0.78004,
-      "delta_7d": 0.60984,
-      "percentile": 0.99581
+      "title": "Taiwan banks deploy AI to prevent cyberattacks",
+      "source_id": "s12"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
-  "sources": [],
-  "computed": {
-    "word_count": 452,
-    "reading_minutes": 2,
-    "item_count": 0,
-    "ai_linked": {
-      "linked": 0,
-      "total": 0
+  "sources": [
+    {
+      "id": "s1",
+      "title": "Amazon: China-Linked Hackers' AI Agents Exploited Medical Software Zero-Day",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/amazon-china-linked-hackers-ai-agents-exploited-medical-software-zero-day",
+      "source_type": "press",
+      "published_at": "2026-11-21T20:08:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
     },
-    "source_count": 0,
-    "publisher_count": 0
+    {
+      "id": "s2",
+      "title": "Attackers' AI Agents Found a Zero-Day in Medical-Imaging Software and Gained Root Access",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/attackers-ai-agents-found-zero-day-in.html",
+      "source_type": "press",
+      "published_at": "2026-11-21T19:03:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "Hackers exploit GL.iNet cloud flaw to infect routers, KVM devices",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/hackers-exploit-glinet-cloud-flaw-to-infect-routers-kvm-devices",
+      "source_type": "press",
+      "published_at": "2026-11-23T02:45:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "Cleverbridge warns hackers stole credit card numbers, CVVs in data breach",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/cleverbridge-warns-hackers-stole-credit-card-numbers-cvvs-in-data-breach",
+      "source_type": "press",
+      "published_at": "2026-11-22T23:43:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "Rackspace Spot breach let hackers access customer Kubernetes secrets",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/rackspace-spot-breach-let-hackers-access-customer-kubernetes-secrets",
+      "source_type": "press",
+      "published_at": "2026-11-22T06:59:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "CVE-2026-115560: Session serializer mismatch can lead to remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-115560",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "GHSA-658j-r8rw-q6mx: Session serializer mismatch can lead to remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "GitHub Advisory (php-src)",
+      "url": "https://github.com/php/php-src/security/advisories/GHSA-658j-r8rw-q6mx",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "github-advisories",
+      "publisher_name": "GitHub Advisory Database",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "CVE-2026-126714: Partially overwritten session files can lead to remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-126714",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "CVE-2026-129289: PHP-FPM request smuggling through an unread HTTP request body",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129289",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "CVE-2026-129474: Use-after-free in magic method backtraces can lead to remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-129474",
+      "source_type": "cve_record",
+      "published_at": "2026-11-19",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "President Trump Taps Kirsten Davies as National Cyber Director",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/president-trump-taps-kirsten-davies-as-national-cyber-director",
+      "source_type": "press",
+      "published_at": "2026-11-21T21:00:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "Taiwan banks deploy AI to prevent cyberattacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Focus Taiwan (CNA English)",
+      "url": "https://focustaiwan.tw/sci-tech/202611220007",
+      "source_type": "press",
+      "published_at": "2026-11-22T17:47:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "Signal restricts mobile screenshots as it confronts 'existential threat' of AI surveillance",
+      "title_en": null,
+      "language": "en",
+      "outlet": "TechCrunch",
+      "url": "https://techcrunch.com/2026/11/21/signal-restricts-mobile-screenshots-as-it-confronts-existential-threat-of-ai-surveillance",
+      "source_type": "press",
+      "published_at": "2026-11-22T05:37:00+08:00",
+      "publisher": "techcrunch",
+      "publisher_name": "TechCrunch",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "BADBOX botnet returns with record-breaking 40 billion daily ad requests",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/badbox-30-botnet-returns-with-record-breaking-40-billion-daily-ad-requests",
+      "source_type": "press",
+      "published_at": "2026-11-21T23:17:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "OpenRouter Drops 3 Providers After Researchers Catch Months of Prompt Theft at AI Hosting Firms",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/openrouter-drops-3-providers-after.html",
+      "source_type": "press",
+      "published_at": "2026-11-22T13:06:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "GnuPG Warns Critical GPGME Flaw Could Expose App Data via Malicious OpenPGP Keys",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Hacker News",
+      "url": "https://thehackernews.com/2026/11/gnupg-warns-critical-gpgme-flaw-could.html",
+      "source_type": "press",
+      "published_at": "2026-11-21T19:05:00+08:00",
+      "publisher": "the-hacker-news",
+      "publisher_name": "The Hacker News",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 1034,
+    "reading_minutes": 5,
+    "item_count": 6,
+    "ai_linked": {
+      "linked": 1,
+      "total": 6
+    },
+    "source_count": 16,
+    "publisher_count": 7
   }
 }

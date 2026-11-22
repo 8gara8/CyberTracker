@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-23",
-      "edition": "data_only",
-      "published_at": "2026-11-23T04:30:54+08:00",
-      "item_count": 0,
+      "edition": "full",
+      "published_at": "2026-11-23T04:33:47+08:00",
+      "item_count": 6,
       "corrected": false
     },
     {
@@ -1750,7 +1750,9 @@
     },
     "https://securityweek.com/amazon-china-linked-hackers-ai-agents-exploited-medical-software-zero-day": {
       "first_cited": "2026-11-22",
-      "item_ids": [],
+      "item_ids": [
+        "2026-11-23/camp-ai-agents-global-2026-11"
+      ],
       "sha256": null,
       "hashed_at": null,
       "last_check": {
@@ -1824,6 +1826,124 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://thehackernews.com/2026/11/attackers-ai-agents-found-zero-day-in.html": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/camp-ai-agents-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/hackers-exploit-glinet-cloud-flaw-to-infect-routers-kvm-devices": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/inc-networking-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/cleverbridge-warns-hackers-stole-credit-card-numbers-cvvs-in-data-breach": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/inc-ecommerce-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/rackspace-spot-breach-let-hackers-access-customer-kubernetes-secrets": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/inc-cloud-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-115560": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/cve-2026-115560"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://github.com/php/php-src/security/advisories/GHSA-658j-r8rw-q6mx": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/cve-2026-115560"
+      ],
+      "sha256": "1eddbe93edb3e3163b3ffd94245fe194dbd45a46773d5f35ba4645e78e439c4c",
+      "hashed_at": "2026-11-23T04:33:42+08:00",
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-126714": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/cve-2026-115560"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129289": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/cve-2026-115560"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-129474": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/cve-2026-115560"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/president-trump-taps-kirsten-davies-as-national-cyber-director": {
+      "first_cited": "2026-11-23",
+      "item_ids": [
+        "2026-11-23/pol-cyber-director-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://focustaiwan.tw/sci-tech/202611220007": {
+      "first_cited": "2026-11-23",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://techcrunch.com/2026/11/21/signal-restricts-mobile-screenshots-as-it-confronts-existential-threat-of-ai-surveillance": {
+      "first_cited": "2026-11-23",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/badbox-30-botnet-returns-with-record-breaking-40-billion-daily-ad-requests": {
+      "first_cited": "2026-11-23",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://thehackernews.com/2026/11/openrouter-drops-3-providers-after.html": {
+      "first_cited": "2026-11-23",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }
