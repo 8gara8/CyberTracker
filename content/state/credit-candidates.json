@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-20",
+  "updated_at": "2026-11-21",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -10556,6 +10556,12 @@
       "2026-11-20",
       "cna.credits",
       "Khaled Suliman of AISLE Research"
+    ],
+    [
+      "CVE-2026-134311",
+      "2026-11-21",
+      "cna.credits",
+      "Anthropic OSS Scanner"
     ]
   ]
 }
