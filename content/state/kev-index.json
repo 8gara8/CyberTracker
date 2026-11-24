@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-22",
-  "catalog_version": "2026.11.20",
+  "updated_at": "2026-11-23",
+  "catalog_version": "2026.11.24",
   "entries": [
     [
       "CVE-2010-5326",
@@ -16048,7 +16048,7 @@
       "DiskStation Manager (DSM)",
       "2025-03-19",
       "synology",
-      "unknown"
+      "known"
     ],
     [
       "CVE-2026-40217",
@@ -16111,6 +16111,51 @@
       "Roller",
       "2026-11-17",
       "apache",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133968",
+      "2026-11-23",
+      "Project MONAI",
+      "MONAI Label",
+      "2026-11-20",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-134624",
+      "2026-11-23",
+      "N-able",
+      "MailAssure",
+      "2026-11-22",
+      "N-able",
+      "unknown"
+    ],
+    [
+      "CVE-2026-131914",
+      "2026-11-24",
+      "Idunno",
+      "AntiCsrf",
+      "2026-11-19",
+      "Mandiant",
+      "unknown"
+    ],
+    [
+      "CVE-2026-132165",
+      "2026-11-24",
+      "Drupal",
+      "Core",
+      null,
+      null,
+      "unknown"
+    ],
+    [
+      "CVE-2026-132224",
+      "2026-11-24",
+      "Optimizely",
+      "Web Experimentation",
+      "2026-11-18",
+      "mitre",
       "unknown"
     ]
   ]

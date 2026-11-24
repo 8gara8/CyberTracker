@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-22",
+  "updated_at": "2026-11-23",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -4042,6 +4042,18 @@
       "Red Hat would like to thank Aisle Research for reporting this issue."
     ],
     [
+      "CVE-2026-60076",
+      "2026-11-23",
+      "cna.credits",
+      "bugbunny.ai"
+    ],
+    [
+      "CVE-2026-60077",
+      "2026-11-23",
+      "cna.credits",
+      "bugbunny.ai"
+    ],
+    [
       "CVE-2026-60124",
       "2026-07-08",
       "cna.credits",
@@ -5816,6 +5828,12 @@
       "2026-09-06",
       "cna.credits",
       "Claude Opus 5 (1M context)"
+    ],
+    [
+      "CVE-2026-86312",
+      "2026-11-23",
+      "cna.credits",
+      "Calif.io, in collaboration with Anthropic"
     ],
     [
       "CVE-2026-86320",
@@ -9034,6 +9052,12 @@
       "Fluid Attacks' AI SAST Scanner"
     ],
     [
+      "CVE-2026-119068",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic and Ada Logics, Aymen Benlamari"
+    ],
+    [
       "CVE-2026-119078",
       "2026-11-09",
       "cna.credits",
@@ -9122,6 +9146,12 @@
       "2026-11-09",
       "cna.credits",
       "MopMonk-AI"
+    ],
+    [
+      "CVE-2026-121482",
+      "2026-11-18",
+      "cna.credits",
+      "Alex Gaynor (Anthropic)"
     ],
     [
       "CVE-2026-121559",
@@ -10294,6 +10324,12 @@
       "Claude Opus 5.5"
     ],
     [
+      "CVE-2026-129976",
+      "2026-11-23",
+      "cna.credits",
+      "Aisle Research"
+    ],
+    [
       "CVE-2026-130441",
       "2026-11-20",
       "cna.credits",
@@ -10562,6 +10598,306 @@
       "2026-11-21",
       "cna.credits",
       "Anthropic OSS Scanner"
+    ],
+    [
+      "CVE-2026-134841",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-F8ORRHGA)"
+    ],
+    [
+      "CVE-2026-134841",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-CSULRTN9)"
+    ],
+    [
+      "CVE-2026-134841",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-V49PY3LL)"
+    ],
+    [
+      "CVE-2026-134841",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-8HOO55D6)"
+    ],
+    [
+      "CVE-2026-134842",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-CPJGFCH9)"
+    ],
+    [
+      "CVE-2026-134842",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-H4KGSOTO)"
+    ],
+    [
+      "CVE-2026-134842",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-JZYBNC5Y)"
+    ],
+    [
+      "CVE-2026-134843",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-8DWVKNQB)"
+    ],
+    [
+      "CVE-2026-134844",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-96Q8LC5K)"
+    ],
+    [
+      "CVE-2026-134844",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-XWDO8ONS)"
+    ],
+    [
+      "CVE-2026-134845",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-JON5W0PA)"
+    ],
+    [
+      "CVE-2026-134845",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-CHV7PJLQ)"
+    ],
+    [
+      "CVE-2026-134845",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-QMR87C71)"
+    ],
+    [
+      "CVE-2026-134846",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-XN4FNDUA)"
+    ],
+    [
+      "CVE-2026-134846",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-VWAJRJ3T)"
+    ],
+    [
+      "CVE-2026-134847",
+      "2026-11-23",
+      "cna.credits",
+      "Anthropic OSS Scanner (ANT-2026-6FX8KOK1)"
+    ],
+    [
+      "CVE-2026-135231",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135232",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135233",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135234",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135235",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135236",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135237",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135238",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135239",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135240",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135241",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135242",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135243",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135244",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135245",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135247",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135248",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135249",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135250",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135252",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135253",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135254",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135256",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135257",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135258",
+      "2026-11-23",
+      "cna.credits",
+      "Francois-Xavier Stellamans from the NATO Cyber Security Centre with OpenAI Daybreak support (using GPT5.6-Cyber)"
+    ],
+    [
+      "CVE-2026-135258",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135259",
+      "2026-11-23",
+      "cna.credits",
+      "Francois-Xavier Stellamans from the NATO Cyber Security Centre with OpenAI Daybreak support (using GPT5.6-Cyber)"
+    ],
+    [
+      "CVE-2026-135259",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135260",
+      "2026-11-23",
+      "cna.credits",
+      "Francois-Xavier Stellamans from the NATO Cyber Security Centre with OpenAI Daybreak support (using GPT5.6-Cyber)"
+    ],
+    [
+      "CVE-2026-135260",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135261",
+      "2026-11-23",
+      "cna.credits",
+      "Francois-Xavier Stellamans from the NATO Cyber Security Centre with OpenAI Daybreak support (using GPT5.6-Cyber)"
+    ],
+    [
+      "CVE-2026-135261",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135262",
+      "2026-11-23",
+      "cna.credits",
+      "Claude Opus 5.5"
+    ],
+    [
+      "CVE-2026-135301",
+      "2026-11-23",
+      "cna.credits",
+      "ENISA AI Team"
     ]
   ]
 }
