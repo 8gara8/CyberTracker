@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "as_of": "2026-11-25",
+  "as_of": "2026-11-26",
   "claims_version": 1,
   "claims": [
     {
@@ -28,9 +28,9 @@
       "text": "The flood of new flaws is lasting, not a passing wave: at the end of 2028 the 13-week count of new CVE records is still at least 300% above (4 times) its 2023 to 2024 average (+432.6% on 8 Nov 2026).",
       "status": "open",
       "zone": "support",
-      "reading": 456.3,
-      "reading_text": "+456.3%",
-      "reading_as_of": "2026-11-23",
+      "reading": 457.6,
+      "reading_text": "+457.6%",
+      "reading_as_of": "2026-11-24",
       "last_entry_id": "SE-0002"
     },
     {
@@ -38,9 +38,9 @@
       "text": "AI flaw-finding keeps scaling beyond Anthropic: at the end of 2027 the 13-week count of AI-credited flaws excluding Anthropic is at least 450 (224 in the 13 weeks to 8 Nov 2026).",
       "status": "open",
       "zone": "between",
-      "reading": 351,
-      "reading_text": "351",
-      "reading_as_of": "2026-11-23",
+      "reading": 401,
+      "reading_text": "401",
+      "reading_as_of": "2026-11-24",
       "last_entry_id": "SE-0003"
     },
     {
@@ -50,7 +50,7 @@
       "zone": "between",
       "reading": 15,
       "reading_text": "15 (80% range 12 to 20)",
-      "reading_as_of": "2026-11-23",
+      "reading_as_of": "2026-11-24",
       "last_entry_id": "SE-0004"
     },
     {
