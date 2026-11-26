@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-24",
+  "updated_at": "2026-11-25",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -5092,6 +5092,12 @@
       "CodeAnt AI Security Research Team"
     ],
     [
+      "CVE-2026-77230",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
       "CVE-2026-77923",
       "2026-08-24",
       "cna.credits",
@@ -5126,6 +5132,12 @@
       "2026-10-21",
       "cna.credits",
       "Claude"
+    ],
+    [
+      "CVE-2026-78102",
+      "2026-11-25",
+      "cna.credits",
+      "MopMonk-AI"
     ],
     [
       "CVE-2026-78334",
@@ -5456,6 +5468,48 @@
       "2026-08-29",
       "cna.credits",
       "Joshua Rogers (AISLE Research)"
+    ],
+    [
+      "CVE-2026-82489",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82490",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82491",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82492",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82493",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82494",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
+    ],
+    [
+      "CVE-2026-82495",
+      "2026-11-25",
+      "cna.credits",
+      "CodeAnt AI Security Research Team"
     ],
     [
       "CVE-2026-82717",
@@ -10276,6 +10330,12 @@
       "Claude Opus 5 (1M context)"
     ],
     [
+      "CVE-2026-126536",
+      "2026-11-25",
+      "cna.credits",
+      "Fluid Attacks' AI SAST Scanner"
+    ],
+    [
       "CVE-2026-127039",
       "2026-11-18",
       "cna.credits",
@@ -10688,6 +10748,12 @@
       "2026-11-20",
       "cna.credits",
       "Khaled Suliman of AISLE Research"
+    ],
+    [
+      "CVE-2026-133987",
+      "2026-11-25",
+      "cna.credits",
+      "Claude Martino | Patchstack Bug Bounty Program"
     ],
     [
       "CVE-2026-134311",
@@ -11366,6 +11432,18 @@
       "2026-11-24",
       "cna.credits",
       "Jeffrey Crowell - OpenAI Codex Security"
+    ],
+    [
+      "CVE-2026-136451",
+      "2026-11-25",
+      "cna.credits",
+      "Red Hat would like to thank Bruno Oliveira(abstractj) in collaboration with OpenAI for reporting this issue."
+    ],
+    [
+      "CVE-2026-136703",
+      "2026-11-25",
+      "cna.credits",
+      "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
     ]
   ]
 }

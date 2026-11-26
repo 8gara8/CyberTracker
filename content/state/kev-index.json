@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-24",
-  "catalog_version": "2026.11.24",
+  "updated_at": "2026-11-25",
+  "catalog_version": "2026.11.25",
   "entries": [
     [
       "CVE-2010-5326",
@@ -16145,8 +16145,8 @@
       "2026-11-24",
       "Drupal",
       "Core",
-      null,
-      null,
+      "2026-11-26",
+      "drupal",
       "unknown"
     ],
     [
@@ -16156,6 +16156,96 @@
       "Web Experimentation",
       "2026-11-18",
       "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2023-25914",
+      "2026-11-25",
+      "Danfoss",
+      "AK-SM 800A Series",
+      "2023-08-21",
+      "DIVD",
+      "unknown"
+    ],
+    [
+      "CVE-2023-25915",
+      "2026-11-25",
+      "Danfoss",
+      "AK-SM 800A Series",
+      "2023-08-21",
+      "DIVD",
+      "unknown"
+    ],
+    [
+      "CVE-2025-41450",
+      "2026-11-25",
+      "Danfoss",
+      "AK-SM 800A Series",
+      "2025-05-08",
+      "Danfoss",
+      "unknown"
+    ],
+    [
+      "CVE-2026-103406",
+      "2026-11-25",
+      "Hewlett Packard Enterprise (HPE)",
+      "Juniper Session Smart Conductor and Session Smart Router",
+      "2026-10-28",
+      "juniper",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133275",
+      "2026-11-25",
+      "Mitel",
+      "MiCollab",
+      "2026-11-19",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133303",
+      "2026-11-25",
+      "Mitel",
+      "MiCollab",
+      "2026-11-19",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133311",
+      "2026-11-25",
+      "Mitel",
+      "MiCollab",
+      "2026-11-19",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133323",
+      "2026-11-25",
+      "Mitel",
+      "MiCollab",
+      "2026-11-19",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133324",
+      "2026-11-25",
+      "Mitel",
+      "MiCollab",
+      "2026-11-19",
+      "mitre",
+      "unknown"
+    ],
+    [
+      "CVE-2026-133469",
+      "2026-11-25",
+      "Vates",
+      "Xen Orchestra",
+      "2026-11-23",
+      "GitHub_M",
       "unknown"
     ]
   ]
