@@ -448,7 +448,7 @@
       "sha256": "6d014f994c02c0c877c6829cf2287fe472143ea9f8bb4a26886ba1bf5ed90c13",
       "hashed_at": "2026-11-14T04:38:38+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -615,7 +615,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -672,7 +672,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-15T04:33:06+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -685,7 +685,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -698,7 +698,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -711,7 +711,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -724,7 +724,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -737,7 +737,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -748,7 +748,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -759,7 +759,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -772,7 +772,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -785,7 +785,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-16T04:33:49+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -798,7 +798,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-16T04:33:49+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -811,7 +811,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-16T04:33:49+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -824,7 +824,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-16T04:33:49+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -837,7 +837,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-16T04:33:49+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -848,7 +848,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -861,7 +861,7 @@
       "sha256": "9c56a4becdf667ebaccd0a29f028b4796d4eda57553adcffc66f8ce6e4551100",
       "hashed_at": "2026-11-18T04:34:08+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -875,7 +875,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-18T04:34:09+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -889,7 +889,7 @@
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "hashed_at": "2026-11-18T04:34:02+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -902,7 +902,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": null
       }
@@ -915,7 +915,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-18T04:34:09+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -928,7 +928,7 @@
       "sha256": "2bc184f7f449f9a27f3a85f9d469b10859f33fcb31287ee9267a3b94bd36ae73",
       "hashed_at": "2026-11-18T04:33:46+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -941,7 +941,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-18T04:34:09+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -954,7 +954,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -967,7 +967,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -978,7 +978,7 @@
       "sha256": "b69d2af348de84b9fdcf38933f4d969adc6d0f2c89983d535a847bb71af5acb8",
       "hashed_at": "2026-11-18T04:34:08+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -989,7 +989,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1002,9 +1002,9 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
-        "result": "ok",
-        "http": 200
+        "date": "2026-11-28",
+        "result": "unknown",
+        "http": 429
       }
     },
     "https://securityweek.com/california-sues-openai-seeking-court-ordered-changes-after-the-hugging-face-hack": {
@@ -1015,7 +1015,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1026,9 +1026,9 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
-        "result": "ok",
-        "http": 200
+        "date": "2026-11-28",
+        "result": "unknown",
+        "http": 429
       }
     },
     "https://bleepingcomputer.com/news/security/barracuda-links-cloud-breach-to-artex-ai-powered-cyberattack": {
@@ -1037,7 +1037,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1048,7 +1048,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1059,7 +1059,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1072,7 +1072,7 @@
       "sha256": "6a22187ebb6723d8002759afb31a798a795bc9d5a2bcbdf962f84b58cbe07ea5",
       "hashed_at": "2026-11-19T04:34:11+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1085,7 +1085,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1098,7 +1098,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1111,7 +1111,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": null
       }
@@ -1124,7 +1124,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1137,7 +1137,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1150,7 +1150,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1163,7 +1163,7 @@
       "sha256": "e0abe2fa9ef1268282b2ba937f1d3707884173c76737f312463fb72e766e0ecd",
       "hashed_at": "2026-11-19T04:34:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1176,7 +1176,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1189,7 +1189,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1202,7 +1202,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1215,7 +1215,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1228,7 +1228,7 @@
       "sha256": "3d407fbfb976eccfc65fdd1f46132b5d48cafc1ce919ab40ecbbf07fde1ebaea",
       "hashed_at": "2026-11-19T04:34:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1239,7 +1239,7 @@
       "sha256": "fffd6998fa2fdd82f6c700b5d4f4d7790cf1419977df461954ec037ead56a156",
       "hashed_at": "2026-11-19T04:34:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1250,7 +1250,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1261,7 +1261,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1274,7 +1274,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1287,7 +1287,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1300,7 +1300,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1313,7 +1313,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1329,7 +1329,7 @@
       "sha256": "458b0548e9191e89730a1fed5610ff2c68a80df9a14b584f92ab1d6d9dc9b933",
       "hashed_at": "2026-11-20T04:34:09+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1342,7 +1342,7 @@
       "sha256": "ad7f12406292f00c954b01660a7acba687223abb204310b1d9541aa80cccfa62",
       "hashed_at": "2026-11-20T04:33:42+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1355,7 +1355,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1368,7 +1368,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1382,7 +1382,7 @@
       "sha256": "61fef1cd6108043429ab338a89791f3553c30ffe77ebd3a1cc21e6493d7f62f6",
       "hashed_at": "2026-11-20T04:34:09+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1395,7 +1395,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1409,7 +1409,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1422,7 +1422,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1435,7 +1435,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1448,7 +1448,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "broken",
         "http": null
       }
@@ -1461,7 +1461,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1472,7 +1472,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-20T04:34:10+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1483,7 +1483,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1494,7 +1494,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1505,7 +1505,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1516,7 +1516,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1527,7 +1527,7 @@
       "sha256": "7dafc4598479572750798f7a5a3af100785d882ef222c5a0ec36321597925589",
       "hashed_at": "2026-11-20T04:34:16+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1543,7 +1543,7 @@
       "sha256": "1ab2c2c8020c89db5cc75eca3797bc4f661e56deb8f55ca87fd50a6512aaa3e0",
       "hashed_at": "2026-11-21T04:37:27+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1556,7 +1556,7 @@
       "sha256": "c550d0e3b465cf01ffb15fc7c9336f04b6e9121345c5286e728f8ddfdde34d8c",
       "hashed_at": "2026-11-21T04:33:41+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1569,7 +1569,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1582,7 +1582,7 @@
       "sha256": "405d4d504ec214b4d9aa2cdd2a88d6234fe0b6a5f354d741e28e5170f922b786",
       "hashed_at": "2026-11-21T04:33:42+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "changed",
         "http": 200
       }
@@ -1595,7 +1595,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1608,7 +1608,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-21T04:37:28+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1621,7 +1621,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-21T04:37:28+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1634,9 +1634,9 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
-        "result": "unknown",
-        "http": 429
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
       }
     },
     "https://therecord.media/amazon-research-cairn-ai-university-attacks-possible-zero-day": {
@@ -1645,7 +1645,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1656,7 +1656,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1667,7 +1667,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1678,7 +1678,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1689,7 +1689,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1702,9 +1702,9 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
-        "result": "ok",
-        "http": 200
+        "date": "2026-11-28",
+        "result": "unknown",
+        "http": 429
       }
     },
     "https://bleepingcomputer.com/news/microsoft/n-able-says-recent-security-breach-led-to-major-service-outage": {
@@ -1715,9 +1715,9 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
-        "result": "ok",
-        "http": 200
+        "date": "2026-11-28",
+        "result": "unknown",
+        "http": 429
       }
     },
     "https://securityweek.com/n-able-blames-service-disruption-on-cyberattack": {
@@ -1728,7 +1728,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1741,7 +1741,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-22T04:33:51+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1754,7 +1754,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1767,7 +1767,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1780,7 +1780,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-22T04:33:51+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1793,7 +1793,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1804,7 +1804,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1815,7 +1815,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": null
       }
@@ -1826,7 +1826,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": null
       }
@@ -1837,7 +1837,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "unknown",
         "http": 429
       }
@@ -1848,7 +1848,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1859,7 +1859,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1872,7 +1872,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1885,7 +1885,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1898,7 +1898,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1911,7 +1911,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1924,7 +1924,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-23T04:33:53+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1937,7 +1937,7 @@
       "sha256": "1eddbe93edb3e3163b3ffd94245fe194dbd45a46773d5f35ba4645e78e439c4c",
       "hashed_at": "2026-11-23T04:33:42+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1950,7 +1950,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-23T04:33:53+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1963,7 +1963,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-23T04:33:53+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1976,7 +1976,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-23T04:33:53+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -1989,7 +1989,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2000,7 +2000,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2011,7 +2011,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2022,7 +2022,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2033,7 +2033,7 @@
       "sha256": null,
       "hashed_at": null,
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2046,7 +2046,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-25T04:33:43+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2059,7 +2059,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-25T04:33:43+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2072,7 +2072,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-25T04:33:43+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2085,7 +2085,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2098,7 +2098,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2111,7 +2111,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2124,7 +2124,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2137,7 +2137,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2150,7 +2150,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:12+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2163,7 +2163,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2176,7 +2176,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2189,7 +2189,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2202,7 +2202,7 @@
       "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
       "hashed_at": "2026-11-27T04:35:13+08:00",
       "last_check": {
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "result": "ok",
         "http": 200
       }
@@ -2212,9 +2212,13 @@
       "item_ids": [
         "2026-11-28/cve-2026-136716"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "577add9aa9196cba102e016522379406f658660a326aba8770dd2c0b69e2d6d1",
+      "hashed_at": "2026-11-28T04:39:16+08:00",
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://drupal.org/sa-core-2026-019": {
       "first_cited": "2026-11-28",
@@ -2223,16 +2227,24 @@
       ],
       "sha256": "99e35c3b6a57090aef0860f6ed6a0bf0b68cfa5128083b42591028e39fd7ea6b",
       "hashed_at": "2026-11-28T04:33:32+08:00",
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://cve.org/CVERecord?id=CVE-2026-136716": {
       "first_cited": "2026-11-28",
       "item_ids": [
         "2026-11-28/cve-2026-136716"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
+      "hashed_at": "2026-11-28T04:39:16+08:00",
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://bleepingcomputer.com/news/security/drupal-warns-of-new-access-bypass-flaw-exploited-in-attacks": {
       "first_cited": "2026-11-28",
@@ -2241,14 +2253,22 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180829": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180833": {
       "first_cited": "2026-11-28",
@@ -2257,7 +2277,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/sap-germany-cyberattack-github": {
       "first_cited": "2026-11-28",
@@ -2266,7 +2290,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://securityweek.com/sap-confirms-cyberattack-source-code-reportedly-compromised": {
       "first_cited": "2026-11-28",
@@ -2275,7 +2303,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180852": {
       "first_cited": "2026-11-28",
@@ -2284,7 +2316,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://securityweek.com/mitel-micollab-zero-days-exploited-in-suspected-ai-assisted-attacks": {
       "first_cited": "2026-11-28",
@@ -2293,7 +2329,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180854": {
       "first_cited": "2026-11-28",
@@ -2302,25 +2342,37 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://cve.org/CVERecord?id=CVE-2026-128797": {
       "first_cited": "2026-11-28",
       "item_ids": [
         "2026-11-28/cve-2026-128797"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
+      "hashed_at": "2026-11-28T04:39:17+08:00",
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://cve.org/CVERecord?id=CVE-2026-128798": {
       "first_cited": "2026-11-28",
       "item_ids": [
         "2026-11-28/cve-2026-128797"
       ],
-      "sha256": null,
-      "hashed_at": null,
-      "last_check": null
+      "sha256": "7834fedb6efff6635986d274c5dc8ee3ade56b9580f60da889ddabdebf2db72f",
+      "hashed_at": "2026-11-28T04:39:17+08:00",
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180835": {
       "first_cited": "2026-11-28",
@@ -2329,7 +2381,11 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://ithome.com.tw/news/180843": {
       "first_cited": "2026-11-28",
@@ -2338,42 +2394,66 @@
       ],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://cna.com.tw/news/aopl/202611270015.aspx": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/japan-education-ministry-cyberattack": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://bleepingcomputer.com/news/security/unpatched-cacti-zero-day-with-public-poc-gives-remote-code-execution": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/uk-department-work-pensions-cyber-incident": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     },
     "https://therecord.media/france-afp-hit-by-cyberattack": {
       "first_cited": "2026-11-28",
       "item_ids": [],
       "sha256": null,
       "hashed_at": null,
-      "last_check": null
+      "last_check": {
+        "date": "2026-11-28",
+        "result": "ok",
+        "http": 200
+      }
     }
   }
 }

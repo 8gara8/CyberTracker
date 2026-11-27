@@ -628,8 +628,8 @@
       "trigger": "retry",
       "attempt": 2,
       "started_at": "2026-11-28T04:34:08+08:00",
-      "finished_at": null,
-      "outcome": null,
+      "finished_at": "2026-11-28T04:39:58+08:00",
+      "outcome": "published_full",
       "edition": "full",
       "error_code": null,
       "code_commit": "3ee65a2e04b29c1b18996e3ccc481829c367039d",
@@ -684,14 +684,14 @@
           "id": "publish",
           "status": "ok",
           "started_at": "2026-11-28T04:39:10+08:00",
-          "ended_at": null,
+          "ended_at": "2026-11-28T04:39:15+08:00",
           "note": null
         },
         {
           "id": "deploy",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-28T04:39:15+08:00",
+          "ended_at": "2026-11-28T04:39:58+08:00",
           "note": null
         },
         {
@@ -703,9 +703,9 @@
         },
         {
           "id": "links",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-28T04:39:15+08:00",
+          "ended_at": "2026-11-28T04:39:29+08:00",
           "note": null
         }
       ],
@@ -1172,10 +1172,10 @@
         "by_code": {}
       },
       "deploy": {
-        "triggered": false,
-        "ready_at": null,
-        "shows_date": null,
-        "shows_edition": null
+        "triggered": true,
+        "ready_at": "2026-11-28T04:39:58+08:00",
+        "shows_date": "2026-11-28",
+        "shows_edition": "full"
       },
       "recheck": {
         "from": "2026-11-14",
@@ -1240,7 +1240,70 @@
           }
         ]
       },
-      "links": null
+      "links": {
+        "checked_at": "2026-11-28T04:39:29+08:00",
+        "checked": 145,
+        "ok": 116,
+        "unknown": 21,
+        "broken": [
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere",
+            "item_id": "cve-2026-123890",
+            "edition_date": "2026-11-21",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495",
+            "item_id": "cve-2026-123890",
+            "edition_date": "2026-11-21",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-vcs-static-cred-hr7EWZ8t",
+            "item_id": "cve-2026-76466",
+            "edition_date": "2026-11-21",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://ipa.go.jp/security/security-alert/2026/alert20261119.html",
+            "item_id": "cve-2026-123007",
+            "edition_date": "2026-11-20",
+            "result": "broken",
+            "http": null
+          },
+          {
+            "url": "https://bsi.bund.de/DE/Service-Navi/Presse/Pressemitteilungen/Presse2026/261119_Lagebericht.html",
+            "item_id": "elsewhere",
+            "edition_date": "2026-11-20",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://unit42.paloaltonetworks.com/optimjack-supply-chain-attack",
+            "item_id": "sc-web-platform-global-2026-11",
+            "edition_date": "2026-11-19",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/cold-relic-a-case-study-in-impersonation-and-compromise",
+            "item_id": "camp-espionage-us-2026-11",
+            "edition_date": "2026-11-19",
+            "result": "changed",
+            "http": 200
+          },
+          {
+            "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+            "item_id": "angle",
+            "edition_date": "2026-11-18",
+            "result": "changed",
+            "http": 200
+          }
+        ]
+      }
     }
   ]
 }
