@@ -1,14 +1,48 @@
 {
   "schema_version": 1,
   "date": "2026-11-28",
-  "edition": "data_only",
-  "generated_at": "2026-11-28T04:30:50+08:00",
-  "published_at": "2026-11-28T04:31:07+08:00",
+  "edition": "full",
+  "generated_at": "2026-11-28T04:55:00+08:00",
+  "published_at": "2026-11-28T04:39:11+08:00",
   "data_only_published_at": "2026-11-28T04:31:07+08:00",
   "late": false,
   "data_cutoff_utc": "2026-11-26",
-  "lead": [],
-  "angle": null,
+  "lead": [
+    {
+      "text": "CISA added a Drupal core flaw to its exploited list on 27 Nov, US date, after Drupal said it was being exploited.",
+      "item_ids": [
+        "cve-2026-136716"
+      ],
+      "gap": false
+    },
+    {
+      "text": "A Taiwanese e-invoice platform reports unauthorised access to its API that affected merchants.",
+      "item_ids": [
+        "inc-einvoice-tw-2026-11"
+      ],
+      "gap": false
+    },
+    {
+      "text": "iThome reports at least 6 groups use the AI attack framework ARTEX.",
+      "item_ids": [
+        "ai-attack-framework-global-2026-11"
+      ],
+      "gap": false
+    }
+  ],
+  "angle": {
+    "text": "CISA's median wait to list flaws not already exploited at disclosure was 14 days in the 26 weeks to 26 Nov.",
+    "source_id": null,
+    "metric_path": "window.w26.after_disclosure_median_days",
+    "as_of": "2026-11-26",
+    "counterpoint": "Drupal's own advisory says its flaw was exploited before CISA listed it, so the listing date lags real exploitation.",
+    "counterpoint_source_ids": [
+      "s2",
+      "s1"
+    ],
+    "claim_id": "SB-05",
+    "claim_text": "Exploitation speeds up: at the end of 2027 the whole 80% range of the 26-week median days from disclosure to CISA's exploited list is under 15 days (13 to 22 on 8 Nov 2026; 2023 to 2024: 15 to 36)."
+  },
   "regions": {
     "rows": [
       {
@@ -61,7 +95,7 @@
       }
     ],
     "global": {
-      "item_count": 0
+      "item_count": 4
     },
     "signals": []
   },
@@ -73,11 +107,538 @@
     "metrics_sha256": "95c644cc48143b9927559c4658b8ce03c0f2f3d07b18302088e22315b259ccfa",
     "as_of": "2026-11-26"
   },
-  "items": [],
+  "items": [
+    {
+      "id": "cve-2026-136716",
+      "kind": "exploited_flaw",
+      "headline": "Drupal says an installer flaw is exploited; CISA lists it",
+      "summary": "Drupal says a gap left after its previous installer patch is being exploited in the wild. Sites in unusual install states can be taken over. Fixes came on 25 Nov, and CISA listed the flaw on 27 Nov (US date).",
+      "why_it_matters": "A partial patch left a window open, and Drupal says affected sites may already be compromised.",
+      "severity": "high",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-136716"
+      ],
+      "release_id": null,
+      "flaw_evidence": [
+        {
+          "cve_id": "CVE-2026-136716",
+          "kind": "exploited",
+          "basis": "vendor_confirmed",
+          "date": "2026-11-25",
+          "source_id": "s2"
+        },
+        {
+          "cve_id": "CVE-2026-136716",
+          "kind": "exploited",
+          "basis": "cert_confirmed",
+          "date": "2026-11-27",
+          "source_id": "s1"
+        },
+        {
+          "cve_id": "CVE-2026-136716",
+          "kind": "patched",
+          "basis": "vendor_advisory",
+          "date": "2026-11-25",
+          "source_id": "s2"
+        }
+      ],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s2",
+        "s1",
+        "s3",
+        "s4"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": {
+        "id": "drupal",
+        "name": "Drupal",
+        "country": null
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-136716",
+          "date_published": "2026-11-26",
+          "date_updated": "2026-11-27",
+          "assigner": "drupal",
+          "vendor": {
+            "id": "drupal",
+            "name": "Drupal",
+            "country": null
+          },
+          "product": "Drupal core",
+          "title": "Drupal core - Highly critical - Access bypass - SA-CORE-2026-019",
+          "cvss": {
+            "score": 9.8,
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "scorer": "cisa_adp"
+          },
+          "epss": {
+            "score": 0.01212,
+            "percentile": 0.68449,
+            "date": "2026-11-27"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-27"
+          },
+          "kev": null,
+          "credits": [
+            "Andrew Berry (deviantintegral)",
+            "Tim Hestenes Lehnen (hestenet)",
+            "Dave Long (longwave)",
+            "James Sherwin (very_random_man)",
+            "Cathy Theys (yesct)",
+            "Alex Pott (alexpott)",
+            "catch (catch)",
+            "Mohit Aghera (mohit_aghera)",
+            "Jess (xjm)",
+            "Bram Driesen (bramdriesen)"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": "2026-11-25",
+          "patch": {
+            "date": "2026-11-25",
+            "basis": "vendor_advisory",
+            "source_url": "https://drupal.org/sa-core-2026-019"
+          },
+          "exploitation_evidence": [
+            {
+              "date": "2026-11-25",
+              "basis": "vendor_confirmed",
+              "source_url": "https://drupal.org/sa-core-2026-019"
+            },
+            {
+              "date": "2026-11-27",
+              "basis": "cert_confirmed",
+              "source_url": "https://cisa.gov/news-events/alerts/2026/11/27/cisa-adds-three-known-exploited-vulnerabilities-catalog"
+            }
+          ],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-28T04:39:11+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-einvoice-tw-2026-11",
+      "kind": "breach",
+      "headline": "Taiwan e-invoice platform reports unauthorised API access affecting merchants",
+      "summary": "An e-invoice service provider says its external API was accessed without authorisation, affecting merchants and exposing invoice data, per preliminary findings. Merchant brands have warned customers about impersonation scams.",
+      "why_it_matters": "A supplier failure reached merchants downstream; the cause and the attacker are not yet known.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": null,
+        "description": "a Taiwanese e-invoice service provider",
+        "sector": "technology",
+        "country": "TW",
+        "impact": "Merchants affected; e-invoice data exposed",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s6"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s6"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-software-de-2026-11",
+      "kind": "breach",
+      "headline": "SAP confirms cyber incident; source code reportedly copied via stolen GitHub tokens",
+      "summary": "SAP confirmed an incident, citing no evidence of customer data access. Der Spiegel reports stolen GitHub tokens let attackers copy code; SAP has not confirmed.",
+      "why_it_matters": "A vendor's development pipeline may have been reached; what was altered, if anything, is not yet known.",
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "EU",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": "SAP",
+        "description": "a German software maker",
+        "sector": "technology",
+        "country": "DE",
+        "impact": "Source code reportedly copied; no customer data access found",
+        "disruption": false,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s7",
+          "s8"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s7",
+        "s8"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "cve-2026-128797",
+      "kind": "critical_flaw",
+      "headline": "Taiwanese vendor's 5G router: two flaws rated critical in CVE records, none exploited",
+      "summary": "CVE records cite an admin panel exposed over public IPv6 and unauthorised access to device metadata. No exploitation is reported; vendor page not opened.",
+      "why_it_matters": "Published flaws in a Taiwanese vendor's router; whether attackers use them is not yet known.",
+      "severity": "watch",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "TW"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [
+        "CVE-2026-128797",
+        "CVE-2026-128798"
+      ],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": false,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s12",
+        "s13"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": {
+        "id": "acer",
+        "name": "Acer",
+        "country": "TW"
+      },
+      "cves": [
+        {
+          "cve_id": "CVE-2026-128797",
+          "date_published": "2026-11-24",
+          "date_updated": "2026-11-27",
+          "assigner": "Acer",
+          "vendor": {
+            "id": "acer",
+            "name": "Acer",
+            "country": "TW"
+          },
+          "product": "Connect M6E 5G Portable WiFi Router",
+          "title": "Web administration panel exposed over public IPv6",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.00444,
+            "percentile": 0.30505,
+            "date": "2026-11-27"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-27"
+          },
+          "kev": null,
+          "credits": [
+            "Kornel Wojtasiak"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-28T04:39:11+08:00"
+        },
+        {
+          "cve_id": "CVE-2026-128798",
+          "date_published": "2026-11-24",
+          "date_updated": "2026-11-27",
+          "assigner": "Acer",
+          "vendor": {
+            "id": "acer",
+            "name": "Acer",
+            "country": "TW"
+          },
+          "product": "Connect M6E 5G Portable WiFi Router",
+          "title": "Unauthorized access to device and recording metadata",
+          "cvss": {
+            "score": 10,
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+            "scorer": "cna"
+          },
+          "epss": {
+            "score": 0.0037,
+            "percentile": 0.22965,
+            "date": "2026-11-27"
+          },
+          "ssvc": {
+            "exploitation": "none",
+            "automatable": "yes",
+            "technical_impact": "total",
+            "date": "2026-11-27"
+          },
+          "kev": null,
+          "credits": [
+            "Kornel Wojtasiak"
+          ],
+          "ai_credit": null,
+          "discovery_credit": "human",
+          "advisory_date": null,
+          "patch": null,
+          "exploitation_evidence": [],
+          "exploit_reference": false,
+          "vendor_confirmed": true,
+          "vendor_confirmed_by": "vendor_cna",
+          "ghsa_ids": [],
+          "captured_at": "2026-11-28T04:39:11+08:00"
+        }
+      ],
+      "release": null,
+      "public_exploit": "no",
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "inc-mining-us-2026-11",
+      "kind": "breach",
+      "headline": "Wyoming uranium mine's operations paused after cyber incident, iThome reports",
+      "summary": "An Australian miner says a cyber incident hit operations and control systems at its Wyoming uranium mine. It took protective steps and is investigating.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "none",
+      "ai_role_secondary": null,
+      "ai_confidence": null,
+      "ai_claimant": null,
+      "ai_evidence": [],
+      "claim_type": "independent",
+      "regions": [
+        "US"
+      ],
+      "topics": [
+        "ot_cni"
+      ],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": {
+        "victim": null,
+        "description": "an Australian uranium miner",
+        "sector": "energy",
+        "country": "AU",
+        "impact": "Mine operations paused; control systems involved",
+        "disruption": true,
+        "status": "reported",
+        "claimed_by": null,
+        "status_source_ids": [
+          "s9"
+        ]
+      },
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s9"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "ai-attack-framework-global-2026-11",
+      "kind": "ai_capability",
+      "headline": "iThome reports at least 6 hacking groups now use the ARTEX AI attack framework",
+      "summary": "iThome reports at least 6 groups use ARTEX. In one attack the AI agent moved from leaked credentials to Key Vault data within minutes.",
+      "why_it_matters": null,
+      "severity": null,
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s14",
+          "quote": "至少6個駭客組織已開始利用AI自主滲透測試框架ARTEX發動攻擊",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "TW",
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": {
+        "text": "about 4,200 exposed AI attack frameworks, 10 in Taiwan, per Shadowserver as reported by iThome",
+        "source_id": "s15"
+      },
+      "standing_story": null,
+      "source_ids": [
+        "s14",
+        "s15"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    },
+    {
+      "id": "camp-collab-global-2026-11",
+      "kind": "campaign",
+      "headline": "Accenture says MiCollab zero-days were exploited before the patch, likely AI-aided",
+      "summary": "Accenture says attackers exploited Mitel MiCollab flaws a day before the patch, in a suspected extortion campaign, reaching domain control in about an hour.",
+      "why_it_matters": null,
+      "severity": "elevated",
+      "landmark": false,
+      "ai_role": "ai_weapon",
+      "ai_role_secondary": null,
+      "ai_confidence": "reported",
+      "ai_claimant": null,
+      "ai_evidence": [
+        {
+          "source_id": "s10",
+          "quote": "Accenture says hackers exploited MiCollab flaws before Mitel’s advisory, likely aided by AI, in a suspected extortion campaign.",
+          "from_claimant": false
+        }
+      ],
+      "claim_type": "independent",
+      "regions": [
+        "GLOBAL"
+      ],
+      "topics": [],
+      "attribution": [],
+      "actor_nexus": null,
+      "incident": null,
+      "cve_ids": [],
+      "release_id": null,
+      "flaw_evidence": [],
+      "exploit_reported_in_sources": null,
+      "exposure": null,
+      "standing_story": null,
+      "source_ids": [
+        "s10",
+        "s11"
+      ],
+      "first_seen": "2026-11-28",
+      "vendor": null,
+      "cves": [],
+      "release": null,
+      "public_exploit": null,
+      "anthropic_disclosure": false,
+      "withheld": null
+    }
+  ],
   "actors_seen": [],
   "taiwan_lens": {
-    "analysis": "",
-    "item_ids": [],
+    "analysis": "A Taiwanese e-invoice platform reports unauthorised access to its API that affected merchants. A Taiwanese vendor has two router flaws that CVE records rate critical, with no exploitation reported. Election day is 28 Nov; none of today's sources report an election-related cyber incident.",
+    "item_ids": [
+      "inc-einvoice-tw-2026-11",
+      "cve-2026-128797",
+      "ai-attack-framework-global-2026-11"
+    ],
     "source_ids": [],
     "rows": [
       {
@@ -88,8 +649,10 @@
       },
       {
         "row": "home_vendors",
-        "text": null,
-        "item_ids": [],
+        "text": "A Taiwanese vendor's router flaws appear in CVE records only; no exploitation is reported.",
+        "item_ids": [
+          "cve-2026-128797"
+        ],
         "source_ids": []
       },
       {
@@ -112,15 +675,19 @@
       },
       {
         "row": "china_axis",
-        "text": null,
+        "text": "Estonia's justice and digital ministry urged stopping use of DeepSeek and Qwen over data-security concerns, CNA reports.",
         "item_ids": [],
-        "source_ids": []
+        "source_ids": [
+          "s16"
+        ]
       }
     ],
     "japan": {
-      "text": null,
+      "text": "Japan's education ministry disclosed a breach of its government procurement system that may have exposed business records and email addresses, The Record reports.",
       "item_ids": [],
-      "source_ids": []
+      "source_ids": [
+        "s17"
+      ]
     },
     "kev_lines": {
       "tw": {
@@ -155,50 +722,337 @@
   },
   "week_in_review": null,
   "corrections": [],
-  "elsewhere": [],
-  "epss_movers": [
+  "elsewhere": [
     {
-      "cve_id": "CVE-2026-98432",
-      "score": 0.8484,
-      "delta_7d": 0.84063,
-      "percentile": 0.99802
+      "title": "GeoServer flaws reported chained in attacks, as iThome reports watchTowr urging patching",
+      "source_id": "s5"
     },
     {
-      "cve_id": "CVE-2026-16232",
-      "score": 0.78945,
-      "delta_7d": 0.75428,
-      "percentile": 0.99719
+      "title": "Unpatched Cacti zero-day with public proof of concept allows remote code execution",
+      "source_id": "s18"
     },
     {
-      "cve_id": "CVE-2026-114938",
-      "score": 0.72539,
-      "delta_7d": 0.71632,
-      "percentile": 0.99603
+      "title": "UK Department for Work and Pensions takes services offline after cyber incident",
+      "source_id": "s19"
     },
     {
-      "cve_id": "CVE-2026-48939",
-      "score": 0.91199,
-      "delta_7d": 0.7113,
-      "percentile": 0.99876
-    },
-    {
-      "cve_id": "CVE-2026-123158",
-      "score": 0.89631,
-      "delta_7d": 0.70731,
-      "percentile": 0.99861
+      "title": "Cyberattack disrupts AFP's global news distribution platform",
+      "source_id": "s20"
     }
   ],
+  "epss_movers": [],
   "feeds_stale": [],
-  "sources": [],
-  "computed": {
-    "word_count": 424,
-    "reading_minutes": 2,
-    "item_count": 0,
-    "ai_linked": {
-      "linked": 0,
-      "total": 0
+  "sources": [
+    {
+      "id": "s1",
+      "title": "CISA Adds Three Known Exploited Vulnerabilities to Catalog",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CISA",
+      "url": "https://cisa.gov/news-events/alerts/2026/11/27/cisa-adds-three-known-exploited-vulnerabilities-catalog",
+      "source_type": "government",
+      "published_at": "2026-11-27",
+      "publisher": "cisa",
+      "publisher_name": "CISA",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
     },
-    "source_count": 0,
-    "publisher_count": 0
+    {
+      "id": "s2",
+      "title": "SA-CORE-2026-019: Drupal core access bypass",
+      "title_en": null,
+      "language": "en",
+      "outlet": "Drupal",
+      "url": "https://drupal.org/sa-core-2026-019",
+      "source_type": "vendor_advisory",
+      "published_at": "2026-11-25",
+      "publisher": "vendor:drupal",
+      "publisher_name": "Drupal",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s3",
+      "title": "CVE-2026-136716 record",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-136716",
+      "source_type": "cve_record",
+      "published_at": "2026-11-26",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s4",
+      "title": "Drupal warns of new site takeover flaw exploited in attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/drupal-warns-of-new-access-bypass-flaw-exploited-in-attacks",
+      "source_type": "press",
+      "published_at": "2026-11-27T18:10:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s5",
+      "title": "地理資訊伺服器GeoServer漏洞遭串連用於攻擊活動",
+      "title_en": "GeoServer flaws chained in attack campaigns",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180829",
+      "source_type": "press",
+      "published_at": "2026-11-26T17:36:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s6",
+      "title": "香帥蛋糕、一事製菓揭露資安事件,電子發票服務商PayNow對外API遭異常存取,波及500商家",
+      "title_en": "Bakery brands disclose incidents as e-invoice provider's external API is accessed abnormally, affecting merchants",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180833",
+      "source_type": "press",
+      "published_at": "2026-11-26T21:08:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s7",
+      "title": "Software giant SAP confirms cyber incident amid reports of source code breach",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/sap-germany-cyberattack-github",
+      "source_type": "press",
+      "published_at": "2026-11-27T21:15:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s8",
+      "title": "SAP Confirms Cyberattack, Source Code Reportedly Compromised",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/sap-confirms-cyberattack-source-code-reportedly-compromised",
+      "source_type": "press",
+      "published_at": "2026-11-27T15:36:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s9",
+      "title": "美國鈾礦場因資安事件暫停運作",
+      "title_en": "US uranium mine suspends operations after cyber incident",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180852",
+      "source_type": "press",
+      "published_at": "2026-11-27T14:51:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s10",
+      "title": "Mitel MiCollab Zero-Days Exploited in Suspected AI-Assisted Attacks",
+      "title_en": null,
+      "language": "en",
+      "outlet": "SecurityWeek",
+      "url": "https://securityweek.com/mitel-micollab-zero-days-exploited-in-suspected-ai-assisted-attacks",
+      "source_type": "press",
+      "published_at": "2026-11-26T19:35:00+08:00",
+      "publisher": "securityweek",
+      "publisher_name": "SecurityWeek",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s11",
+      "title": "MiCollab漏洞修補前已遭利用,攻擊者約在1小時取得網域控制權限",
+      "title_en": "MiCollab flaws exploited before patch; attackers gained domain control in about an hour",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180854",
+      "source_type": "press",
+      "published_at": "2026-11-27T15:12:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s12",
+      "title": "CVE-2026-128797 record",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-128797",
+      "source_type": "cve_record",
+      "published_at": "2026-11-24",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s13",
+      "title": "CVE-2026-128798 record",
+      "title_en": null,
+      "language": "en",
+      "outlet": "CVE Program",
+      "url": "https://cve.org/CVERecord?id=CVE-2026-128798",
+      "source_type": "cve_record",
+      "published_at": "2026-11-24",
+      "publisher": "cve-org",
+      "publisher_name": "CVE Program",
+      "tier": 1,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s14",
+      "title": "中國及北韓駭客皆已於武器庫中加入ARTEX",
+      "title_en": "Chinese and North Korean hackers have both added ARTEX to their arsenals",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180835",
+      "source_type": "press",
+      "published_at": "2026-11-27T10:02:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s15",
+      "title": "近4,200個AI自主攻擊框架暴露於公開網路,臺灣也發現10個",
+      "title_en": "Nearly 4,200 autonomous AI attack frameworks exposed online, 10 found in Taiwan",
+      "language": "zh-Hant-TW",
+      "outlet": "iThome 資安",
+      "url": "https://ithome.com.tw/news/180843",
+      "source_type": "press",
+      "published_at": "2026-11-27T11:12:00+08:00",
+      "publisher": "ithome",
+      "publisher_name": "iThome",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s16",
+      "title": "愛沙尼亞示警資安風險 籲停用DeepSeek等3款AI工具",
+      "title_en": "Estonia warns of security risks, urges stopping use of three AI tools including DeepSeek",
+      "language": "zh-Hant-TW",
+      "outlet": "中央社",
+      "url": "https://cna.com.tw/news/aopl/202611270015.aspx",
+      "source_type": "press",
+      "published_at": "2026-11-27T07:13:00+08:00",
+      "publisher": "cna",
+      "publisher_name": "中央社 Central News Agency and Focus Taiwan (CNA English)",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s17",
+      "title": "Japan’s education ministry discloses breach of government procurement system",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/japan-education-ministry-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-27T22:15:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s18",
+      "title": "Unpatched Cacti zero-day with public PoC gives remote code execution",
+      "title_en": null,
+      "language": "en",
+      "outlet": "BleepingComputer",
+      "url": "https://bleepingcomputer.com/news/security/unpatched-cacti-zero-day-with-public-poc-gives-remote-code-execution",
+      "source_type": "press",
+      "published_at": "2026-11-28T01:06:00+08:00",
+      "publisher": "bleepingcomputer",
+      "publisher_name": "BleepingComputer",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s19",
+      "title": "British government takes services offline following ‘cyber incident’",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/uk-department-work-pensions-cyber-incident",
+      "source_type": "press",
+      "published_at": "2026-11-27T08:00:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    },
+    {
+      "id": "s20",
+      "title": "Cyberattack disrupts global news distribution platform at France’s AFP",
+      "title_en": null,
+      "language": "en",
+      "outlet": "The Record",
+      "url": "https://therecord.media/france-afp-hit-by-cyberattack",
+      "source_type": "press",
+      "published_at": "2026-11-27T08:00:00+08:00",
+      "publisher": "the-record",
+      "publisher_name": "The Record",
+      "tier": 2,
+      "state_label": null,
+      "seen_as": "pack"
+    }
+  ],
+  "computed": {
+    "word_count": 1012,
+    "reading_minutes": 5,
+    "item_count": 7,
+    "ai_linked": {
+      "linked": 2,
+      "total": 7
+    },
+    "source_count": 20,
+    "publisher_count": 8
   }
 }

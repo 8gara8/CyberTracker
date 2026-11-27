@@ -630,12 +630,12 @@
       "started_at": "2026-11-28T04:34:08+08:00",
       "finished_at": null,
       "outcome": null,
-      "edition": null,
+      "edition": "full",
       "error_code": null,
       "code_commit": "3ee65a2e04b29c1b18996e3ccc481829c367039d",
       "data_cutoff_utc": "2026-11-26",
       "data_only_published_at": null,
-      "full_published_at": null,
+      "full_published_at": "2026-11-28T04:39:11+08:00",
       "late": false,
       "stages": [
         {
@@ -668,22 +668,22 @@
         },
         {
           "id": "draft",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-28T04:34:12+08:00",
+          "ended_at": "2026-11-28T04:37:45+08:00",
           "note": null
         },
         {
           "id": "validate",
-          "status": "skipped",
-          "started_at": null,
-          "ended_at": null,
+          "status": "ok",
+          "started_at": "2026-11-28T04:37:45+08:00",
+          "ended_at": "2026-11-28T04:39:10+08:00",
           "note": null
         },
         {
           "id": "publish",
-          "status": "skipped",
-          "started_at": null,
+          "status": "ok",
+          "started_at": "2026-11-28T04:39:10+08:00",
           "ended_at": null,
           "note": null
         },
@@ -1144,13 +1144,16 @@
         }
       ],
       "budgets": {
-        "agent_seconds": 0,
-        "web_fetches": 0,
-        "web_searches": 0,
-        "repair_rounds": 0,
-        "tokens_in": null,
-        "tokens_out": null,
-        "usage": null,
+        "agent_seconds": 297,
+        "web_fetches": 9,
+        "web_searches": 2,
+        "repair_rounds": 2,
+        "tokens_in": 2121702,
+        "tokens_out": 43538,
+        "usage": {
+          "window": "seven_day",
+          "utilization": 0.17
+        },
         "safety_stops": 0
       },
       "candidates": {
@@ -1158,8 +1161,16 @@
         "kept": 40,
         "deep_read": 15
       },
-      "validation": null,
-      "soft_gates": null,
+      "validation": {
+        "errors": 0,
+        "warnings": 0,
+        "codes": []
+      },
+      "soft_gates": {
+        "checked": 8,
+        "dropped": 0,
+        "by_code": {}
+      },
       "deploy": {
         "triggered": false,
         "ready_at": null,

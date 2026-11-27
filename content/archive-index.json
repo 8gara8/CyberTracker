@@ -3,9 +3,9 @@
   "editions": [
     {
       "date": "2026-11-28",
-      "edition": "data_only",
-      "published_at": "2026-11-28T04:31:07+08:00",
-      "item_count": 0,
+      "edition": "full",
+      "published_at": "2026-11-28T04:39:11+08:00",
+      "item_count": 7,
       "corrected": false
     },
     {
@@ -2206,6 +2206,174 @@
         "result": "ok",
         "http": 200
       }
+    },
+    "https://cisa.gov/news-events/alerts/2026/11/27/cisa-adds-three-known-exploited-vulnerabilities-catalog": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-136716"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://drupal.org/sa-core-2026-019": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-136716"
+      ],
+      "sha256": "99e35c3b6a57090aef0860f6ed6a0bf0b68cfa5128083b42591028e39fd7ea6b",
+      "hashed_at": "2026-11-28T04:33:32+08:00",
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-136716": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-136716"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/drupal-warns-of-new-access-bypass-flaw-exploited-in-attacks": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-136716"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180829": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180833": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/inc-einvoice-tw-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/sap-germany-cyberattack-github": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/inc-software-de-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/sap-confirms-cyberattack-source-code-reportedly-compromised": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/inc-software-de-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180852": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/inc-mining-us-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://securityweek.com/mitel-micollab-zero-days-exploited-in-suspected-ai-assisted-attacks": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/camp-collab-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180854": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/camp-collab-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-128797": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-128797"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cve.org/CVERecord?id=CVE-2026-128798": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/cve-2026-128797"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180835": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/ai-attack-framework-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://ithome.com.tw/news/180843": {
+      "first_cited": "2026-11-28",
+      "item_ids": [
+        "2026-11-28/ai-attack-framework-global-2026-11"
+      ],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://cna.com.tw/news/aopl/202611270015.aspx": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/japan-education-ministry-cyberattack": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://bleepingcomputer.com/news/security/unpatched-cacti-zero-day-with-public-poc-gives-remote-code-execution": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/uk-department-work-pensions-cyber-incident": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
+    },
+    "https://therecord.media/france-afp-hit-by-cyberattack": {
+      "first_cited": "2026-11-28",
+      "item_ids": [],
+      "sha256": null,
+      "hashed_at": null,
+      "last_check": null
     }
   }
 }
