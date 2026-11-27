@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-25",
+  "updated_at": "2026-11-26",
   "prefilter_sha256": "4d13c88890d20a99cad542683a02c59381dab4e72378caa5b4f6d116983ee58b",
   "candidates": [
     [
@@ -9238,6 +9238,12 @@
       "Joshua Rogers (AISLE Research)"
     ],
     [
+      "CVE-2026-120353",
+      "2026-11-26",
+      "cna.credits",
+      "Claude Security Scans"
+    ],
+    [
       "CVE-2026-120367",
       "2026-11-09",
       "cna.credits",
@@ -10858,6 +10864,12 @@
       "Anthropic OSS Scanner (ANT-2026-6FX8KOK1)"
     ],
     [
+      "CVE-2026-135107",
+      "2026-11-26",
+      "cna.credits",
+      "This issue was discovered by AISLE Research in partnership with Red Hat Product Security."
+    ],
+    [
       "CVE-2026-135231",
       "2026-11-23",
       "cna.credits",
@@ -11444,6 +11456,18 @@
       "2026-11-25",
       "cna.credits",
       "Red Hat would like to thank Bruno Oliveira - abstractj (in collaboration with OpenAI) for reporting this issue."
+    ],
+    [
+      "CVE-2026-137530",
+      "2026-11-26",
+      "cna.credits",
+      "AI-Risk-Management"
+    ],
+    [
+      "CVE-2026-137594",
+      "2026-11-26",
+      "cna.credits",
+      "Claude Opus 5.5"
     ]
   ]
 }
